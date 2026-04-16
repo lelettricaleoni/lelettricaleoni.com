@@ -1,0 +1,84 @@
+{
+  "nav": {
+    "services": "Leistungen",
+    "pricing": "Preise",
+    "contact": "Kontakt"
+  },
+  "hero": {
+    "open_badge": "Wir haben geöffnet",
+    "coming_soon_label": "Website kommt bald",
+    "headline": "L'Elettrica Leoni",
+    "subheadline": "E-Bike Verleih und Reparaturen in Dro am Gardasee",
+    "cta_map": "Anfahrt",
+    "cta_contact": "Kontaktiere uns",
+    "website_wip": "Unsere vollständige Website ist im Aufbau. In der Zwischenzeit finden Sie alle Informationen hier unten."
+  },
+  "services": {
+    "title": "Unsere Leistungen",
+    "rental": {
+      "title": "Verleih",
+      "desc": "Flyer E-Bikes, klassische Fahrräder und Segway, um den Gardasee und die umliegenden Täler zu erkunden."
+    },
+    "repair": {
+      "title": "Reparaturen",
+      "desc": "Reparatur und Wartung von E-Bikes, Rennrädern, Mountainbikes, E-Scootern und jeder Art von Fahrrad."
+    }
+  },
+  "pricing": {
+    "title": "Preisliste",
+    "subtitle": "Alle Preise beinhalten Helm und Schloss. Mehrfachvermietung möglich.",
+    "download_pdf": "Preisliste herunterladen",
+    "ebike_title": "Flyer E-Bikes",
+    "classic_title": "Klassisches Fahrrad",
+    "segway_title": "Segway Ninebot P65E",
+    "extras_title": "Extras",
+    "duration": "Dauer",
+    "half_day": "Halber Tag",
+    "day_1": "1 Tag",
+    "days_2": "2 Tage",
+    "days_3": "3 Tage",
+    "days_4": "4 Tage",
+    "days_5": "5 Tage",
+    "days_6": "6 Tage",
+    "days_7": "7 Tage",
+    "hour_1": "1 Stunde",
+    "hours_2": "2 Stunden",
+    "hours_3": "3 Stunden",
+    "hours_4": "4 Stunden",
+    "full_day": "Ganzer Tag",
+    "per_day": "/ Tag",
+    "from_day2": "2+ Tage",
+    "not_available": "—",
+    "charger": "Ladegerät",
+    "child_seat": "Kindersitz",
+    "one_time": "einmalig"
+  },
+  "info": {
+    "title": "Wo wir sind",
+    "address_label": "Adresse",
+    "phone_label": "Telefon",
+    "email_label": "E-Mail",
+    "hours_label": "Öffnungszeiten",
+    "hours_value": "Täglich 09:00 – 13:00 / 14:00 – 19:00",
+    "directions": "Wegbeschreibung"
+  },
+  "map": {
+    "title": "Finden Sie uns auf Google Maps"
+  },
+  "footer": {
+    "copyright": "© {year} L'Elettrica Leoni. Alle Rechte vorbehalten.",
+    "privacy": "Datenschutzerklärung",
+    "vat": "MwSt.-Nr."
+  },
+  "privacy": {
+    "title": "Datenschutzerklärung",
+    "last_updated": "Zuletzt aktualisiert: April 2026",
+    "controller_title": "Verantwortlicher",
+    "data_title": "Erhobene Daten",
+    "data_body": "Diese Website verwendet Google Analytics (GA4), um anonyme Browsing-Daten zu sammeln (besuchte Seiten, Sitzungsdauer, Gerät). Über die Website werden keine personenbezogenen Daten direkt erhoben.",
+    "cookies_title": "Cookies",
+    "cookies_body": "Wir verwenden technische Cookies und Analyse-Cookies von Drittanbietern (Google Analytics). Durch weiteres Surfen stimmen Sie der Verwendung von Cookies zu.",
+    "contact_title": "Kontakt",
+    "contact_body": "Für Anfragen zum Datenschutz: lelettricaleoni@gmail.com"
+  }
+}

@@ -1,0 +1,84 @@
+{
+  "nav": {
+    "services": "Servizi",
+    "pricing": "Prezzi",
+    "contact": "Contatti"
+  },
+  "hero": {
+    "open_badge": "Siamo aperti",
+    "coming_soon_label": "Sito in arrivo",
+    "headline": "L'Elettrica Leoni",
+    "subheadline": "Noleggio e-bike e riparazioni a Dro, sul Lago di Garda",
+    "cta_map": "Come raggiungerci",
+    "cta_contact": "Contattaci",
+    "website_wip": "Il sito completo è in costruzione. Nel frattempo trovi tutte le informazioni qui sotto."
+  },
+  "services": {
+    "title": "I nostri servizi",
+    "rental": {
+      "title": "Noleggio",
+      "desc": "E-bike Flyer, bici classiche e Segway per esplorare il Lago di Garda e le valli circostanti."
+    },
+    "repair": {
+      "title": "Riparazioni",
+      "desc": "Riparazioni e manutenzione di bici elettriche, da corsa, mountain bike, monopattini e qualsiasi tipo di bicicletta."
+    }
+  },
+  "pricing": {
+    "title": "Listino prezzi",
+    "subtitle": "Tutti i prezzi includono casco e lucchetto. Possibilità di noleggio multiplo.",
+    "download_pdf": "Scarica il volantino prezzi",
+    "ebike_title": "E-Bike Flyer",
+    "classic_title": "Bici Classica",
+    "segway_title": "Segway Ninebot P65E",
+    "extras_title": "Extra",
+    "duration": "Durata",
+    "half_day": "Mezza giornata",
+    "day_1": "1 giorno",
+    "days_2": "2 giorni",
+    "days_3": "3 giorni",
+    "days_4": "4 giorni",
+    "days_5": "5 giorni",
+    "days_6": "6 giorni",
+    "days_7": "7 giorni",
+    "hour_1": "1 ora",
+    "hours_2": "2 ore",
+    "hours_3": "3 ore",
+    "hours_4": "4 ore",
+    "full_day": "Giornata intera",
+    "per_day": "/ giorno",
+    "from_day2": "2+ giorni",
+    "not_available": "—",
+    "charger": "Caricabatterie",
+    "child_seat": "Seggiolino bimbo",
+    "one_time": "una tantum"
+  },
+  "info": {
+    "title": "Dove siamo",
+    "address_label": "Indirizzo",
+    "phone_label": "Telefono",
+    "email_label": "Email",
+    "hours_label": "Orario",
+    "hours_value": "Tutti i giorni 09:00 – 13:00 / 14:00 – 19:00",
+    "directions": "Ottieni indicazioni"
+  },
+  "map": {
+    "title": "Trovaci su Google Maps"
+  },
+  "footer": {
+    "copyright": "© {year} L'Elettrica Leoni. Tutti i diritti riservati.",
+    "privacy": "Privacy Policy",
+    "vat": "P.IVA"
+  },
+  "privacy": {
+    "title": "Privacy Policy",
+    "last_updated": "Ultimo aggiornamento: aprile 2026",
+    "controller_title": "Titolare del trattamento",
+    "data_title": "Dati raccolti",
+    "data_body": "Questo sito utilizza Google Analytics (GA4) per raccogliere dati anonimi di navigazione (pagine visitate, durata sessione, dispositivo). Nessun dato personale viene raccolto direttamente tramite il sito.",
+    "cookies_title": "Cookie",
+    "cookies_body": "Utilizziamo cookie tecnici e cookie analitici di terze parti (Google Analytics). Continuando la navigazione accetti l'utilizzo dei cookie.",
+    "contact_title": "Contatti",
+    "contact_body": "Per qualsiasi richiesta relativa al trattamento dei dati: lelettricaleoni@gmail.com"
+  }
+}

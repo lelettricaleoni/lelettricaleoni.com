@@ -1,0 +1,84 @@
+{
+  "nav": {
+    "services": "Services",
+    "pricing": "Pricing",
+    "contact": "Contact"
+  },
+  "hero": {
+    "open_badge": "We're open",
+    "coming_soon_label": "Website coming soon",
+    "headline": "L'Elettrica Leoni",
+    "subheadline": "E-bike rental and repairs in Dro, Lake Garda",
+    "cta_map": "Find us",
+    "cta_contact": "Contact us",
+    "website_wip": "Our full website is under construction. In the meantime, all the information you need is below."
+  },
+  "services": {
+    "title": "Our services",
+    "rental": {
+      "title": "Rental",
+      "desc": "Flyer e-bikes, classic bicycles and Segway to explore Lake Garda and the surrounding valleys."
+    },
+    "repair": {
+      "title": "Repairs",
+      "desc": "Repair and maintenance of e-bikes, road bikes, mountain bikes, electric scooters and any type of bicycle."
+    }
+  },
+  "pricing": {
+    "title": "Pricing",
+    "subtitle": "All prices include helmet and lock. Multi-bike rentals available.",
+    "download_pdf": "Download price list",
+    "ebike_title": "Flyer E-Bikes",
+    "classic_title": "Classic Bicycle",
+    "segway_title": "Segway Ninebot P65E",
+    "extras_title": "Extras",
+    "duration": "Duration",
+    "half_day": "Half day",
+    "day_1": "1 day",
+    "days_2": "2 days",
+    "days_3": "3 days",
+    "days_4": "4 days",
+    "days_5": "5 days",
+    "days_6": "6 days",
+    "days_7": "7 days",
+    "hour_1": "1 hour",
+    "hours_2": "2 hours",
+    "hours_3": "3 hours",
+    "hours_4": "4 hours",
+    "full_day": "Full day",
+    "per_day": "/ day",
+    "from_day2": "2+ days",
+    "not_available": "—",
+    "charger": "Battery charger",
+    "child_seat": "Child seat",
+    "one_time": "one-time"
+  },
+  "info": {
+    "title": "Where to find us",
+    "address_label": "Address",
+    "phone_label": "Phone",
+    "email_label": "Email",
+    "hours_label": "Hours",
+    "hours_value": "Every day 09:00 – 13:00 / 14:00 – 19:00",
+    "directions": "Get directions"
+  },
+  "map": {
+    "title": "Find us on Google Maps"
+  },
+  "footer": {
+    "copyright": "© {year} L'Elettrica Leoni. All rights reserved.",
+    "privacy": "Privacy Policy",
+    "vat": "VAT"
+  },
+  "privacy": {
+    "title": "Privacy Policy",
+    "last_updated": "Last updated: April 2026",
+    "controller_title": "Data Controller",
+    "data_title": "Data Collected",
+    "data_body": "This website uses Google Analytics (GA4) to collect anonymous browsing data (pages visited, session duration, device). No personal data is collected directly through the website.",
+    "cookies_title": "Cookies",
+    "cookies_body": "We use technical cookies and third-party analytics cookies (Google Analytics). By continuing to browse, you accept the use of cookies.",
+    "contact_title": "Contact",
+    "contact_body": "For any requests related to data processing: lelettricaleoni@gmail.com"
+  }
+}
