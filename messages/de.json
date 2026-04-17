@@ -7,7 +7,7 @@
   "hero": {
     "open_badge": "Wir haben geöffnet",
     "coming_soon_label": "Website kommt bald",
-    "headline": "L'Elettrica Leoni",
+    "headline": "Lelettrica",
     "subheadline": "E-Bike Verleih und Reparaturen in Dro am Gardasee",
     "cta_map": "Anfahrt",
     "cta_contact": "Kontaktiere uns",
@@ -28,7 +28,7 @@
     "title": "Preisliste",
     "subtitle": "Alle Preise beinhalten Helm und Schloss. Mehrfachvermietung möglich.",
     "download_pdf": "Preisliste herunterladen",
-    "ebike_title": "Flyer E-Bikes",
+    "ebike_title": "E-Bikes",
     "classic_title": "Klassisches Fahrrad",
     "segway_title": "Segway Ninebot P65E",
     "extras_title": "Extras",
@@ -66,7 +66,7 @@
     "title": "Finden Sie uns auf Google Maps"
   },
   "footer": {
-    "copyright": "© {year} L'Elettrica Leoni. Alle Rechte vorbehalten.",
+    "copyright": "© {year} Lelettrica. Alle Rechte vorbehalten.",
     "privacy": "Datenschutzerklärung",
     "vat": "MwSt.-Nr."
   },

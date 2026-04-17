@@ -7,7 +7,7 @@
   "hero": {
     "open_badge": "Siamo aperti",
     "coming_soon_label": "Sito in arrivo",
-    "headline": "L'Elettrica Leoni",
+    "headline": "Lelettrica",
     "subheadline": "Noleggio e-bike e riparazioni a Dro, sul Lago di Garda",
     "cta_map": "Come raggiungerci",
     "cta_contact": "Contattaci",
@@ -28,7 +28,7 @@
     "title": "Listino prezzi",
     "subtitle": "Tutti i prezzi includono casco e lucchetto. Possibilità di noleggio multiplo.",
     "download_pdf": "Scarica il volantino prezzi",
-    "ebike_title": "E-Bike Flyer",
+    "ebike_title": "E-Bike",
     "classic_title": "Bici Classica",
     "segway_title": "Segway Ninebot P65E",
     "extras_title": "Extra",
@@ -66,7 +66,7 @@
     "title": "Trovaci su Google Maps"
   },
   "footer": {
-    "copyright": "© {year} L'Elettrica Leoni. Tutti i diritti riservati.",
+    "copyright": "© {year} Lelettrica. Tutti i diritti riservati.",
     "privacy": "Privacy Policy",
     "vat": "P.IVA"
   },

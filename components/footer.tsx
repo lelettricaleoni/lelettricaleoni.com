@@ -45,7 +45,7 @@ export function Footer({ lang, dict }: FooterProps) {
           <Link href={`/${lang}`}>
             <Image
               src="/svg/LogoLelettrica_full.svg"
-              alt="L'Elettrica Leoni"
+              alt="Lelettrica"
               width={140}
               height={44}
               className="h-8 w-auto brightness-0 invert opacity-90"
@@ -83,6 +83,9 @@ export function Footer({ lang, dict }: FooterProps) {
 
         <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-white/40">
           <p>{copyright}</p>
+          <p className="text-white/30">
+            {dict.footer.vat} 02622600225 • LELETTRICA DI LEONI GABRIELE
+          </p>
           <Link
             href={`/${lang}/privacy`}
             className="hover:text-white/70 transition-colors"

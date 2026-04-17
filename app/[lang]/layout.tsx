@@ -2,6 +2,9 @@ import type { Metadata } from 'next'
 import { getDictionary, hasLocale } from './dictionaries'
 import { notFound } from 'next/navigation'
 
+const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://lelettricaleoni.com').replace(/\/$/, '')
+const locales = ['it', 'en', 'de']
+
 export async function generateStaticParams() {
   return [{ lang: 'it' }, { lang: 'en' }, { lang: 'de' }]
 }
@@ -14,65 +17,58 @@ export async function generateMetadata({
   const { lang } = await params
   if (!hasLocale(lang)) return {}
 
-  const dict = await getDictionary(lang)
-  const descriptions: Record<string, string> = {
-    it: 'Noleggio e-bike Flyer, bici classiche e Segway a Dro (TN), sul Lago di Garda. Riparazioni bici di ogni tipo. Aperto tutti i giorni 09–19.',
-    en: 'Flyer e-bike, classic bicycle and Segway rental in Dro, Lake Garda (Italy). Bike repairs of all types. Open every day 09:00–19:00.',
-    de: 'Flyer E-Bike, klassisches Fahrrad und Segway Verleih in Dro am Gardasee (Italien). Fahrradreparaturen aller Art. Täglich geöffnet 09–19 Uhr.',
+  const titles: Record<string, string> = {
+    it: 'Lelettrica - Noleggio E-Bike Flyer & Riparazioni Bici · Dro, Lago di Garda',
+    en: 'Lelettrica - Flyer E-Bike Rental & Bike Repairs · Dro, Lake Garda',
+    de: 'Lelettrica - Flyer E-Bike Verleih & Fahrradreparaturen · Dro, Gardasee',
   }
 
+  const descriptions: Record<string, string> = {
+    it: 'Noleggio E-bike, bici classiche e Segway sul Lago di Garda. Riparazioni bici elettriche, MTB, da corsa e monopattini. Aperto ogni giorno 09:00–19:00 · Via Roma 90, Dro (TN).',
+    en: 'Flyer E-bike, classic bicycle and Segway rental on Lake Garda. Repairs for e-bikes, MTB, road bikes and electric scooters. Open every day 09:00–19:00 · Dro, Trentino.',
+    de: 'Flyer E-Bike, Fahrrad und Segway-Verleih am Gardasee. Reparaturen für E-Bikes, MTB, Rennräder und E-Scooter. Täglich geöffnet 09:00–19:00 · Dro, Trentino.',
+  }
+
+  const title = titles[lang] ?? titles.it
+  const description = descriptions[lang] ?? descriptions.it
+
   return {
-    metadataBase: new URL('https://lelettricaleoni.com'),
+    metadataBase: new URL(siteUrl),
     title: {
-      template: `%s | ${dict.hero.headline}`,
-      default: `${dict.hero.headline} — ${dict.hero.subheadline}`,
+      template: `%s | Lelettrica`,
+      default: title,
     },
-    description: descriptions[lang] ?? descriptions.it,
+    description,
     keywords: [
-      'noleggio ebike', 'e-bike Dro', 'Flyer bike', 'noleggio bici Garda',
-      'bike rental Lake Garda', 'riparazioni bici', 'Segway Dro', 'Trentino',
+      'noleggio ebike', 'e-bike Dro', 'Flyer bike', 'noleggio bici Lago di Garda',
+      'bike rental Lake Garda', 'riparazioni bici Trentino', 'Segway Dro',
+      'Flyer Uproc', 'Flyer Gotour', 'bici elettrica Garda', 'Dro TN',
       'Fahrradverleih Gardasee', 'E-Bike Verleih Trentino',
     ],
-    authors: [{ name: "L'Elettrica Leoni" }],
-    creator: "L'Elettrica Leoni",
+    authors: [{ name: 'Lelettrica' }],
+    creator: 'Lelettrica',
     openGraph: {
       type: 'website',
       locale: lang === 'it' ? 'it_IT' : lang === 'de' ? 'de_DE' : 'en_US',
-      url: `https://lelettricaleoni.com/${lang}`,
-      siteName: "L'Elettrica Leoni",
-      title: `${dict.hero.headline} — ${dict.hero.subheadline}`,
-      description: descriptions[lang] ?? descriptions.it,
-      images: [
-        {
-          url: '/opengraph-image',
-          width: 1200,
-          height: 630,
-          alt: "L'Elettrica Leoni",
-        },
-      ],
+      url: `${siteUrl}/${lang}`,
+      siteName: 'Lelettrica',
+      title,
+      description,
+      images: [{ url: '/opengraph-image', width: 1200, height: 630, alt: 'Lelettrica' }],
     },
     twitter: {
       card: 'summary_large_image',
-      title: dict.hero.headline,
-      description: descriptions[lang] ?? descriptions.it,
+      title,
+      description,
     },
     alternates: {
-      canonical: `https://lelettricaleoni.com/${lang}`,
-      languages: {
-        'it': 'https://lelettricaleoni.com/it',
-        'en': 'https://lelettricaleoni.com/en',
-        'de': 'https://lelettricaleoni.com/de',
-      },
+      canonical: `${siteUrl}/${lang}`,
+      languages: Object.fromEntries(locales.map((l) => [l, `${siteUrl}/${l}`])),
     },
     robots: {
       index: true,
       follow: true,
-      googleBot: {
-        index: true,
-        follow: true,
-        'max-image-preview': 'large',
-        'max-snippet': -1,
-      },
+      googleBot: { index: true, follow: true, 'max-image-preview': 'large', 'max-snippet': -1 },
     },
   }
 }
@@ -87,6 +83,5 @@ export default async function LangLayout({
   const { lang } = await params
   if (!hasLocale(lang)) notFound()
 
-  // html/body are in the root app/layout.tsx — this layout only handles metadata.
   return <>{children}</>
 }

@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import { MapPin, Phone, Clock } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -24,25 +25,30 @@ interface HeroSectionProps {
 export function HeroSection({ lang, dict }: HeroSectionProps) {
   return (
     <section className="relative min-h-screen flex flex-col items-center justify-center text-center overflow-hidden pt-16">
-      {/* Gradient background */}
-      <div
-        className="absolute inset-0 -z-10"
-        style={{
-          background:
-            'linear-gradient(135deg, #1a3a5c 0%, #366DA1 45%, #795F91 100%)',
-        }}
+      {/* Mobile portrait */}
+      <Image
+        src="/images/hero-mobile.webp"
+        alt=""
+        fill
+        className="object-cover object-center sm:hidden"
+        priority
+        quality={82}
+        sizes="(max-width: 639px) 100vw, 0px"
       />
-      {/* Subtle grid overlay */}
-      <div
-        className="absolute inset-0 -z-10 opacity-10"
-        style={{
-          backgroundImage:
-            'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.3) 1px, transparent 0)',
-          backgroundSize: '40px 40px',
-        }}
+      {/* Desktop landscape */}
+      <Image
+        src="/images/hero.webp"
+        alt="Lelettrica — E-Bike Noleggio"
+        fill
+        className="object-cover object-[center_0%] hidden sm:block"
+        priority
+        quality={80}
+        sizes="100vw"
       />
+      {/* Dark overlay for text readability */}
+      <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/40 to-black/60 z-10" />
 
-      <div className="relative z-10 max-w-3xl mx-auto px-4 sm:px-6 py-20 flex flex-col items-center gap-6">
+      <div className="relative z-20 max-w-3xl mx-auto px-4 sm:px-6 py-20 flex flex-col items-center gap-6">
         {/* Status badges */}
         <div className="flex flex-wrap items-center justify-center gap-3">
           <Badge className="bg-green-500/20 text-green-200 border-green-400/40 text-sm px-4 py-1.5 font-semibold uppercase tracking-wider">
@@ -106,7 +112,7 @@ export function HeroSection({ lang, dict }: HeroSectionProps) {
       </div>
 
       {/* Scroll indicator */}
-      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce text-white/40">
+      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce text-white/40 z-20">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <path d="M12 5v14M5 12l7 7 7-7" />
         </svg>

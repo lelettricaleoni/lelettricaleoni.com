@@ -7,7 +7,7 @@
   "hero": {
     "open_badge": "We're open",
     "coming_soon_label": "Website coming soon",
-    "headline": "L'Elettrica Leoni",
+    "headline": "Lelettrica",
     "subheadline": "E-bike rental and repairs in Dro, Lake Garda",
     "cta_map": "Find us",
     "cta_contact": "Contact us",
@@ -28,7 +28,7 @@
     "title": "Pricing",
     "subtitle": "All prices include helmet and lock. Multi-bike rentals available.",
     "download_pdf": "Download price list",
-    "ebike_title": "Flyer E-Bikes",
+    "ebike_title": "E-Bikes",
     "classic_title": "Classic Bicycle",
     "segway_title": "Segway Ninebot P65E",
     "extras_title": "Extras",
@@ -66,7 +66,7 @@
     "title": "Find us on Google Maps"
   },
   "footer": {
-    "copyright": "© {year} L'Elettrica Leoni. All rights reserved.",
+    "copyright": "© {year} Lelettrica. All rights reserved.",
     "privacy": "Privacy Policy",
     "vat": "VAT"
   },

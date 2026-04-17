@@ -9,8 +9,10 @@ const geist = Geist({
   subsets: ['latin'],
 })
 
+const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://lelettricaleoni.com').replace(/\/$/, '')
+
 export const metadata: Metadata = {
-  metadataBase: new URL('https://lelettricaleoni.com'),
+  metadataBase: new URL(siteUrl),
 }
 
 export const viewport: Viewport = {

@@ -16,7 +16,7 @@ export function Navbar({ lang, dict }: NavbarProps) {
         <Link href={`/${lang}`} className="flex items-center shrink-0">
           <Image
             src="/svg/LogoLelettrica_full.svg"
-            alt="L'Elettrica Leoni"
+            alt="Lelettrica"
             width={160}
             height={50}
             priority
