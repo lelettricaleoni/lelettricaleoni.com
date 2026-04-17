@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { getDictionary, hasLocale } from './dictionaries'
+import { hasLocale } from './dictionaries'
 import { notFound } from 'next/navigation'
 
 const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://lelettricaleoni.com').replace(/\/$/, '')
