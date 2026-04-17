@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import Image from 'next/image'
-import { MapPin, Phone, Clock } from 'lucide-react'
+import { MapPin, Phone, Clock, Circle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 
@@ -51,8 +51,9 @@ export function HeroSection({ lang, dict }: HeroSectionProps) {
       <div className="relative z-20 max-w-3xl mx-auto px-4 sm:px-6 py-20 flex flex-col items-center gap-6">
         {/* Status badges */}
         <div className="flex flex-wrap items-center justify-center gap-3">
-          <Badge className="bg-green-500/20 text-green-200 border-green-400/40 text-sm px-4 py-1.5 font-semibold uppercase tracking-wider">
-            ● {dict.hero.open_badge}
+          <Badge className="bg-green-500/20 text-green-200 border-green-400/40 text-sm px-4 py-1.5 font-semibold uppercase tracking-wider flex items-center gap-1.5">
+            <Circle size={8} className="fill-green-300 text-green-300" />
+            {dict.hero.open_badge}
           </Badge>
           <Badge
             variant="outline"
