@@ -62,7 +62,10 @@
     "directions": "Ottieni indicazioni"
   },
   "map": {
-    "title": "Trovaci su Google Maps"
+    "title": "Trovaci su Google Maps",
+    "load_prompt": "Clicca per caricare la mappa",
+    "load_notice": "Google Maps utilizza cookie di terze parti",
+    "load_button": "Carica la mappa"
   },
   "footer": {
     "copyright": "© {year} Lelettrica. Tutti i diritti riservati.",
