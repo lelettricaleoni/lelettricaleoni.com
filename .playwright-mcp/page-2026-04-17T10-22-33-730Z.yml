@@ -195,8 +195,8 @@
             - img [ref=e222]
             - generic [ref=e225]:
               - paragraph [ref=e226]: Email
-              - link "lelettricaleoni@gmail.com" [ref=e228] [cursor=pointer]:
-                - /url: mailto:lelettricaleoni@gmail.com
+              - link "info@lelettricaleoni.com" [ref=e228] [cursor=pointer]:
+                - /url: mailto:info@lelettricaleoni.com
           - generic [ref=e229]:
             - img [ref=e231]
             - generic [ref=e234]:
@@ -220,8 +220,8 @@
             - link "+39 338 123 2434" [ref=e248] [cursor=pointer]:
               - /url: tel:+393381232434
             - text: ·
-            - link "lelettricaleoni@gmail.com" [ref=e249] [cursor=pointer]:
-              - /url: mailto:lelettricaleoni@gmail.com
+            - link "info@lelettricaleoni.com" [ref=e249] [cursor=pointer]:
+              - /url: mailto:info@lelettricaleoni.com
         - link "Instagram" [ref=e250] [cursor=pointer]:
           - /url: https://www.instagram.com/lelettricaleoni
           - img [ref=e251]

@@ -60,8 +60,8 @@ export function Footer({ lang, dict }: FooterProps) {
                 +39 338 123 2434
               </a>
               {' · '}
-              <a href="mailto:lelettricaleoni@gmail.com" className="hover:text-white transition-colors">
-                lelettricaleoni@gmail.com
+              <a href="mailto:info@lelettricaleoni.com" className="hover:text-white transition-colors">
+                info@lelettricaleoni.com
               </a>
             </p>
           </div>

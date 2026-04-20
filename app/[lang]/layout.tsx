@@ -24,9 +24,9 @@ export async function generateMetadata({
   }
 
   const descriptions: Record<string, string> = {
-    it: 'Noleggio E-bike, bici classiche e Segway sul Lago di Garda. Riparazioni bici elettriche, MTB, da corsa e monopattini. Aperto ogni giorno 09:00–19:00 · Via Roma 90, Dro (TN).',
-    en: 'Flyer E-bike, classic bicycle and Segway rental on Lake Garda. Repairs for e-bikes, MTB, road bikes and electric scooters. Open every day 09:00–19:00 · Dro, Trentino.',
-    de: 'Flyer E-Bike, Fahrrad und Segway-Verleih am Gardasee. Reparaturen für E-Bikes, MTB, Rennräder und E-Scooter. Täglich geöffnet 09:00–19:00 · Dro, Trentino.',
+    it: 'Noleggio E-bike Flyer e bici classiche sul Lago di Garda. Riparazioni bici elettriche, MTB, da corsa e monopattini. Aperto ogni giorno 09:00–19:00 · Via Roma 90, Dro (TN).',
+    en: 'Flyer E-bike and classic bicycle rental on Lake Garda. Repairs for e-bikes, MTB, road bikes and electric scooters. Open every day 09:00–19:00 · Dro, Trentino.',
+    de: 'Flyer E-Bike und Fahrradverleih am Gardasee. Reparaturen für E-Bikes, MTB, Rennräder und E-Scooter. Täglich geöffnet 09:00–19:00 · Dro, Trentino.',
   }
 
   const title = titles[lang] ?? titles.it
@@ -41,7 +41,7 @@ export async function generateMetadata({
     description,
     keywords: [
       'noleggio ebike', 'e-bike Dro', 'Flyer bike', 'noleggio bici Lago di Garda',
-      'bike rental Lake Garda', 'riparazioni bici Trentino', 'Segway Dro',
+      'bike rental Lake Garda', 'riparazioni bici Trentino',
       'Flyer Uproc', 'Flyer Gotour', 'bici elettrica Garda', 'Dro TN',
       'Fahrradverleih Gardasee', 'E-Bike Verleih Trentino',
     ],

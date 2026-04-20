@@ -58,10 +58,10 @@ export function MapSection({ dict }: MapSectionProps) {
               label={dict.info.email_label}
               value={
                 <a
-                  href="mailto:lelettricaleoni@gmail.com"
+                  href="mailto:info@lelettricaleoni.com"
                   className="hover:text-primary transition-colors"
                 >
-                  lelettricaleoni@gmail.com
+                  info@lelettricaleoni.com
                 </a>
               }
             />

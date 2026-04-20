@@ -17,7 +17,7 @@
     "title": "Our services",
     "rental": {
       "title": "Rental",
-      "desc": "Flyer e-bikes, classic bicycles and Segway to explore Lake Garda and the surrounding valleys."
+      "desc": "Flyer e-bikes and classic bicycles to explore Lake Garda and the surrounding valleys."
     },
     "repair": {
       "title": "Repairs",
@@ -30,7 +30,6 @@
     "download_pdf": "Download price list",
     "ebike_title": "E-Bikes",
     "classic_title": "Classic Bicycle",
-    "segway_title": "Segway Ninebot P65E",
     "extras_title": "Extras",
     "duration": "Duration",
     "half_day": "Half day",
@@ -79,6 +78,6 @@
     "cookies_title": "Cookies",
     "cookies_body": "We use technical cookies and third-party analytics cookies (Google Analytics). By continuing to browse, you accept the use of cookies.",
     "contact_title": "Contact",
-    "contact_body": "For any requests related to data processing: lelettricaleoni@gmail.com"
+    "contact_body": "For any requests related to data processing: info@lelettricaleoni.com"
   }
 }

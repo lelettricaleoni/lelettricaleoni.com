@@ -17,7 +17,7 @@
     "title": "I nostri servizi",
     "rental": {
       "title": "Noleggio",
-      "desc": "E-bike Flyer, bici classiche e Segway per esplorare il Lago di Garda e le valli circostanti."
+      "desc": "E-bike Flyer e bici classiche per esplorare il Lago di Garda e le valli circostanti."
     },
     "repair": {
       "title": "Riparazioni",
@@ -30,7 +30,6 @@
     "download_pdf": "Scarica il volantino prezzi",
     "ebike_title": "E-Bike",
     "classic_title": "Bici Classica",
-    "segway_title": "Segway Ninebot P65E",
     "extras_title": "Extra",
     "duration": "Durata",
     "half_day": "Mezza giornata",
@@ -79,6 +78,6 @@
     "cookies_title": "Cookie",
     "cookies_body": "Utilizziamo cookie tecnici e cookie analitici di terze parti (Google Analytics). Continuando la navigazione accetti l'utilizzo dei cookie.",
     "contact_title": "Contatti",
-    "contact_body": "Per qualsiasi richiesta relativa al trattamento dei dati: lelettricaleoni@gmail.com"
+    "contact_body": "Per qualsiasi richiesta relativa al trattamento dei dati: info@lelettricaleoni.com"
   }
 }

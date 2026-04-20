@@ -1,4 +1,4 @@
-import { Download, Zap, Bike, Gauge, Tag } from 'lucide-react'
+import { Download, Zap, Bike, Tag } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   Table,
@@ -16,7 +16,6 @@ interface PricingDict {
     download_pdf: string
     ebike_title: string
     classic_title: string
-    segway_title: string
     extras_title: string
     duration: string
     half_day: string
@@ -27,11 +26,6 @@ interface PricingDict {
     days_5: string
     days_6: string
     days_7: string
-    hour_1: string
-    hours_2: string
-    hours_3: string
-    hours_4: string
-    full_day: string
     per_day: string
     from_day2: string
     not_available: string
@@ -125,7 +119,7 @@ export function PricingSection({ dict }: { dict: PricingDict }) {
           </div>
         </div>
 
-        {/* Bici classica + Segway affiancati */}
+        {/* Bici classica + Extra affiancati */}
         <div className="grid sm:grid-cols-2 gap-6 mb-10">
           <div>
             <SectionTitle icon={<Bike size={18} />} label={p.classic_title} />
@@ -136,25 +130,9 @@ export function PricingSection({ dict }: { dict: PricingDict }) {
           </div>
 
           <div>
-            <SectionTitle icon={<Gauge size={18} />} label={p.segway_title} />
-            <div className="rounded-xl border border-border bg-white overflow-hidden shadow-sm">
-              <PriceRow label={p.hour_1}  price="€10" />
-              <PriceRow label={p.hours_2} price="€15" />
-              <PriceRow label={p.hours_3} price="€18" />
-              <PriceRow label={p.hours_4} price="€20" />
-              <PriceRow label={p.full_day} price="€25" />
-            </div>
-          </div>
-        </div>
-
-        {/* Extra */}
-        <div className="mb-10">
-          <SectionTitle icon={<Tag size={18} />} label={p.extras_title} />
-          <div className="grid sm:grid-cols-2 gap-6">
+            <SectionTitle icon={<Tag size={18} />} label={p.extras_title} />
             <div className="rounded-xl border border-border bg-white overflow-hidden shadow-sm">
               <PriceRow label={p.charger}    price="€5" sub={`(${p.one_time})`} />
-            </div>
-            <div className="rounded-xl border border-border bg-white overflow-hidden shadow-sm">
               <PriceRow label={p.child_seat} price="€3" sub={`(${p.one_time})`} />
             </div>
           </div>

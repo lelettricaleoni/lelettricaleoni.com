@@ -17,7 +17,7 @@
     "title": "Unsere Leistungen",
     "rental": {
       "title": "Verleih",
-      "desc": "Flyer E-Bikes, klassische Fahrräder und Segway, um den Gardasee und die umliegenden Täler zu erkunden."
+      "desc": "Flyer E-Bikes und klassische Fahrräder, um den Gardasee und die umliegenden Täler zu erkunden."
     },
     "repair": {
       "title": "Reparaturen",
@@ -30,7 +30,6 @@
     "download_pdf": "Preisliste herunterladen",
     "ebike_title": "E-Bikes",
     "classic_title": "Klassisches Fahrrad",
-    "segway_title": "Segway Ninebot P65E",
     "extras_title": "Extras",
     "duration": "Dauer",
     "half_day": "Halber Tag",
@@ -79,6 +78,6 @@
     "cookies_title": "Cookies",
     "cookies_body": "Wir verwenden technische Cookies und Analyse-Cookies von Drittanbietern (Google Analytics). Durch weiteres Surfen stimmen Sie der Verwendung von Cookies zu.",
     "contact_title": "Kontakt",
-    "contact_body": "Für Anfragen zum Datenschutz: lelettricaleoni@gmail.com"
+    "contact_body": "Für Anfragen zum Datenschutz: info@lelettricaleoni.com"
   }
 }
