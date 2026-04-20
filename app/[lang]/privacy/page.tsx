@@ -1,9 +1,26 @@
+import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { getDictionary, hasLocale } from '../dictionaries'
 import { Navbar } from '@/components/navbar'
 import { Footer } from '@/components/footer'
 import { Separator } from '@/components/ui/separator'
+
+const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://lelettricaleoni.com').replace(/\/$/, '')
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ lang: string }>
+}): Promise<Metadata> {
+  const { lang } = await params
+  if (!hasLocale(lang)) return {}
+  return {
+    alternates: {
+      canonical: `${siteUrl}/${lang}/privacy`,
+    },
+  }
+}
 
 export default async function PrivacyPage({
   params,
