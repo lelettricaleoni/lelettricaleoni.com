@@ -6,7 +6,7 @@ import { Navbar } from '@/components/navbar'
 import { Footer } from '@/components/footer'
 import { Separator } from '@/components/ui/separator'
 
-const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://lelettricaleoni.com').replace(/\/$/, '')
+const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://www.lelettricaleoni.com').replace(/\/$/, '')
 
 export async function generateMetadata({
   params,
