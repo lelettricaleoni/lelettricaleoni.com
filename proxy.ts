@@ -35,7 +35,7 @@ export function proxy(request: NextRequest) {
 
   const locale = getLocale(request)
   request.nextUrl.pathname = `/${locale}${pathname}`
-  return NextResponse.redirect(request.nextUrl)
+  return NextResponse.redirect(request.nextUrl, 301)
 }
 
 export const config = {
