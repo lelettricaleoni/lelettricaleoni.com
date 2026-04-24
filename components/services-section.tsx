@@ -1,5 +1,6 @@
 import { Bike, Wrench } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { SectionViewTracker } from '@/components/section-view-tracker'
 
 interface ServicesSectionProps {
   dict: {
@@ -14,6 +15,7 @@ interface ServicesSectionProps {
 export function ServicesSection({ dict }: ServicesSectionProps) {
   return (
     <section id="servizi" className="py-20 bg-white">
+      <SectionViewTracker name="services" />
       <div className="max-w-5xl mx-auto px-4 sm:px-6">
         <h2 className="text-3xl sm:text-4xl font-bold text-center text-foreground mb-12">
           {dict.services.title}
