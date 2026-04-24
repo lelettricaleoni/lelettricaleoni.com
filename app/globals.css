@@ -65,3 +65,13 @@
     color: hsl(var(--foreground));
   }
 }
+
+/* vanilla-cookieconsent: allineamento al brand blu */
+:root {
+  --cc-btn-primary-bg: #366da1;
+  --cc-btn-primary-hover-bg: #2d5c8e;
+  --cc-btn-primary-text: #fff;
+  --cc-toggle-on-bg: #366da1;
+  --cc-toggle-on-knob-bg: #fff;
+  --cc-separator-border-color: hsl(214 32% 91%);
+}
