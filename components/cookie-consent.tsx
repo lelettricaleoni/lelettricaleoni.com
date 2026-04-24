@@ -7,31 +7,16 @@ import * as CookieConsent from 'vanilla-cookieconsent'
 
 declare global {
   interface Window {
-    gtag: (...args: unknown[]) => void
+    gtag?: (...args: unknown[]) => void
     dataLayer?: unknown[]
   }
 }
 
-function loadGA4(gaId: string) {
-  if (document.getElementById('ga4-script')) return
-  window.dataLayer = window.dataLayer || []
-  // eslint-disable-next-line prefer-rest-params
-  window.gtag = function () { window.dataLayer!.push(arguments as unknown as object) }
-  window.gtag('js', new Date())
-  window.gtag('config', gaId)
-  const script = document.createElement('script')
-  script.id = 'ga4-script'
-  script.async = true
-  script.src = `https://www.googletagmanager.com/gtag/js?id=${gaId}`
-  document.head.appendChild(script)
-}
-
 interface CookieConsentInitProps {
   locale: string
-  gaId?: string
 }
 
-export function CookieConsentInit({ locale, gaId }: CookieConsentInitProps) {
+export function CookieConsentInit({ locale }: CookieConsentInitProps) {
   useEffect(() => {
     const lang = ['it', 'en', 'de'].includes(locale) ? locale : 'it'
 
@@ -166,16 +151,14 @@ export function CookieConsentInit({ locale, gaId }: CookieConsentInitProps) {
         },
       },
       onConsent: () => {
-        if (gaId && CookieConsent.acceptedCategory('analytics')) {
-          loadGA4(gaId)
-        }
+        window.gtag?.('consent', 'update', {
+          analytics_storage: CookieConsent.acceptedCategory('analytics') ? 'granted' : 'denied',
+        })
       },
       onChange: () => {
-        if (gaId && CookieConsent.acceptedCategory('analytics')) {
-          loadGA4(gaId)
-        } else if (gaId && window.gtag) {
-          window.gtag('consent', 'update', { analytics_storage: 'denied' })
-        }
+        window.gtag?.('consent', 'update', {
+          analytics_storage: CookieConsent.acceptedCategory('analytics') ? 'granted' : 'denied',
+        })
       },
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
