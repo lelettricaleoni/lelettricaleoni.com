@@ -30,7 +30,7 @@ export function SectionViewTracker({ name }: { name: string }) {
     <span
       ref={ref}
       aria-hidden="true"
-      className="absolute w-px h-px pointer-events-none"
+      className="block w-0 h-0 overflow-hidden"
     />
   )
 }
