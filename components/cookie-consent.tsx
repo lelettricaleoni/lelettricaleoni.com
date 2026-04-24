@@ -181,5 +181,10 @@ export function CookieConsentInit({ locale, gaId }: CookieConsentInitProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  useEffect(() => {
+    const lang = ['it', 'en', 'de'].includes(locale) ? locale : 'it'
+    CookieConsent.setLanguage(lang)
+  }, [locale])
+
   return null
 }
