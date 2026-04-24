@@ -1,8 +1,12 @@
+'use client'
+
 import Link from 'next/link'
 import Image from 'next/image'
 import { MapPin, Phone, Clock, Circle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { trackEvent } from '@/lib/analytics'
+import { SectionViewTracker } from '@/components/section-view-tracker'
 
 interface HeroSectionProps {
   lang: string
@@ -25,6 +29,7 @@ interface HeroSectionProps {
 export function HeroSection({ lang, dict }: HeroSectionProps) {
   return (
     <section className="relative min-h-screen flex flex-col items-center justify-center text-center overflow-hidden pt-16">
+      <SectionViewTracker name="hero" />
       {/* Mobile portrait */}
       <Image
         src="/images/hero-mobile.webp"
@@ -94,7 +99,12 @@ export function HeroSection({ lang, dict }: HeroSectionProps) {
         {/* CTAs */}
         <div className="flex flex-col sm:flex-row gap-3 mt-4">
           <Button asChild size="lg" className="bg-white text-primary hover:bg-white/90 font-semibold px-8">
-            <Link href={`/${lang}#contatti`}>{dict.hero.cta_map}</Link>
+            <Link
+              href={`/${lang}#contatti`}
+              onClick={() => trackEvent('cta_click', { cta_name: 'view_map' })}
+            >
+              {dict.hero.cta_map}
+            </Link>
           </Button>
           <Button
             asChild
@@ -102,7 +112,12 @@ export function HeroSection({ lang, dict }: HeroSectionProps) {
             variant="outline"
             className="border-white/40 text-white hover:bg-white/10 bg-transparent px-8"
           >
-            <a href="tel:+393381232434">{dict.hero.cta_contact}</a>
+            <a
+              href="tel:+393381232434"
+              onClick={() => trackEvent('phone_call', { source: 'hero' })}
+            >
+              {dict.hero.cta_contact}
+            </a>
           </Button>
         </div>
 
