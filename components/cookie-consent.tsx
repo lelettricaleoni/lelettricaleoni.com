@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
+import { usePathname } from 'next/navigation'
 import 'vanilla-cookieconsent/dist/cookieconsent.css'
 import * as CookieConsent from 'vanilla-cookieconsent'
 
@@ -181,10 +182,13 @@ export function CookieConsentInit({ locale, gaId }: CookieConsentInitProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  const pathname = usePathname()
+
   useEffect(() => {
-    const lang = ['it', 'en', 'de'].includes(locale) ? locale : 'it'
+    const pathLocale = pathname?.split('/')[1] ?? ''
+    const lang = ['it', 'en', 'de'].includes(pathLocale) ? pathLocale : 'it'
     CookieConsent.setLanguage(lang)
-  }, [locale])
+  }, [pathname])
 
   return null
 }
