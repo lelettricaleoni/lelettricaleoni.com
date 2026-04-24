@@ -1,5 +1,9 @@
+'use client'
+
 import Image from 'next/image'
 import Link from 'next/link'
+import { trackEvent } from '@/lib/analytics'
+
 // Instagram SVG inline (lucide-react non include icone di brand)
 function InstagramIcon({ size = 22 }: { size?: number }) {
   return (
@@ -57,11 +61,19 @@ export function Footer({ lang, dict }: FooterProps) {
           <div className="text-center text-sm text-white/60 space-y-1">
             <p>Via Roma, 90 — Dro, TN 38074, Italia</p>
             <p>
-              <a href="tel:+393381232434" className="hover:text-white transition-colors">
+              <a
+                href="tel:+393381232434"
+                className="hover:text-white transition-colors"
+                onClick={() => trackEvent('phone_call', { source: 'footer' })}
+              >
                 +39 338 123 2434
               </a>
               {' · '}
-              <a href="mailto:info@lelettricaleoni.com" className="hover:text-white transition-colors">
+              <a
+                href="mailto:info@lelettricaleoni.com"
+                className="hover:text-white transition-colors"
+                onClick={() => trackEvent('email_click', { source: 'footer' })}
+              >
                 info@lelettricaleoni.com
               </a>
             </p>
@@ -74,6 +86,7 @@ export function Footer({ lang, dict }: FooterProps) {
             rel="noopener noreferrer"
             className="flex items-center gap-2 text-white/70 hover:text-white transition-colors"
             aria-label="Instagram"
+            onClick={() => trackEvent('outbound_click', { link_domain: 'instagram.com' })}
           >
             <InstagramIcon size={22} />
             <span className="text-sm">@lelettricaleoni</span>
