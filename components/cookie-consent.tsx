@@ -14,7 +14,7 @@ function loadGA4(gaId: string) {
   if (document.getElementById('ga4-script')) return
   window.dataLayer = window.dataLayer || []
   window.gtag = function (...args: unknown[]) {
-    window.dataLayer!.push(args as Object)
+    window.dataLayer!.push(args as object)
   }
   window.gtag('js', new Date())
   window.gtag('config', gaId)
@@ -172,10 +172,13 @@ export function CookieConsentInit({ locale, gaId }: CookieConsentInitProps) {
       onChange: () => {
         if (gaId && CookieConsent.acceptedCategory('analytics')) {
           loadGA4(gaId)
+        } else if (gaId && window.gtag) {
+          window.gtag('consent', 'update', { analytics_storage: 'denied' })
         }
       },
     })
-  }, [locale, gaId])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   return null
 }
