@@ -65,8 +65,33 @@ export default async function PrivacyPage({
             </section>
 
             <section>
+              <h2 className="text-lg font-semibold mb-3">{p.legal_basis_title}</h2>
+              <p className="text-muted-foreground leading-relaxed">{p.legal_basis_body}</p>
+            </section>
+
+            <section>
               <h2 className="text-lg font-semibold mb-3">{p.cookies_title}</h2>
               <p className="text-muted-foreground leading-relaxed">{p.cookies_body}</p>
+            </section>
+
+            <section>
+              <h2 className="text-lg font-semibold mb-3">{p.retention_title}</h2>
+              <p className="text-muted-foreground leading-relaxed">{p.retention_body}</p>
+            </section>
+
+            <section>
+              <h2 className="text-lg font-semibold mb-3">{p.third_parties_title}</h2>
+              <p className="text-muted-foreground leading-relaxed">{p.third_parties_body}</p>
+            </section>
+
+            <section>
+              <h2 className="text-lg font-semibold mb-3">{p.rights_title}</h2>
+              <p className="text-muted-foreground leading-relaxed">
+                {p.rights_body}{' '}
+                <a href="mailto:info@lelettricaleoni.com" className="text-primary hover:underline">
+                  info@lelettricaleoni.com
+                </a>
+              </p>
             </section>
 
             <section>
