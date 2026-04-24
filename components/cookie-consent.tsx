@@ -15,9 +15,8 @@ declare global {
 function loadGA4(gaId: string) {
   if (document.getElementById('ga4-script')) return
   window.dataLayer = window.dataLayer || []
-  window.gtag = function (...args: unknown[]) {
-    window.dataLayer!.push(args as object)
-  }
+  // eslint-disable-next-line prefer-rest-params
+  window.gtag = function () { window.dataLayer!.push(arguments as unknown as object) }
   window.gtag('js', new Date())
   window.gtag('config', gaId)
   const script = document.createElement('script')
