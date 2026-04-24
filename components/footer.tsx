@@ -28,6 +28,7 @@ interface FooterProps {
     footer: {
       copyright: string
       privacy: string
+      cookie_settings: string
       vat: string
     }
   }
@@ -86,12 +87,21 @@ export function Footer({ lang, dict }: FooterProps) {
           <p className="text-white/30">
             {dict.footer.vat} 02622600225 • LELETTRICA DI LEONI GABRIELE
           </p>
-          <Link
-            href={`/${lang}/privacy`}
-            className="hover:text-white/70 transition-colors"
-          >
-            {dict.footer.privacy}
-          </Link>
+          <div className="flex items-center gap-4">
+            <Link
+              href={`/${lang}/privacy`}
+              className="hover:text-white/70 transition-colors"
+            >
+              {dict.footer.privacy}
+            </Link>
+            <button
+              type="button"
+              data-cc="show-preferencesModal"
+              className="hover:text-white/70 transition-colors cursor-pointer"
+            >
+              {dict.footer.cookie_settings}
+            </button>
+          </div>
         </div>
       </div>
     </footer>
