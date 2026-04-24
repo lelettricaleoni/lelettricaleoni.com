@@ -70,6 +70,7 @@
   "footer": {
     "copyright": "© {year} Lelettrica. Alle Rechte vorbehalten.",
     "privacy": "Datenschutzerklärung",
+    "cookie_settings": "Cookie-Einstellungen",
     "vat": "MwSt.-Nr."
   },
   "privacy": {
@@ -77,10 +78,18 @@
     "last_updated": "Zuletzt aktualisiert: April 2026",
     "controller_title": "Verantwortlicher",
     "data_title": "Erhobene Daten",
-    "data_body": "Diese Website verwendet Google Analytics (GA4), um anonyme Browsing-Daten zu sammeln (besuchte Seiten, Sitzungsdauer, Gerät). Über die Website werden keine personenbezogenen Daten direkt erhoben.",
+    "data_body": "Diese Website verwendet Google Analytics (GA4) nur nach Ihrer Einwilligung. GA4 erfasst anonyme Browsing-Daten (besuchte Seiten, Sitzungsdauer, Gerätetyp). Über die Website werden keine personenbezogenen Daten direkt erhoben.",
+    "legal_basis_title": "Rechtsgrundlage",
+    "legal_basis_body": "Die Verarbeitung analytischer Daten erfolgt auf Grundlage der Einwilligung des Nutzers (Art. 6 Abs. 1 lit. a DSGVO), die beim ersten Besuch über das Cookie-Banner erteilt wird. Die Einwilligung kann jederzeit widerrufen werden.",
     "cookies_title": "Cookies",
-    "cookies_body": "Wir verwenden technische Cookies und Analyse-Cookies von Drittanbietern (Google Analytics). Durch weiteres Surfen stimmen Sie der Verwendung von Cookies zu.",
+    "cookies_body": "Wir verwenden technisch notwendige Cookies sowie — nach Einwilligung — Analyse-Cookies von Drittanbietern (Google Analytics). Die Einstellungen können jederzeit über „Cookie-Einstellungen" in der Fußzeile geändert werden.",
+    "retention_title": "Datenspeicherung",
+    "retention_body": "Die über Google Analytics erhobenen Daten werden entsprechend der Standard-GA4-Konfiguration 14 Monate lang gespeichert.",
+    "third_parties_title": "Datenempfänger",
+    "third_parties_body": "Browsing-Daten werden an Google LLC (1600 Amphitheatre Parkway, Mountain View, CA 94043, USA) übermittelt, die gemäß Art. 28 DSGVO als Auftragsverarbeiter tätig ist. Google LLC nimmt am EU-US Data Privacy Framework teil. Weitere Informationen: policies.google.com/privacy.",
+    "rights_title": "Betroffenenrechte",
+    "rights_body": "Gemäß Art. 15–22 DSGVO haben Sie das Recht auf: Auskunft, Berichtigung oder Löschung Ihrer Daten, Einschränkung der Verarbeitung, Widerspruch, Datenübertragbarkeit sowie jederzeitigen Widerruf Ihrer Einwilligung. Zur Ausübung dieser Rechte wenden Sie sich an:",
     "contact_title": "Kontakt",
-    "contact_body": "Für Anfragen zum Datenschutz: info@lelettricaleoni.com"
+    "contact_body": "Für alle Anfragen zum Datenschutz: info@lelettricaleoni.com"
   }
 }
