@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from 'next'
 import { Geist } from 'next/font/google'
-import { GoogleAnalytics } from '@next/third-parties/google'
+import { CookieConsentInit } from '@/components/cookie-consent'
 import { headers } from 'next/headers'
 import './globals.css'
 
@@ -35,9 +35,9 @@ export default async function RootLayout({
   return (
     <html lang={locale} className={`${geist.variable} antialiased`}>
       <body className="min-h-screen flex flex-col bg-background text-foreground">
+        <CookieConsentInit locale={locale} gaId={gaId ?? undefined} />
         {children}
       </body>
-      {gaId && <GoogleAnalytics gaId={gaId} />}
     </html>
   )
 }

@@ -70,6 +70,7 @@
   "footer": {
     "copyright": "© {year} Lelettrica. Tutti i diritti riservati.",
     "privacy": "Privacy Policy",
+    "cookie_settings": "Impostazioni cookie",
     "vat": "P.IVA"
   },
   "privacy": {
@@ -77,9 +78,17 @@
     "last_updated": "Ultimo aggiornamento: aprile 2026",
     "controller_title": "Titolare del trattamento",
     "data_title": "Dati raccolti",
-    "data_body": "Questo sito utilizza Google Analytics (GA4) per raccogliere dati anonimi di navigazione (pagine visitate, durata sessione, dispositivo). Nessun dato personale viene raccolto direttamente tramite il sito.",
+    "data_body": "Questo sito utilizza Google Analytics (GA4) esclusivamente previo consenso. GA4 raccoglie dati anonimi di navigazione (pagine visitate, durata sessione, tipo di dispositivo). Nessun dato personale identificativo viene raccolto direttamente tramite il sito.",
+    "legal_basis_title": "Base giuridica",
+    "legal_basis_body": "Il trattamento dei dati analitici avviene sulla base del consenso dell'utente (art. 6, par. 1, lett. a GDPR), espresso tramite il banner cookie al primo accesso. Il consenso può essere revocato in qualsiasi momento.",
     "cookies_title": "Cookie",
-    "cookies_body": "Utilizziamo cookie tecnici e cookie analitici di terze parti (Google Analytics). Continuando la navigazione accetti l'utilizzo dei cookie.",
+    "cookies_body": "Utilizziamo cookie tecnici necessari al funzionamento del sito e, previo consenso, cookie analitici di terze parti (Google Analytics). Il consenso può essere modificato in qualsiasi momento cliccando su \"Impostazioni cookie\" nel footer.",
+    "retention_title": "Conservazione dei dati",
+    "retention_body": "I dati raccolti tramite Google Analytics vengono conservati per 14 mesi, secondo la configurazione predefinita di GA4.",
+    "third_parties_title": "Destinatari dei dati",
+    "third_parties_body": "I dati di navigazione sono trasmessi a Google LLC (1600 Amphitheatre Parkway, Mountain View, CA 94043, USA), che agisce in qualità di responsabile del trattamento ai sensi dell'art. 28 GDPR. Google LLC aderisce al Data Privacy Framework EU-USA. Ulteriori informazioni: policies.google.com/privacy.",
+    "rights_title": "Diritti dell'interessato",
+    "rights_body": "Ai sensi degli artt. 15–22 GDPR hai il diritto di: accedere ai tuoi dati, richiederne la rettifica o la cancellazione, limitarne il trattamento, opporti al trattamento, richiedere la portabilità dei dati e revocare il consenso in qualsiasi momento. Per esercitare questi diritti scrivi a:",
     "contact_title": "Contatti",
     "contact_body": "Per qualsiasi richiesta relativa al trattamento dei dati: info@lelettricaleoni.com"
   }
