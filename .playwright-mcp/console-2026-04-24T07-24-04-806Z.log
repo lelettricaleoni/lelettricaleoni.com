@@ -1,0 +1,105 @@
+[  188100ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  188562ms] [ERROR] ./app/[lang]/page.tsx:3:1
+Module not found: Can't resolve '@/components/navbar'
+  1 | import { notFound } from 'next/navigation'
+  2 | import { getDictionary, hasLocale } from './dictionaries'
+> 3 | import { Navbar } from '@/components/navbar'
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  4 | import { HeroSection } from '@/components/hero-section'
+  5 | import { ServicesSection } from '@/components/services-section'
+  6 | import { PricingSection } from '@/components/pricing-section'
+
+Import map: aliased to relative './components/navbar' inside of [project]/
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:3272
+[  188562ms] [ERROR] ./app/[lang]/page.tsx:6:1
+Module not found: Can't resolve '@/components/pricing-section'
+  4 | import { HeroSection } from '@/components/hero-section'
+  5 | import { ServicesSection } from '@/components/services-section'
+> 6 | import { PricingSection } from '@/components/pricing-section'
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  7 | import { MapSection } from '@/components/map-section'
+  8 | import { Footer } from '@/components/footer'
+  9 |
+
+Import map: aliased to relative './components/pricing-section' inside of [project]/
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:3272
+[  188612ms] [ERROR] ./app/[lang]/page.tsx:3:1
+Module not found: Can't resolve '@/components/navbar'
+  1 | import { notFound } from 'next/navigation'
+  2 | import { getDictionary, hasLocale } from './dictionaries'
+> 3 | import { Navbar } from '@/components/navbar'
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  4 | import { HeroSection } from '@/components/hero-section'
+  5 | import { ServicesSection } from '@/components/services-section'
+  6 | import { PricingSection } from '@/components/pricing-section'
+
+Import map: aliased to relative './components/navbar' inside of [project]/
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:3272
+[  188612ms] [ERROR] ./app/[lang]/page.tsx:6:1
+Module not found: Can't resolve '@/components/pricing-section'
+  4 | import { HeroSection } from '@/components/hero-section'
+  5 | import { ServicesSection } from '@/components/services-section'
+> 6 | import { PricingSection } from '@/components/pricing-section'
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  7 | import { MapSection } from '@/components/map-section'
+  8 | import { Footer } from '@/components/footer'
+  9 |
+
+Import map: aliased to relative './components/pricing-section' inside of [project]/
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:3272
+[  188613ms] [ERROR] ./app/[lang]/page.tsx:3:1
+Module not found: Can't resolve '@/components/navbar'
+  1 | import { notFound } from 'next/navigation'
+  2 | import { getDictionary, hasLocale } from './dictionaries'
+> 3 | import { Navbar } from '@/components/navbar'
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  4 | import { HeroSection } from '@/components/hero-section'
+  5 | import { ServicesSection } from '@/components/services-section'
+  6 | import { PricingSection } from '@/components/pricing-section'
+
+Import map: aliased to relative './components/navbar' inside of [project]/
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:3272
+[  188613ms] [ERROR] ./app/[lang]/page.tsx:6:1
+Module not found: Can't resolve '@/components/pricing-section'
+  4 | import { HeroSection } from '@/components/hero-section'
+  5 | import { ServicesSection } from '@/components/services-section'
+> 6 | import { PricingSection } from '@/components/pricing-section'
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  7 | import { MapSection } from '@/components/map-section'
+  8 | import { Footer } from '@/components/footer'
+  9 |
+
+Import map: aliased to relative './components/pricing-section' inside of [project]/
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:3272
+[  188620ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  188626ms] [WARNING] [HMR] Invalid message: {"isTrusted":true}
+TypeError: Cannot convert undefined or null to object
+    at Object.keys (<anonymous>)
+    at extractModulesFromTurbopackMessage (http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_0fhqo1d._.js:13631:39)
+    at TurbopackHmr.onTurbopackMessage (http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_0fhqo1d._.js:13578:32)
+    at processMessage (http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_0fhqo1d._.js:13936:30)
+    at WebSocket.handleMessage (http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_0fhqo1d._.js:13335:52) @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  188643ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  188644ms] [LOG] [Fast Refresh] done in 17ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  188758ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  189169ms] [LOG] [Fast Refresh] done in 514ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  189296ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  189345ms] [LOG] [Fast Refresh] done in 151ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  189566ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  189699ms] [LOG] [Fast Refresh] done in 239ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  190231ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  190254ms] [LOG] [Fast Refresh] done in 129ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  190356ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  190470ms] [LOG] [Fast Refresh] done in 216ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  190653ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  190774ms] [LOG] [Fast Refresh] done in 229ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  191429ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  191486ms] [LOG] [Fast Refresh] done in 162ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  191647ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  191681ms] [LOG] [Fast Refresh] done in 135ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
