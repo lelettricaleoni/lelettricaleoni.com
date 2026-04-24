@@ -43,7 +43,10 @@ export function MapEmbed({ title, loadPrompt, loadNotice, loadButton }: MapEmbed
         <p className="font-semibold text-foreground text-sm">{loadPrompt}</p>
         <p className="text-xs text-muted-foreground mt-1">{loadNotice}</p>
       </div>
-      <Button size="sm" variant="outline" className="cursor-pointer" onClick={() => { setLoaded(true); trackEvent('map_load') }}>
+      <Button size="sm" variant="outline" className="cursor-pointer" onClick={() => {
+        setLoaded(true)
+        trackEvent('map_load')
+      }}>
         {loadButton}
       </Button>
     </div>
