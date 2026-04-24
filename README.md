@@ -1,36 +1,110 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Lelettrica — lelettricaleoni.com
 
-## Getting Started
+Sito web per **Lelettrica di Leoni Gabriele**, noleggio e-bike Flyer e riparazioni bici a Dro (TN), sul Lago di Garda.
 
-First, run the development server:
+## Stack
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+| Tecnologia | Versione |
+|---|---|
+| Next.js App Router | 16.2.4 |
+| React | 19 |
+| TypeScript | — |
+| Tailwind CSS | v4 |
+| shadcn/ui | — |
+
+## Funzionalità
+
+- **i18n nativo** — IT / EN / DE tramite `proxy.ts` + `app/[lang]/` + dizionari JSON
+- **SEO avanzato** — JSON-LD `LocalBusiness` + `BikeShop`, hreflang, OG, sitemap, robots
+- **GDPR compliant** — cookie consent via vanilla-cookieconsent v3; GA4 caricato solo dopo consenso
+- **GA4 custom events** — `trackEvent` utility consent-aware; 9 eventi (phone_call, cta_click, section_view, file_download, map_load, get_directions, email_click, language_switch, outbound_click)
+- **Mappa lazy** — Google Maps iframe caricato solo al click (nessun cookie di terze parti al caricamento)
+- **Immagini ottimizzate** — hero desktop + mobile WebP via `next/image`
+
+## Struttura
+
+```
+app/
+  layout.tsx              # Root layout — html/body, cookie consent
+  [lang]/
+    layout.tsx            # Metadata locale + JSON-LD
+    page.tsx              # Homepage (hero + servizi + prezzi + mappa)
+    privacy/page.tsx      # Privacy policy GDPR
+  sitemap.ts / robots.ts
+  opengraph-image.tsx
+
+components/
+  navbar.tsx
+  hero-section.tsx
+  services-section.tsx
+  pricing-section.tsx
+  map-section.tsx
+  map-embed.tsx           # Lazy iframe Maps (GDPR)
+  footer.tsx
+  language-switcher.tsx
+  cookie-consent.tsx      # vanilla-cookieconsent v3 + GA4 injection
+  section-view-tracker.tsx # IntersectionObserver per section_view GA4
+
+lib/
+  analytics.ts            # trackEvent() — guard window.gtag (consent-aware)
+  utils.ts
+
+messages/
+  it.json / en.json / de.json
+
+proxy.ts                  # Rilevamento locale, redirect, header x-locale
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Sviluppo locale
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm install
+npm run dev
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Apri [http://localhost:3000](http://localhost:3000).
 
-## Learn More
+## Build
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+npm run build
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+TypeScript viene verificato automaticamente durante la build.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Variabili d'ambiente
 
-## Deploy on Vercel
+Crea un file `.env.local`:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```env
+NEXT_PUBLIC_GA_ID=G-XXXXXXXXXX
+NEXT_PUBLIC_MAPS_EMBED_URL=https://www.google.com/maps/embed?...
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Entrambe opzionali: il sito funziona senza (analytics e mappa semplicemente non si caricano).
+
+## i18n
+
+Il rilevamento della lingua avviene in `proxy.ts` tramite l'header `Accept-Language`. L'utente viene reindirizzato automaticamente a `/it`, `/en` o `/de`. Il cambio manuale avviene tramite il language switcher nella navbar.
+
+Per aggiungere stringhe: modifica i tre file in `messages/` mantenendo le stesse chiavi.
+
+## GA4 Events
+
+Tutti gli eventi sono condizionati al consenso cookie analytics (`window.gtag` presente solo dopo consenso).
+
+| Evento | Parametri | Componente |
+|---|---|---|
+| `phone_call` | `{ source: 'hero'\|'contact'\|'footer' }` | hero, map-section, footer |
+| `email_click` | `{ source: 'contact'\|'footer' }` | map-section, footer |
+| `cta_click` | `{ cta_name: 'view_map' }` | hero |
+| `get_directions` | — | map-section |
+| `map_load` | — | map-embed |
+| `file_download` | `{ file_name, file_extension }` | pricing |
+| `outbound_click` | `{ link_domain: 'instagram.com' }` | footer |
+| `language_switch` | `{ language: 'it'\|'en'\|'de' }` | language-switcher |
+| `section_view` | `{ section_name }` | SectionViewTracker in ogni sezione |
+
+## Licenza
+
+Codice proprietario — tutti i diritti riservati.
