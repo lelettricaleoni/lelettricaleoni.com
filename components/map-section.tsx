@@ -1,6 +1,10 @@
+'use client'
+
 import { MapPin, Phone, Mail, Clock, ExternalLink } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { MapEmbed } from '@/components/map-embed'
+import { trackEvent } from '@/lib/analytics'
+import { SectionViewTracker } from '@/components/section-view-tracker'
 
 interface MapSectionProps {
   dict: {
@@ -28,6 +32,7 @@ const MAPS_DIRECTIONS_URL =
 export function MapSection({ dict }: MapSectionProps) {
   return (
     <section id="contatti" className="py-20 bg-white">
+      <SectionViewTracker name="contacts" />
       <div className="max-w-5xl mx-auto px-4 sm:px-6">
         <h2 className="text-3xl sm:text-4xl font-bold text-center text-foreground mb-12">
           {dict.info.title}
@@ -48,6 +53,7 @@ export function MapSection({ dict }: MapSectionProps) {
                 <a
                   href="tel:+393381232434"
                   className="hover:text-primary transition-colors"
+                  onClick={() => trackEvent('phone_call', { source: 'contact' })}
                 >
                   +39 338 123 2434
                 </a>
@@ -60,6 +66,7 @@ export function MapSection({ dict }: MapSectionProps) {
                 <a
                   href="mailto:info@lelettricaleoni.com"
                   className="hover:text-primary transition-colors"
+                  onClick={() => trackEvent('email_click', { source: 'contact' })}
                 >
                   info@lelettricaleoni.com
                 </a>
@@ -72,7 +79,12 @@ export function MapSection({ dict }: MapSectionProps) {
             />
 
             <Button asChild className="mt-2 gap-2" size="lg">
-              <a href={MAPS_DIRECTIONS_URL} target="_blank" rel="noopener noreferrer">
+              <a
+                  href={MAPS_DIRECTIONS_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => trackEvent('get_directions')}
+                >
                 <ExternalLink size={16} />
                 {dict.info.directions}
               </a>

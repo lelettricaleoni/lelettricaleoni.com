@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
+import { usePathname } from 'next/navigation'
 import 'vanilla-cookieconsent/dist/cookieconsent.css'
 import * as CookieConsent from 'vanilla-cookieconsent'
 
@@ -56,7 +57,7 @@ export function CookieConsentInit({ locale, gaId }: CookieConsentInitProps) {
             preferencesModal: {
               title: 'Preferenze cookie',
               acceptAllBtn: 'Accetta tutto',
-              acceptNecessaryBtn: 'Rifiuta tutto',
+              acceptNecessaryBtn: 'Solo necessari',
               savePreferencesBtn: 'Salva preferenze',
               closeIconLabel: 'Chiudi',
               sections: [
@@ -96,7 +97,7 @@ export function CookieConsentInit({ locale, gaId }: CookieConsentInitProps) {
             preferencesModal: {
               title: 'Cookie preferences',
               acceptAllBtn: 'Accept all',
-              acceptNecessaryBtn: 'Reject all',
+              acceptNecessaryBtn: 'Necessary only',
               savePreferencesBtn: 'Save preferences',
               closeIconLabel: 'Close',
               sections: [
@@ -136,7 +137,7 @@ export function CookieConsentInit({ locale, gaId }: CookieConsentInitProps) {
             preferencesModal: {
               title: 'Cookie-Einstellungen',
               acceptAllBtn: 'Alle akzeptieren',
-              acceptNecessaryBtn: 'Alle ablehnen',
+              acceptNecessaryBtn: 'Nur notwendige',
               savePreferencesBtn: 'Einstellungen speichern',
               closeIconLabel: 'Schließen',
               sections: [
@@ -180,6 +181,14 @@ export function CookieConsentInit({ locale, gaId }: CookieConsentInitProps) {
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  const pathname = usePathname()
+
+  useEffect(() => {
+    const pathLocale = pathname?.split('/')[1] ?? ''
+    const lang = ['it', 'en', 'de'].includes(pathLocale) ? pathLocale : 'it'
+    CookieConsent.setLanguage(lang)
+  }, [pathname])
 
   return null
 }

@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { MapPin } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { trackEvent } from '@/lib/analytics'
 
 const MAPS_EMBED_URL =
   process.env.NEXT_PUBLIC_MAPS_EMBED_URL ??
@@ -42,7 +43,10 @@ export function MapEmbed({ title, loadPrompt, loadNotice, loadButton }: MapEmbed
         <p className="font-semibold text-foreground text-sm">{loadPrompt}</p>
         <p className="text-xs text-muted-foreground mt-1">{loadNotice}</p>
       </div>
-      <Button size="sm" variant="outline" className="cursor-pointer" onClick={() => setLoaded(true)}>
+      <Button size="sm" variant="outline" className="cursor-pointer" onClick={() => {
+        setLoaded(true)
+        trackEvent('map_load')
+      }}>
         {loadButton}
       </Button>
     </div>

@@ -1,3 +1,5 @@
+'use client'
+
 import { Download, Zap, Bike, Tag } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -8,6 +10,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { trackEvent } from '@/lib/analytics'
+import { SectionViewTracker } from '@/components/section-view-tracker'
 
 interface PricingDict {
   pricing: {
@@ -63,6 +67,7 @@ export function PricingSection({ dict }: { dict: PricingDict }) {
 
   return (
     <section id="prezzi" className="py-20 bg-slate-50">
+      <SectionViewTracker name="pricing" />
       <div className="max-w-5xl mx-auto px-4 sm:px-6">
         <div className="text-center mb-12">
           <h2 className="text-3xl sm:text-4xl font-bold text-foreground mb-3">{p.title}</h2>
@@ -142,7 +147,12 @@ export function PricingSection({ dict }: { dict: PricingDict }) {
 
         <div className="text-center">
           <Button asChild variant="outline" size="lg" className="gap-2">
-            <a href="/pdf/Volantino 2023.pdf" target="_blank" rel="noopener noreferrer">
+            <a
+              href="/pdf/Volantino 2023.pdf"
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => trackEvent('file_download', { file_name: 'listino-prezzi', file_extension: 'pdf' })}
+            >
               <Download size={18} />
               {p.download_pdf}
             </a>

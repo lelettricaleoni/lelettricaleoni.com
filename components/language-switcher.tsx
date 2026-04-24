@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import ReactCountryFlag from 'react-country-flag'
 import { cn } from '@/lib/utils'
+import { trackEvent } from '@/lib/analytics'
 
 const locales = [
   { code: 'it', countryCode: 'IT', label: 'IT' },
@@ -27,6 +28,11 @@ export function LanguageSwitcher({ currentLang }: { currentLang: string }) {
           key={locale.code}
           href={buildHref(locale.code)}
           title={locale.label}
+          onClick={() => {
+            if (locale.code !== currentLang) {
+              trackEvent('language_switch', { language: locale.code })
+            }
+          }}
           className={cn(
             'flex items-center gap-1.5 px-2 py-1.5 rounded-md text-xs font-semibold transition-all duration-150',
             currentLang === locale.code
