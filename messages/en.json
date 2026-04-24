@@ -86,7 +86,7 @@
     "retention_title": "Data Retention",
     "retention_body": "Data collected through Google Analytics is retained for 14 months, as per the default GA4 configuration.",
     "third_parties_title": "Data Recipients",
-    "third_parties_body": "Browsing data is transmitted to Google LLC (1600 Amphitheatre Parkway, Mountain View, CA 94043, USA), acting as a data processor under Art. 28 GDPR. Google LLC participates in the EU-US Data Privacy Framework. More information: policies.google.com/privacy.",
+    "third_parties_body": "Browsing data is transmitted to Google LLC (1600 Amphitheatre Parkway, Mountain View, CA 94043, USA), acting as a data processor under Art. 28 GDPR. Google LLC participates in the EU-US Data Privacy Framework. More information: policies.google.com/privacy. This website is hosted by Vercel Inc. (440 N Barranca Ave #4133, Covina, CA 91723, USA), which processes network data (IP address, HTTP headers) as part of providing the hosting infrastructure. Vercel Inc. participates in the EU-US Data Privacy Framework. More information: vercel.com/legal/privacy-policy.",
     "rights_title": "Your Rights",
     "rights_body": "Under Arts. 15–22 GDPR you have the right to: access your data, request its rectification or erasure, restrict its processing, object to processing, request data portability, and withdraw consent at any time. To exercise these rights, contact us at:",
     "contact_title": "Contact",
