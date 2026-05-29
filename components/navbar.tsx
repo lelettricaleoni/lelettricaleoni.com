@@ -6,6 +6,7 @@ interface NavbarProps {
   lang: string
   dict: {
     nav: { services: string; pricing: string; contact: string }
+    percorsi?: { nav_label: string }
   }
 }
 
@@ -34,6 +35,11 @@ export function Navbar({ lang, dict }: NavbarProps) {
           <Link href={`/${lang}#contatti`} className="hover:text-primary transition-colors">
             {dict.nav.contact}
           </Link>
+          {dict.percorsi && (
+            <Link href={`/${lang}/percorsi`} className="hover:text-primary transition-colors">
+              {dict.percorsi.nav_label}
+            </Link>
+          )}
         </div>
 
         <LanguageSwitcher currentLang={lang} />
