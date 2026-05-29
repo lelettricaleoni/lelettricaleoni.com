@@ -9,7 +9,6 @@ interface RouteFlyoverProps {
   points: Coord[]
 }
 
-// Basemap satellite ESRI — gratuito, nessuna API key
 const SATELLITE_STYLE: maplibregl.StyleSpecification = {
   version: 8,
   sources: {
@@ -61,7 +60,6 @@ export function RouteFlyover({ points }: RouteFlyoverProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<maplibregl.Map | null>(null)
   const rafRef = useRef<number | null>(null)
-  const flyHandlerRef = useRef<(() => void) | null>(null)
   const [flying, setFlying] = useState(false)
   const [ready, setReady] = useState(false)
 
@@ -82,7 +80,7 @@ export function RouteFlyover({ points }: RouteFlyoverProps) {
     map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'top-right')
 
     map.on('load', () => {
-      // Terreno 3D — AWS Elevation Tiles (gratuito)
+      // Terreno 3D
       map.addSource('terrain-rgb', {
         type: 'raster-dem',
         tiles: ['https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'],
@@ -92,20 +90,16 @@ export function RouteFlyover({ points }: RouteFlyoverProps) {
       })
       map.setTerrain({ source: 'terrain-rgb', exaggeration: 1.5 })
 
-      // Tracciato GPX con glow
+      // Tracciato GPX
       map.addSource('route', {
         type: 'geojson',
-        data: {
-          type: 'Feature',
-          properties: {},
-          geometry: { type: 'LineString', coordinates: points },
-        },
+        data: { type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: points } },
       })
       map.addLayer({
         id: 'route-glow',
         type: 'line',
         source: 'route',
-        paint: { 'line-color': '#ffffff', 'line-width': 8, 'line-opacity': 0.4 },
+        paint: { 'line-color': '#ffffff', 'line-width': 8, 'line-opacity': 0.35 },
       })
       map.addLayer({
         id: 'route-line',
@@ -115,12 +109,35 @@ export function RouteFlyover({ points }: RouteFlyoverProps) {
         paint: { 'line-color': '#f97316', 'line-width': 3 },
       })
 
+      // Pallino mobile
+      map.addSource('dot', {
+        type: 'geojson',
+        data: { type: 'Feature', properties: {}, geometry: { type: 'Point', coordinates: points[0] } },
+      })
+      map.addLayer({
+        id: 'dot-halo',
+        type: 'circle',
+        source: 'dot',
+        paint: { 'circle-radius': 16, 'circle-color': '#f97316', 'circle-opacity': 0.25 },
+      })
+      map.addLayer({
+        id: 'dot',
+        type: 'circle',
+        source: 'dot',
+        paint: {
+          'circle-radius': 8,
+          'circle-color': '#f97316',
+          'circle-stroke-width': 2.5,
+          'circle-stroke-color': '#ffffff',
+        },
+      })
+
       setReady(true)
     })
 
     mapRef.current = map
     return () => {
-      if (flyHandlerRef.current) map.off('render', flyHandlerRef.current)
+      if (rafRef.current) cancelAnimationFrame(rafRef.current)
       map.remove()
       mapRef.current = null
     }
@@ -131,23 +148,40 @@ export function RouteFlyover({ points }: RouteFlyoverProps) {
     if (!map || points.length < 2) return
     setFlying(true)
 
-    // Disabilita terreno 3D durante il flyover — è lui che causa i drop di frame
+    // Terreno off durante flyover — principala causa di drop frame
     map.setTerrain(null)
 
     const startTime = performance.now()
     const DURATION = 35_000
+    let lastCameraUpdate = 0
 
     const frame = () => {
       const progress = Math.min((performance.now() - startTime) / DURATION, 1)
       const { center, bearing } = getPositionAtProgress(points, progress)
-      map.jumpTo({ center, zoom: 14.5, pitch: 65, bearing })
+
+      // Aggiorna pallino ogni frame → movimento fluido
+      const dotSrc = map.getSource('dot') as maplibregl.GeoJSONSource
+      dotSrc.setData({ type: 'Feature', properties: {}, geometry: { type: 'Point', coordinates: center } })
+
+      // Telecamera segue con ritardo naturale — non rigida
+      const now = performance.now()
+      if (now - lastCameraUpdate > 80) {
+        lastCameraUpdate = now
+        map.easeTo({
+          center,
+          bearing,
+          zoom: 14.5,
+          pitch: 60,
+          duration: 250,
+          easing: (t) => t * (2 - t), // ease-out: parte veloce, rallenta
+        })
+      }
 
       if (progress < 1) {
         rafRef.current = requestAnimationFrame(frame)
       } else {
         rafRef.current = null
         setFlying(false)
-        // Riattiva terreno 3D
         map.setTerrain({ source: 'terrain-rgb', exaggeration: 1.5 })
         map.fitBounds(getBounds(points), { padding: 60, pitch: 0, bearing: 0, duration: 1500 })
       }
