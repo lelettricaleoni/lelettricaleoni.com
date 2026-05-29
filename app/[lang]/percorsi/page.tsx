@@ -92,8 +92,10 @@ export default async function PercorsiPage({
           <p className="text-muted-foreground mt-2">{dict.percorsi.page_subtitle}</p>
         </div>
       </section>
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-10">
-        <RouteFilters routes={routesWithData} lang={lang} dict={dict} />
+      <main className="w-full py-10">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6">
+          <RouteFilters routes={routesWithData} lang={lang} dict={dict} />
+        </div>
       </main>
       <Footer lang={lang} dict={dict} />
     </>
