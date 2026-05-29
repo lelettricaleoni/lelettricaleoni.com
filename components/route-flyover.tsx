@@ -1,225 +1,180 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
-import maplibregl from 'maplibre-gl'
-import 'maplibre-gl/dist/maplibre-gl.css'
 
 type Coord = [number, number, number] // [lon, lat, ele]
 
-interface RouteFlyoverProps {
-  points: Coord[]
-}
-
-const SATELLITE_STYLE: maplibregl.StyleSpecification = {
-  version: 8,
-  sources: {
-    satellite: {
-      type: 'raster',
-      tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],
-      tileSize: 256,
-      maxzoom: 19,
-      attribution: '© Esri &amp; contributors',
-    },
-  },
-  layers: [{ id: 'satellite', type: 'raster', source: 'satellite' }],
-}
-
-function computeBearing(a: Coord, b: Coord): number {
-  const dLon = ((b[0] - a[0]) * Math.PI) / 180
-  const φ1 = (a[1] * Math.PI) / 180
-  const φ2 = (b[1] * Math.PI) / 180
-  const y = Math.sin(dLon) * Math.cos(φ2)
-  const x = Math.cos(φ1) * Math.sin(φ2) - Math.sin(φ1) * Math.cos(φ2) * Math.cos(dLon)
-  return (Math.atan2(y, x) * 180 / Math.PI + 360) % 360
-}
-
-function getPositionAtProgress(points: Coord[], progress: number) {
-  const n = points.length
-  const floatIdx = Math.min(progress * (n - 1), n - 2)
-  const idx = Math.floor(floatIdx)
-  const t = floatIdx - idx
-  const a = points[idx]
-  const b = points[Math.min(idx + 1, n - 1)]
-  const center: [number, number] = [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t]
-
-  // Bearing calcolato su finestra larga per smorzare il rumore GPS
-  const window = Math.max(20, Math.floor(n * 0.05))
-  const fromIdx = Math.max(0, idx - 3)
-  const toIdx = Math.min(n - 1, idx + window)
-  const bearing = computeBearing(points[fromIdx], points[toIdx])
-
-  return { center, bearing }
-}
-
-// Smoothing esponenziale del bearing con gestione wrap 0°/360°
-function smoothBearingStep(current: number, target: number, factor: number): number {
-  let diff = target - current
-  if (diff > 180) diff -= 360
-  if (diff < -180) diff += 360
-  return current + diff * factor
-}
-
-function getBounds(points: Coord[]): [[number, number], [number, number]] {
-  let minLon = Infinity, maxLon = -Infinity, minLat = Infinity, maxLat = -Infinity
-  for (const [lon, lat] of points) {
-    if (lon < minLon) minLon = lon
-    if (lon > maxLon) maxLon = lon
-    if (lat < minLat) minLat = lat
-    if (lat > maxLat) maxLat = lat
-  }
-  return [[minLon, minLat], [maxLon, maxLat]]
-}
-
-export function RouteFlyover({ points }: RouteFlyoverProps) {
+export function RouteFlyover({ points }: { points: Coord[] }) {
   const containerRef = useRef<HTMLDivElement>(null)
-  const mapRef = useRef<maplibregl.Map | null>(null)
-  const rafRef = useRef<number | null>(null)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const viewerRef = useRef<any>(null)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const entityRef = useRef<any>(null)
   const [flying, setFlying] = useState(false)
   const [ready, setReady] = useState(false)
 
   useEffect(() => {
     if (!containerRef.current || points.length < 2) return
+    let destroyed = false
 
-    const bounds = getBounds(points)
+    ;(async () => {
+      // Deve essere impostato prima di importare Cesium
+      ;(window as Window & { CESIUM_BASE_URL?: string }).CESIUM_BASE_URL = '/cesium'
 
-    const map = new maplibregl.Map({
-      container: containerRef.current,
-      style: SATELLITE_STYLE,
-      bounds,
-      fitBoundsOptions: { padding: 60 },
-      pitch: 0,
-      bearing: 0,
-    })
+      // Carica CSS widgets
+      if (!document.querySelector('#cesium-widgets-css')) {
+        const link = document.createElement('link')
+        link.id = 'cesium-widgets-css'
+        link.rel = 'stylesheet'
+        link.href = '/cesium/Widgets/widgets.css'
+        document.head.appendChild(link)
+      }
 
-    map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'top-right')
+      const Cesium = await import('cesium')
+      if (destroyed || !containerRef.current) return
 
-    map.on('load', () => {
-      // Terreno 3D
-      map.addSource('terrain-rgb', {
-        type: 'raster-dem',
-        tiles: ['https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'],
-        tileSize: 256,
-        maxzoom: 15,
-        encoding: 'terrarium',
+      const token = process.env.NEXT_PUBLIC_CESIUM_TOKEN
+      if (token) Cesium.Ion.defaultAccessToken = token
+
+      const viewer = new Cesium.Viewer(containerRef.current, {
+        ...(token ? { terrain: Cesium.Terrain.fromWorldTerrain() } : {}),
+        timeline: false,
+        animation: false,
+        homeButton: false,
+        sceneModePicker: false,
+        navigationHelpButton: false,
+        geocoder: false,
+        baseLayerPicker: false,
+        fullscreenButton: false,
+        infoBox: false,
+        selectionIndicator: false,
+        creditContainer: document.createElement('div'), // nasconde il logo Cesium
       })
-      map.setTerrain({ source: 'terrain-rgb', exaggeration: 1.5 })
+
+      // Satellite ESRI (gratuito)
+      viewer.imageryLayers.removeAll()
+      viewer.imageryLayers.addImageryProvider(
+        await Cesium.ArcGisMapServerImageryProvider.fromUrl(
+          'https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer'
+        )
+      )
 
       // Tracciato GPX
-      map.addSource('route', {
-        type: 'geojson',
-        data: { type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: points } },
-      })
-      map.addLayer({
-        id: 'route-glow',
-        type: 'line',
-        source: 'route',
-        paint: { 'line-color': '#ffffff', 'line-width': 8, 'line-opacity': 0.35 },
-      })
-      map.addLayer({
-        id: 'route-line',
-        type: 'line',
-        source: 'route',
-        layout: { 'line-cap': 'round', 'line-join': 'round' },
-        paint: { 'line-color': '#795F91', 'line-width': 3 },
-      })
-
-      // Pallino mobile
-      map.addSource('dot', {
-        type: 'geojson',
-        data: { type: 'Feature', properties: {}, geometry: { type: 'Point', coordinates: points[0] } },
-      })
-      map.addLayer({
-        id: 'dot-halo',
-        type: 'circle',
-        source: 'dot',
-        paint: { 'circle-radius': 16, 'circle-color': '#795F91', 'circle-opacity': 0.25 },
-      })
-      map.addLayer({
-        id: 'dot',
-        type: 'circle',
-        source: 'dot',
-        paint: {
-          'circle-radius': 8,
-          'circle-color': '#795F91',
-          'circle-stroke-width': 2.5,
-          'circle-stroke-color': '#ffffff',
+      viewer.entities.add({
+        polyline: {
+          positions: Cesium.Cartesian3.fromDegreesArrayHeights(
+            points.flatMap(([lon, lat, ele]) => [lon, lat, ele + 3])
+          ),
+          width: 4,
+          material: new Cesium.PolylineGlowMaterialProperty({
+            glowPower: 0.2,
+            color: Cesium.Color.fromCssColorString('#795F91'),
+          }),
         },
       })
 
-      setReady(true)
-    })
+      // Vista iniziale sul percorso
+      const positions = points.map(([lon, lat, ele]) =>
+        Cesium.Cartesian3.fromDegrees(lon, lat, ele)
+      )
+      viewer.camera.flyToBoundingSphere(
+        Cesium.BoundingSphere.fromPoints(positions),
+        { duration: 1.5, offset: new Cesium.HeadingPitchRange(0, Cesium.Math.toRadians(-40), 0) }
+      )
 
-    mapRef.current = map
+      viewerRef.current = viewer
+      setReady(true)
+    })()
+
     return () => {
-      if (rafRef.current) cancelAnimationFrame(rafRef.current)
-      map.remove()
-      mapRef.current = null
+      destroyed = true
+      viewerRef.current?.destroy()
+      viewerRef.current = null
     }
   }, [points])
 
-  function startFlyover() {
-    const map = mapRef.current
-    if (!map || points.length < 2) return
+  async function startFlyover() {
+    const viewer = viewerRef.current
+    if (!viewer || points.length < 2) return
+
+    const Cesium = await import('cesium')
     setFlying(true)
 
-    const startTime = performance.now()
-    const DURATION = 55_000
-    let lastCameraUpdate = 0
-    let smoothedBearing = getPositionAtProgress(points, 0).bearing
+    const DURATION_S = 60
+    const start = Cesium.JulianDate.now()
+    const stop = Cesium.JulianDate.addSeconds(start, DURATION_S, new Cesium.JulianDate())
 
-    const frame = () => {
-      const progress = Math.min((performance.now() - startTime) / DURATION, 1)
-      const { center, bearing: rawBearing } = getPositionAtProgress(points, progress)
+    viewer.clock.startTime = start.clone()
+    viewer.clock.stopTime = stop.clone()
+    viewer.clock.currentTime = start.clone()
+    viewer.clock.clockRange = Cesium.ClockRange.CLAMPED
+    viewer.clock.multiplier = 1
 
-      // Smoothing esponenziale: filtra oscillazioni GPS, mantiene le svolte reali
-      smoothedBearing = smoothBearingStep(smoothedBearing, rawBearing, 0.07)
+    // Posizioni campionate lungo il percorso
+    const positionProperty = new Cesium.SampledPositionProperty()
+    positionProperty.setInterpolationOptions({
+      interpolationDegree: 3,
+      interpolationAlgorithm: Cesium.HermitePolynomialApproximation,
+    })
 
-      // Aggiorna pallino ogni frame → movimento fluido
-      const dotSrc = map.getSource('dot') as maplibregl.GeoJSONSource
-      dotSrc.setData({ type: 'Feature', properties: {}, geometry: { type: 'Point', coordinates: center } })
+    points.forEach(([lon, lat, ele], i) => {
+      const t = Cesium.JulianDate.addSeconds(
+        start,
+        (i / (points.length - 1)) * DURATION_S,
+        new Cesium.JulianDate()
+      )
+      positionProperty.addSample(t, Cesium.Cartesian3.fromDegrees(lon, lat, ele + 5))
+    })
 
-      // Telecamera segue con ritardo naturale — non rigida
-      const now = performance.now()
-      if (now - lastCameraUpdate > 80) {
-        lastCameraUpdate = now
+    if (entityRef.current) viewer.entities.remove(entityRef.current)
 
-        // Lookahead 4%: la cam punta leggermente avanti così le tile
-        // di terreno si precaricano prima che il pallino ci arrivi
-        const lookAhead = Math.min(progress + 0.04, 1)
-        const { center: camCenter } = getPositionAtProgress(points, lookAhead)
+    const entity = viewer.entities.add({
+      availability: new Cesium.TimeIntervalCollection([
+        new Cesium.TimeInterval({ start, stop }),
+      ]),
+      position: positionProperty,
+      orientation: new Cesium.VelocityOrientationProperty(positionProperty),
+      point: {
+        pixelSize: 14,
+        color: Cesium.Color.fromCssColorString('#795F91'),
+        outlineColor: Cesium.Color.WHITE,
+        outlineWidth: 2.5,
+        disableDepthTestDistance: Number.POSITIVE_INFINITY,
+      },
+    })
 
-        map.easeTo({
-          center: camCenter,
-          bearing: smoothedBearing,
-          zoom: 13,
-          pitch: 48,
-          duration: 300,
-          easing: (t) => t * (2 - t),
-        })
-      }
+    entityRef.current = entity
 
-      if (progress < 1) {
-        rafRef.current = requestAnimationFrame(frame)
-      } else {
-        rafRef.current = null
-        setFlying(false)
-        map.fitBounds(getBounds(points), { padding: 60, pitch: 0, bearing: 0, duration: 1500 })
-      }
-    }
+    // trackedEntity = la camera segue il pallino con terrain-following automatico
+    viewer.trackedEntity = entity
+    viewer.clock.shouldAnimate = true
 
-    rafRef.current = requestAnimationFrame(frame)
+    const removeListener = viewer.clock.onStop.addEventListener(() => {
+      setFlying(false)
+      viewer.trackedEntity = undefined
+      removeListener()
+    })
   }
 
-  function stopFlyover() {
-    if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null }
+  async function stopFlyover() {
+    const viewer = viewerRef.current
+    if (!viewer) return
+    viewer.clock.shouldAnimate = false
+    viewer.trackedEntity = undefined
     setFlying(false)
-    const map = mapRef.current
-    if (!map) return
-    map.fitBounds(getBounds(points), { padding: 60, pitch: 0, bearing: 0, duration: 800 })
+
+    const Cesium = await import('cesium')
+    const positions = points.map(([lon, lat, ele]) =>
+      Cesium.Cartesian3.fromDegrees(lon, lat, ele)
+    )
+    viewer.camera.flyToBoundingSphere(
+      Cesium.BoundingSphere.fromPoints(positions),
+      { duration: 1.5, offset: new Cesium.HeadingPitchRange(0, Cesium.Math.toRadians(-40), 0) }
+    )
   }
 
   return (
     <div className="relative rounded-xl overflow-hidden border border-border isolate">
-      <div ref={containerRef} className="h-72 sm:h-[420px] w-full" />
+      <div ref={containerRef} className="h-72 sm:h-[420px] w-full bg-black" />
       {ready && (
         <button
           onClick={flying ? stopFlyover : startFlyover}
