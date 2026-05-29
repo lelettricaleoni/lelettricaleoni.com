@@ -15,6 +15,7 @@ export function RouteFlyover({ points }: { points: Coord[] }) {
   const viewerRef = useRef<CesiumType>(null)
   const cesiumRef = useRef<CesiumType>(null)  // cache del modulo Cesium
   const entityRef = useRef<CesiumType>(null)
+  const cameraHandlerRef = useRef<CesiumType>(null)
   const [flying, setFlying] = useState(false)
   const [ready, setReady] = useState(false)
 
@@ -120,6 +121,8 @@ export function RouteFlyover({ points }: { points: Coord[] }) {
 
     return () => {
       destroyed = true
+      cameraHandlerRef.current?.()
+      cameraHandlerRef.current = null
       viewerRef.current?.destroy()
       viewerRef.current = null
       cesiumRef.current = null
@@ -156,7 +159,6 @@ export function RouteFlyover({ points }: { points: Coord[] }) {
     const entity = viewer.entities.add({
       availability: new Cesium.TimeIntervalCollection([new Cesium.TimeInterval({ start, stop })]),
       position: pos,
-      orientation: new Cesium.VelocityOrientationProperty(pos),
       point: {
         pixelSize: 14,
         color: Cesium.Color.fromCssColorString('#795F91'),
@@ -166,13 +168,21 @@ export function RouteFlyover({ points }: { points: Coord[] }) {
       },
     })
     entityRef.current = entity
-    viewer.trackedEntity = entity
-    viewer.trackedEntityOffset = new Cesium.HeadingPitchRange(0, Cesium.Math.toRadians(-30), 3000)
+
+    // Camera manuale ogni frame — nessun jerk da trackedEntity
+    const offset = new Cesium.HeadingPitchRange(0, Cesium.Math.toRadians(-30), 3000)
+    cameraHandlerRef.current = viewer.scene.postUpdate.addEventListener((_scene: unknown, time: CesiumType) => {
+      const currentPos = pos.getValue(time, new Cesium.Cartesian3())
+      if (currentPos) viewer.camera.lookAt(currentPos, offset)
+    })
+
     viewer.clock.shouldAnimate = true
 
     const rm = viewer.clock.onStop.addEventListener(() => {
       setFlying(false)
-      viewer.trackedEntity = undefined
+      cameraHandlerRef.current?.()
+      cameraHandlerRef.current = null
+      viewer.camera.lookAtTransform(Cesium.Matrix4.IDENTITY)
       rm()
     })
   }
@@ -182,7 +192,9 @@ export function RouteFlyover({ points }: { points: Coord[] }) {
     const Cesium = cesiumRef.current
     if (!viewer || !Cesium) return
     viewer.clock.shouldAnimate = false
-    viewer.trackedEntity = undefined
+    cameraHandlerRef.current?.()
+    cameraHandlerRef.current = null
+    viewer.camera.lookAtTransform(Cesium.Matrix4.IDENTITY)
     setFlying(false)
     const positions = points.map(([lon, lat, ele]) => Cesium.Cartesian3.fromDegrees(lon, lat, ele))
     viewer.camera.flyToBoundingSphere(
