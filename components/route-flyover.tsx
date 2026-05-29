@@ -119,7 +119,7 @@ export function RouteFlyover({ points }: RouteFlyoverProps) {
         type: 'line',
         source: 'route',
         layout: { 'line-cap': 'round', 'line-join': 'round' },
-        paint: { 'line-color': '#366DA1', 'line-width': 3 },
+        paint: { 'line-color': '#795F91', 'line-width': 3 },
       })
 
       // Pallino mobile
