@@ -18,6 +18,7 @@ export function RouteFlyover({ points }: { points: Coord[] }) {
   const cameraHandlerRef = useRef<CesiumType>(null)
   const [flying, setFlying] = useState(false)
   const [ready, setReady] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     if (!containerRef.current || points.length < 2) return
@@ -116,6 +117,7 @@ export function RouteFlyover({ points }: { points: Coord[] }) {
         })
       } catch (err) {
         console.error('Cesium init error:', err)
+        setError(err instanceof Error ? err.message : String(err))
       }
     })()
 
@@ -200,6 +202,14 @@ export function RouteFlyover({ points }: { points: Coord[] }) {
     viewer.camera.flyToBoundingSphere(
       Cesium.BoundingSphere.fromPoints(positions),
       { duration: 1.5, offset: new Cesium.HeadingPitchRange(0, Cesium.Math.toRadians(-40), 0) }
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-72 sm:h-[420px] rounded-xl border border-border bg-muted text-sm text-muted-foreground px-4 text-center">
+        Mappa 3D non disponibile: {error}
+      </div>
     )
   }
 
