@@ -5,7 +5,7 @@ import * as schema from './schema'
 const globalForDb = globalThis as unknown as { db: ReturnType<typeof drizzle> }
 
 function createDb() {
-  const client = postgres(process.env.DATABASE_URL!, { max: 1 })
+  const client = postgres(process.env.DATABASE_URL!, { max: 1, ssl: { rejectUnauthorized: false } })
   return drizzle(client, { schema })
 }
 
