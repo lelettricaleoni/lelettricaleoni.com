@@ -71,11 +71,30 @@ export function parseGpxPoints(gpxString: string): [number, number, number][] {
     parseFloat(String(p['@_lat'] ?? 0)),
     parseFloat(String(p['ele'] ?? 0)),
   ])
-  if (all.length > 800) {
-    const step = Math.ceil(all.length / 800)
-    return all.filter((_, i) => i % step === 0)
+  if (all.length <= 2000) return all
+
+  // Campionamento adattivo per distanza: mantiene più punti nelle curve
+  const target = 2000
+  const totalDist = all.reduce((acc, p, i) => {
+    if (i === 0) return 0
+    const prev = all[i - 1]
+    const dx = p[0] - prev[0], dy = p[1] - prev[1]
+    return acc + Math.sqrt(dx * dx + dy * dy)
+  }, 0)
+  const step = totalDist / target
+  const result: [number, number, number][] = [all[0]]
+  let accumulated = 0
+  for (let i = 1; i < all.length - 1; i++) {
+    const prev = all[i - 1]
+    const dx = all[i][0] - prev[0], dy = all[i][1] - prev[1]
+    accumulated += Math.sqrt(dx * dx + dy * dy)
+    if (accumulated >= step) {
+      result.push(all[i])
+      accumulated = 0
+    }
   }
-  return all
+  result.push(all[all.length - 1])
+  return result
 }
 
 export function watermarkGpx(gpxString: string, routeName: string): string {
