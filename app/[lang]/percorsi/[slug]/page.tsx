@@ -201,11 +201,6 @@ export default async function RouteDetailPage({
           </div>
         </div>
 
-        {/* Start point */}
-        {translation?.startPointLabel && (
-          <p className="text-sm text-muted-foreground">📍 {translation.startPointLabel}</p>
-        )}
-
         {/* Description */}
         {translation?.description && (
           <div className="prose prose-slate max-w-none">
