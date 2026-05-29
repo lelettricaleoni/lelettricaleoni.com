@@ -103,7 +103,7 @@ export default async function RouteDetailPage({
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <Navbar lang={lang} dict={dict} />
-      <main className="max-w-4xl mx-auto px-4 py-8 space-y-8">
+      <main className="max-w-4xl mx-auto px-4 pt-24 pb-8 space-y-8">
         {/* Back */}
         <Link href={`/${lang}/percorsi`} className="text-sm text-muted-foreground hover:text-[#366DA1]">
           {d.back_to_list}
