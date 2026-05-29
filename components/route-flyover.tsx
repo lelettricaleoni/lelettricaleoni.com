@@ -131,19 +131,38 @@ export function RouteFlyover({ points }: RouteFlyoverProps) {
     setFlying(true)
     startTimeRef.current = null
     const DURATION = 35_000
+    const STEP_MS = 80      // aggiorna la destinazione ogni 80ms (~12fps)
+    const EASE_MS = STEP_MS * 2  // easing 160ms — si sovrappone allo step successivo
+    let lastStep = -1
 
     const frame = (now: number) => {
       const map = mapRef.current
       if (!map) return
       if (startTimeRef.current === null) startTimeRef.current = now
-      const progress = Math.min((now - startTimeRef.current) / DURATION, 1)
-      const { center, bearing } = getPositionAtProgress(points, progress)
-      map.jumpTo({ center, zoom: 14.5, pitch: 65, bearing })
+
+      const elapsed = now - startTimeRef.current
+      const progress = Math.min(elapsed / DURATION, 1)
+
+      if (now - lastStep >= STEP_MS) {
+        lastStep = now
+        const { center, bearing } = getPositionAtProgress(points, progress)
+        map.easeTo({
+          center,
+          zoom: 14.5,
+          pitch: 65,
+          bearing,
+          duration: EASE_MS,
+          easing: (t) => t,
+        })
+      }
+
       if (progress < 1) {
         rafRef.current = requestAnimationFrame(frame)
       } else {
-        setFlying(false)
-        map.fitBounds(getBounds(points), { padding: 60, pitch: 0, bearing: 0, duration: 1500 })
+        setTimeout(() => {
+          setFlying(false)
+          mapRef.current?.fitBounds(getBounds(points), { padding: 60, pitch: 0, bearing: 0, duration: 1500 })
+        }, EASE_MS)
       }
     }
 
