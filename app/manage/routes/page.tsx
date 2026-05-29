@@ -29,7 +29,7 @@ export default async function AdminPercorsiPage() {
     <div className="space-y-6 max-w-3xl">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-[#1e3a5f]">
-          Percorsi ({routesList.length})
+          Percorsi
         </h1>
         <Button asChild className="bg-[#1e3a5f] hover:bg-[#152c4a]">
           <Link href="/manage/routes/new"><Plus size={16} className="mr-1" /> Nuovo percorso</Link>

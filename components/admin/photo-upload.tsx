@@ -125,8 +125,8 @@ export function PhotoUpload({
         </div>
       </div>
 
-      {photos.map((p, i) => (
-        <input key={p.storageKey} type="hidden" name={`photoKeys[${i}]`} value={p.storageKey} />
+      {photos.map((p) => (
+        <input key={p.storageKey} type="hidden" name="photoKey" value={p.storageKey} />
       ))}
     </div>
   )

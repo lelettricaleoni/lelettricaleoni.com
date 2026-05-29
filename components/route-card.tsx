@@ -1,6 +1,5 @@
 import Link from 'next/link'
 import Image from 'next/image'
-import { TrendingUp } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { r2PublicUrl } from '@/lib/r2'
 import type { Route, RouteTranslation, RoutePhoto } from '@/lib/db'
@@ -55,30 +54,25 @@ export function RouteCard({ route, translation, coverPhoto, lang, dict }: RouteC
           ))}
         </div>
 
-        <div className="grid grid-cols-4 gap-2 bg-muted/50 rounded-lg p-2.5">
-          {route.distanceKm && (
-            <div className="text-center">
-              <p className="text-sm font-bold text-[#1e3a5f]">{route.distanceKm}</p>
-              <p className="text-[10px] text-muted-foreground">{d.stat_distance}</p>
+        {(() => {
+          const stats = [
+            route.distanceKm ? { value: `${route.distanceKm}`, label: d.stat_distance } : null,
+            route.elevationM != null ? { value: `${route.elevationM}`, label: `↑ ${d.stat_elevation}` } : null,
+            route.durationMin ? { value: `${Math.floor(route.durationMin / 60)}h${route.durationMin % 60 > 0 ? `${route.durationMin % 60}m` : ''}`, label: d.stat_duration } : null,
+            { value: d[`surface_${route.surface}` as keyof typeof d] ?? route.surface, label: d.stat_surface },
+          ].filter(Boolean) as { value: string; label: string }[]
+
+          return (
+            <div className="flex rounded-lg border bg-muted/30 overflow-hidden divide-x divide-border">
+              {stats.map((stat) => (
+                <div key={stat.label} className="flex-1 min-w-0 py-2 px-1 text-center">
+                  <p className="text-sm font-bold text-[#1e3a5f] truncate leading-tight">{stat.value}</p>
+                  <p className="text-[10px] text-muted-foreground truncate mt-0.5">{stat.label}</p>
+                </div>
+              ))}
             </div>
-          )}
-          {route.elevationM != null && (
-            <div className="text-center">
-              <p className="text-sm font-bold text-[#1e3a5f]">{route.elevationM}</p>
-              <p className="text-[10px] text-muted-foreground flex items-center justify-center gap-0.5"><TrendingUp size={9} /> {d.stat_elevation}</p>
-            </div>
-          )}
-          {route.durationMin && (
-            <div className="text-center">
-              <p className="text-sm font-bold text-[#1e3a5f]">{Math.round(route.durationMin / 60)}h{route.durationMin % 60 > 0 ? `${route.durationMin % 60}m` : ''}</p>
-              <p className="text-[10px] text-muted-foreground">{d.stat_duration}</p>
-            </div>
-          )}
-          <div className="text-center">
-            <p className="text-sm font-bold text-[#1e3a5f] capitalize">{d[`surface_${route.surface}` as keyof typeof d] ?? route.surface}</p>
-            <p className="text-[10px] text-muted-foreground">{d.stat_surface}</p>
-          </div>
-        </div>
+          )
+        })()}
       </div>
     </Link>
   )

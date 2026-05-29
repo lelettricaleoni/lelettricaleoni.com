@@ -14,8 +14,8 @@ export function AdminSidebar() {
 
   return (
     <aside className="w-56 min-h-screen bg-[#1e3a5f] flex flex-col py-6 px-3 shrink-0">
-      <div className="text-white font-bold text-sm px-3 mb-8">⚡ Gestione</div>
-
+      <div className="text-white font-bold text-sm px-3 mb-8">Gestione</div>
+      
       <nav className="flex-1 space-y-1">
         {navItems.map(({ href, label, icon: Icon }) => (
           <Link

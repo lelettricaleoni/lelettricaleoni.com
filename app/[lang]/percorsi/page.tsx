@@ -85,15 +85,13 @@ export default async function PercorsiPage({
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <Navbar lang={lang} dict={dict} />
-      <main className="max-w-5xl mx-auto px-4 pt-24 pb-12 space-y-8">
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 pt-24 pb-12 space-y-8">
         <div>
           <h1 className="text-3xl font-bold text-[#1e3a5f]">{dict.percorsi.page_title}</h1>
           <p className="text-muted-foreground mt-2">{dict.percorsi.page_subtitle}</p>
         </div>
 
         <RouteFilters routes={routesWithData} lang={lang} dict={dict} />
-
-        <p className="text-xs text-muted-foreground border-t pt-4">{dict.percorsi.copyright_notice}</p>
       </main>
       <Footer lang={lang} dict={dict} />
     </>

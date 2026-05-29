@@ -85,7 +85,12 @@ export function RouteFilters({ routes, lang, dict }: RouteFiltersProps) {
       {filtered.length === 0 ? (
         <p className="text-sm text-muted-foreground py-8 text-center">{d.no_results}</p>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+        <div className={cn(
+          'grid gap-6',
+          filtered.length === 1
+            ? 'grid-cols-1'
+            : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'
+        )}>
           {filtered.map(({ route, translation, coverPhoto }) => (
             <RouteCard
               key={route.id}

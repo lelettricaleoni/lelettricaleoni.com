@@ -116,6 +116,17 @@
     "back_to_list": "All routes",
     "no_results": "No routes found with these filters.",
     "copyright_notice": "Routes are the exclusive property of Lelettrica di Leoni Gabriele. All rights reserved.",
-    "nav_label": "Routes"
+    "nav_label": "Routes",
+    "gpx_modal_title": "Download GPX track",
+    "gpx_modal_subtitle": "Import this file into your favourite cycling apps",
+    "gpx_modal_apps": "Compatible with",
+    "gpx_modal_note": "The GPX file includes a Lelettrica watermark.",
+    "gpx_modal_download": "Download GPX",
+    "share_modal_title": "Share this route",
+    "share_modal_subtitle": "Copy the link or share directly",
+    "share_modal_copy": "Copy link",
+    "share_modal_copied": "Link copied!",
+    "share_modal_whatsapp": "WhatsApp",
+    "share_modal_native": "Share"
   }
 }

@@ -10,8 +10,8 @@ export const s3 = new S3Client({
     accessKeyId: process.env.R2_ACCESS_KEY_ID!,
     secretAccessKey: process.env.R2_SECRET_ACCESS_KEY!,
   },
-  requestChecksumCalculation: 'when_required',
-  responseChecksumValidation: 'when_required',
+  requestChecksumCalculation: 'WHEN_REQUIRED' as const,
+  responseChecksumValidation: 'WHEN_REQUIRED' as const,
 })
 
 export const R2_BUCKET = process.env.R2_BUCKET_NAME!

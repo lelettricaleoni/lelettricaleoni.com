@@ -5,7 +5,7 @@ import { notFound, redirect } from 'next/navigation'
 
 export default async function EditPercorsoPage({ params }: { params: Promise<{ id: string }> }) {
   const user = await getAdminUser()
-  if (!user) redirect('/gestione/login')
+  if (!user) redirect('/manage/login')
 
   const { id } = await params
   const data = await getRouteWithDetails(id)

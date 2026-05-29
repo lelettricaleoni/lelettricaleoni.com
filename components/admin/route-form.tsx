@@ -25,12 +25,26 @@ export function RouteForm({ action, route, translations, photos }: RouteFormProp
   const [state, formAction, isPending] = useActionState(action, {})
   const itTranslation = translations?.find((t) => t.locale === 'it')
 
+  const [nameIt, setNameIt] = useState(itTranslation?.name ?? '')
+  const [descriptionIt, setDescriptionIt] = useState(itTranslation?.description ?? '')
+  const [startPointLabel, setStartPointLabel] = useState(itTranslation?.startPointLabel ?? '')
+  const [difficulty, setDifficulty] = useState(route?.difficulty ?? 'easy')
+  const [surface, setSurface] = useState(route?.surface ?? 'mixed')
   const [distanceKm, setDistanceKm] = useState(route?.distanceKm ?? '')
   const [elevationM, setElevationM] = useState(route?.elevationM?.toString() ?? '')
+  const [durationMin, setDurationMin] = useState(route?.durationMin?.toString() ?? '')
+  const [stravaUrl, setStravaUrl] = useState(route?.stravaUrl ?? '')
+  const [komootUrl, setKomootUrl] = useState(route?.komootUrl ?? '')
+  const [bikeTypes, setBikeTypes] = useState<string[]>(route?.bikeTypes ?? [])
 
-  function handleGpxUploaded(_key: string, stats: { distanceKm: number; elevationM: number }) {
+  function handleGpxUploaded(_key: string, stats: { distanceKm: number; elevationM: number; durationMin?: number }) {
     setDistanceKm(stats.distanceKm.toString())
     setElevationM(stats.elevationM.toString())
+    if (stats.durationMin) setDurationMin(stats.durationMin.toString())
+  }
+
+  function toggleBikeType(type: string, checked: boolean) {
+    setBikeTypes((prev) => checked ? [...prev, type] : prev.filter((t) => t !== type))
   }
 
   return (
@@ -42,18 +56,27 @@ export function RouteForm({ action, route, translations, photos }: RouteFormProp
 
         <div className="space-y-1">
           <Label htmlFor="nameIt">Nome percorso *</Label>
-          <Input id="nameIt" name="nameIt" required defaultValue={itTranslation?.name} />
+          <Input id="nameIt" name="nameIt" required value={nameIt} onChange={(e) => setNameIt(e.target.value)} />
           {state.errors?.nameIt && <p className="text-xs text-destructive">{state.errors.nameIt[0]}</p>}
         </div>
 
         <div className="space-y-1">
           <Label htmlFor="startPointLabel">Punto di partenza</Label>
-          <Input id="startPointLabel" name="startPointLabel" placeholder="es. Dro, Via Roma 90" defaultValue={itTranslation?.startPointLabel ?? ''} />
+          <Input
+            id="startPointLabel" name="startPointLabel"
+            placeholder="es. Dro, Via Roma 90"
+            value={startPointLabel}
+            onChange={(e) => setStartPointLabel(e.target.value)}
+          />
         </div>
 
         <div className="space-y-1">
           <Label htmlFor="descriptionIt">Descrizione *</Label>
-          <Textarea id="descriptionIt" name="descriptionIt" rows={5} required defaultValue={itTranslation?.description} />
+          <Textarea
+            id="descriptionIt" name="descriptionIt" rows={5} required
+            value={descriptionIt}
+            onChange={(e) => setDescriptionIt(e.target.value)}
+          />
           {state.errors?.descriptionIt && <p className="text-xs text-destructive">{state.errors.descriptionIt[0]}</p>}
         </div>
 
@@ -72,7 +95,7 @@ export function RouteForm({ action, route, translations, photos }: RouteFormProp
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-1">
             <Label htmlFor="difficulty">Difficoltà *</Label>
-            <Select name="difficulty" defaultValue={route?.difficulty ?? 'easy'}>
+            <Select name="difficulty" value={difficulty} onValueChange={(v) => setDifficulty(v as typeof difficulty)}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="easy">Facile</SelectItem>
@@ -84,7 +107,7 @@ export function RouteForm({ action, route, translations, photos }: RouteFormProp
           </div>
           <div className="space-y-1">
             <Label htmlFor="surface">Fondo *</Label>
-            <Select name="surface" defaultValue={route?.surface ?? 'mixed'}>
+            <Select name="surface" value={surface} onValueChange={(v) => setSurface(v as typeof surface)}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="asphalt">Asfalto</SelectItem>
@@ -113,7 +136,12 @@ export function RouteForm({ action, route, translations, photos }: RouteFormProp
           </div>
           <div className="space-y-1">
             <Label htmlFor="durationMin">Durata (minuti)</Label>
-            <Input id="durationMin" name="durationMin" type="number" min="1" defaultValue={route?.durationMin ?? ''} placeholder="es. 180" />
+            <Input
+              id="durationMin" name="durationMin" type="number" min="1"
+              value={durationMin}
+              onChange={(e) => setDurationMin(e.target.value)}
+              placeholder="es. 180"
+            />
           </div>
         </div>
       </section>
@@ -129,7 +157,8 @@ export function RouteForm({ action, route, translations, photos }: RouteFormProp
                 id={`bike-${type}`}
                 name="bikeTypes"
                 value={type}
-                defaultChecked={route?.bikeTypes.includes(type)}
+                checked={bikeTypes.includes(type)}
+                onCheckedChange={(checked) => toggleBikeType(type, !!checked)}
               />
               <Label htmlFor={`bike-${type}`} className="font-normal">{type}</Label>
             </div>
@@ -143,11 +172,21 @@ export function RouteForm({ action, route, translations, photos }: RouteFormProp
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-1">
             <Label htmlFor="stravaUrl">Strava URL</Label>
-            <Input id="stravaUrl" name="stravaUrl" type="url" defaultValue={route?.stravaUrl ?? ''} placeholder="https://www.strava.com/routes/..." />
+            <Input
+              id="stravaUrl" name="stravaUrl" type="url"
+              value={stravaUrl}
+              onChange={(e) => setStravaUrl(e.target.value)}
+              placeholder="https://www.strava.com/routes/..."
+            />
           </div>
           <div className="space-y-1">
             <Label htmlFor="komootUrl">Komoot URL</Label>
-            <Input id="komootUrl" name="komootUrl" type="url" defaultValue={route?.komootUrl ?? ''} placeholder="https://www.komoot.com/tour/..." />
+            <Input
+              id="komootUrl" name="komootUrl" type="url"
+              value={komootUrl}
+              onChange={(e) => setKomootUrl(e.target.value)}
+              placeholder="https://www.komoot.com/tour/..."
+            />
           </div>
         </div>
       </section>

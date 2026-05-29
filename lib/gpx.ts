@@ -3,6 +3,7 @@ import { XMLParser } from 'fast-xml-parser'
 interface GpxStats {
   distanceKm: number
   elevationM: number
+  durationMin?: number
 }
 
 function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
@@ -23,12 +24,13 @@ export function parseGpxStats(gpxString: string): GpxStats {
 
   const trkseg = obj?.gpx?.trk?.trkseg
   const rawPoints = trkseg?.trkpt ?? []
-  const points: { lat: number; lon: number; ele: number }[] = (
+  const points: { lat: number; lon: number; ele: number; time?: string }[] = (
     Array.isArray(rawPoints) ? rawPoints : [rawPoints]
   ).map((p: Record<string, unknown>) => ({
     lat: parseFloat(String(p['@_lat'] ?? 0)),
     lon: parseFloat(String(p['@_lon'] ?? 0)),
     ele: parseFloat(String(p['ele'] ?? 0)),
+    time: p['time'] ? String(p['time']) : undefined,
   }))
 
   let distanceKm = 0
@@ -43,10 +45,37 @@ export function parseGpxStats(gpxString: string): GpxStats {
     if (diff > 0) elevationM += diff
   }
 
+  const timestamps = points
+    .map((p) => p.time ? new Date(p.time).getTime() : NaN)
+    .filter((t) => !isNaN(t))
+  const durationMin = timestamps.length >= 2
+    ? Math.round((timestamps[timestamps.length - 1] - timestamps[0]) / 60000)
+    : undefined
+
   return {
     distanceKm: Math.round(distanceKm * 10) / 10,
     elevationM: Math.round(elevationM),
+    durationMin,
   }
+}
+
+export function parseGpxPoints(gpxString: string): [number, number][] {
+  const parser = new XMLParser({ ignoreAttributes: false, attributeNamePrefix: '@_' })
+  const obj = parser.parse(gpxString)
+  const trkseg = obj?.gpx?.trk?.trkseg
+  const rawPoints = trkseg?.trkpt ?? []
+  const all: [number, number][] = (
+    Array.isArray(rawPoints) ? rawPoints : [rawPoints]
+  ).map((p: Record<string, unknown>) => [
+    parseFloat(String(p['@_lat'] ?? 0)),
+    parseFloat(String(p['@_lon'] ?? 0)),
+  ])
+  // Downsample to max 800 points to keep props lean
+  if (all.length > 800) {
+    const step = Math.ceil(all.length / 800)
+    return all.filter((_, i) => i % step === 0)
+  }
+  return all
 }
 
 export function watermarkGpx(gpxString: string, routeName: string): string {

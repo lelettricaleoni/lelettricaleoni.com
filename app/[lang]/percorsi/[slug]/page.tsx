@@ -4,15 +4,19 @@ import Link from 'next/link'
 import type { Metadata } from 'next'
 import { eq, and } from 'drizzle-orm'
 import { ArrowLeft, TrendingUp } from 'lucide-react'
+import { GetObjectCommand } from '@aws-sdk/client-s3'
 import { getDictionary, hasLocale } from '../../dictionaries'
 import { Navbar } from '@/components/navbar'
 import { Footer } from '@/components/footer'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { RouteGallery } from '@/components/route-gallery'
-import { RouteShareButton } from '@/components/route-share-button'
+import { RouteMapLoader } from '@/components/route-map-loader'
+import { RouteGpxModal } from '@/components/route-gpx-modal'
+import { RouteShareModal } from '@/components/route-share-modal'
 import { db, routes, routeTranslations, routePhotos } from '@/lib/db'
-import { r2PublicUrl } from '@/lib/r2'
+import { s3, R2_BUCKET, r2PublicUrl } from '@/lib/r2'
+import { parseGpxPoints } from '@/lib/gpx'
 
 export const revalidate = 3600
 
@@ -81,6 +85,18 @@ export default async function RouteDetailPage({
 
   const coverPhoto = photos[0]
 
+  let gpxPoints: [number, number][] = []
+  if (route.gpxKey) {
+    try {
+      const res = await s3.send(new GetObjectCommand({ Bucket: R2_BUCKET, Key: route.gpxKey }))
+      const chunks: Buffer[] = []
+      for await (const chunk of res.Body as AsyncIterable<Buffer>) chunks.push(Buffer.from(chunk))
+      gpxPoints = parseGpxPoints(Buffer.concat(chunks).toString('utf-8'))
+    } catch {
+      gpxPoints = []
+    }
+  }
+
   const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://www.lelettricaleoni.com').replace(/\/$/, '')
 
   const difficultyLabel: Record<string, string> = {
@@ -138,6 +154,9 @@ export default async function RouteDetailPage({
             ))}
           </div>
         </div>
+
+        {/* Mappa GPX */}
+        {gpxPoints.length > 1 && <RouteMapLoader points={gpxPoints} />}
 
         {/* Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 bg-muted/40 rounded-xl p-4">
@@ -201,18 +220,19 @@ export default async function RouteDetailPage({
             </Button>
           )}
           {route.gpxKey && (
-            <Button asChild variant="outline" size="sm">
-              <a href={`/api/percorsi/${slug}/gpx`} download>{d.download_gpx}</a>
-            </Button>
+            <RouteGpxModal
+              slug={slug}
+              routeName={translation?.name ?? slug}
+              dict={dict}
+            />
           )}
-          <RouteShareButton
+          <RouteShareModal
             url={`${siteUrl}/${lang}/percorsi/${slug}`}
-            label={d.share}
-            copiedLabel={d.share_copied}
+            routeName={translation?.name ?? slug}
+            dict={dict}
           />
         </div>
 
-        <p className="text-xs text-muted-foreground">{d.copyright_notice}</p>
       </main>
       <Footer lang={lang} dict={dict} />
     </>

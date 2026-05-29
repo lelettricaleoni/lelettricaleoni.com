@@ -76,6 +76,7 @@ export async function createRouteAction(
   await requireAdmin()
 
   const bikeTypes = formData.getAll('bikeTypes') as string[]
+  const photoKeys = formData.getAll('photoKey') as string[]
   const raw = {
     nameIt:          formData.get('nameIt'),
     descriptionIt:   formData.get('descriptionIt'),
@@ -123,6 +124,12 @@ export async function createRouteAction(
     { routeId: newRoute.id, locale: 'de', name: nameTranslations.de, description: descTranslations.de, startPointLabel, isAutoTranslated: true },
   ])
 
+  if (photoKeys.length > 0) {
+    await db.insert(routePhotos).values(
+      photoKeys.map((storageKey, displayOrder) => ({ routeId: newRoute.id, storageKey, displayOrder }))
+    )
+  }
+
   revalidatePath('/[lang]/percorsi', 'page')
   redirect('/manage/routes')
 }
@@ -135,6 +142,7 @@ export async function updateRouteAction(
   await requireAdmin()
 
   const bikeTypes = formData.getAll('bikeTypes') as string[]
+  const photoKeys = formData.getAll('photoKey') as string[]
   const raw = {
     nameIt:          formData.get('nameIt'),
     descriptionIt:   formData.get('descriptionIt'),
@@ -171,6 +179,13 @@ export async function updateRouteAction(
     gpxKey: routeData.gpxKey || null,
     updatedAt: new Date(),
   }).where(eq(routes.id, id))
+
+  await db.delete(routePhotos).where(eq(routePhotos.routeId, id))
+  if (photoKeys.length > 0) {
+    await db.insert(routePhotos).values(
+      photoKeys.map((storageKey, displayOrder) => ({ routeId: id, storageKey, displayOrder }))
+    )
+  }
 
   const reTranslate = formData.get('retranslate') === 'true'
   if (reTranslate) {

@@ -94,7 +94,7 @@
   },
   "percorsi": {
     "page_title": "Empfohlene Routen",
-    "page_subtitle": "Erkunden Sie den Gardasee und die umliegenden Täler mit dem E-Bike oder Fahrrad",
+    "page_subtitle": "Erkunde den Gardasee und die Täler um Dro per E-Bike oder Fahrrad",
     "filter_all": "Alle",
     "filter_difficulty": "Schwierigkeit",
     "difficulty_easy": "Leicht",
@@ -116,6 +116,17 @@
     "back_to_list": "Alle Routen",
     "no_results": "Keine Routen mit diesen Filtern gefunden.",
     "copyright_notice": "Routen sind ausschließliches Eigentum von Lelettrica di Leoni Gabriele. Alle Rechte vorbehalten.",
-    "nav_label": "Routen"
+    "nav_label": "Routen",
+    "gpx_modal_title": "GPX-Track herunterladen",
+    "gpx_modal_subtitle": "Importiere diese Datei in deine Lieblings-Fahrrad-Apps",
+    "gpx_modal_apps": "Kompatibel mit",
+    "gpx_modal_note": "Die GPX-Datei enthält ein Lelettrica-Wasserzeichen.",
+    "gpx_modal_download": "GPX herunterladen",
+    "share_modal_title": "Diese Route teilen",
+    "share_modal_subtitle": "Link kopieren oder direkt teilen",
+    "share_modal_copy": "Link kopieren",
+    "share_modal_copied": "Link kopiert!",
+    "share_modal_whatsapp": "WhatsApp",
+    "share_modal_native": "Teilen"
   }
 }

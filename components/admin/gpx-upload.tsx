@@ -8,7 +8,7 @@ import { getPresignedUploadUrlAction } from '@/lib/actions/routes'
 interface GpxUploadProps {
   routeId: string
   defaultGpxKey?: string
-  onUploaded: (key: string, stats: { distanceKm: number; elevationM: number }) => void
+  onUploaded: (key: string, stats: { distanceKm: number; elevationM: number; durationMin?: number }) => void
 }
 
 export function GpxUpload({ routeId, defaultGpxKey, onUploaded }: GpxUploadProps) {
@@ -42,7 +42,8 @@ export function GpxUpload({ routeId, defaultGpxKey, onUploaded }: GpxUploadProps
 
         setGpxKey(key)
         onUploaded(key, stats)
-        toast.success(`GPX caricato — ${stats.distanceKm} km, +${stats.elevationM} m dislivello`)
+        const dur = stats.durationMin ? `, ${Math.floor(stats.durationMin / 60)}h${stats.durationMin % 60 > 0 ? `${stats.durationMin % 60}m` : ''}` : ''
+        toast.success(`GPX caricato — ${stats.distanceKm} km, +${stats.elevationM} m${dur}`)
       } catch (err) {
         console.error('GPX upload error:', err)
         toast.error(`Errore GPX: ${err instanceof Error ? err.message : 'sconosciuto'}`)

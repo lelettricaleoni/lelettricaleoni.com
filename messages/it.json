@@ -116,6 +116,17 @@
     "back_to_list": "Tutti i percorsi",
     "no_results": "Nessun percorso trovato con questi filtri.",
     "copyright_notice": "I percorsi sono proprietà esclusiva di Lelettrica di Leoni Gabriele. Tutti i diritti riservati.",
-    "nav_label": "Percorsi"
+    "nav_label": "Percorsi",
+    "gpx_modal_title": "Scarica il tracciato GPX",
+    "gpx_modal_subtitle": "Importa questo file nelle tue app di ciclismo preferite",
+    "gpx_modal_apps": "Compatibile con",
+    "gpx_modal_note": "Il file GPX include un watermark di Lelettrica.",
+    "gpx_modal_download": "Scarica GPX",
+    "share_modal_title": "Condividi questo percorso",
+    "share_modal_subtitle": "Copia il link o condividi direttamente",
+    "share_modal_copy": "Copia link",
+    "share_modal_copied": "Link copiato!",
+    "share_modal_whatsapp": "WhatsApp",
+    "share_modal_native": "Condividi"
   }
 }
