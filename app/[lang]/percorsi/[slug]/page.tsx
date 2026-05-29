@@ -21,9 +21,14 @@ import { parseGpxPoints } from '@/lib/gpx'
 export const revalidate = 3600
 
 export async function generateStaticParams() {
-  const published = await db.select({ slug: routes.slug }).from(routes).where(eq(routes.isPublished, true))
-  const langs = ['it', 'en', 'de']
-  return langs.flatMap((lang) => published.map(({ slug }) => ({ lang, slug })))
+  try {
+    const published = await db.select({ slug: routes.slug }).from(routes).where(eq(routes.isPublished, true))
+    const langs = ['it', 'en', 'de']
+    return langs.flatMap((lang) => published.map(({ slug }) => ({ lang, slug })))
+  } catch {
+    // DB non raggiungibile in build (env var mancanti) → pagine generate on-demand
+    return []
+  }
 }
 
 export async function generateMetadata({
