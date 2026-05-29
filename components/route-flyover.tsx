@@ -119,7 +119,7 @@ export function RouteFlyover({ points }: RouteFlyoverProps) {
         type: 'line',
         source: 'route',
         layout: { 'line-cap': 'round', 'line-join': 'round' },
-        paint: { 'line-color': '#f97316', 'line-width': 3 },
+        paint: { 'line-color': '#366DA1', 'line-width': 3 },
       })
 
       // Pallino mobile
@@ -131,7 +131,7 @@ export function RouteFlyover({ points }: RouteFlyoverProps) {
         id: 'dot-halo',
         type: 'circle',
         source: 'dot',
-        paint: { 'circle-radius': 16, 'circle-color': '#f97316', 'circle-opacity': 0.25 },
+        paint: { 'circle-radius': 16, 'circle-color': '#795F91', 'circle-opacity': 0.25 },
       })
       map.addLayer({
         id: 'dot',
@@ -139,7 +139,7 @@ export function RouteFlyover({ points }: RouteFlyoverProps) {
         source: 'dot',
         paint: {
           'circle-radius': 8,
-          'circle-color': '#f97316',
+          'circle-color': '#795F91',
           'circle-stroke-width': 2.5,
           'circle-stroke-color': '#ffffff',
         },
@@ -162,7 +162,7 @@ export function RouteFlyover({ points }: RouteFlyoverProps) {
     setFlying(true)
 
     const startTime = performance.now()
-    const DURATION = 35_000
+    const DURATION = 55_000
     let lastCameraUpdate = 0
     let smoothedBearing = getPositionAtProgress(points, 0).bearing
 
@@ -184,8 +184,8 @@ export function RouteFlyover({ points }: RouteFlyoverProps) {
         map.easeTo({
           center,
           bearing: smoothedBearing,
-          zoom: 14.5,
-          pitch: 60,
+          zoom: 13,
+          pitch: 48,
           duration: 300,
           easing: (t) => t * (2 - t),
         })
