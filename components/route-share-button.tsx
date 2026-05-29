@@ -7,8 +7,8 @@ export function RouteShareButton({ url, label, copiedLabel }: { url: string; lab
   function handleShare() {
     navigator.clipboard.writeText(url)
     toast.success(copiedLabel)
-    if (typeof window !== 'undefined' && (window as Window & { gtag?: (...args: unknown[]) => void }).gtag) {
-      ;(window as Window & { gtag?: (...args: unknown[]) => void }).gtag?.('event', 'share_route', { method: 'copy_link', url })
+    if (typeof window !== 'undefined') {
+      window.gtag?.('event', 'share_route', { method: 'copy_link', url })
     }
   }
   return (

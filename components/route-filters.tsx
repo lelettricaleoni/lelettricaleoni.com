@@ -35,8 +35,8 @@ export function RouteFilters({ routes, lang, dict }: RouteFiltersProps) {
 
   function toggle<T extends string>(current: T | null, value: T, set: (v: T | null) => void) {
     set(current === value ? null : value)
-    if (typeof window !== 'undefined' && (window as Window & { gtag?: (...args: unknown[]) => void }).gtag) {
-      ;(window as Window & { gtag?: (...args: unknown[]) => void }).gtag?.('event', 'filter_routes', { filter_type: 'difficulty', filter_value: value })
+    if (typeof window !== 'undefined') {
+      window.gtag?.('event', 'filter_routes', { filter_type: 'difficulty', filter_value: value })
     }
   }
 
