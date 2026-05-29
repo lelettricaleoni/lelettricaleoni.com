@@ -181,8 +181,14 @@ export function RouteFlyover({ points }: RouteFlyoverProps) {
       const now = performance.now()
       if (now - lastCameraUpdate > 80) {
         lastCameraUpdate = now
+
+        // Lookahead 4%: la cam punta leggermente avanti così le tile
+        // di terreno si precaricano prima che il pallino ci arrivi
+        const lookAhead = Math.min(progress + 0.04, 1)
+        const { center: camCenter } = getPositionAtProgress(points, lookAhead)
+
         map.easeTo({
-          center,
+          center: camCenter,
           bearing: smoothedBearing,
           zoom: 13,
           pitch: 48,
