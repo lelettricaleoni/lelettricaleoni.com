@@ -87,13 +87,13 @@ export default async function PercorsiPage({
       <Navbar lang={lang} dict={dict} />
       {/* Header a piena larghezza come le sezioni home */}
       <section className="w-full pt-24 pb-8">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6">
+        <div className="max-w-6xl mx-auto px-6 sm:px-10">
           <h1 className="text-3xl font-bold text-[#1e3a5f]">{dict.percorsi.page_title}</h1>
           <p className="text-muted-foreground mt-2">{dict.percorsi.page_subtitle}</p>
         </div>
       </section>
       <main className="w-full py-10">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6">
+        <div className="max-w-6xl mx-auto px-6 sm:px-10">
           <RouteFilters routes={routesWithData} lang={lang} dict={dict} />
         </div>
       </main>
