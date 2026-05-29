@@ -161,9 +161,6 @@ export function RouteFlyover({ points }: RouteFlyoverProps) {
     if (!map || points.length < 2) return
     setFlying(true)
 
-    // Terreno off durante flyover — principala causa di drop frame
-    map.setTerrain(null)
-
     const startTime = performance.now()
     const DURATION = 35_000
     let lastCameraUpdate = 0
@@ -199,7 +196,6 @@ export function RouteFlyover({ points }: RouteFlyoverProps) {
       } else {
         rafRef.current = null
         setFlying(false)
-        map.setTerrain({ source: 'terrain-rgb', exaggeration: 1.5 })
         map.fitBounds(getBounds(points), { padding: 60, pitch: 0, bearing: 0, duration: 1500 })
       }
     }
@@ -212,7 +208,6 @@ export function RouteFlyover({ points }: RouteFlyoverProps) {
     setFlying(false)
     const map = mapRef.current
     if (!map) return
-    map.setTerrain({ source: 'terrain-rgb', exaggeration: 1.5 })
     map.fitBounds(getBounds(points), { padding: 60, pitch: 0, bearing: 0, duration: 800 })
   }
 
