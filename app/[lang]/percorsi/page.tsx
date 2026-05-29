@@ -6,6 +6,7 @@ import { Navbar } from '@/components/navbar'
 import { Footer } from '@/components/footer'
 import { RouteFilters } from '@/components/route-filters'
 import { db, routes, routeTranslations, routePhotos } from '@/lib/db'
+import { shortRouteId } from '@/lib/utils'
 
 export const revalidate = 3600
 
@@ -76,8 +77,8 @@ export default async function PercorsiPage({
     itemListElement: routesWithData.map(({ route, translation }, i) => ({
       '@type': 'ListItem',
       position: i + 1,
-      url: `${siteUrl}/${lang}/percorsi/${route.slug}`,
-      name: translation?.name ?? route.slug,
+      url: `${siteUrl}/${lang}/percorsi/${shortRouteId(route.id)}`,
+      name: translation?.name ?? shortRouteId(route.id),
     })),
   }
 

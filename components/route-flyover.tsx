@@ -3,17 +3,18 @@ import { useEffect, useRef, useState } from 'react'
 
 type Coord = [number, number, number] // [lon, lat, ele]
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type CesiumType = any
+
 declare global {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  interface Window { CESIUM_BASE_URL: string; Cesium: any }
+  interface Window { CESIUM_BASE_URL: string }
 }
 
 export function RouteFlyover({ points }: { points: Coord[] }) {
   const containerRef = useRef<HTMLDivElement>(null)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const viewerRef = useRef<any>(null)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const entityRef = useRef<any>(null)
+  const viewerRef = useRef<CesiumType>(null)
+  const cesiumRef = useRef<CesiumType>(null)  // cache del modulo Cesium
+  const entityRef = useRef<CesiumType>(null)
   const [flying, setFlying] = useState(false)
   const [ready, setReady] = useState(false)
 
@@ -23,6 +24,19 @@ export function RouteFlyover({ points }: { points: Coord[] }) {
 
     ;(async () => {
       try {
+        // Aspetta che il container abbia dimensioni reali prima di inizializzare Cesium
+        await new Promise<void>((resolve) => {
+          if (!containerRef.current) return resolve()
+          if (containerRef.current.clientHeight > 0) return resolve()
+          const ro = new ResizeObserver(() => {
+            if (containerRef.current && containerRef.current.clientHeight > 0) {
+              ro.disconnect()
+              resolve()
+            }
+          })
+          ro.observe(containerRef.current)
+        })
+
         window.CESIUM_BASE_URL = '/cesium'
 
         if (!document.querySelector('#cesium-css')) {
@@ -33,8 +47,12 @@ export function RouteFlyover({ points }: { points: Coord[] }) {
           document.head.appendChild(link)
         }
 
-        const Cesium = (await import('cesium')).default ?? (await import('cesium'))
+        // Cesium usa named exports — import('cesium').default è undefined con webpack
+        const mod = await import('cesium')
+        const Cesium: CesiumType = mod.default ?? mod
         if (destroyed || !containerRef.current) return
+
+        cesiumRef.current = Cesium  // cache per startFlyover / stopFlyover
 
         const token = process.env.NEXT_PUBLIC_CESIUM_TOKEN
         if (token) Cesium.Ion.defaultAccessToken = token
@@ -64,6 +82,7 @@ export function RouteFlyover({ points }: { points: Coord[] }) {
           creditContainer: document.createElement('div'),
         })
 
+        // Traccia del percorso
         viewer.entities.add({
           polyline: {
             positions: Cesium.Cartesian3.fromDegreesArrayHeights(
@@ -86,7 +105,14 @@ export function RouteFlyover({ points }: { points: Coord[] }) {
         )
 
         viewerRef.current = viewer
-        setReady(true)
+        // Aspetta il prossimo frame di rendering prima di ridimensionare
+        // (il browser deve aver applicato height:100% al .cesium-widget)
+        requestAnimationFrame(() => {
+          if (!destroyed) {
+            viewer.resize()
+            setReady(true)
+          }
+        })
       } catch (err) {
         console.error('Cesium init error:', err)
       }
@@ -96,13 +122,14 @@ export function RouteFlyover({ points }: { points: Coord[] }) {
       destroyed = true
       viewerRef.current?.destroy()
       viewerRef.current = null
+      cesiumRef.current = null
     }
   }, [points])
 
-  async function startFlyover() {
+  function startFlyover() {
     const viewer = viewerRef.current
-    if (!viewer || points.length < 2) return
-    const { default: Cesium } = await import('cesium')
+    const Cesium = cesiumRef.current
+    if (!viewer || !Cesium || points.length < 2) return
     setFlying(true)
 
     const DURATION_S = 60
@@ -140,6 +167,7 @@ export function RouteFlyover({ points }: { points: Coord[] }) {
     })
     entityRef.current = entity
     viewer.trackedEntity = entity
+    viewer.trackedEntityOffset = new Cesium.HeadingPitchRange(0, Cesium.Math.toRadians(-30), 3000)
     viewer.clock.shouldAnimate = true
 
     const rm = viewer.clock.onStop.addEventListener(() => {
@@ -149,13 +177,13 @@ export function RouteFlyover({ points }: { points: Coord[] }) {
     })
   }
 
-  async function stopFlyover() {
+  function stopFlyover() {
     const viewer = viewerRef.current
-    if (!viewer) return
+    const Cesium = cesiumRef.current
+    if (!viewer || !Cesium) return
     viewer.clock.shouldAnimate = false
     viewer.trackedEntity = undefined
     setFlying(false)
-    const { default: Cesium } = await import('cesium')
     const positions = points.map(([lon, lat, ele]) => Cesium.Cartesian3.fromDegrees(lon, lat, ele))
     viewer.camera.flyToBoundingSphere(
       Cesium.BoundingSphere.fromPoints(positions),
@@ -165,7 +193,11 @@ export function RouteFlyover({ points }: { points: Coord[] }) {
 
   return (
     <div className="relative rounded-xl overflow-hidden border border-border isolate">
-      <div ref={containerRef} className="h-72 sm:h-[420px] w-full bg-black" />
+      <div
+        ref={containerRef}
+        className="w-full h-72 sm:h-[420px]"
+        style={{ position: 'relative', display: 'block' }}
+      />
       {ready && (
         <button
           onClick={flying ? stopFlyover : startFlyover}

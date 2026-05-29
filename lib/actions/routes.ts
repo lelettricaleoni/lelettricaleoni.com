@@ -7,6 +7,7 @@ import { db, routes, routeTranslations, routePhotos } from '@/lib/db'
 import { getAdminUser } from '@/lib/supabase/server'
 import { translateFromItalian } from './translate'
 import { deleteR2Object, getPresignedUploadUrl } from '@/lib/r2'
+import { shortRouteId } from '@/lib/utils'
 
 const RouteSchema = z.object({
   nameIt:          z.string().min(2).max(200),
@@ -211,7 +212,7 @@ export async function updateRouteAction(
   }
 
   revalidatePath('/[lang]/percorsi', 'page')
-  revalidatePath(`/[lang]/percorsi/${slug}`, 'page')
+  revalidatePath(`/[lang]/percorsi/${shortRouteId(id)}`, 'page')
   redirect('/manage/routes')
 }
 
@@ -239,7 +240,7 @@ export async function togglePublishAction(id: string, isPublished: boolean) {
     .returning()
 
   revalidatePath('/[lang]/percorsi', 'page')
-  if (route?.slug) revalidatePath(`/[lang]/percorsi/${route.slug}`, 'page')
+  if (route) revalidatePath(`/[lang]/percorsi/${shortRouteId(route.id)}`, 'page')
 }
 
 export async function getPresignedUploadUrlAction(
@@ -269,5 +270,5 @@ export async function savePhotosAction(
     )
   }
   const [route] = await db.select().from(routes).where(eq(routes.id, routeId))
-  if (route?.slug) revalidatePath(`/[lang]/percorsi/${route.slug}`, 'page')
+  if (route) revalidatePath(`/[lang]/percorsi/${shortRouteId(route.id)}`, 'page')
 }

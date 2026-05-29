@@ -2,6 +2,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { Badge } from '@/components/ui/badge'
 import { r2PublicUrl } from '@/lib/r2'
+import { shortRouteId } from '@/lib/utils'
 import type { Route, RouteTranslation, RoutePhoto } from '@/lib/db'
 
 interface RouteCardProps {
@@ -25,7 +26,7 @@ export function RouteCard({ route, translation, coverPhoto, lang, dict }: RouteC
 
   return (
     <Link
-      href={`/${lang}/percorsi/${route.slug}`}
+      href={`/${lang}/percorsi/${shortRouteId(route.id)}`}
       className="group block rounded-xl overflow-hidden border bg-card hover:shadow-md transition-shadow"
     >
       <div className="relative h-48 bg-[#c8dae8]">

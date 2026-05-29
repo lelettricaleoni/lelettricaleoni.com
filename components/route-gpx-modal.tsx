@@ -10,33 +10,24 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog'
 
-const APPS = [
-  { name: 'Komoot', color: '#6DB33F' },
-  { name: 'Strava', color: '#FC4C02' },
-  { name: 'Garmin', color: '#007DC3' },
-  { name: 'Wahoo', color: '#E31E24' },
-  { name: 'OsmAnd', color: '#6B4F9E' },
-  { name: 'AllTrails', color: '#2DB34A' },
-]
-
 interface RouteGpxModalProps {
-  slug: string
+  shortId: string
   routeName: string
   dict: { percorsi: Record<string, string> }
 }
 
-export function RouteGpxModal({ slug, routeName, dict }: RouteGpxModalProps) {
+export function RouteGpxModal({ shortId, routeName, dict }: RouteGpxModalProps) {
   const [open, setOpen] = useState(false)
   const d = dict.percorsi
 
   function handleDownload() {
     const a = document.createElement('a')
-    a.href = `/api/percorsi/${slug}/gpx`
+    a.href = `/api/percorsi/${shortId}/gpx`
     a.download = `${routeName}.gpx`
     document.body.appendChild(a)
     a.click()
     document.body.removeChild(a)
-    window.gtag?.('event', 'download_gpx', { route: slug })
+    window.gtag?.('event', 'download_gpx', { route: shortId })
     setOpen(false)
   }
 
@@ -62,28 +53,6 @@ export function RouteGpxModal({ slug, routeName, dict }: RouteGpxModalProps) {
           </DialogHeader>
 
           <div className="space-y-5 pt-1">
-            {/* App compatibility */}
-            <div>
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">
-                {d.gpx_modal_apps}
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {APPS.map((app) => (
-                  <span
-                    key={app.name}
-                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border"
-                    style={{ borderColor: `${app.color}40`, color: app.color, backgroundColor: `${app.color}0d` }}
-                  >
-                    <span
-                      className="w-1.5 h-1.5 rounded-full shrink-0"
-                      style={{ backgroundColor: app.color }}
-                    />
-                    {app.name}
-                  </span>
-                ))}
-              </div>
-            </div>
-
             {/* Note watermark */}
             <div className="flex items-start gap-2.5 rounded-lg bg-muted/60 px-3.5 py-2.5">
               <Info size={14} className="text-muted-foreground mt-0.5 shrink-0" />
