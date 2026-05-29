@@ -6,6 +6,11 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 const src = join(root, 'node_modules/cesium/Build/Cesium')
 const dest = join(root, 'public/cesium')
 
+// File principale
+import { copyFileSync } from 'fs'
+copyFileSync(join(src, 'Cesium.js'), join(dest, 'Cesium.js'))
+
+// Cartelle statiche
 for (const dir of ['Workers', 'ThirdParty', 'Assets', 'Widgets']) {
   mkdirSync(join(dest, dir), { recursive: true })
   cpSync(join(src, dir), join(dest, dir), { recursive: true })
