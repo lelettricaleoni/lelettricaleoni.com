@@ -3,7 +3,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import { eq, and } from 'drizzle-orm'
-import { ArrowLeft, TrendingUp } from 'lucide-react'
+import { ArrowLeft, Ruler, TrendingUp, Clock, Layers } from 'lucide-react'
 import { GetObjectCommand } from '@aws-sdk/client-s3'
 import { getDictionary, hasLocale } from '../../dictionaries'
 import { Navbar } from '@/components/navbar'
@@ -11,7 +11,7 @@ import { Footer } from '@/components/footer'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { RouteGallery } from '@/components/route-gallery'
-import { RouteMapLoader } from '@/components/route-map-loader'
+import { RouteFlyoverLoader } from '@/components/route-flyover-loader'
 import { RouteGpxModal } from '@/components/route-gpx-modal'
 import { RouteShareModal } from '@/components/route-share-modal'
 import { db, routes, routeTranslations, routePhotos } from '@/lib/db'
@@ -90,7 +90,7 @@ export default async function RouteDetailPage({
 
   const coverPhoto = photos[0]
 
-  let gpxPoints: [number, number][] = []
+  let gpxPoints: [number, number, number][] = []
   if (route.gpxKey) {
     try {
       const res = await s3.send(new GetObjectCommand({ Bucket: R2_BUCKET, Key: route.gpxKey }))
@@ -125,7 +125,7 @@ export default async function RouteDetailPage({
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <Navbar lang={lang} dict={dict} />
-      <main className="max-w-4xl mx-auto px-4 pt-24 pb-8 space-y-8">
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 pt-24 pb-8 space-y-8">
         {/* Back */}
         <Link href={`/${lang}/percorsi`} className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-[#366DA1]">
           <ArrowLeft size={14} /> {d.back_to_list}
@@ -160,36 +160,44 @@ export default async function RouteDetailPage({
           </div>
         </div>
 
-        {/* Mappa GPX */}
-        {gpxPoints.length > 1 && <RouteMapLoader points={gpxPoints} />}
+        {/* Mappa / Flyover GPX */}
+        {gpxPoints.length > 1 && <RouteFlyoverLoader points={gpxPoints} />}
 
         {/* Stats */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 bg-muted/40 rounded-xl p-4">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {route.distanceKm && (
-            <div className="text-center">
-              <p className="text-2xl font-bold text-[#1e3a5f]">{route.distanceKm}</p>
-              <p className="text-xs text-muted-foreground">{d.stat_distance}</p>
+            <div className="flex flex-col items-center gap-2 rounded-2xl border bg-white p-4 shadow-sm">
+              <Ruler size={20} className="text-[#366DA1]" />
+              <p className="text-2xl font-bold text-[#1e3a5f] leading-none">
+                {route.distanceKm}<span className="text-sm font-normal ml-0.5">km</span>
+              </p>
+              <p className="text-xs text-muted-foreground uppercase tracking-wide text-center">{d.stat_distance}</p>
             </div>
           )}
           {route.elevationM != null && (
-            <div className="text-center">
-              <p className="text-2xl font-bold text-[#1e3a5f]">{route.elevationM}</p>
-              <p className="text-xs text-muted-foreground flex items-center justify-center gap-0.5"><TrendingUp size={11} /> {d.stat_elevation}</p>
+            <div className="flex flex-col items-center gap-2 rounded-2xl border bg-white p-4 shadow-sm">
+              <TrendingUp size={20} className="text-[#366DA1]" />
+              <p className="text-2xl font-bold text-[#1e3a5f] leading-none">
+                {route.elevationM}<span className="text-sm font-normal ml-0.5">m</span>
+              </p>
+              <p className="text-xs text-muted-foreground uppercase tracking-wide text-center">{d.stat_elevation}</p>
             </div>
           )}
           {route.durationMin && (
-            <div className="text-center">
-              <p className="text-2xl font-bold text-[#1e3a5f]">
+            <div className="flex flex-col items-center gap-2 rounded-2xl border bg-white p-4 shadow-sm">
+              <Clock size={20} className="text-[#366DA1]" />
+              <p className="text-2xl font-bold text-[#1e3a5f] leading-none">
                 {Math.floor(route.durationMin / 60)}h{route.durationMin % 60 > 0 ? `${route.durationMin % 60}m` : ''}
               </p>
-              <p className="text-xs text-muted-foreground">{d.stat_duration}</p>
+              <p className="text-xs text-muted-foreground uppercase tracking-wide text-center">{d.stat_duration}</p>
             </div>
           )}
-          <div className="text-center">
-            <p className="text-2xl font-bold text-[#1e3a5f] capitalize">
+          <div className="flex flex-col items-center gap-2 rounded-2xl border bg-white p-4 shadow-sm">
+            <Layers size={20} className="text-[#366DA1]" />
+            <p className="text-2xl font-bold text-[#1e3a5f] leading-none capitalize">
               {d[`surface_${route.surface}` as keyof typeof d] ?? route.surface}
             </p>
-            <p className="text-xs text-muted-foreground">{d.stat_surface}</p>
+            <p className="text-xs text-muted-foreground uppercase tracking-wide text-center">{d.stat_surface}</p>
           </div>
         </div>
 
