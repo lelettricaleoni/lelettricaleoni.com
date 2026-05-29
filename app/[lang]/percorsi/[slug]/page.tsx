@@ -3,6 +3,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import { eq, and } from 'drizzle-orm'
+import { ArrowLeft, TrendingUp } from 'lucide-react'
 import { getDictionary, hasLocale } from '../../dictionaries'
 import { Navbar } from '@/components/navbar'
 import { Footer } from '@/components/footer'
@@ -105,8 +106,8 @@ export default async function RouteDetailPage({
       <Navbar lang={lang} dict={dict} />
       <main className="max-w-4xl mx-auto px-4 pt-24 pb-8 space-y-8">
         {/* Back */}
-        <Link href={`/${lang}/percorsi`} className="text-sm text-muted-foreground hover:text-[#366DA1]">
-          {d.back_to_list}
+        <Link href={`/${lang}/percorsi`} className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-[#366DA1]">
+          <ArrowLeft size={14} /> {d.back_to_list}
         </Link>
 
         {/* Hero */}
@@ -149,7 +150,7 @@ export default async function RouteDetailPage({
           {route.elevationM != null && (
             <div className="text-center">
               <p className="text-2xl font-bold text-[#1e3a5f]">{route.elevationM}</p>
-              <p className="text-xs text-muted-foreground">{d.stat_elevation}</p>
+              <p className="text-xs text-muted-foreground flex items-center justify-center gap-0.5"><TrendingUp size={11} /> {d.stat_elevation}</p>
             </div>
           )}
           {route.durationMin && (

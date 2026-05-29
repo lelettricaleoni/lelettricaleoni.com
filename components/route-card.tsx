@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import Image from 'next/image'
+import { TrendingUp } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { r2PublicUrl } from '@/lib/r2'
 import type { Route, RouteTranslation, RoutePhoto } from '@/lib/db'
@@ -64,7 +65,7 @@ export function RouteCard({ route, translation, coverPhoto, lang, dict }: RouteC
           {route.elevationM != null && (
             <div className="text-center">
               <p className="text-sm font-bold text-[#1e3a5f]">{route.elevationM}</p>
-              <p className="text-[10px] text-muted-foreground">{d.stat_elevation}</p>
+              <p className="text-[10px] text-muted-foreground flex items-center justify-center gap-0.5"><TrendingUp size={9} /> {d.stat_elevation}</p>
             </div>
           )}
           {route.durationMin && (

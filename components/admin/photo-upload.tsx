@@ -48,6 +48,12 @@ export function PhotoUpload({
     defaultPhotos.map((p) => ({ storageKey: p.storageKey, preview: r2PublicUrl(p.storageKey) }))
   )
   const [uploading, setUploading] = useState(false)
+  const effectiveRouteId = routeId === 'new' ? (() => {
+    if (typeof window === 'undefined') return 'new'
+    const k = '__gpx_tmp_id'
+    if (!sessionStorage.getItem(k)) sessionStorage.setItem(k, crypto.randomUUID())
+    return sessionStorage.getItem(k)!
+  })() : routeId
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -59,8 +65,12 @@ export function PhotoUpload({
     try {
       const newPhotos: Photo[] = []
       for (const file of acceptedFiles) {
-        const { url, key } = await getPresignedUploadUrlAction(routeId, file.name, file.type, 'photo')
-        await fetch(url, { method: 'PUT', body: file, headers: { 'Content-Type': file.type } })
+        const { key } = await getPresignedUploadUrlAction(effectiveRouteId, file.name, file.type, 'photo')
+        const fd = new FormData()
+        fd.append('file', file)
+        fd.append('key', key)
+        const uploadRes = await fetch('/api/upload', { method: 'POST', body: fd })
+        if (!uploadRes.ok) throw new Error(`Upload ${uploadRes.status}: ${await uploadRes.text()}`)
         newPhotos.push({ storageKey: key, preview: URL.createObjectURL(file) })
       }
       setPhotos((prev) => [...prev, ...newPhotos])

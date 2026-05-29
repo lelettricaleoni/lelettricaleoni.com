@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
+import { ArrowLeft } from 'lucide-react'
 import { getDictionary, hasLocale } from '../dictionaries'
 import { Navbar } from '@/components/navbar'
 import { Footer } from '@/components/footer'
@@ -40,9 +41,9 @@ export default async function PrivacyPage({
         <div className="max-w-2xl mx-auto px-4 sm:px-6 py-16">
           <Link
             href={`/${lang}`}
-            className="text-sm text-muted-foreground hover:text-primary transition-colors mb-8 inline-block"
+            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors mb-8"
           >
-            ← {lang === 'it' ? 'Torna alla home' : lang === 'de' ? 'Zurück zur Startseite' : 'Back to home'}
+            <ArrowLeft size={14} /> {lang === 'it' ? 'Torna alla home' : lang === 'de' ? 'Zurück zur Startseite' : 'Back to home'}
           </Link>
 
           <h1 className="text-3xl font-bold text-foreground mb-2">{p.title}</h1>

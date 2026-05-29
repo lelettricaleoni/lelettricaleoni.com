@@ -3,7 +3,7 @@ import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 
 const R2_ENDPOINT = `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`
 
-const s3 = new S3Client({
+export const s3 = new S3Client({
   region: 'auto',
   endpoint: R2_ENDPOINT,
   credentials: {
