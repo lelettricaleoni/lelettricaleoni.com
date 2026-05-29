@@ -3,6 +3,32 @@ import { useEffect, useRef, useState } from 'react'
 
 type Coord = [number, number, number] // [lon, lat, ele]
 
+// Cesium caricato da /public/cesium/Cesium.js — bypassa Turbopack
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type CesiumType = any
+
+declare global {
+  interface Window { Cesium: CesiumType }
+}
+
+function loadCesium(): Promise<CesiumType> {
+  if (typeof window === 'undefined') return Promise.reject()
+  if (window.Cesium) return Promise.resolve(window.Cesium)
+
+  return new Promise((resolve, reject) => {
+    const link = document.createElement('link')
+    link.rel = 'stylesheet'
+    link.href = '/cesium/Widgets/widgets.css'
+    document.head.appendChild(link)
+
+    const script = document.createElement('script')
+    script.src = '/cesium/Cesium.js'
+    script.onload = () => resolve(window.Cesium)
+    script.onerror = reject
+    document.head.appendChild(script)
+  })
+}
+
 export function RouteFlyover({ points }: { points: Coord[] }) {
   const containerRef = useRef<HTMLDivElement>(null)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -16,74 +42,66 @@ export function RouteFlyover({ points }: { points: Coord[] }) {
     if (!containerRef.current || points.length < 2) return
     let destroyed = false
 
-    ;(async () => {
-      // Deve essere impostato prima di importare Cesium
-      ;(window as Window & { CESIUM_BASE_URL?: string }).CESIUM_BASE_URL = '/cesium'
-
-      // Carica CSS widgets
-      if (!document.querySelector('#cesium-widgets-css')) {
-        const link = document.createElement('link')
-        link.id = 'cesium-widgets-css'
-        link.rel = 'stylesheet'
-        link.href = '/cesium/Widgets/widgets.css'
-        document.head.appendChild(link)
-      }
-
-      const Cesium = await import('cesium')
+    loadCesium().then(async (Cesium) => {
       if (destroyed || !containerRef.current) return
 
       const token = process.env.NEXT_PUBLIC_CESIUM_TOKEN
       if (token) Cesium.Ion.defaultAccessToken = token
 
-      const viewer = new Cesium.Viewer(containerRef.current, {
-        ...(token ? { terrain: Cesium.Terrain.fromWorldTerrain() } : {}),
-        timeline: false,
-        animation: false,
-        homeButton: false,
-        sceneModePicker: false,
-        navigationHelpButton: false,
-        geocoder: false,
-        baseLayerPicker: false,
-        fullscreenButton: false,
-        infoBox: false,
-        selectionIndicator: false,
-        creditContainer: document.createElement('div'), // nasconde il logo Cesium
-      })
-
-      // Satellite ESRI (gratuito)
-      viewer.imageryLayers.removeAll()
-      viewer.imageryLayers.addImageryProvider(
-        await Cesium.ArcGisMapServerImageryProvider.fromUrl(
+      try {
+        // Satellite ESRI caricato prima del Viewer — evita 404 da Bing Maps di default
+        const esriImagery = await Cesium.ArcGisMapServerImageryProvider.fromUrl(
           'https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer'
         )
-      )
 
-      // Tracciato GPX
-      viewer.entities.add({
-        polyline: {
-          positions: Cesium.Cartesian3.fromDegreesArrayHeights(
-            points.flatMap(([lon, lat, ele]) => [lon, lat, ele + 3])
-          ),
-          width: 4,
-          material: new Cesium.PolylineGlowMaterialProperty({
-            glowPower: 0.2,
-            color: Cesium.Color.fromCssColorString('#795F91'),
-          }),
-        },
-      })
+        let terrainProvider
+        if (token) {
+          try { terrainProvider = await Cesium.CesiumTerrainProvider.fromIonAssetId(1) } catch { /* nessun terreno */ }
+        }
 
-      // Vista iniziale sul percorso
-      const positions = points.map(([lon, lat, ele]) =>
-        Cesium.Cartesian3.fromDegrees(lon, lat, ele)
-      )
-      viewer.camera.flyToBoundingSphere(
-        Cesium.BoundingSphere.fromPoints(positions),
-        { duration: 1.5, offset: new Cesium.HeadingPitchRange(0, Cesium.Math.toRadians(-40), 0) }
-      )
+        const viewer = new Cesium.Viewer(containerRef.current, {
+          baseLayer: new Cesium.ImageryLayer(esriImagery),
+          terrainProvider,
+          timeline: false,
+          animation: false,
+          homeButton: false,
+          sceneModePicker: false,
+          navigationHelpButton: false,
+          geocoder: false,
+          baseLayerPicker: false,
+          fullscreenButton: false,
+          infoBox: false,
+          selectionIndicator: false,
+          creditContainer: document.createElement('div'),
+        })
 
-      viewerRef.current = viewer
-      setReady(true)
-    })()
+        // Tracciato GPX
+        viewer.entities.add({
+          polyline: {
+            positions: Cesium.Cartesian3.fromDegreesArrayHeights(
+              points.flatMap(([lon, lat, ele]) => [lon, lat, ele + 3])
+            ),
+            width: 4,
+            material: new Cesium.PolylineGlowMaterialProperty({
+              glowPower: 0.2,
+              color: Cesium.Color.fromCssColorString('#795F91'),
+            }),
+          },
+        })
+
+        // Vista iniziale
+        const positions = points.map(([lon, lat, ele]) => Cesium.Cartesian3.fromDegrees(lon, lat, ele))
+        viewer.camera.flyToBoundingSphere(
+          Cesium.BoundingSphere.fromPoints(positions),
+          { duration: 1.5, offset: new Cesium.HeadingPitchRange(0, Cesium.Math.toRadians(-40), 0) }
+        )
+
+        viewerRef.current = viewer
+        setReady(true)
+      } catch (err) {
+        console.error('Cesium init error:', err)
+      }
+    }).catch((err) => console.error('Cesium load error:', err))
 
     return () => {
       destroyed = true
@@ -95,10 +113,9 @@ export function RouteFlyover({ points }: { points: Coord[] }) {
   async function startFlyover() {
     const viewer = viewerRef.current
     if (!viewer || points.length < 2) return
+    const Cesium = window.Cesium
 
-    const Cesium = await import('cesium')
     setFlying(true)
-
     const DURATION_S = 60
     const start = Cesium.JulianDate.now()
     const stop = Cesium.JulianDate.addSeconds(start, DURATION_S, new Cesium.JulianDate())
@@ -109,7 +126,6 @@ export function RouteFlyover({ points }: { points: Coord[] }) {
     viewer.clock.clockRange = Cesium.ClockRange.CLAMPED
     viewer.clock.multiplier = 1
 
-    // Posizioni campionate lungo il percorso
     const positionProperty = new Cesium.SampledPositionProperty()
     positionProperty.setInterpolationOptions({
       interpolationDegree: 3,
@@ -117,20 +133,14 @@ export function RouteFlyover({ points }: { points: Coord[] }) {
     })
 
     points.forEach(([lon, lat, ele], i) => {
-      const t = Cesium.JulianDate.addSeconds(
-        start,
-        (i / (points.length - 1)) * DURATION_S,
-        new Cesium.JulianDate()
-      )
+      const t = Cesium.JulianDate.addSeconds(start, (i / (points.length - 1)) * DURATION_S, new Cesium.JulianDate())
       positionProperty.addSample(t, Cesium.Cartesian3.fromDegrees(lon, lat, ele + 5))
     })
 
     if (entityRef.current) viewer.entities.remove(entityRef.current)
 
     const entity = viewer.entities.add({
-      availability: new Cesium.TimeIntervalCollection([
-        new Cesium.TimeInterval({ start, stop }),
-      ]),
+      availability: new Cesium.TimeIntervalCollection([new Cesium.TimeInterval({ start, stop })]),
       position: positionProperty,
       orientation: new Cesium.VelocityOrientationProperty(positionProperty),
       point: {
@@ -143,8 +153,6 @@ export function RouteFlyover({ points }: { points: Coord[] }) {
     })
 
     entityRef.current = entity
-
-    // trackedEntity = la camera segue il pallino con terrain-following automatico
     viewer.trackedEntity = entity
     viewer.clock.shouldAnimate = true
 
@@ -155,17 +163,15 @@ export function RouteFlyover({ points }: { points: Coord[] }) {
     })
   }
 
-  async function stopFlyover() {
+  function stopFlyover() {
     const viewer = viewerRef.current
     if (!viewer) return
     viewer.clock.shouldAnimate = false
     viewer.trackedEntity = undefined
     setFlying(false)
 
-    const Cesium = await import('cesium')
-    const positions = points.map(([lon, lat, ele]) =>
-      Cesium.Cartesian3.fromDegrees(lon, lat, ele)
-    )
+    const Cesium = window.Cesium
+    const positions = points.map(([lon, lat, ele]) => Cesium.Cartesian3.fromDegrees(lon, lat, ele))
     viewer.camera.flyToBoundingSphere(
       Cesium.BoundingSphere.fromPoints(positions),
       { duration: 1.5, offset: new Cesium.HeadingPitchRange(0, Cesium.Math.toRadians(-40), 0) }
