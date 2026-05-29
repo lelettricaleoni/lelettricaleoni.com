@@ -6,6 +6,9 @@ interface TranslationResult {
 }
 
 export async function translateFromItalian(text: string): Promise<TranslationResult> {
+  if (!text || text.trim().length === 0) throw new Error('Text cannot be empty')
+  if (text.length > 5000) throw new Error('Text exceeds 5000 character limit')
+
   const endpoint = process.env.AZURE_TRANSLATOR_ENDPOINT!
   const key = process.env.AZURE_TRANSLATOR_KEY!
   const region = process.env.AZURE_TRANSLATOR_REGION!
