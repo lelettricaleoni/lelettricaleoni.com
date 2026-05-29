@@ -2,6 +2,7 @@
 
 import Image from 'next/image'
 import Link from 'next/link'
+import * as CookieConsent from 'vanilla-cookieconsent'
 import { trackEvent } from '@/lib/analytics'
 
 // Instagram SVG inline (lucide-react non include icone di brand)
@@ -109,7 +110,7 @@ export function Footer({ lang, dict }: FooterProps) {
             </Link>
             <button
               type="button"
-              data-cc="show-preferencesModal"
+              onClick={() => CookieConsent.showPreferences()}
               className="hover:text-white/70 transition-colors cursor-pointer"
             >
               {dict.footer.cookie_settings}
