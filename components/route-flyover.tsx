@@ -60,6 +60,7 @@ function getBounds(points: Coord[]): [[number, number], [number, number]] {
 export function RouteFlyover({ points }: RouteFlyoverProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<maplibregl.Map | null>(null)
+  const rafRef = useRef<number | null>(null)
   const flyHandlerRef = useRef<(() => void) | null>(null)
   const [flying, setFlying] = useState(false)
   const [ready, setReady] = useState(false)
@@ -130,37 +131,38 @@ export function RouteFlyover({ points }: RouteFlyoverProps) {
     if (!map || points.length < 2) return
     setFlying(true)
 
+    // Disabilita terreno 3D durante il flyover — è lui che causa i drop di frame
+    map.setTerrain(null)
+
     const startTime = performance.now()
     const DURATION = 35_000
 
-    const onRender = () => {
+    const frame = () => {
       const progress = Math.min((performance.now() - startTime) / DURATION, 1)
       const { center, bearing } = getPositionAtProgress(points, progress)
       map.jumpTo({ center, zoom: 14.5, pitch: 65, bearing })
 
-      if (progress >= 1) {
-        map.off('render', onRender)
-        flyHandlerRef.current = null
-        setFlying(false)
-        map.fitBounds(getBounds(points), { padding: 60, pitch: 0, bearing: 0, duration: 1500 })
+      if (progress < 1) {
+        rafRef.current = requestAnimationFrame(frame)
       } else {
-        map.triggerRepaint()
+        rafRef.current = null
+        setFlying(false)
+        // Riattiva terreno 3D
+        map.setTerrain({ source: 'terrain-rgb', exaggeration: 1.5 })
+        map.fitBounds(getBounds(points), { padding: 60, pitch: 0, bearing: 0, duration: 1500 })
       }
     }
 
-    flyHandlerRef.current = onRender
-    map.on('render', onRender)
-    map.triggerRepaint()
+    rafRef.current = requestAnimationFrame(frame)
   }
 
   function stopFlyover() {
-    const map = mapRef.current
-    if (map && flyHandlerRef.current) {
-      map.off('render', flyHandlerRef.current)
-      flyHandlerRef.current = null
-    }
+    if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null }
     setFlying(false)
-    if (map) map.fitBounds(getBounds(points), { padding: 60, pitch: 0, bearing: 0, duration: 800 })
+    const map = mapRef.current
+    if (!map) return
+    map.setTerrain({ source: 'terrain-rgb', exaggeration: 1.5 })
+    map.fitBounds(getBounds(points), { padding: 60, pitch: 0, bearing: 0, duration: 800 })
   }
 
   return (
