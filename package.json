@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "node scripts/copy-cesium.mjs && next dev",
+    "dev": "next dev --no-turbopack",
     "build": "node scripts/copy-cesium.mjs && next build",
     "start": "next start",
     "lint": "eslint",

@@ -3,30 +3,9 @@ import { useEffect, useRef, useState } from 'react'
 
 type Coord = [number, number, number] // [lon, lat, ele]
 
-// Cesium caricato da /public/cesium/Cesium.js — bypassa Turbopack
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type CesiumType = any
-
 declare global {
-  interface Window { Cesium: CesiumType }
-}
-
-function loadCesium(): Promise<CesiumType> {
-  if (typeof window === 'undefined') return Promise.reject()
-  if (window.Cesium) return Promise.resolve(window.Cesium)
-
-  return new Promise((resolve, reject) => {
-    const link = document.createElement('link')
-    link.rel = 'stylesheet'
-    link.href = '/cesium/Widgets/widgets.css'
-    document.head.appendChild(link)
-
-    const script = document.createElement('script')
-    script.src = '/cesium/Cesium.js'
-    script.onload = () => resolve(window.Cesium)
-    script.onerror = reject
-    document.head.appendChild(script)
-  })
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  interface Window { CESIUM_BASE_URL: string; Cesium: any }
 }
 
 export function RouteFlyover({ points }: { points: Coord[] }) {
@@ -42,21 +21,31 @@ export function RouteFlyover({ points }: { points: Coord[] }) {
     if (!containerRef.current || points.length < 2) return
     let destroyed = false
 
-    loadCesium().then(async (Cesium) => {
-      if (destroyed || !containerRef.current) return
-
-      const token = process.env.NEXT_PUBLIC_CESIUM_TOKEN
-      if (token) Cesium.Ion.defaultAccessToken = token
-
+    ;(async () => {
       try {
-        // Satellite ESRI caricato prima del Viewer — evita 404 da Bing Maps di default
+        window.CESIUM_BASE_URL = '/cesium'
+
+        if (!document.querySelector('#cesium-css')) {
+          const link = document.createElement('link')
+          link.id = 'cesium-css'
+          link.rel = 'stylesheet'
+          link.href = '/cesium/Widgets/widgets.css'
+          document.head.appendChild(link)
+        }
+
+        const Cesium = (await import('cesium')).default ?? (await import('cesium'))
+        if (destroyed || !containerRef.current) return
+
+        const token = process.env.NEXT_PUBLIC_CESIUM_TOKEN
+        if (token) Cesium.Ion.defaultAccessToken = token
+
         const esriImagery = await Cesium.ArcGisMapServerImageryProvider.fromUrl(
           'https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer'
         )
 
         let terrainProvider
         if (token) {
-          try { terrainProvider = await Cesium.CesiumTerrainProvider.fromIonAssetId(1) } catch { /* nessun terreno */ }
+          try { terrainProvider = await Cesium.CesiumTerrainProvider.fromIonAssetId(1) } catch { /* no terrain */ }
         }
 
         const viewer = new Cesium.Viewer(containerRef.current, {
@@ -75,7 +64,6 @@ export function RouteFlyover({ points }: { points: Coord[] }) {
           creditContainer: document.createElement('div'),
         })
 
-        // Tracciato GPX
         viewer.entities.add({
           polyline: {
             positions: Cesium.Cartesian3.fromDegreesArrayHeights(
@@ -89,8 +77,9 @@ export function RouteFlyover({ points }: { points: Coord[] }) {
           },
         })
 
-        // Vista iniziale
-        const positions = points.map(([lon, lat, ele]) => Cesium.Cartesian3.fromDegrees(lon, lat, ele))
+        const positions = points.map(([lon, lat, ele]) =>
+          Cesium.Cartesian3.fromDegrees(lon, lat, ele)
+        )
         viewer.camera.flyToBoundingSphere(
           Cesium.BoundingSphere.fromPoints(positions),
           { duration: 1.5, offset: new Cesium.HeadingPitchRange(0, Cesium.Math.toRadians(-40), 0) }
@@ -101,7 +90,7 @@ export function RouteFlyover({ points }: { points: Coord[] }) {
       } catch (err) {
         console.error('Cesium init error:', err)
       }
-    }).catch((err) => console.error('Cesium load error:', err))
+    })()
 
     return () => {
       destroyed = true
@@ -113,9 +102,9 @@ export function RouteFlyover({ points }: { points: Coord[] }) {
   async function startFlyover() {
     const viewer = viewerRef.current
     if (!viewer || points.length < 2) return
-    const Cesium = window.Cesium
-
+    const { default: Cesium } = await import('cesium')
     setFlying(true)
+
     const DURATION_S = 60
     const start = Cesium.JulianDate.now()
     const stop = Cesium.JulianDate.addSeconds(start, DURATION_S, new Cesium.JulianDate())
@@ -126,23 +115,21 @@ export function RouteFlyover({ points }: { points: Coord[] }) {
     viewer.clock.clockRange = Cesium.ClockRange.CLAMPED
     viewer.clock.multiplier = 1
 
-    const positionProperty = new Cesium.SampledPositionProperty()
-    positionProperty.setInterpolationOptions({
+    const pos = new Cesium.SampledPositionProperty()
+    pos.setInterpolationOptions({
       interpolationDegree: 3,
       interpolationAlgorithm: Cesium.HermitePolynomialApproximation,
     })
-
     points.forEach(([lon, lat, ele], i) => {
       const t = Cesium.JulianDate.addSeconds(start, (i / (points.length - 1)) * DURATION_S, new Cesium.JulianDate())
-      positionProperty.addSample(t, Cesium.Cartesian3.fromDegrees(lon, lat, ele + 5))
+      pos.addSample(t, Cesium.Cartesian3.fromDegrees(lon, lat, ele + 5))
     })
 
     if (entityRef.current) viewer.entities.remove(entityRef.current)
-
     const entity = viewer.entities.add({
       availability: new Cesium.TimeIntervalCollection([new Cesium.TimeInterval({ start, stop })]),
-      position: positionProperty,
-      orientation: new Cesium.VelocityOrientationProperty(positionProperty),
+      position: pos,
+      orientation: new Cesium.VelocityOrientationProperty(pos),
       point: {
         pixelSize: 14,
         color: Cesium.Color.fromCssColorString('#795F91'),
@@ -151,26 +138,24 @@ export function RouteFlyover({ points }: { points: Coord[] }) {
         disableDepthTestDistance: Number.POSITIVE_INFINITY,
       },
     })
-
     entityRef.current = entity
     viewer.trackedEntity = entity
     viewer.clock.shouldAnimate = true
 
-    const removeListener = viewer.clock.onStop.addEventListener(() => {
+    const rm = viewer.clock.onStop.addEventListener(() => {
       setFlying(false)
       viewer.trackedEntity = undefined
-      removeListener()
+      rm()
     })
   }
 
-  function stopFlyover() {
+  async function stopFlyover() {
     const viewer = viewerRef.current
     if (!viewer) return
     viewer.clock.shouldAnimate = false
     viewer.trackedEntity = undefined
     setFlying(false)
-
-    const Cesium = window.Cesium
+    const { default: Cesium } = await import('cesium')
     const positions = points.map(([lon, lat, ele]) => Cesium.Cartesian3.fromDegrees(lon, lat, ele))
     viewer.camera.flyToBoundingSphere(
       Cesium.BoundingSphere.fromPoints(positions),
