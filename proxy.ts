@@ -21,6 +21,11 @@ function getLocale(request: NextRequest): string {
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
+  // Escludi asset statici Cesium dalla localizzazione
+  if (pathname.startsWith('/cesium/')) {
+    return NextResponse.next()
+  }
+
   // Protezione area admin
   if (pathname.startsWith('/manage')) {
     if (pathname === '/manage/login') {
@@ -76,6 +81,6 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/((?!api|_next/static|_next/image|favicon\\.ico|icon\\.svg|apple-icon\\.png|opengraph-image|sitemap\\.xml|robots\\.txt|.*\\.pdf$|svg/.*|images/.*).*)',
+    '/((?!api|_next/static|_next/image|favicon\\.ico|icon\\.svg|apple-icon\\.png|opengraph-image|sitemap\\.xml|robots\\.txt|.*\\.pdf$|svg/.*|images/.*|cesium/.*).*)',
   ],
 }

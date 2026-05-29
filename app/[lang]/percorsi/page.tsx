@@ -6,6 +6,7 @@ import { Navbar } from '@/components/navbar'
 import { Footer } from '@/components/footer'
 import { RouteFilters } from '@/components/route-filters'
 import { db, routes, routeTranslations, routePhotos } from '@/lib/db'
+import { shortRouteId } from '@/lib/utils'
 
 export const revalidate = 3600
 
@@ -76,8 +77,8 @@ export default async function PercorsiPage({
     itemListElement: routesWithData.map(({ route, translation }, i) => ({
       '@type': 'ListItem',
       position: i + 1,
-      url: `${siteUrl}/${lang}/percorsi/${route.slug}`,
-      name: translation?.name ?? route.slug,
+      url: `${siteUrl}/${lang}/percorsi/${shortRouteId(route.id)}`,
+      name: translation?.name ?? shortRouteId(route.id),
     })),
   }
 
@@ -85,13 +86,17 @@ export default async function PercorsiPage({
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <Navbar lang={lang} dict={dict} />
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 pt-24 pb-12 space-y-8">
-        <div>
+      {/* Header a piena larghezza come le sezioni home */}
+      <section className="w-full pt-24 pb-8">
+        <div className="max-w-6xl mx-auto px-12 sm:px-20">
           <h1 className="text-3xl font-bold text-[#1e3a5f]">{dict.percorsi.page_title}</h1>
           <p className="text-muted-foreground mt-2">{dict.percorsi.page_subtitle}</p>
         </div>
-
-        <RouteFilters routes={routesWithData} lang={lang} dict={dict} />
+      </section>
+      <main className="w-full py-10">
+        <div className="max-w-6xl mx-auto px-12 sm:px-20">
+          <RouteFilters routes={routesWithData} lang={lang} dict={dict} />
+        </div>
       </main>
       <Footer lang={lang} dict={dict} />
     </>

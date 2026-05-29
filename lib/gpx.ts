@@ -59,18 +59,18 @@ export function parseGpxStats(gpxString: string): GpxStats {
   }
 }
 
-export function parseGpxPoints(gpxString: string): [number, number][] {
+export function parseGpxPoints(gpxString: string): [number, number, number][] {
   const parser = new XMLParser({ ignoreAttributes: false, attributeNamePrefix: '@_' })
   const obj = parser.parse(gpxString)
   const trkseg = obj?.gpx?.trk?.trkseg
   const rawPoints = trkseg?.trkpt ?? []
-  const all: [number, number][] = (
+  const all: [number, number, number][] = (
     Array.isArray(rawPoints) ? rawPoints : [rawPoints]
   ).map((p: Record<string, unknown>) => [
+    parseFloat(String(p['@_lon'] ?? 0)), // lon first — GeoJSON format
     parseFloat(String(p['@_lat'] ?? 0)),
-    parseFloat(String(p['@_lon'] ?? 0)),
+    parseFloat(String(p['ele'] ?? 0)),
   ])
-  // Downsample to max 800 points to keep props lean
   if (all.length > 800) {
     const step = Math.ceil(all.length / 800)
     return all.filter((_, i) => i % step === 0)

@@ -1,6 +1,7 @@
 import type { MetadataRoute } from 'next'
 import { eq } from 'drizzle-orm'
 import { db, routes } from '@/lib/db'
+import { shortRouteId } from '@/lib/utils'
 
 const BASE_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://www.lelettricaleoni.com').replace(/\/$/, '')
 const locales = ['it', 'en', 'de']
@@ -31,24 +32,25 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   let dynamicEntries: MetadataRoute.Sitemap = []
   try {
     const publishedRoutes = await db
-      .select({ id: routes.id, slug: routes.slug, updatedAt: routes.updatedAt })
+      .select({ id: routes.id, updatedAt: routes.updatedAt })
       .from(routes)
       .where(eq(routes.isPublished, true))
 
-    dynamicEntries = publishedRoutes.flatMap((route) =>
-      locales.map((lang) => ({
-        url: `${BASE_URL}/${lang}/percorsi/${route.slug}`,
+    dynamicEntries = publishedRoutes.flatMap((route) => {
+      const sid = shortRouteId(route.id)
+      return locales.map((lang) => ({
+        url: `${BASE_URL}/${lang}/percorsi/${sid}`,
         lastModified: route.updatedAt,
         changeFrequency: 'monthly' as const,
         priority: 0.7,
         alternates: {
           languages: {
-            ...Object.fromEntries(locales.map((l) => [l, `${BASE_URL}/${l}/percorsi/${route.slug}`])),
-            'x-default': `${BASE_URL}/it/percorsi/${route.slug}`,
+            ...Object.fromEntries(locales.map((l) => [l, `${BASE_URL}/${l}/percorsi/${sid}`])),
+            'x-default': `${BASE_URL}/it/percorsi/${sid}`,
           },
         },
       }))
-    )
+    })
   } catch {}
 
   return [...staticEntries, ...dynamicEntries]

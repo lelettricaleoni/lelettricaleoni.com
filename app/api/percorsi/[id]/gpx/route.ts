@@ -1,17 +1,17 @@
 import { NextResponse } from 'next/server'
-import { eq, and } from 'drizzle-orm'
+import { and, eq, sql } from 'drizzle-orm'
 import { db, routes, routeTranslations } from '@/lib/db'
 import { r2PublicUrl } from '@/lib/r2'
 import { watermarkGpx } from '@/lib/gpx'
 
 export async function GET(
   _request: Request,
-  { params }: { params: Promise<{ slug: string }> }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const { slug } = await params
+  const { id } = await params
 
   const [route] = await db.select().from(routes).where(
-    and(eq(routes.slug, slug), eq(routes.isPublished, true))
+    and(sql`left(${routes.id}::text, 8) = ${id}`, eq(routes.isPublished, true))
   )
 
   if (!route?.gpxKey) {
@@ -29,12 +29,12 @@ export async function GET(
   }
 
   const gpxString = await gpxResponse.text()
-  const watermarked = watermarkGpx(gpxString, translation?.name ?? slug)
+  const watermarked = watermarkGpx(gpxString, translation?.name ?? id)
 
   return new NextResponse(watermarked, {
     headers: {
       'Content-Type': 'application/gpx+xml',
-      'Content-Disposition': `attachment; filename="${slug}.gpx"`,
+      'Content-Disposition': `attachment; filename="${id}.gpx"`,
       'Cache-Control': 'no-store',
     },
   })
