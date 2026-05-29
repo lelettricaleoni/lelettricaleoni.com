@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev --webpack",
-    "build": "node scripts/copy-cesium.mjs && next build",
+    "build": "node scripts/copy-cesium.mjs && next build --webpack",
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
