@@ -9,6 +9,21 @@ interface RouteFlyoverProps {
   points: Coord[]
 }
 
+// Basemap satellite ESRI — gratuito, nessuna API key
+const SATELLITE_STYLE: maplibregl.StyleSpecification = {
+  version: 8,
+  sources: {
+    satellite: {
+      type: 'raster',
+      tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],
+      tileSize: 256,
+      maxzoom: 19,
+      attribution: '© Esri &amp; contributors',
+    },
+  },
+  layers: [{ id: 'satellite', type: 'raster', source: 'satellite' }],
+}
+
 function computeBearing(a: Coord, b: Coord): number {
   const dLon = ((b[0] - a[0]) * Math.PI) / 180
   const φ1 = (a[1] * Math.PI) / 180
@@ -57,18 +72,17 @@ export function RouteFlyover({ points }: RouteFlyoverProps) {
 
     const map = new maplibregl.Map({
       container: containerRef.current,
-      style: 'https://tiles.openfreemap.org/styles/liberty',
+      style: SATELLITE_STYLE,
       bounds,
       fitBoundsOptions: { padding: 60 },
       pitch: 0,
       bearing: 0,
-      canvasContextAttributes: { antialias: true },
     })
 
     map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'top-right')
 
     map.on('load', () => {
-      // 3D terrain via AWS Elevation Tiles (free, no API key)
+      // Terreno 3D — AWS Elevation Tiles (gratuito)
       map.addSource('terrain-rgb', {
         type: 'raster-dem',
         tiles: ['https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'],
@@ -78,18 +92,7 @@ export function RouteFlyover({ points }: RouteFlyoverProps) {
       })
       map.setTerrain({ source: 'terrain-rgb', exaggeration: 1.5 })
 
-      // Atmospheric sky
-      map.setSky({
-        'sky-color': '#199EF3',
-        'sky-horizon-blend': 0.5,
-        'horizon-color': '#fbe59e',
-        'horizon-fog-blend': 0.4,
-        'fog-color': '#f3f6ff',
-        'fog-ground-blend': 0.5,
-        'atmosphere-blend': 0.5,
-      })
-
-      // GPX route line with glow
+      // Tracciato GPX con glow
       map.addSource('route', {
         type: 'geojson',
         data: {
@@ -102,14 +105,14 @@ export function RouteFlyover({ points }: RouteFlyoverProps) {
         id: 'route-glow',
         type: 'line',
         source: 'route',
-        paint: { 'line-color': '#ffffff', 'line-width': 7, 'line-opacity': 0.35 },
+        paint: { 'line-color': '#ffffff', 'line-width': 8, 'line-opacity': 0.4 },
       })
       map.addLayer({
         id: 'route-line',
         type: 'line',
         source: 'route',
         layout: { 'line-cap': 'round', 'line-join': 'round' },
-        paint: { 'line-color': '#366DA1', 'line-width': 3 },
+        paint: { 'line-color': '#f97316', 'line-width': 3 },
       })
 
       setReady(true)
@@ -160,7 +163,7 @@ export function RouteFlyover({ points }: RouteFlyoverProps) {
       {ready && (
         <button
           onClick={flying ? stopFlyover : startFlyover}
-          className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 px-4 py-2 rounded-full bg-white/90 shadow-md text-sm font-medium text-[#1e3a5f] hover:bg-white transition-colors backdrop-blur-sm"
+          className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 px-4 py-2 rounded-full bg-black/60 shadow-md text-sm font-medium text-white hover:bg-black/80 transition-colors backdrop-blur-sm"
         >
           {flying ? '⏹ Stop' : '▶ Flyover 3D'}
         </button>
