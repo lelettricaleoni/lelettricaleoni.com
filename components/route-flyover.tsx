@@ -39,10 +39,23 @@ function getPositionAtProgress(points: Coord[], progress: number) {
   const t = floatIdx - idx
   const a = points[idx]
   const b = points[Math.min(idx + 1, n - 1)]
-  return {
-    center: [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t] as [number, number],
-    bearing: computeBearing(a, b),
-  }
+  const center: [number, number] = [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t]
+
+  // Bearing calcolato su finestra larga per smorzare il rumore GPS
+  const window = Math.max(20, Math.floor(n * 0.05))
+  const fromIdx = Math.max(0, idx - 3)
+  const toIdx = Math.min(n - 1, idx + window)
+  const bearing = computeBearing(points[fromIdx], points[toIdx])
+
+  return { center, bearing }
+}
+
+// Smoothing esponenziale del bearing con gestione wrap 0°/360°
+function smoothBearingStep(current: number, target: number, factor: number): number {
+  let diff = target - current
+  if (diff > 180) diff -= 360
+  if (diff < -180) diff += 360
+  return current + diff * factor
 }
 
 function getBounds(points: Coord[]): [[number, number], [number, number]] {
@@ -154,10 +167,14 @@ export function RouteFlyover({ points }: RouteFlyoverProps) {
     const startTime = performance.now()
     const DURATION = 35_000
     let lastCameraUpdate = 0
+    let smoothedBearing = getPositionAtProgress(points, 0).bearing
 
     const frame = () => {
       const progress = Math.min((performance.now() - startTime) / DURATION, 1)
-      const { center, bearing } = getPositionAtProgress(points, progress)
+      const { center, bearing: rawBearing } = getPositionAtProgress(points, progress)
+
+      // Smoothing esponenziale: filtra oscillazioni GPS, mantiene le svolte reali
+      smoothedBearing = smoothBearingStep(smoothedBearing, rawBearing, 0.07)
 
       // Aggiorna pallino ogni frame → movimento fluido
       const dotSrc = map.getSource('dot') as maplibregl.GeoJSONSource
@@ -169,11 +186,11 @@ export function RouteFlyover({ points }: RouteFlyoverProps) {
         lastCameraUpdate = now
         map.easeTo({
           center,
-          bearing,
+          bearing: smoothedBearing,
           zoom: 14.5,
           pitch: 60,
-          duration: 250,
-          easing: (t) => t * (2 - t), // ease-out: parte veloce, rallenta
+          duration: 300,
+          easing: (t) => t * (2 - t),
         })
       }
 
