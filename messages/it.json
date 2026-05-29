@@ -105,7 +105,7 @@
     "surface_dirt": "Sterrato",
     "surface_mixed": "Misto",
     "stat_distance": "km",
-    "stat_elevation": "↑ m",
+    "stat_elevation": "m",
     "stat_duration": "durata",
     "stat_surface": "fondo",
     "open_strava": "Apri su Strava",
@@ -113,7 +113,7 @@
     "download_gpx": "Scarica GPX",
     "share": "Condividi",
     "share_copied": "Link copiato!",
-    "back_to_list": "← Tutti i percorsi",
+    "back_to_list": "Tutti i percorsi",
     "no_results": "Nessun percorso trovato con questi filtri.",
     "copyright_notice": "I percorsi sono proprietà esclusiva di Lelettrica di Leoni Gabriele. Tutti i diritti riservati.",
     "nav_label": "Percorsi"

@@ -105,7 +105,7 @@
     "surface_dirt": "Dirt",
     "surface_mixed": "Mixed",
     "stat_distance": "km",
-    "stat_elevation": "↑ m",
+    "stat_elevation": "m",
     "stat_duration": "duration",
     "stat_surface": "surface",
     "open_strava": "Open on Strava",
@@ -113,7 +113,7 @@
     "download_gpx": "Download GPX",
     "share": "Share",
     "share_copied": "Link copied!",
-    "back_to_list": "← All routes",
+    "back_to_list": "All routes",
     "no_results": "No routes found with these filters.",
     "copyright_notice": "Routes are the exclusive property of Lelettrica di Leoni Gabriele. All rights reserved.",
     "nav_label": "Routes"
