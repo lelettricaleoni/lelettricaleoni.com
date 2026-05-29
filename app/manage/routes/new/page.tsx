@@ -5,7 +5,7 @@ import { redirect } from 'next/navigation'
 
 export default async function NuovoPercorsoPage() {
   const user = await getAdminUser()
-  if (!user) redirect('/gestione/login')
+  if (!user) redirect('/manage/login')
 
   return (
     <div className="space-y-6">

@@ -6,7 +6,7 @@ import { logoutAction } from '@/lib/actions/auth'
 import { cn } from '@/lib/utils'
 
 const navItems = [
-  { href: '/gestione/percorsi', label: 'Percorsi', icon: Map },
+  { href: '/manage/routes', label: 'Percorsi', icon: Map },
 ]
 
 export function AdminSidebar() {

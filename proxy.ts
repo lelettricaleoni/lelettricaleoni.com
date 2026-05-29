@@ -22,8 +22,8 @@ export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   // Protezione area admin
-  if (pathname.startsWith('/gestione')) {
-    if (pathname === '/gestione/login') {
+  if (pathname.startsWith('/manage')) {
+    if (pathname === '/manage/login') {
       return NextResponse.next()
     }
 
@@ -50,7 +50,7 @@ export async function proxy(request: NextRequest) {
 
     if (!user || user.user_metadata?.role !== 'admin') {
       const loginUrl = request.nextUrl.clone()
-      loginUrl.pathname = '/gestione/login'
+      loginUrl.pathname = '/manage/login'
       return NextResponse.redirect(loginUrl)
     }
 

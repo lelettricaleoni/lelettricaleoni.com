@@ -124,7 +124,7 @@ export async function createRouteAction(
   ])
 
   revalidatePath('/[lang]/percorsi', 'page')
-  redirect('/gestione/percorsi')
+  redirect('/manage/routes')
 }
 
 export async function updateRouteAction(
@@ -197,7 +197,7 @@ export async function updateRouteAction(
 
   revalidatePath('/[lang]/percorsi', 'page')
   revalidatePath(`/[lang]/percorsi/${slug}`, 'page')
-  redirect('/gestione/percorsi')
+  redirect('/manage/routes')
 }
 
 export async function deleteRouteAction(id: string) {

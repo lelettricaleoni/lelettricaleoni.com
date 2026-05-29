@@ -10,7 +10,7 @@ import { redirect } from 'next/navigation'
 
 export default async function AdminPercorsiPage() {
   const user = await getAdminUser()
-  if (!user) redirect('/gestione/login')
+  if (!user) redirect('/manage/login')
 
   const routesList = await getRoutesForAdmin()
 
@@ -32,7 +32,7 @@ export default async function AdminPercorsiPage() {
           Percorsi ({routesList.length})
         </h1>
         <Button asChild className="bg-[#1e3a5f] hover:bg-[#152c4a]">
-          <Link href="/gestione/percorsi/nuovo"><Plus size={16} className="mr-1" /> Nuovo percorso</Link>
+          <Link href="/manage/routes/new"><Plus size={16} className="mr-1" /> Nuovo percorso</Link>
         </Button>
       </div>
 

@@ -40,20 +40,20 @@ La pagina mostra i percorsi in e-bike consigliati ai clienti.
 
 ---
 
-## Pannello admin (`/gestione`)
+## Pannello admin (`/manage`)
 
 URL oscuro, non indicizzato, non linkato pubblicamente.
 
 ### Accesso
 
-Vai su `/gestione` — se non sei autenticato vieni reindirizzato a `/gestione/login`.
+Vai su `/manage` — se non sei autenticato vieni reindirizzato a `/manage/login`.
 
 Inserisci le credenziali del tuo account Supabase (email + password). Per funzionare, l'account deve avere `user_metadata.role = 'admin'`. Per impostarlo:
 
 1. Dashboard Supabase → Authentication → Users → seleziona l'utente
 2. Modifica `raw_user_meta_data` aggiungendo `"role": "admin"`
 
-### Gestione percorsi
+### manage percorsi
 
 Dalla sidebar clicca **Percorsi** per vedere la lista. Da lì puoi:
 
@@ -84,9 +84,9 @@ app/
     percorsi/
       page.tsx            # Lista percorsi pubblica (ISR)
       [slug]/page.tsx     # Dettaglio percorso (ISR)
-  gestione/               # Area admin (non indicizzata)
+  manage/               # Area admin (non indicizzata)
     login/page.tsx
-    page.tsx              # Redirect → /gestione/percorsi
+    page.tsx              # Redirect → /manage/percorsi
     percorsi/
       page.tsx            # Lista percorsi admin
       nuovo/page.tsx      # Form nuovo percorso
@@ -128,7 +128,7 @@ lib/
 messages/
   it.json / en.json / de.json   # Include sezione "percorsi"
 
-proxy.ts                  # i18n redirect + protezione /gestione/*
+proxy.ts                  # i18n redirect + protezione /manage/*
 drizzle.config.ts
 types/gtag.d.ts
 ```

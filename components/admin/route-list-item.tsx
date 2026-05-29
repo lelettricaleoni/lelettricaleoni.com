@@ -58,7 +58,7 @@ export function RouteListItem({ route, name }: { route: Route; name: string }) {
         </Button>
 
         <Button variant="ghost" size="icon" asChild>
-          <Link href={`/gestione/percorsi/${route.id}`}><Pencil size={16} /></Link>
+          <Link href={`/manage/routes/${route.id}`}><Pencil size={16} /></Link>
         </Button>
 
         <AlertDialog>

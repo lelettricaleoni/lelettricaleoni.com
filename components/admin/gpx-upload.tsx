@@ -22,8 +22,13 @@ export function GpxUpload({ routeId, defaultGpxKey, onUploaded }: GpxUploadProps
       if (!file) return
       setUploading(true)
       try {
-        const { url, key } = await getPresignedUploadUrlAction(routeId, file.name, file.type || 'application/gpx+xml', 'gpx')
-        await fetch(url, { method: 'PUT', body: file, headers: { 'Content-Type': file.type || 'application/gpx+xml' } })
+        const contentType = file.type || 'application/gpx+xml'
+        const { url, key } = await getPresignedUploadUrlAction(routeId, file.name, contentType, 'gpx')
+        const uploadRes = await fetch(url, { method: 'PUT', body: file, headers: { 'Content-Type': contentType } })
+        if (!uploadRes.ok) {
+          const body = await uploadRes.text()
+          throw new Error(`R2 ${uploadRes.status}: ${body}`)
+        }
 
         const text = await file.text()
         const { parseGpxStats } = await import('@/lib/gpx')
@@ -32,8 +37,9 @@ export function GpxUpload({ routeId, defaultGpxKey, onUploaded }: GpxUploadProps
         setGpxKey(key)
         onUploaded(key, stats)
         toast.success(`GPX caricato — ${stats.distanceKm} km, ↑${stats.elevationM} m`)
-      } catch {
-        toast.error('Errore nel caricamento GPX')
+      } catch (err) {
+        console.error('GPX upload error:', err)
+        toast.error(`Errore GPX: ${err instanceof Error ? err.message : 'sconosciuto'}`)
       } finally {
         setUploading(false)
       }

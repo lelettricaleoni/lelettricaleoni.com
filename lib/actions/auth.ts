@@ -11,14 +11,14 @@ export async function loginAction(formData: FormData) {
   const { error } = await supabase.auth.signInWithPassword({ email, password })
 
   if (error) {
-    redirect('/gestione/login?error=Credenziali+non+valide.+Riprova.')
+    redirect('/manage/login?error=Credenziali+non+valide.+Riprova.')
   }
 
-  redirect('/gestione/percorsi')
+  redirect('/manage/routes')
 }
 
 export async function logoutAction() {
   const supabase = await createSupabaseServerClient()
   await supabase.auth.signOut()
-  redirect('/gestione/login')
+  redirect('/manage/login')
 }
