@@ -1,10 +1,10 @@
 import type { NextConfig } from "next";
-import webpack from "webpack";
 
 const nextConfig: NextConfig = {
-  webpack: (config) => {
-    config.plugins.push(new webpack.DefinePlugin({ CESIUM_BASE_URL: JSON.stringify('/cesium') }))
-    return config
+  turbopack: {
+    define: {
+      CESIUM_BASE_URL: JSON.stringify('/cesium'),
+    },
   },
   images: {
     qualities: [75, 80, 82, 100],
