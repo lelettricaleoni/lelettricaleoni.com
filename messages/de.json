@@ -91,5 +91,31 @@
     "rights_body": "Gemäß Art. 15–22 DSGVO haben Sie das Recht auf: Auskunft, Berichtigung oder Löschung Ihrer Daten, Einschränkung der Verarbeitung, Widerspruch, Datenübertragbarkeit sowie jederzeitigen Widerruf Ihrer Einwilligung. Zur Ausübung dieser Rechte wenden Sie sich an:",
     "contact_title": "Kontakt",
     "contact_body": "Für alle Anfragen zum Datenschutz: info@lelettricaleoni.com"
+  },
+  "percorsi": {
+    "page_title": "Empfohlene Routen",
+    "page_subtitle": "Erkunden Sie den Gardasee und die umliegenden Täler mit dem E-Bike oder Fahrrad",
+    "filter_all": "Alle",
+    "filter_difficulty": "Schwierigkeit",
+    "difficulty_easy": "Leicht",
+    "difficulty_medium": "Mittel",
+    "difficulty_hard": "Schwer",
+    "difficulty_expert": "Experte",
+    "surface_asphalt": "Asphalt",
+    "surface_dirt": "Schotter",
+    "surface_mixed": "Gemischt",
+    "stat_distance": "km",
+    "stat_elevation": "↑ m",
+    "stat_duration": "Dauer",
+    "stat_surface": "Belag",
+    "open_strava": "Auf Strava öffnen",
+    "open_komoot": "Auf Komoot öffnen",
+    "download_gpx": "GPX herunterladen",
+    "share": "Teilen",
+    "share_copied": "Link kopiert!",
+    "back_to_list": "← Alle Routen",
+    "no_results": "Keine Routen mit diesen Filtern gefunden.",
+    "copyright_notice": "Routen sind ausschließliches Eigentum von Lelettrica di Leoni Gabriele. Alle Rechte vorbehalten.",
+    "nav_label": "Routen"
   }
 }

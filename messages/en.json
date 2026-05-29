@@ -91,5 +91,31 @@
     "rights_body": "Under Arts. 15–22 GDPR you have the right to: access your data, request its rectification or erasure, restrict its processing, object to processing, request data portability, and withdraw consent at any time. To exercise these rights, contact us at:",
     "contact_title": "Contact",
     "contact_body": "For any requests related to data processing: info@lelettricaleoni.com"
+  },
+  "percorsi": {
+    "page_title": "Recommended routes",
+    "page_subtitle": "Explore Lake Garda and the surrounding valleys by e-bike or bicycle",
+    "filter_all": "All",
+    "filter_difficulty": "Difficulty",
+    "difficulty_easy": "Easy",
+    "difficulty_medium": "Medium",
+    "difficulty_hard": "Hard",
+    "difficulty_expert": "Expert",
+    "surface_asphalt": "Asphalt",
+    "surface_dirt": "Dirt",
+    "surface_mixed": "Mixed",
+    "stat_distance": "km",
+    "stat_elevation": "↑ m",
+    "stat_duration": "duration",
+    "stat_surface": "surface",
+    "open_strava": "Open on Strava",
+    "open_komoot": "Open on Komoot",
+    "download_gpx": "Download GPX",
+    "share": "Share",
+    "share_copied": "Link copied!",
+    "back_to_list": "← All routes",
+    "no_results": "No routes found with these filters.",
+    "copyright_notice": "Routes are the exclusive property of Lelettrica di Leoni Gabriele. All rights reserved.",
+    "nav_label": "Routes"
   }
 }
