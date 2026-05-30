@@ -121,9 +121,8 @@ export function RouteFlyover({ points }: { points: Coord[] }) {
           { duration: 1.5, offset: new Cesium.HeadingPitchRange(0, Cesium.Math.toRadians(-40), 0) }
         )
 
+        viewer.resolutionScale = window.devicePixelRatio
         viewerRef.current = viewer
-        // Aspetta il prossimo frame di rendering prima di ridimensionare
-        // (il browser deve aver applicato height:100% al .cesium-widget)
         requestAnimationFrame(() => {
           if (!destroyed) {
             viewer.resize()
