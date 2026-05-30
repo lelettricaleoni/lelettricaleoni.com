@@ -7,14 +7,15 @@ const src = join(root, 'node_modules/cesium/Build/Cesium')
 const dest = join(root, 'public/cesium')
 
 if (!existsSync(src)) {
-  console.warn(`⚠ ${src} non trovato — skip (Cesium viene bundlato da webpack)`)
+  console.warn(`⚠ ${src} non trovato — skip`)
   process.exit(0)
 }
 
 mkdirSync(dest, { recursive: true })
 
-// Cesium.js non serve: viene importato e bundlato da webpack
-// Copia solo le risorse statiche necessarie a runtime
+// Copia Cesium.js (caricato via script tag, non bundlato da webpack)
+cpSync(join(src, 'Cesium.js'), join(dest, 'Cesium.js'))
+
 for (const dir of ['Workers', 'ThirdParty', 'Assets', 'Widgets']) {
   const srcDir = join(src, dir)
   if (!existsSync(srcDir)) {

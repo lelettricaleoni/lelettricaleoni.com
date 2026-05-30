@@ -7,7 +7,8 @@ type Coord = [number, number, number] // [lon, lat, ele]
 type CesiumType = any
 
 declare global {
-  interface Window { CESIUM_BASE_URL: string }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  interface Window { CESIUM_BASE_URL: string; Cesium: any }
 }
 
 export function RouteFlyover({ points }: { points: Coord[] }) {
@@ -49,9 +50,23 @@ export function RouteFlyover({ points }: { points: Coord[] }) {
           document.head.appendChild(link)
         }
 
-        // Cesium usa named exports — import('cesium').default è undefined con webpack
-        const mod = await import('cesium')
-        const Cesium: CesiumType = mod.default ?? mod
+        // Cesium caricato via script tag per evitare bundling webpack (octal escape in GLSL)
+        await new Promise<void>((resolve, reject) => {
+          if (window.Cesium) return resolve()
+          const existing = document.querySelector('#cesium-js')
+          if (existing) {
+            existing.addEventListener('load', () => resolve(), { once: true })
+            existing.addEventListener('error', () => reject(new Error('Cesium.js load failed')), { once: true })
+            return
+          }
+          const script = document.createElement('script')
+          script.id = 'cesium-js'
+          script.src = '/cesium/Cesium.js'
+          script.onload = () => resolve()
+          script.onerror = () => reject(new Error('Cesium.js load failed'))
+          document.head.appendChild(script)
+        })
+        const Cesium: CesiumType = window.Cesium
         if (destroyed || !containerRef.current) return
 
         cesiumRef.current = Cesium  // cache per startFlyover / stopFlyover
