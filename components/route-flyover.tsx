@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
+import { Play, Square } from 'lucide-react'
 
 type Coord = [number, number, number] // [lon, lat, ele]
 
@@ -228,19 +229,33 @@ export function RouteFlyover({ points }: { points: Coord[] }) {
   }
 
   return (
-    <div className="relative rounded-xl overflow-hidden border border-border isolate">
-      <div
-        ref={containerRef}
-        className="w-full h-72 sm:h-[420px]"
-        style={{ position: 'relative', display: 'block' }}
-      />
+    <div className="space-y-3">
+      <div className="rounded-xl overflow-hidden border border-border">
+        <div
+          ref={containerRef}
+          className="w-full h-72 sm:h-[420px]"
+          style={{ position: 'relative', display: 'block' }}
+        />
+      </div>
       {ready && (
-        <button
-          onClick={flying ? stopFlyover : startFlyover}
-          className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 px-4 py-2 rounded-full bg-black/60 shadow-md text-sm font-medium text-white hover:bg-black/80 transition-colors backdrop-blur-sm"
-        >
-          {flying ? '⏹ Stop' : '▶ Flyover 3D'}
-        </button>
+        <div className="flex justify-center">
+          <button
+            onClick={flying ? stopFlyover : startFlyover}
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-[#366DA1] text-[#366DA1] bg-white text-sm font-semibold shadow-sm hover:bg-[#366DA1] hover:text-white transition-colors"
+          >
+            {flying ? (
+              <>
+                <Square size={15} className="fill-current" />
+                Stop flyover
+              </>
+            ) : (
+              <>
+                <Play size={15} className="fill-current" />
+                Flyover 3D
+              </>
+            )}
+          </button>
+        </div>
       )}
     </div>
   )
