@@ -1,5 +1,4 @@
 import { notFound } from 'next/navigation'
-import Image from 'next/image'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import { eq, and, sql } from 'drizzle-orm'
@@ -136,24 +135,7 @@ export default async function RouteDetailPage({
           <ArrowLeft size={14} /> {d.back_to_list}
         </Link>
 
-        {/* Hero */}
-        {coverPhoto && (
-          <div className="relative h-64 sm:h-80 rounded-2xl overflow-hidden">
-            <Image
-              src={r2PublicUrl(coverPhoto.storageKey)}
-              alt={translation?.name ?? id}
-              fill
-              className="object-cover"
-              priority
-              sizes="(max-width: 1024px) 100vw, 896px"
-            />
-            <span className="absolute top-4 right-4 text-sm font-semibold px-3 py-1.5 rounded-full bg-white/90 text-[#1e3a5f]">
-              {difficultyLabel[route.difficulty]}
-            </span>
-          </div>
-        )}
-
-        {/* Title + bike types */}
+        {/* Title + bike types + difficulty */}
         <div className="space-y-3">
           <h1 className="text-2xl sm:text-3xl font-bold text-[#1e3a5f]">
             {translation?.name ?? id}
@@ -162,6 +144,11 @@ export default async function RouteDetailPage({
             {route.bikeTypes.map((type) => (
               <Badge key={type} variant="secondary">{type}</Badge>
             ))}
+            {route.difficulty && (
+              <Badge variant="outline" className="font-semibold text-[#1e3a5f]">
+                {difficultyLabel[route.difficulty]}
+              </Badge>
+            )}
           </div>
         </div>
 
