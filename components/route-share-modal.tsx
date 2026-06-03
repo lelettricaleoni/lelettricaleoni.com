@@ -13,13 +13,13 @@ import {
 interface RouteShareModalProps {
   url: string
   routeName: string
-  dict: { percorsi: Record<string, string> }
+  dict: { routes: Record<string, string> }
 }
 
 export function RouteShareModal({ url, routeName, dict }: RouteShareModalProps) {
   const [open, setOpen] = useState(false)
   const [copied, setCopied] = useState(false)
-  const d = dict.percorsi
+  const d = dict.routes
 
   const hasNativeShare = typeof navigator !== 'undefined' && !!navigator.share
 

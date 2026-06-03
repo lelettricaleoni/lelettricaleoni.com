@@ -34,6 +34,9 @@ export default async function RootLayout({
   return (
     <html lang={locale} className={`${geist.variable} antialiased`}>
       <body className="min-h-screen flex flex-col bg-background text-foreground">
+        {process.env.NODE_ENV === 'development' && (
+          <Script src="https://unpkg.com/react-scan@latest/dist/auto.global.js" strategy="beforeInteractive" />
+        )}
         {gaId && (
           <>
             {/* Consent Mode v2 — defaults denied, wait 500ms for banner response */}

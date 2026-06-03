@@ -14,8 +14,8 @@ export default async function LoginPage({
     <div className="min-h-screen flex items-center justify-center bg-background">
       <div className="w-full max-w-sm space-y-6 p-8 border rounded-lg shadow-sm">
         <div className="text-center">
-          <h1 className="text-xl font-bold text-[#1e3a5f]">Lelettrica — Gestione</h1>
-          <p className="text-sm text-muted-foreground mt-1">Accesso riservato</p>
+          <h1 className="text-xl font-bold text-[#1e3a5f]">Lelettrica — Manage</h1>
+          <p className="text-sm text-muted-foreground mt-1">Restricted access</p>
         </div>
 
         {params.error && (
@@ -40,7 +40,7 @@ export default async function LoginPage({
             />
           </div>
           <Button type="submit" className="w-full bg-[#1e3a5f] hover:bg-[#152c4a]">
-            Accedi
+            Log in
           </Button>
         </form>
       </div>

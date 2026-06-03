@@ -30,7 +30,6 @@ export const routeTranslations = pgTable('route_translations', {
   locale:            localeEnum('locale').notNull(),
   name:              text('name').notNull(),
   description:       text('description').notNull(),
-  startPointLabel:   text('start_point_label'),
   isAutoTranslated:  boolean('is_auto_translated').notNull().default(false),
 }, (t) => [index('route_translations_route_locale_idx').on(t.routeId, t.locale)])
 

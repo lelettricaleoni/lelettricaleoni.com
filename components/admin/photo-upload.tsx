@@ -74,9 +74,9 @@ export function PhotoUpload({
         newPhotos.push({ storageKey: key, preview: URL.createObjectURL(file) })
       }
       setPhotos((prev) => [...prev, ...newPhotos])
-      toast.success(`${newPhotos.length} foto caricate`)
+      toast.success(`${newPhotos.length} photo${newPhotos.length !== 1 ? 's' : ''} uploaded`)
     } catch {
-      toast.error('Errore nel caricamento foto')
+      toast.error('Photo upload failed')
     } finally {
       setUploading(false)
     }
@@ -121,7 +121,7 @@ export function PhotoUpload({
         <input {...getInputProps()} />
         <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
           <Upload size={16} />
-          {uploading ? 'Caricamento...' : 'Aggiungi foto (trascina o clicca)'}
+          {uploading ? 'Uploading...' : 'Add photos (drop or click)'}
         </div>
       </div>
 

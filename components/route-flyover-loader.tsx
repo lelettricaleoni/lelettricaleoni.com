@@ -9,6 +9,11 @@ const RouteFlyoverInner = dynamic(
   }
 )
 
-export function RouteFlyoverLoader({ points }: { points: [number, number, number][] }) {
-  return <RouteFlyoverInner points={points} />
+interface Props {
+  points: [number, number, number][]
+  difficulty?: 'easy' | 'medium' | 'hard' | 'expert'
+}
+
+export function RouteFlyoverLoader({ points, difficulty }: Props) {
+  return <RouteFlyoverInner points={points} difficulty={difficulty} />
 }

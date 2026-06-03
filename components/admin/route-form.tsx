@@ -27,7 +27,6 @@ export function RouteForm({ action, route, translations, photos }: RouteFormProp
 
   const [nameIt, setNameIt] = useState(itTranslation?.name ?? '')
   const [descriptionIt, setDescriptionIt] = useState(itTranslation?.description ?? '')
-  const [startPointLabel, setStartPointLabel] = useState(itTranslation?.startPointLabel ?? '')
   const [difficulty, setDifficulty] = useState(route?.difficulty ?? 'easy')
   const [surface, setSurface] = useState(route?.surface ?? 'mixed')
   const [distanceKm, setDistanceKm] = useState(route?.distanceKm ?? '')
@@ -49,29 +48,19 @@ export function RouteForm({ action, route, translations, photos }: RouteFormProp
 
   return (
     <form action={formAction} className="space-y-8 max-w-2xl">
-      {/* Testi IT */}
+      {/* Italian text */}
       <section className="space-y-4">
-        <h2 className="text-lg font-semibold text-[#1e3a5f]">Contenuto (italiano)</h2>
-        <p className="text-sm text-muted-foreground">EN e DE vengono generati automaticamente con Azure Translator al salvataggio.</p>
+        <h2 className="text-lg font-semibold text-[#1e3a5f]">Content (Italian)</h2>
+        <p className="text-sm text-muted-foreground">EN and DE are auto-generated with Azure Translator on save.</p>
 
         <div className="space-y-1">
-          <Label htmlFor="nameIt">Nome percorso *</Label>
+          <Label htmlFor="nameIt">Route name *</Label>
           <Input id="nameIt" name="nameIt" required value={nameIt} onChange={(e) => setNameIt(e.target.value)} />
           {state.errors?.nameIt && <p className="text-xs text-destructive">{state.errors.nameIt[0]}</p>}
         </div>
 
         <div className="space-y-1">
-          <Label htmlFor="startPointLabel">Punto di partenza</Label>
-          <Input
-            id="startPointLabel" name="startPointLabel"
-            placeholder="es. Dro, Via Roma 90"
-            value={startPointLabel}
-            onChange={(e) => setStartPointLabel(e.target.value)}
-          />
-        </div>
-
-        <div className="space-y-1">
-          <Label htmlFor="descriptionIt">Descrizione *</Label>
+          <Label htmlFor="descriptionIt">Description *</Label>
           <Textarea
             id="descriptionIt" name="descriptionIt" rows={5} required
             value={descriptionIt}
@@ -83,59 +72,69 @@ export function RouteForm({ action, route, translations, photos }: RouteFormProp
         {route && (
           <div className="flex items-center gap-2 text-sm">
             <Switch name="retranslate" id="retranslate" value="true" />
-            <Label htmlFor="retranslate">Rigenera traduzioni EN/DE (Azure)</Label>
+            <Label htmlFor="retranslate">Regenerate EN/DE translations (Azure)</Label>
           </div>
         )}
       </section>
 
-      {/* Statistiche */}
+      {/* GPX */}
+      <section className="space-y-3">
+        <h2 className="text-lg font-semibold text-[#1e3a5f]">GPX file</h2>
+        <GpxUpload
+          routeId={route?.id ?? 'new'}
+          defaultGpxKey={route?.gpxKey ?? undefined}
+          onUploaded={handleGpxUploaded}
+        />
+      </section>
+
+      {/* Stats */}
       <section className="space-y-4">
-        <h2 className="text-lg font-semibold text-[#1e3a5f]">Statistiche</h2>
+        <h2 className="text-lg font-semibold text-[#1e3a5f]">Statistics</h2>
 
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-1">
-            <Label htmlFor="difficulty">Difficoltà *</Label>
+            <Label htmlFor="difficulty">Difficulty *</Label>
             <Select name="difficulty" value={difficulty} onValueChange={(v) => setDifficulty(v as typeof difficulty)}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="easy">Facile</SelectItem>
-                <SelectItem value="medium">Medio</SelectItem>
-                <SelectItem value="hard">Difficile</SelectItem>
-                <SelectItem value="expert">Esperto</SelectItem>
+                <SelectItem value="easy">Easy</SelectItem>
+                <SelectItem value="medium">Medium</SelectItem>
+                <SelectItem value="hard">Hard</SelectItem>
+                <SelectItem value="expert">Expert</SelectItem>
               </SelectContent>
             </Select>
           </div>
           <div className="space-y-1">
-            <Label htmlFor="surface">Fondo *</Label>
+            <Label htmlFor="surface">Surface *</Label>
             <Select name="surface" value={surface} onValueChange={(v) => setSurface(v as typeof surface)}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="asphalt">Asfalto</SelectItem>
-                <SelectItem value="dirt">Sterrato</SelectItem>
-                <SelectItem value="mixed">Misto</SelectItem>
+                <SelectItem value="asphalt">Asphalt</SelectItem>
+                <SelectItem value="dirt">Dirt</SelectItem>
+                <SelectItem value="mixed">Mixed</SelectItem>
               </SelectContent>
             </Select>
           </div>
           <div className="space-y-1">
-            <Label htmlFor="distanceKm">Distanza (km)</Label>
+            <Label htmlFor="distanceKm">Distance (km)</Label>
             <Input
               id="distanceKm" name="distanceKm" type="number" step="0.1" min="0"
               value={distanceKm}
               onChange={(e) => setDistanceKm(e.target.value)}
-              placeholder="auto da GPX"
+              placeholder="auto from GPX"
             />
           </div>
           <div className="space-y-1">
-            <Label htmlFor="elevationM">Dislivello (m)</Label>
+            <Label htmlFor="elevationM">Elevation gain (m)</Label>
             <Input
               id="elevationM" name="elevationM" type="number" min="0"
               value={elevationM}
               onChange={(e) => setElevationM(e.target.value)}
-              placeholder="auto da GPX"
+              placeholder="auto from GPX"
             />
           </div>
           <div className="space-y-1">
-            <Label htmlFor="durationMin">Durata (minuti)</Label>
+            <Label htmlFor="durationMin">Duration (minutes)</Label>
             <Input
               id="durationMin" name="durationMin" type="number" min="1"
               value={durationMin}
@@ -146,9 +145,9 @@ export function RouteForm({ action, route, translations, photos }: RouteFormProp
         </div>
       </section>
 
-      {/* Tipo bici */}
+      {/* Bike type */}
       <section className="space-y-3">
-        <h2 className="text-lg font-semibold text-[#1e3a5f]">Tipo di bici *</h2>
+        <h2 className="text-lg font-semibold text-[#1e3a5f]">Bike type *</h2>
         {state.errors?.bikeTypes && <p className="text-xs text-destructive">{state.errors.bikeTypes[0]}</p>}
         <div className="flex flex-wrap gap-4">
           {BIKE_TYPES.map((type) => (
@@ -166,9 +165,9 @@ export function RouteForm({ action, route, translations, photos }: RouteFormProp
         </div>
       </section>
 
-      {/* Link esterni */}
+      {/* External links */}
       <section className="space-y-4">
-        <h2 className="text-lg font-semibold text-[#1e3a5f]">Link esterni</h2>
+        <h2 className="text-lg font-semibold text-[#1e3a5f]">External links</h2>
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-1">
             <Label htmlFor="stravaUrl">Strava URL</Label>
@@ -191,20 +190,10 @@ export function RouteForm({ action, route, translations, photos }: RouteFormProp
         </div>
       </section>
 
-      {/* GPX */}
+      {/* Photos */}
       <section className="space-y-3">
-        <h2 className="text-lg font-semibold text-[#1e3a5f]">File GPX</h2>
-        <GpxUpload
-          routeId={route?.id ?? 'new'}
-          defaultGpxKey={route?.gpxKey ?? undefined}
-          onUploaded={handleGpxUploaded}
-        />
-      </section>
-
-      {/* Foto */}
-      <section className="space-y-3">
-        <h2 className="text-lg font-semibold text-[#1e3a5f]">Galleria foto</h2>
-        <p className="text-sm text-muted-foreground">La prima foto è la copertina. Trascina per riordinare.</p>
+        <h2 className="text-lg font-semibold text-[#1e3a5f]">Photo gallery</h2>
+        <p className="text-sm text-muted-foreground">First photo is the cover. Drag to reorder.</p>
         <PhotoUpload
           routeId={route?.id ?? 'new'}
           defaultPhotos={photos ?? []}
@@ -215,7 +204,7 @@ export function RouteForm({ action, route, translations, photos }: RouteFormProp
 
       <div className="flex gap-3">
         <Button type="submit" className="bg-[#1e3a5f] hover:bg-[#152c4a]" disabled={isPending}>
-          {isPending ? 'Salvataggio...' : route ? 'Aggiorna percorso' : 'Crea percorso'}
+          {isPending ? 'Saving...' : route ? 'Update route' : 'Create route'}
         </Button>
       </div>
     </form>

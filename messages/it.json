@@ -92,9 +92,10 @@
     "contact_title": "Contatti",
     "contact_body": "Per qualsiasi richiesta relativa al trattamento dei dati: info@lelettricaleoni.com"
   },
-  "percorsi": {
+  "routes": {
     "page_title": "Percorsi consigliati",
-    "page_subtitle": "Esplora il Lago di Garda e le valli circostanti in e-bike o bici",
+    "routes_count": "percorsi",
+    "page_subtitle": "Selezione di itinerari attorno a Dro e al Lago di Garda, adatti a ogni livello. Scegli il tuo percorso e parti per un'avventura.",
     "filter_all": "Tutti",
     "filter_difficulty": "Difficoltà",
     "difficulty_easy": "Facile",
@@ -115,6 +116,7 @@
     "share_copied": "Link copiato!",
     "back_to_list": "Tutti i percorsi",
     "no_results": "Nessun percorso trovato con questi filtri.",
+    "no_results_reset": "Reimposta filtri",
     "copyright_notice": "I percorsi sono proprietà esclusiva di Lelettrica di Leoni Gabriele. Tutti i diritti riservati.",
     "nav_label": "Percorsi",
     "gpx_modal_title": "Scarica il tracciato GPX",

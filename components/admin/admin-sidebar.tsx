@@ -6,7 +6,7 @@ import { logoutAction } from '@/lib/actions/auth'
 import { cn } from '@/lib/utils'
 
 const navItems = [
-  { href: '/manage/routes', label: 'Percorsi', icon: Map },
+  { href: '/manage/routes', label: 'Routes', icon: Map },
 ]
 
 export function AdminSidebar() {
@@ -14,7 +14,7 @@ export function AdminSidebar() {
 
   return (
     <aside className="w-56 min-h-screen bg-[#1e3a5f] flex flex-col py-6 px-3 shrink-0">
-      <div className="text-white font-bold text-sm px-3 mb-8">Gestione</div>
+      <div className="text-white font-bold text-sm px-3 mb-8">Manage</div>
       
       <nav className="flex-1 space-y-1">
         {navItems.map(({ href, label, icon: Icon }) => (
@@ -40,7 +40,7 @@ export function AdminSidebar() {
           className="flex items-center gap-2 px-3 py-2 text-white/50 hover:text-white text-sm w-full rounded-md hover:bg-white/10 transition-colors"
         >
           <LogOut size={15} />
-          Esci
+          Log out
         </button>
       </form>
     </aside>

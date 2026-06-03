@@ -7,7 +7,7 @@ interface NavbarProps {
   lang: string
   dict: {
     nav: { services: string; pricing: string; contact: string }
-    percorsi?: { nav_label: string }
+    routes?: { nav_label: string }
   }
 }
 
@@ -17,7 +17,7 @@ export function Navbar({ lang, dict }: NavbarProps) {
     { href: `/${lang}#servizi`, label: dict.nav.services },
     { href: `/${lang}#prezzi`, label: dict.nav.pricing },
     { href: `/${lang}#contatti`, label: dict.nav.contact },
-    ...(dict.percorsi ? [{ href: `/${lang}/percorsi`, label: dict.percorsi.nav_label }] : []),
+    ...(dict.routes ? [{ href: `/${lang}/routes`, label: dict.routes.nav_label }] : []),
   ]
 
   return (
@@ -44,9 +44,9 @@ export function Navbar({ lang, dict }: NavbarProps) {
           <Link href={`/${lang}#contatti`} className="hover:text-primary transition-colors">
             {dict.nav.contact}
           </Link>
-          {dict.percorsi && (
-            <Link href={`/${lang}/percorsi`} className="hover:text-primary transition-colors">
-              {dict.percorsi.nav_label}
+          {dict.routes && (
+            <Link href={`/${lang}/routes`} className="hover:text-primary transition-colors">
+              {dict.routes.nav_label}
             </Link>
           )}
         </div>

@@ -18,21 +18,21 @@ export async function generateMetadata({
   const dict = await getDictionary(lang)
   const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://www.lelettricaleoni.com').replace(/\/$/, '')
   return {
-    title: dict.percorsi.page_title,
-    description: dict.percorsi.page_subtitle,
+    title: dict.routes.page_title,
+    description: dict.routes.page_subtitle,
     alternates: {
-      canonical: `${siteUrl}/${lang}/percorsi`,
+      canonical: `${siteUrl}/${lang}/routes`,
       languages: {
-        it: `${siteUrl}/it/percorsi`,
-        en: `${siteUrl}/en/percorsi`,
-        de: `${siteUrl}/de/percorsi`,
-        'x-default': `${siteUrl}/it/percorsi`,
+        it: `${siteUrl}/it/routes`,
+        en: `${siteUrl}/en/routes`,
+        de: `${siteUrl}/de/routes`,
+        'x-default': `${siteUrl}/it/routes`,
       },
     },
   }
 }
 
-export default async function PercorsiPage({
+export default async function RoutesPage({
   params,
 }: { params: Promise<{ lang: string }> }) {
   const { lang } = await params
@@ -71,13 +71,13 @@ export default async function PercorsiPage({
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'ItemList',
-    name: dict.percorsi.page_title,
-    url: `${siteUrl}/${lang}/percorsi`,
+    name: dict.routes.page_title,
+    url: `${siteUrl}/${lang}/routes`,
     numberOfItems: routesWithData.length,
     itemListElement: routesWithData.map(({ route, translation }, i) => ({
       '@type': 'ListItem',
       position: i + 1,
-      url: `${siteUrl}/${lang}/percorsi/${shortRouteId(route.id)}`,
+      url: `${siteUrl}/${lang}/routes/${shortRouteId(route.id)}`,
       name: translation?.name ?? shortRouteId(route.id),
     })),
   }
@@ -86,15 +86,12 @@ export default async function PercorsiPage({
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <Navbar lang={lang} dict={dict} />
-      {/* Header a piena larghezza come le sezioni home */}
-      <section className="w-full pt-24 pb-8">
-        <div className="max-w-6xl mx-auto px-12 sm:px-20">
-          <h1 className="text-3xl font-bold text-[#1e3a5f]">{dict.percorsi.page_title}</h1>
-          <p className="text-muted-foreground mt-2">{dict.percorsi.page_subtitle}</p>
-        </div>
-      </section>
-      <main className="w-full py-10">
-        <div className="max-w-6xl mx-auto px-12 sm:px-20">
+      <main className="w-full pt-24 pb-16">
+        <div className="max-w-6xl mx-auto px-12 sm:px-20 space-y-8">
+          <div>
+            <h1 className="text-3xl font-bold text-[#1e3a5f]">{dict.routes.page_title}</h1>
+            <p className="text-muted-foreground mt-2 max-w-xl">{dict.routes.page_subtitle}</p>
+          </div>
           <RouteFilters routes={routesWithData} lang={lang} dict={dict} />
         </div>
       </main>

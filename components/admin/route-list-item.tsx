@@ -11,10 +11,11 @@ import {
   AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
 import { deleteRouteAction, togglePublishAction } from '@/lib/actions/routes'
+import { DifficultyBadge } from '@/components/difficulty-badge'
 import type { Route } from '@/lib/db'
 
-const difficultyLabel: Record<string, string> = {
-  easy: 'Facile', medium: 'Medio', hard: 'Difficile', expert: 'Esperto'
+const DIFFICULTY_LABELS: Record<string, string> = {
+  easy: 'Easy', medium: 'Medium', hard: 'Hard', expert: 'Expert',
 }
 
 export function RouteListItem({ route, name }: { route: Route; name: string }) {
@@ -23,14 +24,14 @@ export function RouteListItem({ route, name }: { route: Route; name: string }) {
   function handleDelete() {
     startTransition(async () => {
       await deleteRouteAction(route.id)
-      toast.success('Percorso eliminato')
+      toast.success('Route deleted')
     })
   }
 
   function handleTogglePublish() {
     startTransition(async () => {
       await togglePublishAction(route.id, !route.isPublished)
-      toast.success(route.isPublished ? 'Percorso nascosto' : 'Percorso pubblicato')
+      toast.success(route.isPublished ? 'Route hidden' : 'Route published')
     })
   }
 
@@ -39,10 +40,10 @@ export function RouteListItem({ route, name }: { route: Route; name: string }) {
       <div className="space-y-1 min-w-0">
         <p className="font-medium text-[#1e3a5f] truncate">{name}</p>
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Badge variant="outline">{difficultyLabel[route.difficulty]}</Badge>
+          <DifficultyBadge difficulty={route.difficulty} label={DIFFICULTY_LABELS[route.difficulty] ?? route.difficulty} />
           {route.distanceKm && <span>{route.distanceKm} km</span>}
           <Badge variant={route.isPublished ? 'default' : 'secondary'}>
-            {route.isPublished ? 'Pubblicato' : 'Bozza'}
+            {route.isPublished ? 'Published' : 'Draft'}
           </Badge>
         </div>
       </div>
@@ -52,7 +53,7 @@ export function RouteListItem({ route, name }: { route: Route; name: string }) {
           variant="ghost" size="icon"
           onClick={handleTogglePublish}
           disabled={isPending}
-          title={route.isPublished ? 'Nascondi' : 'Pubblica'}
+          title={route.isPublished ? 'Hide' : 'Publish'}
         >
           {route.isPublished ? <EyeOff size={16} /> : <Eye size={16} />}
         </Button>
@@ -69,15 +70,15 @@ export function RouteListItem({ route, name }: { route: Route; name: string }) {
           </AlertDialogTrigger>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Eliminare il percorso?</AlertDialogTitle>
+              <AlertDialogTitle>Delete route?</AlertDialogTitle>
               <AlertDialogDescription>
-                Questa azione è irreversibile. Verranno eliminate anche tutte le foto e il file GPX.
+                This action is irreversible. All photos and the GPX file will also be deleted.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel>Annulla</AlertDialogCancel>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
               <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90">
-                Elimina
+                Delete
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>

@@ -92,9 +92,10 @@
     "contact_title": "Contact",
     "contact_body": "For any requests related to data processing: info@lelettricaleoni.com"
   },
-  "percorsi": {
+  "routes": {
     "page_title": "Recommended routes",
-    "page_subtitle": "Explore Lake Garda and the surrounding valleys by e-bike or bicycle",
+    "routes_count": "routes",
+    "page_subtitle": "Curated routes around Dro and Lake Garda, suited to every level. Pick your route and set off on an adventure.",
     "filter_all": "All",
     "filter_difficulty": "Difficulty",
     "difficulty_easy": "Easy",
@@ -115,6 +116,7 @@
     "share_copied": "Link copied!",
     "back_to_list": "All routes",
     "no_results": "No routes found with these filters.",
+    "no_results_reset": "Reset filters",
     "copyright_notice": "Routes are the exclusive property of Lelettrica di Leoni Gabriele. All rights reserved.",
     "nav_label": "Routes",
     "gpx_modal_title": "Download GPX track",

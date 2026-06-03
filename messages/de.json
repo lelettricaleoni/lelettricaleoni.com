@@ -92,9 +92,10 @@
     "contact_title": "Kontakt",
     "contact_body": "Für alle Anfragen zum Datenschutz: info@lelettricaleoni.com"
   },
-  "percorsi": {
+  "routes": {
     "page_title": "Empfohlene Routen",
-    "page_subtitle": "Erkunde den Gardasee und die Täler um Dro per E-Bike oder Fahrrad",
+    "routes_count": "Routen",
+    "page_subtitle": "Ausgewählte Routen rund um Dro und den Gardasee, für jedes Niveau geeignet. Wähle deine Route und starte dein Abenteuer.",
     "filter_all": "Alle",
     "filter_difficulty": "Schwierigkeit",
     "difficulty_easy": "Leicht",
@@ -115,6 +116,7 @@
     "share_copied": "Link kopiert!",
     "back_to_list": "Alle Routen",
     "no_results": "Keine Routen mit diesen Filtern gefunden.",
+    "no_results_reset": "Filter zurücksetzen",
     "copyright_notice": "Routen sind ausschließliches Eigentum von Lelettrica di Leoni Gabriele. Alle Rechte vorbehalten.",
     "nav_label": "Routen",
     "gpx_modal_title": "GPX-Track herunterladen",

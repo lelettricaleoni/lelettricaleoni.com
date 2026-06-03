@@ -1,0 +1,124 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - navigation [ref=e3]:
+      - link "Lelettrica" [ref=e4] [cursor=pointer]:
+        - /url: /it
+        - img "Lelettrica" [ref=e5]
+      - generic [ref=e6]:
+        - link "Servizi" [ref=e7] [cursor=pointer]:
+          - /url: /it#servizi
+        - link "Prezzi" [ref=e8] [cursor=pointer]:
+          - /url: /it#prezzi
+        - link "Contatti" [ref=e9] [cursor=pointer]:
+          - /url: /it#contatti
+        - link "Percorsi" [ref=e10] [cursor=pointer]:
+          - /url: /it/routes
+      - generic [ref=e12]:
+        - link "IT IT" [ref=e13] [cursor=pointer]:
+          - /url: /it/routes/2783fc56
+          - img "IT" [ref=e14]
+          - generic [ref=e15]: IT
+        - link "EN EN" [ref=e16] [cursor=pointer]:
+          - /url: /en/routes/2783fc56
+          - img "EN" [ref=e17]
+          - generic [ref=e18]: EN
+        - link "DE DE" [ref=e19] [cursor=pointer]:
+          - /url: /de/routes/2783fc56
+          - img "DE" [ref=e20]
+          - generic [ref=e21]: DE
+  - main [ref=e22]:
+    - generic [ref=e23]:
+      - link "Tutti i percorsi" [ref=e24] [cursor=pointer]:
+        - /url: /it/routes
+        - img [ref=e25]
+        - text: Tutti i percorsi
+      - generic [ref=e27]:
+        - heading "Downhill in paganella" [level=1] [ref=e28]
+        - generic [ref=e29]:
+          - generic [ref=e30]:
+            - generic [ref=e31]:
+              - img [ref=e32]
+              - img [ref=e34]
+            - text: eMTB
+          - generic [ref=e36]:
+            - img [ref=e38]
+            - text: MTB
+          - generic [ref=e40]:
+            - img [ref=e42]
+            - text: Road Bike
+          - generic [ref=e46]:
+            - generic [ref=e47]:
+              - img [ref=e48]
+              - img [ref=e52]
+            - text: E-Road Bike
+          - generic [ref=e54]:
+            - img [ref=e56]
+            - text: Gravel
+          - generic [ref=e60]:
+            - generic [ref=e61]:
+              - img [ref=e62]
+              - img [ref=e66]
+            - text: E-Gravel
+          - generic [ref=e68]:
+            - img [ref=e70]
+            - text: City Bike
+          - generic [ref=e74]:
+            - generic [ref=e75]:
+              - img [ref=e76]
+              - img [ref=e80]
+            - text: E-City Bike
+          - generic [ref=e82]: Esperto
+      - generic [ref=e84]:
+        - generic [ref=e85]:
+          - img [ref=e86]
+          - paragraph [ref=e92]: 23.50km
+          - paragraph [ref=e93]: km
+        - generic [ref=e94]:
+          - img [ref=e95]
+          - paragraph [ref=e98]: 1616m
+          - paragraph [ref=e99]: m
+        - generic [ref=e100]:
+          - img [ref=e101]
+          - paragraph [ref=e104]: 2h51m
+          - paragraph [ref=e105]: durata
+        - generic [ref=e106]:
+          - img [ref=e107]
+          - paragraph [ref=e111]: Sterrato
+          - paragraph [ref=e112]: fondo
+      - paragraph [ref=e114]: Una fantastiga giornata di downhill con ben 2 giri di trail
+      - button "Downhill in paganella foto 1" [ref=e116]:
+        - img "Downhill in paganella foto 1" [ref=e117]
+      - generic [ref=e118]:
+        - button "Scarica GPX" [ref=e119]:
+          - img
+          - text: Scarica GPX
+        - button "Condividi" [ref=e120]:
+          - img
+          - text: Condividi
+  - contentinfo [ref=e121]:
+    - generic [ref=e122]:
+      - generic [ref=e123]:
+        - link "Lelettrica" [ref=e124] [cursor=pointer]:
+          - /url: /it
+          - img "Lelettrica" [ref=e125]
+        - generic [ref=e126]:
+          - paragraph [ref=e127]: Via Roma, 90 — Dro, TN 38074, Italia
+          - paragraph [ref=e128]:
+            - link "+39 338 123 2434" [ref=e129] [cursor=pointer]:
+              - /url: tel:+393381232434
+            - text: ·
+            - link "info@lelettricaleoni.com" [ref=e130] [cursor=pointer]:
+              - /url: mailto:info@lelettricaleoni.com
+        - link "Instagram" [ref=e131] [cursor=pointer]:
+          - /url: https://www.instagram.com/lelettricaleoni
+          - img [ref=e132]
+          - generic [ref=e135]: "@lelettricaleoni"
+      - generic [ref=e136]:
+        - paragraph [ref=e137]: © 2026 Lelettrica. Tutti i diritti riservati.
+        - paragraph [ref=e138]: P.IVA 02622600225 • LELETTRICA DI LEONI GABRIELE
+        - generic [ref=e139]:
+          - link "Privacy Policy" [ref=e140] [cursor=pointer]:
+            - /url: /it/privacy
+          - button "Impostazioni cookie" [ref=e141] [cursor=pointer]
+  - button "Open Next.js Dev Tools" [ref=e147] [cursor=pointer]:
+    - img [ref=e148]

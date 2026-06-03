@@ -12,7 +12,6 @@ import { shortRouteId } from '@/lib/utils'
 const RouteSchema = z.object({
   nameIt:          z.string().min(2).max(200),
   descriptionIt:   z.string().min(10),
-  startPointLabel: z.string().optional(),
   difficulty:      z.enum(['easy', 'medium', 'hard', 'expert']),
   distanceKm:      z.coerce.number().positive().optional(),
   elevationM:      z.coerce.number().nonnegative().int().optional(),
@@ -81,7 +80,6 @@ export async function createRouteAction(
   const raw = {
     nameIt:          formData.get('nameIt'),
     descriptionIt:   formData.get('descriptionIt'),
-    startPointLabel: formData.get('startPointLabel') || undefined,
     difficulty:      formData.get('difficulty'),
     distanceKm:      formData.get('distanceKm') || undefined,
     elevationM:      formData.get('elevationM') || undefined,
@@ -98,7 +96,7 @@ export async function createRouteAction(
     return { errors: parsed.error.flatten().fieldErrors }
   }
 
-  const { nameIt, descriptionIt, startPointLabel, ...routeData } = parsed.data
+  const { nameIt, descriptionIt, ...routeData } = parsed.data
 
   const slug = slugify(nameIt)
   const [newRoute] = await db.insert(routes).values({
@@ -120,9 +118,9 @@ export async function createRouteAction(
   ])
 
   await db.insert(routeTranslations).values([
-    { routeId: newRoute.id, locale: 'it', name: nameIt, description: descriptionIt, startPointLabel, isAutoTranslated: false },
-    { routeId: newRoute.id, locale: 'en', name: nameTranslations.en, description: descTranslations.en, startPointLabel, isAutoTranslated: true },
-    { routeId: newRoute.id, locale: 'de', name: nameTranslations.de, description: descTranslations.de, startPointLabel, isAutoTranslated: true },
+    { routeId: newRoute.id, locale: 'it', name: nameIt, description: descriptionIt, isAutoTranslated: false },
+    { routeId: newRoute.id, locale: 'en', name: nameTranslations.en, description: descTranslations.en, isAutoTranslated: true },
+    { routeId: newRoute.id, locale: 'de', name: nameTranslations.de, description: descTranslations.de, isAutoTranslated: true },
   ])
 
   if (photoKeys.length > 0) {
@@ -131,7 +129,7 @@ export async function createRouteAction(
     )
   }
 
-  revalidatePath('/[lang]/percorsi', 'page')
+  revalidatePath('/[lang]/routes', 'page')
   redirect('/manage/routes')
 }
 
@@ -147,7 +145,6 @@ export async function updateRouteAction(
   const raw = {
     nameIt:          formData.get('nameIt'),
     descriptionIt:   formData.get('descriptionIt'),
-    startPointLabel: formData.get('startPointLabel') || undefined,
     difficulty:      formData.get('difficulty'),
     distanceKm:      formData.get('distanceKm') || undefined,
     elevationM:      formData.get('elevationM') || undefined,
@@ -164,7 +161,7 @@ export async function updateRouteAction(
     return { errors: parsed.error.flatten().fieldErrors }
   }
 
-  const { nameIt, descriptionIt, startPointLabel, ...routeData } = parsed.data
+  const { nameIt, descriptionIt, ...routeData } = parsed.data
   const slug = slugify(nameIt)
 
   await db.update(routes).set({
@@ -201,18 +198,18 @@ export async function updateRouteAction(
     ] as const) {
       await db
         .update(routeTranslations)
-        .set({ name, description: desc, startPointLabel, isAutoTranslated: isAuto })
+        .set({ name, description: desc, isAutoTranslated: isAuto })
         .where(and(eq(routeTranslations.routeId, id), eq(routeTranslations.locale, locale)))
     }
   } else {
     await db
       .update(routeTranslations)
-      .set({ name: nameIt, description: descriptionIt, startPointLabel })
+      .set({ name: nameIt, description: descriptionIt })
       .where(and(eq(routeTranslations.routeId, id), eq(routeTranslations.locale, 'it')))
   }
 
-  revalidatePath('/[lang]/percorsi', 'page')
-  revalidatePath(`/[lang]/percorsi/${shortRouteId(id)}`, 'page')
+  revalidatePath('/[lang]/routes', 'page')
+  revalidatePath(`/[lang]/routes/${shortRouteId(id)}`, 'page')
   redirect('/manage/routes')
 }
 
@@ -228,7 +225,7 @@ export async function deleteRouteAction(id: string) {
 
   await db.delete(routes).where(eq(routes.id, id))
 
-  revalidatePath('/[lang]/percorsi', 'page')
+  revalidatePath('/[lang]/routes', 'page')
 }
 
 export async function togglePublishAction(id: string, isPublished: boolean) {
@@ -239,8 +236,8 @@ export async function togglePublishAction(id: string, isPublished: boolean) {
     .where(eq(routes.id, id))
     .returning()
 
-  revalidatePath('/[lang]/percorsi', 'page')
-  if (route) revalidatePath(`/[lang]/percorsi/${shortRouteId(route.id)}`, 'page')
+  revalidatePath('/[lang]/routes', 'page')
+  if (route) revalidatePath(`/[lang]/routes/${shortRouteId(route.id)}`, 'page')
 }
 
 export async function getPresignedUploadUrlAction(
@@ -270,5 +267,5 @@ export async function savePhotosAction(
     )
   }
   const [route] = await db.select().from(routes).where(eq(routes.id, routeId))
-  if (route) revalidatePath(`/[lang]/percorsi/${shortRouteId(route.id)}`, 'page')
+  if (route) revalidatePath(`/[lang]/routes/${shortRouteId(route.id)}`, 'page')
 }

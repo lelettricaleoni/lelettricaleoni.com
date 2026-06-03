@@ -13,16 +13,16 @@ import {
 interface RouteGpxModalProps {
   shortId: string
   routeName: string
-  dict: { percorsi: Record<string, string> }
+  dict: { routes: Record<string, string> }
 }
 
 export function RouteGpxModal({ shortId, routeName, dict }: RouteGpxModalProps) {
   const [open, setOpen] = useState(false)
-  const d = dict.percorsi
+  const d = dict.routes
 
   function handleDownload() {
     const a = document.createElement('a')
-    a.href = `/api/percorsi/${shortId}/gpx`
+    a.href = `/api/routes/${shortId}/gpx`
     a.download = `${routeName}.gpx`
     document.body.appendChild(a)
     a.click()

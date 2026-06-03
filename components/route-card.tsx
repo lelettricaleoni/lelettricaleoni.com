@@ -1,6 +1,8 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { Badge } from '@/components/ui/badge'
+import { BikeTypeIcon, bikeTypeBadgeClass } from '@/components/bike-type-icon'
+import { DifficultyBadge } from '@/components/difficulty-badge'
 import { r2PublicUrl } from '@/lib/r2'
 import { shortRouteId } from '@/lib/utils'
 import type { Route, RouteTranslation, RoutePhoto } from '@/lib/db'
@@ -10,23 +12,15 @@ interface RouteCardProps {
   translation: RouteTranslation
   coverPhoto: RoutePhoto | undefined
   lang: string
-  dict: { percorsi: Record<string, string> }
-}
-
-const difficultyColor: Record<string, string> = {
-  easy: 'bg-green-100 text-green-800',
-  medium: 'bg-yellow-100 text-yellow-800',
-  hard: 'bg-orange-100 text-orange-800',
-  expert: 'bg-red-100 text-red-800',
+  dict: { routes: Record<string, string> }
 }
 
 export function RouteCard({ route, translation, coverPhoto, lang, dict }: RouteCardProps) {
-  const d = dict.percorsi
-  const difficultyKey = `difficulty_${route.difficulty}` as keyof typeof d
+  const d = dict.routes
 
   return (
     <Link
-      href={`/${lang}/percorsi/${shortRouteId(route.id)}`}
+      href={`/${lang}/routes/${shortRouteId(route.id)}`}
       className="group block rounded-xl overflow-hidden border bg-card hover:shadow-md transition-shadow"
     >
       <div className="relative h-48 bg-[#c8dae8]">
@@ -39,9 +33,11 @@ export function RouteCard({ route, translation, coverPhoto, lang, dict }: RouteC
             sizes="(max-width: 768px) 100vw, 50vw"
           />
         )}
-        <span className={`absolute top-3 right-3 text-xs font-semibold px-2.5 py-1 rounded-full ${difficultyColor[route.difficulty]}`}>
-          {d[difficultyKey] ?? route.difficulty}
-        </span>
+        <DifficultyBadge
+          difficulty={route.difficulty}
+          label={d[`difficulty_${route.difficulty}` as keyof typeof d] ?? route.difficulty}
+          className="absolute top-3 right-3 shadow-sm"
+        />
       </div>
 
       <div className="p-4 space-y-3">
@@ -51,7 +47,10 @@ export function RouteCard({ route, translation, coverPhoto, lang, dict }: RouteC
 
         <div className="flex flex-wrap gap-1.5">
           {route.bikeTypes.map((type) => (
-            <Badge key={type} variant="secondary" className="text-xs">{type}</Badge>
+            <Badge key={type} variant="outline" className={`text-xs flex items-center gap-1 font-medium ${bikeTypeBadgeClass(type)}`}>
+              <BikeTypeIcon type={type} size={12} />
+              {type}
+            </Badge>
           ))}
         </div>
 

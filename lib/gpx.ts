@@ -73,7 +73,7 @@ export function parseGpxPoints(gpxString: string): [number, number, number][] {
   ])
   if (all.length <= 2000) return all
 
-  // Campionamento adattivo per distanza: mantiene più punti nelle curve
+  // Distance-based adaptive sampling: preserves more points on curves
   const target = 2000
   const totalDist = all.reduce((acc, p, i) => {
     if (i === 0) return 0
@@ -101,13 +101,13 @@ export function watermarkGpx(gpxString: string, routeName: string): string {
   const year = new Date().getFullYear()
   const metadata = `
   <metadata>
-    <name>Percorso Lelettrica — ${routeName}</name>
+    <name>Lelettrica Route — ${routeName}</name>
     <author><name>Lelettrica di Leoni Gabriele</name></author>
     <copyright author="Lelettrica di Leoni Gabriele">
       <year>${year}</year>
-      <license>Tutti i diritti riservati — www.lelettricaleoni.com</license>
+      <license>All rights reserved — www.lelettricaleoni.com</license>
     </copyright>
-    <desc>File GPX di proprietà di Lelettrica. Vietata la riproduzione senza autorizzazione. www.lelettricaleoni.com</desc>
+    <desc>GPX file owned by Lelettrica. Reproduction without permission is prohibited. www.lelettricaleoni.com</desc>
   </metadata>`
 
   if (gpxString.includes('<metadata>')) {

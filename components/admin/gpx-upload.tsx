@@ -14,7 +14,7 @@ interface GpxUploadProps {
 export function GpxUpload({ routeId, defaultGpxKey, onUploaded }: GpxUploadProps) {
   const [gpxKey, setGpxKey] = useState(defaultGpxKey ?? '')
   const [uploading, setUploading] = useState(false)
-  // Per nuovi percorsi genera un UUID stabile per la sessione
+  // For new routes, generate a stable UUID for the session
   const effectiveRouteId = routeId === 'new' ? (() => {
     if (typeof window === 'undefined') return 'new'
     const k = '__gpx_tmp_id'
@@ -43,10 +43,10 @@ export function GpxUpload({ routeId, defaultGpxKey, onUploaded }: GpxUploadProps
         setGpxKey(key)
         onUploaded(key, stats)
         const dur = stats.durationMin ? `, ${Math.floor(stats.durationMin / 60)}h${stats.durationMin % 60 > 0 ? `${stats.durationMin % 60}m` : ''}` : ''
-        toast.success(`GPX caricato — ${stats.distanceKm} km, +${stats.elevationM} m${dur}`)
+        toast.success(`GPX uploaded — ${stats.distanceKm} km, +${stats.elevationM} m${dur}`)
       } catch (err) {
         console.error('GPX upload error:', err)
-        toast.error(`Errore GPX: ${err instanceof Error ? err.message : 'sconosciuto'}`)
+        toast.error(`GPX error: ${err instanceof Error ? err.message : 'unknown'}`)
       } finally {
         setUploading(false)
       }
@@ -64,12 +64,12 @@ export function GpxUpload({ routeId, defaultGpxKey, onUploaded }: GpxUploadProps
         <input {...getInputProps()} />
         {gpxKey ? (
           <div className="flex items-center justify-center gap-2 text-sm text-green-600">
-            <FileCheck size={18} /> File GPX caricato (clicca per sostituire)
+            <FileCheck size={18} /> GPX file uploaded (click to replace)
           </div>
         ) : (
           <div className="flex flex-col items-center gap-2 text-sm text-muted-foreground">
             <Upload size={18} />
-            {uploading ? 'Caricamento...' : 'Trascina il file .gpx o clicca per selezionarlo'}
+            {uploading ? 'Uploading...' : 'Drop the .gpx file here or click to select'}
           </div>
         )}
       </div>

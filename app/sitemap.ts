@@ -10,7 +10,7 @@ const LAST_MODIFIED = new Date('2026-04-20')
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticRoutes: { path: string; priority: number; freq: MetadataRoute.Sitemap[number]['changeFrequency'] }[] = [
     { path: '',          priority: 1.0, freq: 'weekly'  },
-    { path: '/percorsi', priority: 0.9, freq: 'weekly'  },
+    { path: '/routes', priority: 0.9, freq: 'weekly'  },
     { path: '/privacy',  priority: 0.3, freq: 'monthly' },
   ]
 
@@ -39,14 +39,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     dynamicEntries = publishedRoutes.flatMap((route) => {
       const sid = shortRouteId(route.id)
       return locales.map((lang) => ({
-        url: `${BASE_URL}/${lang}/percorsi/${sid}`,
+        url: `${BASE_URL}/${lang}/routes/${sid}`,
         lastModified: route.updatedAt,
         changeFrequency: 'monthly' as const,
         priority: 0.7,
         alternates: {
           languages: {
-            ...Object.fromEntries(locales.map((l) => [l, `${BASE_URL}/${l}/percorsi/${sid}`])),
-            'x-default': `${BASE_URL}/it/percorsi/${sid}`,
+            ...Object.fromEntries(locales.map((l) => [l, `${BASE_URL}/${l}/routes/${sid}`])),
+            'x-default': `${BASE_URL}/it/routes/${sid}`,
           },
         },
       }))

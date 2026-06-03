@@ -27,7 +27,7 @@ export function RouteGallery({ photos, routeName }: { photos: RoutePhoto[]; rout
             src={r2PublicUrl(photos[0].storageKey)}
             alt={photos[0].altText ?? `${routeName} foto 1`}
             fill className="object-cover"
-            sizes="100vw"
+            sizes="(max-width: 640px) calc(100vw - 6rem), (max-width: 1152px) calc(100vw - 10rem), 992px"
           />
         </button>
       )}

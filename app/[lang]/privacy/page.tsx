@@ -106,7 +106,7 @@ export default async function PrivacyPage({
               <h2 className="text-lg font-semibold mb-3">
                 {lang === 'it' ? 'Contenuti proprietari' : lang === 'de' ? 'Proprietäre Inhalte' : 'Proprietary content'}
               </h2>
-              <p className="text-muted-foreground leading-relaxed">{dict.percorsi.copyright_notice}</p>
+              <p className="text-muted-foreground leading-relaxed">{dict.routes.copyright_notice}</p>
             </section>
           </div>
         </div>

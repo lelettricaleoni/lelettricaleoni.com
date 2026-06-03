@@ -10,6 +10,8 @@ import { Footer } from '@/components/footer'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { RouteGallery } from '@/components/route-gallery'
+import { BikeTypeIcon, bikeTypeBadgeClass } from '@/components/bike-type-icon'
+import { DifficultyBadge } from '@/components/difficulty-badge'
 import { RouteFlyoverLoader } from '@/components/route-flyover-loader'
 import { RouteGpxModal } from '@/components/route-gpx-modal'
 import { RouteShareModal } from '@/components/route-share-modal'
@@ -56,14 +58,14 @@ export async function generateMetadata({
   return {
     title,
     description,
-    openGraph: { title, description, images: [{ url: ogImage }], url: `${siteUrl}/${lang}/percorsi/${id}` },
+    openGraph: { title, description, images: [{ url: ogImage }], url: `${siteUrl}/${lang}/routes/${id}` },
     alternates: {
-      canonical: `${siteUrl}/${lang}/percorsi/${id}`,
+      canonical: `${siteUrl}/${lang}/routes/${id}`,
       languages: {
-        it: `${siteUrl}/it/percorsi/${id}`,
-        en: `${siteUrl}/en/percorsi/${id}`,
-        de: `${siteUrl}/de/percorsi/${id}`,
-        'x-default': `${siteUrl}/it/percorsi/${id}`,
+        it: `${siteUrl}/it/routes/${id}`,
+        en: `${siteUrl}/en/routes/${id}`,
+        de: `${siteUrl}/de/routes/${id}`,
+        'x-default': `${siteUrl}/it/routes/${id}`,
       },
     },
   }
@@ -76,7 +78,7 @@ export default async function RouteDetailPage({
   if (!hasLocale(lang)) notFound()
 
   const dict = await getDictionary(lang)
-  const d = dict.percorsi
+  const d = dict.routes
 
   const [route] = await db.select().from(routes).where(
     and(sql`left(${routes.id}::text, 8) = ${id}`, eq(routes.isPublished, true))
@@ -107,17 +109,12 @@ export default async function RouteDetailPage({
 
   const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://www.lelettricaleoni.com').replace(/\/$/, '')
 
-  const difficultyLabel: Record<string, string> = {
-    easy: d.difficulty_easy, medium: d.difficulty_medium,
-    hard: d.difficulty_hard, expert: d.difficulty_expert,
-  }
-
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'ExercisePlan',
     name: translation?.name ?? id,
     description: translation?.description,
-    url: `${siteUrl}/${lang}/percorsi/${id}`,
+    url: `${siteUrl}/${lang}/routes/${id}`,
     image: coverPhoto ? r2PublicUrl(coverPhoto.storageKey) : undefined,
     exerciseType: 'Cycling',
     associatedAnatomy: route.bikeTypes,
@@ -131,7 +128,7 @@ export default async function RouteDetailPage({
       <main className="w-full pt-24 pb-8">
       <div className="max-w-6xl mx-auto px-12 sm:px-20 space-y-8">
         {/* Back */}
-        <Link href={`/${lang}/percorsi`} className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-[#366DA1]">
+        <Link href={`/${lang}/routes`} className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-[#366DA1]">
           <ArrowLeft size={14} /> {d.back_to_list}
         </Link>
 
@@ -142,18 +139,22 @@ export default async function RouteDetailPage({
           </h1>
           <div className="flex flex-wrap gap-2">
             {route.bikeTypes.map((type) => (
-              <Badge key={type} variant="secondary">{type}</Badge>
+              <Badge key={type} variant="outline" className={`flex items-center gap-1 font-medium ${bikeTypeBadgeClass(type)}`}>
+                <BikeTypeIcon type={type} size={13} />
+                {type}
+              </Badge>
             ))}
             {route.difficulty && (
-              <Badge variant="outline" className="font-semibold text-[#1e3a5f]">
-                {difficultyLabel[route.difficulty]}
-              </Badge>
+              <DifficultyBadge
+                difficulty={route.difficulty}
+                label={d[`difficulty_${route.difficulty}` as keyof typeof d] ?? route.difficulty}
+              />
             )}
           </div>
         </div>
 
-        {/* Mappa / Flyover GPX */}
-        {gpxPoints.length > 1 && <RouteFlyoverLoader points={gpxPoints} />}
+        {/* Map / GPX flyover */}
+        {gpxPoints.length > 1 && <RouteFlyoverLoader points={gpxPoints} difficulty={route.difficulty} />}
 
         {/* Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -227,7 +228,7 @@ export default async function RouteDetailPage({
             />
           )}
           <RouteShareModal
-            url={`${siteUrl}/${lang}/percorsi/${id}`}
+            url={`${siteUrl}/${lang}/routes/${id}`}
             routeName={translation?.name ?? id}
             dict={dict}
           />

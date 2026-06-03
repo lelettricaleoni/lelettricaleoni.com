@@ -21,12 +21,12 @@ function getLocale(request: NextRequest): string {
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  // Escludi asset statici Cesium dalla localizzazione
+  // Exclude static Cesium assets from i18n routing
   if (pathname.startsWith('/cesium/')) {
     return NextResponse.next()
   }
 
-  // Protezione area admin
+  // Admin area protection
   if (pathname.startsWith('/manage')) {
     if (pathname === '/manage/login') {
       return NextResponse.next()
@@ -62,7 +62,7 @@ export async function proxy(request: NextRequest) {
     return supabaseResponse
   }
 
-  // i18n routing esistente
+  // i18n routing
   const pathnameHasLocale = locales.some(
     (locale) => pathname.startsWith(`/${locale}/`) || pathname === `/${locale}`
   )

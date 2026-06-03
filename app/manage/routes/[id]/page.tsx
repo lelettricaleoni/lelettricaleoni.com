@@ -3,7 +3,7 @@ import { updateRouteAction, getRouteWithDetails } from '@/lib/actions/routes'
 import { getAdminUser } from '@/lib/supabase/server'
 import { notFound, redirect } from 'next/navigation'
 
-export default async function EditPercorsoPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function EditRoutePage({ params }: { params: Promise<{ id: string }> }) {
   const user = await getAdminUser()
   if (!user) redirect('/manage/login')
 
@@ -15,7 +15,7 @@ export default async function EditPercorsoPage({ params }: { params: Promise<{ i
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-[#1e3a5f]">Modifica percorso</h1>
+      <h1 className="text-2xl font-bold text-[#1e3a5f]">Edit route</h1>
       <RouteForm
         action={action}
         route={data.route}
