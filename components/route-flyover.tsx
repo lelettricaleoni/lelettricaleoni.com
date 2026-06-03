@@ -1,6 +1,8 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
 import { Play, Square } from 'lucide-react'
+import { MapLoader } from '@/components/map-loader'
+import { trackEvent } from '@/lib/analytics'
 
 type Coord = [number, number, number] // [lon, lat, ele]
 
@@ -12,8 +14,7 @@ declare global {
   interface Window { CESIUM_BASE_URL: string; Cesium: any }
 }
 
-const CESIUM_VERSION = '1.141.0'
-const CESIUM_CDN = `https://unpkg.com/cesium@${CESIUM_VERSION}/Build/Cesium`
+const CESIUM_BASE = '/cesium'
 
 // Module-level state machine — handles concurrent mounts and retries cleanly
 type LoadState = 'idle' | 'loading' | 'loaded'
@@ -28,7 +29,7 @@ function loadCesiumScript(): Promise<void> {
     cesiumLoadState = 'loading'
     const script = document.createElement('script')
     script.id = 'cesium-js'
-    script.src = `${CESIUM_CDN}/Cesium.js`
+    script.src = `${CESIUM_BASE}/Cesium.js`
     script.onload = () => {
       cesiumLoadState = 'loaded'
       cesiumLoadCallbacks.splice(0).forEach((cb) => cb.resolve())
@@ -53,7 +54,7 @@ const DIFFICULTY_COLORS: Record<string, string> = {
 export function RouteFlyover({ points, difficulty }: { points: Coord[]; difficulty?: string }) {
   const containerRef = useRef<HTMLDivElement>(null)
   const viewerRef = useRef<CesiumType>(null)
-  const cesiumRef = useRef<CesiumType>(null)  // cached Cesium module
+  const cesiumRef = useRef<CesiumType>(null)
   const entityRef = useRef<CesiumType>(null)
   const cameraHandlerRef = useRef<CesiumType>(null)
   const [flying, setFlying] = useState(false)
@@ -79,29 +80,34 @@ export function RouteFlyover({ points, difficulty }: { points: Coord[]; difficul
           ro.observe(containerRef.current)
         })
 
-        window.CESIUM_BASE_URL = `${CESIUM_CDN}/`
+        // Must be set before loading Cesium.js so it reads the correct base path
+        window.CESIUM_BASE_URL = `${CESIUM_BASE}/`
 
         if (!document.querySelector('#cesium-css')) {
           const link = document.createElement('link')
           link.id = 'cesium-css'
           link.rel = 'stylesheet'
-          link.href = `${CESIUM_CDN}/Widgets/widgets.css`
+          link.href = `${CESIUM_BASE}/Widgets/widgets.css`
           document.head.appendChild(link)
         }
 
-        // Cesium loaded via script tag to avoid webpack bundling (octal escapes in GLSL shaders)
         await loadCesiumScript()
         const Cesium: CesiumType = window.Cesium
         if (destroyed || !containerRef.current) return
 
-        cesiumRef.current = Cesium  // cached for startFlyover / stopFlyover
+        cesiumRef.current = Cesium
 
         const token = process.env.NEXT_PUBLIC_CESIUM_TOKEN
         if (token) Cesium.Ion.defaultAccessToken = token
 
-        const esriImagery = await Cesium.ArcGisMapServerImageryProvider.fromUrl(
-          'https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer'
-        )
+        const [esriImagery, esriLabels] = await Promise.all([
+          Cesium.ArcGisMapServerImageryProvider.fromUrl(
+            'https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer'
+          ),
+          Cesium.ArcGisMapServerImageryProvider.fromUrl(
+            'https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer'
+          ),
+        ])
 
         let terrainProvider
         if (token) {
@@ -124,9 +130,11 @@ export function RouteFlyover({ points, difficulty }: { points: Coord[]; difficul
           creditContainer: document.createElement('div'),
         })
 
+        // Labels overlay: city names, peaks, lakes, boundaries
+        viewer.imageryLayers.addImageryProvider(esriLabels)
+
         const trackColor = DIFFICULTY_COLORS[difficulty ?? ''] ?? '#795F91'
 
-        // Route track polyline
         viewer.entities.add({
           polyline: {
             positions: Cesium.Cartesian3.fromDegreesArrayHeights(
@@ -178,6 +186,7 @@ export function RouteFlyover({ points, difficulty }: { points: Coord[]; difficul
     const Cesium = cesiumRef.current
     if (!viewer || !Cesium || points.length < 2) return
     setFlying(true)
+    trackEvent('flyover_start')
 
     const DURATION_S = 60
     const start = Cesium.JulianDate.now()
@@ -213,11 +222,43 @@ export function RouteFlyover({ points, difficulty }: { points: Coord[]; difficul
     })
     entityRef.current = entity
 
-    // Manual camera update every frame — no jerk from trackedEntity
-    const offset = new Cesium.HeadingPitchRange(0, Cesium.Math.toRadians(-30), 3000)
+    // Initialize heading from the first segment so the camera starts already oriented
+    const toRad = Cesium.Math.toRadians
+    const lon0 = toRad(points[0][0]), lat0 = toRad(points[0][1])
+    const lon1 = toRad(points[1][0]), lat1 = toRad(points[1][1])
+    const dLon0 = lon1 - lon0
+    let smoothedHeading = Math.atan2(
+      Math.sin(dLon0) * Math.cos(lat1),
+      Math.cos(lat0) * Math.sin(lat1) - Math.sin(lat0) * Math.cos(lat1) * Math.cos(dLon0)
+    )
+
+    // Manual camera update every frame — heading follows direction of travel, smoothed
+    const LOOK_AHEAD_S = 4  // sample this many seconds ahead for bearing
+    const SMOOTH = 0.08     // per-frame blend (lower = smoother but laggier)
+    const offset = new Cesium.HeadingPitchRange(smoothedHeading, Cesium.Math.toRadians(-30), 3000)
     cameraHandlerRef.current = viewer.scene.postUpdate.addEventListener((_scene: unknown, time: CesiumType) => {
       const currentPos = pos.getValue(time, new Cesium.Cartesian3())
-      if (currentPos) viewer.camera.lookAt(currentPos, offset)
+      if (!currentPos) return
+
+      const aheadTime = Cesium.JulianDate.addSeconds(time, LOOK_AHEAD_S, new Cesium.JulianDate())
+      const aheadPos = pos.getValue(aheadTime, new Cesium.Cartesian3())
+      if (aheadPos) {
+        const c1 = Cesium.Cartographic.fromCartesian(currentPos)
+        const c2 = Cesium.Cartographic.fromCartesian(aheadPos)
+        const dLon = c2.longitude - c1.longitude
+        const targetHeading = Math.atan2(
+          Math.sin(dLon) * Math.cos(c2.latitude),
+          Math.cos(c1.latitude) * Math.sin(c2.latitude) - Math.sin(c1.latitude) * Math.cos(c2.latitude) * Math.cos(dLon)
+        )
+        // Normalize diff to [-π, π] to avoid wrap-around snaps
+        let diff = targetHeading - smoothedHeading
+        while (diff > Math.PI) diff -= 2 * Math.PI
+        while (diff < -Math.PI) diff += 2 * Math.PI
+        smoothedHeading += diff * SMOOTH
+      }
+
+      offset.heading = smoothedHeading
+      viewer.camera.lookAt(currentPos, offset)
     })
 
     viewer.clock.shouldAnimate = true
@@ -236,6 +277,7 @@ export function RouteFlyover({ points, difficulty }: { points: Coord[]; difficul
     const Cesium = cesiumRef.current
     if (!viewer || !Cesium) return
     viewer.clock.shouldAnimate = false
+    trackEvent('flyover_stop')
     cameraHandlerRef.current?.()
     cameraHandlerRef.current = null
     viewer.camera.lookAtTransform(Cesium.Matrix4.IDENTITY)
@@ -257,7 +299,10 @@ export function RouteFlyover({ points, difficulty }: { points: Coord[]; difficul
 
   return (
     <div className="space-y-3">
-      <div className="rounded-xl overflow-hidden border border-border">
+      <div className="rounded-xl overflow-hidden border border-border relative">
+        {!ready && (
+          <MapLoader className="absolute inset-0 z-10" />
+        )}
         <div
           ref={containerRef}
           className="w-full h-72 sm:h-[420px]"
@@ -268,7 +313,7 @@ export function RouteFlyover({ points, difficulty }: { points: Coord[]; difficul
         <div className="flex justify-center">
           <button
             onClick={flying ? stopFlyover : startFlyover}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-[#366DA1] text-[#366DA1] bg-white text-sm font-semibold shadow-sm hover:bg-[#366DA1] hover:text-white transition-colors"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-[#366DA1] text-[#366DA1] bg-white text-sm font-semibold shadow-sm hover:bg-[#366DA1] hover:text-white transition-colors cursor-pointer"
           >
             {flying ? (
               <>

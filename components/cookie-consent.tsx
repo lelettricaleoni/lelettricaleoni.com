@@ -1,9 +1,10 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { usePathname } from 'next/navigation'
 import 'vanilla-cookieconsent/dist/cookieconsent.css'
 import * as CookieConsent from 'vanilla-cookieconsent'
+import { trackPageView } from '@/lib/analytics'
 
 declare global {
   interface Window {
@@ -165,11 +166,18 @@ export function CookieConsentInit({ locale }: CookieConsentInitProps) {
   }, [])
 
   const pathname = usePathname()
+  const isFirstRender = useRef(true)
 
   useEffect(() => {
     const pathLocale = pathname?.split('/')[1] ?? ''
     const lang = ['it', 'en', 'de'].includes(pathLocale) ? pathLocale : 'it'
     CookieConsent.setLanguage(lang)
+
+    if (isFirstRender.current) {
+      isFirstRender.current = false
+      return
+    }
+    trackPageView(pathname ?? '/')
   }, [pathname])
 
   return null

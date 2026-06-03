@@ -21,12 +21,12 @@ export function RouteGallery({ photos, routeName }: { photos: RoutePhoto[]; rout
       {photos.length === 1 && (
         <button
           onClick={() => openAt(0)}
-          className="relative w-full aspect-video rounded-xl overflow-hidden bg-muted hover:opacity-90 transition-opacity focus-visible:ring-2 ring-[#366DA1] outline-none"
+          className="relative w-full aspect-video rounded-xl overflow-hidden bg-muted hover:opacity-90 transition-opacity focus-visible:ring-2 ring-[#366DA1] outline-none cursor-pointer"
         >
           <Image
             src={r2PublicUrl(photos[0].storageKey)}
             alt={photos[0].altText ?? `${routeName} foto 1`}
-            fill className="object-cover"
+            fill priority className="object-cover"
             sizes="(max-width: 640px) calc(100vw - 6rem), (max-width: 1152px) calc(100vw - 10rem), 992px"
           />
         </button>
@@ -38,12 +38,12 @@ export function RouteGallery({ photos, routeName }: { photos: RoutePhoto[]; rout
             <button
               key={photo.id}
               onClick={() => openAt(i)}
-              className={`relative overflow-hidden bg-muted hover:opacity-90 transition-opacity focus-visible:ring-2 ring-[#366DA1] outline-none ${i === 0 ? 'rounded-l-xl' : 'rounded-r-xl'}`}
+              className={`relative overflow-hidden bg-muted hover:opacity-90 transition-opacity focus-visible:ring-2 ring-[#366DA1] outline-none cursor-pointer ${i === 0 ? 'rounded-l-xl' : 'rounded-r-xl'}`}
             >
               <Image
                 src={r2PublicUrl(photo.storageKey)}
                 alt={photo.altText ?? `${routeName} foto ${i + 1}`}
-                fill className="object-cover"
+                fill priority={i === 0} className="object-cover"
                 sizes="50vw"
               />
             </button>
@@ -56,19 +56,19 @@ export function RouteGallery({ photos, routeName }: { photos: RoutePhoto[]; rout
           {/* Prima foto — grande, 2 colonne × 2 righe */}
           <button
             onClick={() => openAt(0)}
-            className="col-span-2 row-span-2 relative rounded-l-xl overflow-hidden bg-muted hover:opacity-90 transition-opacity focus-visible:ring-2 ring-[#366DA1] outline-none"
+            className="col-span-2 row-span-2 relative rounded-l-xl overflow-hidden bg-muted hover:opacity-90 transition-opacity focus-visible:ring-2 ring-[#366DA1] outline-none cursor-pointer"
           >
             <Image
               src={r2PublicUrl(photos[0].storageKey)}
               alt={photos[0].altText ?? `${routeName} foto 1`}
-              fill className="object-cover"
+              fill priority className="object-cover"
               sizes="(max-width: 768px) 66vw, 50vw"
             />
           </button>
           {/* Seconda foto */}
           <button
             onClick={() => openAt(1)}
-            className="relative rounded-tr-xl overflow-hidden bg-muted hover:opacity-90 transition-opacity focus-visible:ring-2 ring-[#366DA1] outline-none"
+            className="relative rounded-tr-xl overflow-hidden bg-muted hover:opacity-90 transition-opacity focus-visible:ring-2 ring-[#366DA1] outline-none cursor-pointer"
           >
             <Image
               src={r2PublicUrl(photos[1].storageKey)}
@@ -80,7 +80,7 @@ export function RouteGallery({ photos, routeName }: { photos: RoutePhoto[]; rout
           {/* Terza foto — con overlay +N se ci sono altre */}
           <button
             onClick={() => openAt(2)}
-            className="relative rounded-br-xl overflow-hidden bg-muted hover:opacity-90 transition-opacity focus-visible:ring-2 ring-[#366DA1] outline-none"
+            className="relative rounded-br-xl overflow-hidden bg-muted hover:opacity-90 transition-opacity focus-visible:ring-2 ring-[#366DA1] outline-none cursor-pointer"
           >
             <Image
               src={r2PublicUrl(photos[2].storageKey)}

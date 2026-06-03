@@ -13,7 +13,8 @@ if (!existsSync(src)) {
 
 mkdirSync(dest, { recursive: true })
 
-// Copia Cesium.js (caricato via script tag, non bundlato da webpack)
+// Cesium.js is loaded via script tag (not bundled by webpack) to avoid SWC
+// choking on GLSL shaders with octal escape sequences
 cpSync(join(src, 'Cesium.js'), join(dest, 'Cesium.js'))
 
 for (const dir of ['Workers', 'ThirdParty', 'Assets', 'Widgets']) {

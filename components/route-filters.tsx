@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import { SlidersHorizontal } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { trackEvent } from '@/lib/analytics'
 import { RouteCard } from './route-card'
 import { BikeTypeIcon } from './bike-type-icon'
 import { DIFFICULTY_STYLES, DIFFICULTY_ACTIVE_STYLES } from './difficulty-badge'
@@ -40,9 +41,11 @@ export function RouteFilters({ routes, lang, dict }: RouteFiltersProps) {
   const availableBikeTypes = [...new Set(routes.flatMap((r) => r.route.bikeTypes))]
     .filter((t) => BIKE_TYPES.includes(t))
 
-  function toggle<T extends string>(current: T | null, value: T, set: (v: T | null) => void) {
+  function toggle<T extends string>(
+    current: T | null, value: T, set: (v: T | null) => void, filterType: string
+  ) {
     set(current === value ? null : value)
-    window.gtag?.('event', 'filter_routes', { filter_type: 'difficulty', filter_value: value })
+    trackEvent('filter_routes', { filter_type: filterType, filter_value: value })
   }
 
   return (
@@ -61,7 +64,7 @@ export function RouteFilters({ routes, lang, dict }: RouteFiltersProps) {
           {availableDifficulties.map((key) => (
             <button
               key={key}
-              onClick={() => toggle(activeDifficulty, key, setActiveDifficulty)}
+              onClick={() => toggle(activeDifficulty, key, setActiveDifficulty, 'difficulty')}
               className={cn('px-3 py-1 rounded-full text-xs font-semibold border cursor-pointer transition-colors',
                 activeDifficulty === key ? DIFFICULTY_ACTIVE_STYLES[key] : DIFFICULTY_STYLES[key])}
             >
@@ -82,7 +85,7 @@ export function RouteFilters({ routes, lang, dict }: RouteFiltersProps) {
           {availableBikeTypes.map((type) => (
             <button
               key={type}
-              onClick={() => toggle(activeBikeType, type, setActiveBikeType)}
+              onClick={() => toggle(activeBikeType, type, setActiveBikeType, 'bike_type')}
               className={cn(
                 'inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border cursor-pointer transition-colors',
                 activeBikeType === type ? PILL_ACTIVE : PILL_INACTIVE

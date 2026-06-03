@@ -5,6 +5,7 @@ import { getDictionary, hasLocale } from '../dictionaries'
 import { Navbar } from '@/components/navbar'
 import { Footer } from '@/components/footer'
 import { RouteFilters } from '@/components/route-filters'
+import { SectionViewTracker } from '@/components/section-view-tracker'
 import { db, routes, routeTranslations, routePhotos } from '@/lib/db'
 import { shortRouteId } from '@/lib/utils'
 
@@ -89,6 +90,7 @@ export default async function RoutesPage({
       <main className="w-full pt-24 pb-16">
         <div className="max-w-6xl mx-auto px-12 sm:px-20 space-y-8">
           <div>
+            <SectionViewTracker name="routes_list" />
             <h1 className="text-3xl font-bold text-[#1e3a5f]">{dict.routes.page_title}</h1>
             <p className="text-muted-foreground mt-2 max-w-xl">{dict.routes.page_subtitle}</p>
           </div>

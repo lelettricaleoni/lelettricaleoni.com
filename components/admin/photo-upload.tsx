@@ -30,7 +30,7 @@ function SortablePhoto({ photo, onRemove }: { photo: Photo; onRemove: () => void
       </button>
       <img src={photo.preview} alt="" className="w-16 h-12 object-cover rounded" />
       <span className="text-xs text-muted-foreground flex-1 truncate">{photo.storageKey.split('/').pop()}</span>
-      <button type="button" onClick={onRemove} className="text-destructive hover:text-destructive/80">
+      <button type="button" onClick={onRemove} className="text-destructive hover:text-destructive/80 cursor-pointer">
         <X size={14} />
       </button>
     </div>

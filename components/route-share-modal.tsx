@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { Share2, Copy, Check, MessageCircle } from 'lucide-react'
+import { trackEvent } from '@/lib/analytics'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -25,26 +26,20 @@ export function RouteShareModal({ url, routeName, dict }: RouteShareModalProps) 
 
   function handleOpen() {
     setOpen(true)
-    if (typeof window !== 'undefined') {
-      window.gtag?.('event', 'share_route', { method: 'modal_open', url })
-    }
+    trackEvent('share_route', { method: 'modal_open', url })
   }
 
   async function handleCopy() {
     await navigator.clipboard.writeText(url)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
-    if (typeof window !== 'undefined') {
-      window.gtag?.('event', 'share_route', { method: 'copy_link', url })
-    }
+    trackEvent('share_route', { method: 'copy_link', url })
   }
 
   async function handleNativeShare() {
     try {
       await navigator.share({ title: routeName, url })
-      if (typeof window !== 'undefined') {
-        window.gtag?.('event', 'share_route', { method: 'native', url })
-      }
+      trackEvent('share_route', { method: 'native', url })
     } catch {
       // user cancelled
     }
@@ -79,7 +74,7 @@ export function RouteShareModal({ url, routeName, dict }: RouteShareModalProps) 
               <span className="flex-1 text-xs text-muted-foreground truncate select-all">{url}</span>
               <button
                 onClick={handleCopy}
-                className="shrink-0 text-muted-foreground hover:text-[#366DA1] transition-colors"
+                className="shrink-0 text-muted-foreground hover:text-[#366DA1] transition-colors cursor-pointer"
                 aria-label={d.share_modal_copy}
               >
                 {copied ? <Check size={15} className="text-green-600" /> : <Copy size={15} />}

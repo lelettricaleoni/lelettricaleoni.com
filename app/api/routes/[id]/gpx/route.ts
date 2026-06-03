@@ -31,10 +31,12 @@ export async function GET(
   const gpxString = await gpxResponse.text()
   const watermarked = watermarkGpx(gpxString, translation?.name ?? id)
 
-  return new NextResponse(watermarked, {
+  const body = Buffer.from(watermarked, 'utf-8')
+  return new NextResponse(body, {
     headers: {
       'Content-Type': 'application/gpx+xml',
       'Content-Disposition': `attachment; filename="${id}.gpx"`,
+      'Content-Length': String(body.length),
       'Cache-Control': 'no-store',
     },
   })

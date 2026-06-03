@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { loginAction, magicLinkAction, resetPasswordAction } from '@/lib/actions/auth'
+import { trackEvent } from '@/lib/analytics'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -56,7 +57,7 @@ export function LoginForm({ lang, d, error, info }: Props) {
           <button
             key={id}
             type="button"
-            onClick={() => setMode(id)}
+            onClick={() => { setMode(id); trackEvent('login_mode_switch', { mode: id }) }}
             className={`flex-1 py-2.5 transition-colors cursor-pointer ${
               mode === id ? 'bg-[#1e3a5f] text-white font-semibold' : 'bg-background text-muted-foreground hover:text-foreground'
             }`}

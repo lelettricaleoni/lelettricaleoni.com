@@ -1,0 +1,115 @@
+- generic [active] [ref=e1]:
+  - button "Open Next.js Dev Tools" [ref=e30] [cursor=pointer]:
+    - generic [ref=e63]:
+      - text: Rendering
+      - generic [ref=e64]:
+        - generic [ref=e65]: .
+        - generic [ref=e66]: .
+        - generic [ref=e67]: .
+  - alert [ref=e38]
+  - banner [ref=e68]:
+    - navigation [ref=e69]:
+      - link "Lelettrica" [ref=e70] [cursor=pointer]:
+        - /url: /it
+        - img "Lelettrica" [ref=e71]
+      - generic [ref=e72]:
+        - link "Servizi" [ref=e73] [cursor=pointer]:
+          - /url: /it#servizi
+        - link "Prezzi" [ref=e74] [cursor=pointer]:
+          - /url: /it#prezzi
+        - link "Contatti" [ref=e75] [cursor=pointer]:
+          - /url: /it#contatti
+        - link "Percorsi" [ref=e76] [cursor=pointer]:
+          - /url: /it/routes
+      - generic [ref=e78]:
+        - link "IT IT" [ref=e79] [cursor=pointer]:
+          - /url: /it/routes/edbaa497
+          - img "IT" [ref=e80]
+          - generic [ref=e81]: IT
+        - link "EN EN" [ref=e82] [cursor=pointer]:
+          - /url: /en/routes/edbaa497
+          - img "EN" [ref=e83]
+          - generic [ref=e84]: EN
+        - link "DE DE" [ref=e85] [cursor=pointer]:
+          - /url: /de/routes/edbaa497
+          - img "DE" [ref=e86]
+          - generic [ref=e87]: DE
+  - main [ref=e88]:
+    - generic [ref=e89]:
+      - link "Tutti i percorsi" [ref=e90] [cursor=pointer]:
+        - /url: /it/routes
+        - img [ref=e91]
+        - text: Tutti i percorsi
+      - generic [ref=e93]:
+        - heading "GIro in paganella" [level=1] [ref=e94]
+        - generic [ref=e95]:
+          - generic [ref=e96]:
+            - img [ref=e97]
+            - text: eMTB
+          - generic [ref=e99]:
+            - img [ref=e100]
+            - text: MTB
+          - generic [ref=e102]: Esperto
+      - generic [ref=e103]:
+        - img [ref=e104]
+        - paragraph [ref=e109]: Caricamento mappa…
+      - generic [ref=e110]:
+        - generic [ref=e111]:
+          - img [ref=e112]
+          - paragraph [ref=e118]: 23.50km
+          - paragraph [ref=e119]: km
+        - generic [ref=e120]:
+          - img [ref=e121]
+          - paragraph [ref=e124]: 1616m
+          - paragraph [ref=e125]: m
+        - generic [ref=e126]:
+          - img [ref=e127]
+          - paragraph [ref=e130]: 2h51m
+          - paragraph [ref=e131]: durata
+        - generic [ref=e132]:
+          - img [ref=e133]
+          - paragraph [ref=e137]: Misto
+          - paragraph [ref=e138]: fondo
+      - paragraph [ref=e140]: GIro in paganella con tanti trail
+      - button "GIro in paganella foto 1" [ref=e142] [cursor=pointer]:
+        - img "GIro in paganella foto 1" [ref=e143]
+      - generic [ref=e144]:
+        - link "Apri su Strava" [ref=e145] [cursor=pointer]:
+          - /url: https://www.strava.com/activities/15201997434
+          - img [ref=e146]
+          - text: Apri su Strava
+        - link "Apri su Komoot" [ref=e148] [cursor=pointer]:
+          - /url: https://www.komoot.com/it-it/tour/2981554929
+          - img [ref=e149]
+          - text: Apri su Komoot
+        - button "Scarica GPX" [ref=e151] [cursor=pointer]:
+          - img
+          - text: Scarica GPX
+        - button "Condividi" [ref=e152] [cursor=pointer]:
+          - img
+          - text: Condividi
+  - contentinfo [ref=e153]:
+    - generic [ref=e154]:
+      - generic [ref=e155]:
+        - link "Lelettrica" [ref=e156] [cursor=pointer]:
+          - /url: /it
+          - img "Lelettrica" [ref=e157]
+        - generic [ref=e158]:
+          - paragraph [ref=e159]: Via Roma, 90, Dro (TN) 38074, Italia
+          - paragraph [ref=e160]:
+            - link "+39 338 123 2434" [ref=e161] [cursor=pointer]:
+              - /url: tel:+393381232434
+            - text: ·
+            - link "info@lelettricaleoni.com" [ref=e162] [cursor=pointer]:
+              - /url: mailto:info@lelettricaleoni.com
+        - link "Instagram" [ref=e163] [cursor=pointer]:
+          - /url: https://www.instagram.com/lelettricaleoni
+          - img [ref=e164]
+          - generic [ref=e167]: "@lelettricaleoni"
+      - generic [ref=e168]:
+        - paragraph [ref=e169]: © 2026 Lelettrica. Tutti i diritti riservati.
+        - paragraph [ref=e170]: P.IVA 02622600225 • LELETTRICA DI LEONI GABRIELE
+        - generic [ref=e171]:
+          - link "Privacy Policy" [ref=e172] [cursor=pointer]:
+            - /url: /it/privacy
+          - button "Impostazioni cookie" [ref=e173] [cursor=pointer]

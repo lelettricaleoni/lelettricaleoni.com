@@ -1,0 +1,27 @@
+- generic [active] [ref=e1]:
+  - button "Open Next.js Dev Tools" [ref=e34] [cursor=pointer]:
+    - generic [ref=e37]:
+      - text: Compiling
+      - generic [ref=e38]:
+        - generic [ref=e39]: .
+        - generic [ref=e40]: .
+        - generic [ref=e41]: .
+  - alert [ref=e42]: Pagina non trovata
+  - generic [ref=e43]:
+    - link "Lelettrica" [ref=e44] [cursor=pointer]:
+      - /url: /it
+      - img "Lelettrica" [ref=e45]
+    - paragraph [ref=e46]: "404"
+    - generic [ref=e47]:
+      - heading "Pagina non trovata" [level=1] [ref=e48]
+      - paragraph [ref=e49]: La pagina che cerchi non esiste o è stata spostata. Torna alla home per trovare tutte le informazioni sul noleggio e-bike.
+    - generic [ref=e50]:
+      - link "Torna alla home" [ref=e51] [cursor=pointer]:
+        - /url: /it
+        - img
+        - text: Torna alla home
+      - link "Chiamaci" [ref=e52] [cursor=pointer]:
+        - /url: tel:+393381232434
+        - img
+        - text: Chiamaci
+    - paragraph [ref=e53]: Via Roma 90, Dro (TN) · +39 338 123 2434

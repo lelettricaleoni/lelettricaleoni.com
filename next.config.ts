@@ -1,7 +1,9 @@
-import type { NextConfig } from "next";
+import type { NextConfig } from "next"
 
 const nextConfig: NextConfig = {
   webpack: (config) => {
+    // Cesium is loaded via script tag (UMD global) to avoid SWC parsing GLSL shaders
+    // with octal escape sequences — this maps `import cesium` to window.Cesium
     config.externals = [...(config.externals ?? []), { cesium: 'Cesium' }]
     return config
   },

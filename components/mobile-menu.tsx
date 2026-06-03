@@ -26,7 +26,7 @@ export function MobileMenu({ links }: MobileMenuProps) {
     <>
       {/* Backdrop — portale a document.body, fuori dall'header con backdrop-filter */}
       <div
-        className="fixed inset-0 z-[998] bg-black/40"
+        className="fixed inset-0 z-[998] bg-black/40 cursor-pointer"
         onClick={() => setOpen(false)}
         aria-hidden
       />
@@ -42,7 +42,7 @@ export function MobileMenu({ links }: MobileMenuProps) {
           <span className="text-sm font-semibold text-[#1e3a5f] tracking-wide uppercase">Menu</span>
           <button
             onClick={() => setOpen(false)}
-            className="p-1.5 rounded-md text-muted-foreground hover:text-[#1e3a5f] hover:bg-[#1e3a5f]/5 transition-colors"
+            className="p-1.5 rounded-md text-muted-foreground hover:text-[#1e3a5f] hover:bg-[#1e3a5f]/5 transition-colors cursor-pointer"
             aria-label="Chiudi menu"
           >
             <X size={20} />
@@ -68,7 +68,7 @@ export function MobileMenu({ links }: MobileMenuProps) {
   return (
     <>
       <button
-        className="md:hidden p-2 -mr-1 rounded-md text-muted-foreground hover:text-[#1e3a5f] transition-colors"
+        className="md:hidden p-2 -mr-1 rounded-md text-muted-foreground hover:text-[#1e3a5f] transition-colors cursor-pointer"
         onClick={() => setOpen(true)}
         aria-label="Apri menu"
         aria-expanded={open}

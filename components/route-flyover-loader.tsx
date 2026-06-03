@@ -1,19 +1,14 @@
 'use client'
 import dynamic from 'next/dynamic'
+import { MapLoader } from '@/components/map-loader'
 
-const RouteFlyoverInner = dynamic(
+type FlyoverProps = { points: [number, number, number][]; difficulty?: string }
+
+const Flyover = dynamic(
   () => import('@/components/route-flyover').then((m) => m.RouteFlyover),
-  {
-    ssr: false,
-    loading: () => <div className="h-72 sm:h-[420px] rounded-xl bg-muted animate-pulse" />,
-  }
+  { ssr: false, loading: () => <MapLoader className="h-72 sm:h-[420px] rounded-xl" /> }
 )
 
-interface Props {
-  points: [number, number, number][]
-  difficulty?: 'easy' | 'medium' | 'hard' | 'expert'
-}
-
-export function RouteFlyoverLoader({ points, difficulty }: Props) {
-  return <RouteFlyoverInner points={points} difficulty={difficulty} />
+export function RouteFlyoverLoader({ points, difficulty }: FlyoverProps) {
+  return <Flyover points={points} difficulty={difficulty} />
 }

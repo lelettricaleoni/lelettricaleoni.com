@@ -8,13 +8,14 @@ import { getDictionary, hasLocale } from '../../dictionaries'
 import { Navbar } from '@/components/navbar'
 import { Footer } from '@/components/footer'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
 import { RouteGallery } from '@/components/route-gallery'
 import { BikeTypeIcon, bikeTypeBadgeClass } from '@/components/bike-type-icon'
 import { DifficultyBadge } from '@/components/difficulty-badge'
 import { RouteFlyoverLoader } from '@/components/route-flyover-loader'
 import { RouteGpxModal } from '@/components/route-gpx-modal'
 import { RouteShareModal } from '@/components/route-share-modal'
+import { RouteExternalLinks } from '@/components/route-external-links'
+import { RouteViewTracker } from '@/components/route-view-tracker'
 import { db, routes, routeTranslations, routePhotos } from '@/lib/db'
 import { s3, R2_BUCKET, r2PublicUrl } from '@/lib/r2'
 import { parseGpxPoints } from '@/lib/gpx'
@@ -123,6 +124,7 @@ export default async function RouteDetailPage({
 
   return (
     <>
+      <RouteViewTracker routeId={id} difficulty={route.difficulty} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <Navbar lang={lang} dict={dict} />
       <main className="w-full pt-24 pb-8">
@@ -210,16 +212,12 @@ export default async function RouteDetailPage({
 
         {/* Links + Share */}
         <div className="flex flex-wrap gap-3 pt-4 border-t">
-          {route.stravaUrl && (
-            <Button asChild variant="outline" size="sm" className="border-orange-400 text-orange-600 hover:bg-orange-50">
-              <a href={route.stravaUrl} target="_blank" rel="noopener noreferrer">{d.open_strava}</a>
-            </Button>
-          )}
-          {route.komootUrl && (
-            <Button asChild variant="outline" size="sm" className="border-green-600 text-green-700 hover:bg-green-50">
-              <a href={route.komootUrl} target="_blank" rel="noopener noreferrer">{d.open_komoot}</a>
-            </Button>
-          )}
+          <RouteExternalLinks
+            stravaUrl={route.stravaUrl}
+            komootUrl={route.komootUrl}
+            openStrava={d.open_strava}
+            openKomoot={d.open_komoot}
+          />
           {route.gpxKey && (
             <RouteGpxModal
               shortId={id}
