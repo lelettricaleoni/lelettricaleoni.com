@@ -130,5 +130,30 @@
     "share_modal_copied": "Link copiato!",
     "share_modal_whatsapp": "WhatsApp",
     "share_modal_native": "Condividi"
+  },
+  "login": {
+    "title": "Accedi",
+    "subtitle": "Bentornato su Lelettrica",
+    "tab_password": "Password",
+    "tab_magic": "Magic link",
+    "tab_reset": "Reset",
+    "email_placeholder": "nome@esempio.com",
+    "password_placeholder": "••••••••",
+    "magic_hint": "Riceverai un link monouso via email. Nessuna password richiesta.",
+    "reset_hint": "Riceverai un link per impostare una nuova password.",
+    "submit_password": "Accedi",
+    "submit_magic": "Invia magic link",
+    "submit_reset": "Invia link di reset",
+    "magic_sent": "Controlla la tua email: ti abbiamo inviato un link di accesso.",
+    "reset_sent": "Controlla la tua email: ti abbiamo inviato il link per reimpostare la password.",
+    "left_title": "Noleggio e-bike a Dro,\nLago di Garda",
+    "left_subtitle": "Prenota il tuo noleggio, gestisci le tue uscite o accedi all'area staff.",
+    "gdpr": "Accesso riservato. Dati trattati nel rispetto del GDPR."
+  },
+  "update_password": {
+    "title": "Nuova password",
+    "subtitle": "Scegli una password di almeno 8 caratteri",
+    "label": "Nuova password",
+    "submit": "Salva password"
   }
 }

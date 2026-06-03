@@ -50,7 +50,7 @@ export function RouteShareModal({ url, routeName, dict }: RouteShareModalProps) 
     }
   }
 
-  const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(`${routeName} — ${url}`)}`
+  const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(`${routeName}: ${url}`)}`
 
   return (
     <>

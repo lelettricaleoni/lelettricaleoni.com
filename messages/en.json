@@ -130,5 +130,30 @@
     "share_modal_copied": "Link copied!",
     "share_modal_whatsapp": "WhatsApp",
     "share_modal_native": "Share"
+  },
+  "login": {
+    "title": "Log in",
+    "subtitle": "Welcome back to Lelettrica",
+    "tab_password": "Password",
+    "tab_magic": "Magic link",
+    "tab_reset": "Reset",
+    "email_placeholder": "name@example.com",
+    "password_placeholder": "••••••••",
+    "magic_hint": "You'll receive a one-time link by email. No password needed.",
+    "reset_hint": "You'll receive a link to set a new password.",
+    "submit_password": "Log in",
+    "submit_magic": "Send magic link",
+    "submit_reset": "Send reset link",
+    "magic_sent": "Check your email: we've sent you a login link.",
+    "reset_sent": "Check your email: we've sent you a password reset link.",
+    "left_title": "E-bike rental in Dro,\nLake Garda",
+    "left_subtitle": "Book your rental, manage your rides or access the staff area.",
+    "gdpr": "Restricted access. Data processed in accordance with GDPR."
+  },
+  "update_password": {
+    "title": "New password",
+    "subtitle": "Choose a password of at least 8 characters",
+    "label": "New password",
+    "submit": "Save password"
   }
 }

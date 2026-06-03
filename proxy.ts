@@ -26,12 +26,13 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next()
   }
 
+  // Auth callback — pass through without i18n redirect
+  if (pathname.startsWith('/auth/')) {
+    return NextResponse.next()
+  }
+
   // Admin area protection
   if (pathname.startsWith('/manage')) {
-    if (pathname === '/manage/login') {
-      return NextResponse.next()
-    }
-
     let supabaseResponse = NextResponse.next({ request })
 
     const supabase = createServerClient(
@@ -55,7 +56,7 @@ export async function proxy(request: NextRequest) {
 
     if (!user || user.user_metadata?.role !== 'admin') {
       const loginUrl = request.nextUrl.clone()
-      loginUrl.pathname = '/manage/login'
+      loginUrl.pathname = '/login'
       return NextResponse.redirect(loginUrl)
     }
 

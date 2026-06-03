@@ -60,7 +60,7 @@ export function Footer({ lang, dict }: FooterProps) {
 
           {/* Address + contact */}
           <div className="text-center text-sm text-white/60 space-y-1">
-            <p>Via Roma, 90 — Dro, TN 38074, Italia</p>
+            <p>Via Roma, 90, Dro (TN) 38074, Italia</p>
             <p>
               <a
                 href="tel:+393381232434"

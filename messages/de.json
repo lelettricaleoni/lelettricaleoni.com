@@ -130,5 +130,30 @@
     "share_modal_copied": "Link kopiert!",
     "share_modal_whatsapp": "WhatsApp",
     "share_modal_native": "Teilen"
+  },
+  "login": {
+    "title": "Anmelden",
+    "subtitle": "Willkommen zurück bei Lelettrica",
+    "tab_password": "Passwort",
+    "tab_magic": "Magic link",
+    "tab_reset": "Zurücksetzen",
+    "email_placeholder": "name@beispiel.com",
+    "password_placeholder": "••••••••",
+    "magic_hint": "Du erhältst einen Einmallink per E-Mail. Kein Passwort erforderlich.",
+    "reset_hint": "Du erhältst einen Link zum Festlegen eines neuen Passworts.",
+    "submit_password": "Anmelden",
+    "submit_magic": "Magic link senden",
+    "submit_reset": "Reset-Link senden",
+    "magic_sent": "Prüfe deine E-Mail: Wir haben dir einen Anmeldelink gesendet.",
+    "reset_sent": "Prüfe deine E-Mail: Wir haben dir einen Link zum Zurücksetzen gesendet.",
+    "left_title": "E-Bike-Verleih in Dro,\nGardasee",
+    "left_subtitle": "Buche deinen Verleih, verwalte deine Ausfahrten oder greife auf den Mitarbeiterbereich zu.",
+    "gdpr": "Eingeschränkter Zugang. Daten werden gemäß DSGVO verarbeitet."
+  },
+  "update_password": {
+    "title": "Neues Passwort",
+    "subtitle": "Wähle ein Passwort mit mindestens 8 Zeichen",
+    "label": "Neues Passwort",
+    "submit": "Passwort speichern"
   }
 }

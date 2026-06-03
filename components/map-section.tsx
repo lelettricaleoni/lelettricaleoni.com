@@ -44,7 +44,7 @@ export function MapSection({ dict }: MapSectionProps) {
             <InfoRow
               icon={<MapPin className="text-primary" size={20} />}
               label={dict.info.address_label}
-              value="Via Roma, 90 — Dro, TN 38074, Italia"
+              value="Via Roma, 90, Dro (TN) 38074, Italia"
             />
             <InfoRow
               icon={<Phone className="text-primary" size={20} />}
