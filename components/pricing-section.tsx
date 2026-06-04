@@ -132,8 +132,8 @@ export function PricingSection({ dict }: { dict: PricingDict }) {
                 <TableRow className="bg-slate-50">
                   <TableHead className="font-semibold text-foreground w-40">{p.duration}</TableHead>
                   <TableHead className="font-semibold text-foreground text-center">eMTB Front</TableHead>
-                  <TableHead className="font-semibold text-foreground text-center">eMTB Full — Alu</TableHead>
-                  <TableHead className="font-semibold text-foreground text-center">eMTB Full — Carbon</TableHead>
+                  <TableHead className="font-semibold text-foreground text-center">eMTB Full • Alu</TableHead>
+                  <TableHead className="font-semibold text-foreground text-center">eMTB Full • Carbon</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -184,7 +184,7 @@ export function PricingSection({ dict }: { dict: PricingDict }) {
           <div className="rounded-xl border border-border bg-white overflow-hidden shadow-sm">
             <PriceRow label={p.charger}        price="€5"  sub={`(${p.one_time})`} />
             <PriceRow label={p.child_seat}     price="€3"  sub={`(${p.one_time})`} />
-            <PriceRow label={p.range_extender} price="€15" sub={`• ${p.range_extender_note}`} />
+            <PriceRow label={p.range_extender} price="€15" sub={`(${p.range_extender_note})`} />
           </div>
         </div>
 
