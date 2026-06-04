@@ -70,7 +70,7 @@ function PriceRow({ label, price, sub }: { label: string; price: string; sub?: s
 function PriceCell({ value }: { value: string | null }) {
   if (!value) {
     return (
-      <TableCell className="text-center text-muted-foreground/40 select-none text-sm">—</TableCell>
+      <TableCell className="text-center text-muted-foreground/30 select-none text-base">•</TableCell>
     )
   }
   return (
@@ -177,8 +177,8 @@ export function PricingSection({ dict }: { dict: PricingDict }) {
           <p className="text-xs text-muted-foreground mt-2 px-1">{p.footnote_charger}</p>
         </div>
 
-        {/* Bici classiche + Extra */}
-        <div className="grid sm:grid-cols-3 gap-6 mb-10">
+        {/* Bici classiche */}
+        <div className="grid sm:grid-cols-2 gap-6 mb-6">
           <div>
             <SectionTitle icon={<Bike size={18} />} label={p.classic_bike_title} />
             <div className="rounded-xl border border-border bg-white overflow-hidden shadow-sm">
@@ -194,14 +194,15 @@ export function PricingSection({ dict }: { dict: PricingDict }) {
               <PriceRow label={p.from_day2} price={`€15 ${p.per_day}`} />
             </div>
           </div>
+        </div>
 
-          <div>
-            <SectionTitle icon={<Tag size={18} />} label={p.extras_title} />
-            <div className="rounded-xl border border-border bg-white overflow-hidden shadow-sm">
-              <PriceRow label={p.charger}        price="€5"  sub={`(${p.one_time})`} />
-              <PriceRow label={p.child_seat}     price="€3"  sub={`(${p.one_time})`} />
-              <PriceRow label={p.range_extender} price="€15" sub={`— ${p.range_extender_note}`} />
-            </div>
+        {/* Extra */}
+        <div className="mb-10">
+          <SectionTitle icon={<Tag size={18} />} label={p.extras_title} />
+          <div className="rounded-xl border border-border bg-white overflow-hidden shadow-sm">
+            <PriceRow label={p.charger}        price="€5"  sub={`(${p.one_time})`} />
+            <PriceRow label={p.child_seat}     price="€3"  sub={`(${p.one_time})`} />
+            <PriceRow label={p.range_extender} price="€15" sub={`— ${p.range_extender_note}`} />
           </div>
         </div>
 
