@@ -48,8 +48,9 @@
     "charger": "Ladegerät",
     "child_seat": "Kindersitz",
     "range_extender": "Range Extender 250 Wh",
+    "range_extender_note": "nur eMTB Full",
     "one_time": "einmalig",
-    "footnote_charger": "* Preis inkl. Ladegerät (€ 5)"
+    "footnote_charger": "1-Tag-Preis inkl. Ladegerät (€ 5)"
   },
   "info": {
     "title": "Wo wir sind",

@@ -38,6 +38,7 @@ interface PricingDict {
     charger: string
     child_seat: string
     range_extender: string
+    range_extender_note: string
     one_time: string
     footnote_charger: string
   }
@@ -109,7 +110,7 @@ export function PricingSection({ dict }: { dict: PricingDict }) {
               </TableHeader>
               <TableBody>
                 {[
-                  { label: p.day_1,     gravel: '€25*',  city: '€33*'  },
+                  { label: p.day_1,     gravel: '€25',   city: '€33'   },
                   { label: p.days_2,    gravel: '€47',   city: '€60'   },
                   { label: p.days_3,    gravel: '€68',   city: '€88'   },
                   { label: p.days_4,    gravel: '€88',   city: '€110'  },
@@ -154,7 +155,7 @@ export function PricingSection({ dict }: { dict: PricingDict }) {
               </TableHeader>
               <TableBody>
                 {[
-                  { label: p.day_1,     front: '€38*',  alu: '€60*',  carbon: '€70*'  },
+                  { label: p.day_1,     front: '€38',   alu: '€60',   carbon: '€70'   },
                   { label: p.days_2,    front: '€72',   alu: '€115',  carbon: '€125'  },
                   { label: p.days_3,    front: '€100',  alu: '€160',  carbon: '€180'  },
                   { label: p.days_4,    front: '€120',  alu: '€195',  carbon: '€220'  },
@@ -199,7 +200,7 @@ export function PricingSection({ dict }: { dict: PricingDict }) {
             <div className="rounded-xl border border-border bg-white overflow-hidden shadow-sm">
               <PriceRow label={p.charger}        price="€5"  sub={`(${p.one_time})`} />
               <PriceRow label={p.child_seat}     price="€3"  sub={`(${p.one_time})`} />
-              <PriceRow label={p.range_extender} price="€15" sub={`(${p.one_time})`} />
+              <PriceRow label={p.range_extender} price="€15" sub={`— ${p.range_extender_note}`} />
             </div>
           </div>
         </div>

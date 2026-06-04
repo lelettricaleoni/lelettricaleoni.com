@@ -48,8 +48,9 @@
     "charger": "Battery charger",
     "child_seat": "Child seat",
     "range_extender": "Range Extender 250 Wh",
+    "range_extender_note": "eMTB Full only",
     "one_time": "one-time",
-    "footnote_charger": "* price includes battery charger (€ 5)"
+    "footnote_charger": "1-day price includes battery charger (€ 5)"
   },
   "info": {
     "title": "Where to find us",
