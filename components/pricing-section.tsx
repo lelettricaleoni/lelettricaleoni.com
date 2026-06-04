@@ -40,7 +40,6 @@ interface PricingDict {
     range_extender: string
     range_extender_note: string
     one_time: string
-    footnote_charger: string
   }
 }
 
@@ -128,7 +127,6 @@ export function PricingSection({ dict }: { dict: PricingDict }) {
               </TableBody>
             </Table>
           </div>
-          <p className="text-xs text-muted-foreground mt-2 px-1">{p.footnote_charger}</p>
         </div>
 
         {/* eMTB */}
@@ -174,7 +172,6 @@ export function PricingSection({ dict }: { dict: PricingDict }) {
               </TableBody>
             </Table>
           </div>
-          <p className="text-xs text-muted-foreground mt-2 px-1">{p.footnote_charger}</p>
         </div>
 
         {/* Bici classiche */}
