@@ -54,7 +54,7 @@ export async function proxy(request: NextRequest) {
 
     const { data: { user } } = await supabase.auth.getUser()
 
-    if (!user || user.user_metadata?.role !== 'admin') {
+    if (!user || user.app_metadata?.role !== 'admin') {
       const loginUrl = request.nextUrl.clone()
       loginUrl.pathname = '/login'
       return NextResponse.redirect(loginUrl)

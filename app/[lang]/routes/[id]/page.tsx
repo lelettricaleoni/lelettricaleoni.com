@@ -83,7 +83,7 @@ export default async function RouteDetailPage({
 
   const [route] = await db.select().from(routes).where(
     and(sql`left(${routes.id}::text, 8) = ${id}`, eq(routes.isPublished, true))
-  )
+  ).catch((err: unknown) => { console.error('[RouteDetailPage] DB error:', err); throw err })
   if (!route) notFound()
 
   const [translation] = await db.select().from(routeTranslations).where(
@@ -103,7 +103,8 @@ export default async function RouteDetailPage({
       const chunks: Buffer[] = []
       for await (const chunk of res.Body as AsyncIterable<Buffer>) chunks.push(Buffer.from(chunk))
       gpxPoints = parseGpxPoints(Buffer.concat(chunks).toString('utf-8'))
-    } catch {
+    } catch (err) {
+      console.error('[RouteDetailPage] R2/GPX error:', err)
       gpxPoints = []
     }
   }
