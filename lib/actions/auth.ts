@@ -11,11 +11,9 @@ export async function loginAction(formData: FormData) {
   const lang = (formData.get('lang') as string) || 'it'
 
   const supabase = await createSupabaseServerClient()
-  const { error } = await supabase.auth.signInWithPassword({ email, password })
+  const { error, data: { user } } = await supabase.auth.signInWithPassword({ email, password })
 
   if (error) redirect(`/${lang}/login?error=Credenziali+non+valide.+Riprova.`)
-
-  const { data: { user } } = await supabase.auth.getUser()
   if (user?.app_metadata?.role === 'admin') redirect('/manage/routes')
   redirect(`/${lang}/login?error=Accesso+non+autorizzato.`)
 }
