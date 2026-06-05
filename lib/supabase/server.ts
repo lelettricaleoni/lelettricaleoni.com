@@ -25,6 +25,6 @@ export async function getAdminUser() {
   const supabase = await createSupabaseServerClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return null
-  if (user.user_metadata?.role !== 'admin') return null
+  if (user.app_metadata?.role !== 'admin') return null
   return user
 }

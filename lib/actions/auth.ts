@@ -16,7 +16,7 @@ export async function loginAction(formData: FormData) {
   if (error) redirect(`/${lang}/login?error=Credenziali+non+valide.+Riprova.`)
 
   const { data: { user } } = await supabase.auth.getUser()
-  if (user?.user_metadata?.role === 'admin') redirect('/manage/routes')
+  if (user?.app_metadata?.role === 'admin') redirect('/manage/routes')
   redirect(`/${lang}/login?error=Accesso+non+autorizzato.`)
 }
 
