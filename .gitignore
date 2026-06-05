@@ -41,3 +41,9 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 temp/
+
+# brainstorming visual companion
+.superpowers/
+
+# cesium static assets (generati da scripts/copy-cesium.mjs)
+/public/cesium/

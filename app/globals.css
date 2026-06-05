@@ -66,6 +66,14 @@
   }
 }
 
+/* Cesium viewer: forza il widget interno a riempire il container */
+.cesium-widget,
+.cesium-widget canvas {
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
+}
+
 /* vanilla-cookieconsent: allineamento al brand blu */
 :root {
   --cc-btn-primary-bg: #366da1;

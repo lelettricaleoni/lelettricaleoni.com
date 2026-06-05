@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import Negotiator from 'negotiator'
 import { match } from '@formatjs/intl-localematcher'
+import { createServerClient } from '@supabase/ssr'
 
 const locales = ['it', 'en', 'de']
 const defaultLocale = 'it'
@@ -17,16 +18,57 @@ function getLocale(request: NextRequest): string {
   }
 }
 
-export function proxy(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
+  // Exclude static Cesium assets from i18n routing
+  if (pathname.startsWith('/cesium/')) {
+    return NextResponse.next()
+  }
+
+  // Auth callback — pass through without i18n redirect
+  if (pathname.startsWith('/auth/')) {
+    return NextResponse.next()
+  }
+
+  // Admin area protection
+  if (pathname.startsWith('/manage')) {
+    let supabaseResponse = NextResponse.next({ request })
+
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() { return request.cookies.getAll() },
+          setAll(cookiesToSet) {
+            cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
+            supabaseResponse = NextResponse.next({ request })
+            cookiesToSet.forEach(({ name, value, options }) =>
+              supabaseResponse.cookies.set(name, value, options)
+            )
+          },
+        },
+      }
+    )
+
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user || user.user_metadata?.role !== 'admin') {
+      const loginUrl = request.nextUrl.clone()
+      loginUrl.pathname = '/login'
+      return NextResponse.redirect(loginUrl)
+    }
+
+    return supabaseResponse
+  }
+
+  // i18n routing
   const pathnameHasLocale = locales.some(
     (locale) => pathname.startsWith(`/${locale}/`) || pathname === `/${locale}`
   )
 
   if (pathnameHasLocale) {
-    // Forward the detected locale as a request header so the root layout can
-    // set the correct lang attribute on <html> without needing params.
     const locale = pathname.split('/')[1]
     const requestHeaders = new Headers(request.headers)
     requestHeaders.set('x-locale', locale)
@@ -40,6 +82,6 @@ export function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/((?!api|_next/static|_next/image|favicon\\.ico|icon\\.svg|apple-icon\\.png|opengraph-image|sitemap\\.xml|robots\\.txt|.*\\.pdf$|svg/.*|images/.*).*)',
+    '/((?!api|_next/static|_next/image|favicon\\.ico|icon\\.svg|apple-icon\\.png|opengraph-image|sitemap\\.xml|robots\\.txt|.*\\.pdf$|svg/.*|images/.*|cesium/.*).*)',
   ],
 }

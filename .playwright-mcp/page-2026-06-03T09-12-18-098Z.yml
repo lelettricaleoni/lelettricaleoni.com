@@ -1,0 +1,94 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - navigation [ref=e3]:
+      - link "Lelettrica" [ref=e4] [cursor=pointer]:
+        - /url: /it
+        - img "Lelettrica" [ref=e5]
+      - generic [ref=e6]:
+        - link "Servizi" [ref=e7] [cursor=pointer]:
+          - /url: /it#servizi
+        - link "Prezzi" [ref=e8] [cursor=pointer]:
+          - /url: /it#prezzi
+        - link "Contatti" [ref=e9] [cursor=pointer]:
+          - /url: /it#contatti
+        - link "Percorsi" [ref=e10] [cursor=pointer]:
+          - /url: /it/routes
+      - generic [ref=e12]:
+        - link "IT IT" [ref=e13] [cursor=pointer]:
+          - /url: /it/routes/2783fc56
+          - img "IT" [ref=e14]
+          - generic [ref=e15]: IT
+        - link "EN EN" [ref=e16] [cursor=pointer]:
+          - /url: /en/routes/2783fc56
+          - img "EN" [ref=e17]
+          - generic [ref=e18]: EN
+        - link "DE DE" [ref=e19] [cursor=pointer]:
+          - /url: /de/routes/2783fc56
+          - img "DE" [ref=e20]
+          - generic [ref=e21]: DE
+  - main [ref=e22]:
+    - generic [ref=e23]:
+      - link "Tutti i percorsi" [ref=e24] [cursor=pointer]:
+        - /url: /it/routes
+        - img [ref=e25]
+        - text: Tutti i percorsi
+      - generic [ref=e27]:
+        - heading "Downhill in paganella" [level=1] [ref=e28]
+        - generic [ref=e29]:
+          - generic [ref=e30]: eMTB
+          - generic [ref=e31]: MTB
+          - generic [ref=e32]: Esperto
+      - generic [ref=e34]:
+        - generic [ref=e35]:
+          - img [ref=e36]
+          - paragraph [ref=e42]: 23.50km
+          - paragraph [ref=e43]: km
+        - generic [ref=e44]:
+          - img [ref=e45]
+          - paragraph [ref=e48]: 1616m
+          - paragraph [ref=e49]: m
+        - generic [ref=e50]:
+          - img [ref=e51]
+          - paragraph [ref=e54]: 2h51m
+          - paragraph [ref=e55]: durata
+        - generic [ref=e56]:
+          - img [ref=e57]
+          - paragraph [ref=e61]: Sterrato
+          - paragraph [ref=e62]: fondo
+      - paragraph [ref=e64]: Una fantastiga giornata di downhill con ben 2 giri di trail
+      - button "Downhill in paganella foto 1" [ref=e66]:
+        - img "Downhill in paganella foto 1" [ref=e67]
+      - generic [ref=e68]:
+        - button "Scarica GPX" [ref=e69]:
+          - img
+          - text: Scarica GPX
+        - button "Condividi" [ref=e70]:
+          - img
+          - text: Condividi
+  - contentinfo [ref=e71]:
+    - generic [ref=e72]:
+      - generic [ref=e73]:
+        - link "Lelettrica" [ref=e74] [cursor=pointer]:
+          - /url: /it
+          - img "Lelettrica" [ref=e75]
+        - generic [ref=e76]:
+          - paragraph [ref=e77]: Via Roma, 90 — Dro, TN 38074, Italia
+          - paragraph [ref=e78]:
+            - link "+39 338 123 2434" [ref=e79] [cursor=pointer]:
+              - /url: tel:+393381232434
+            - text: ·
+            - link "info@lelettricaleoni.com" [ref=e80] [cursor=pointer]:
+              - /url: mailto:info@lelettricaleoni.com
+        - link "Instagram" [ref=e81] [cursor=pointer]:
+          - /url: https://www.instagram.com/lelettricaleoni
+          - img [ref=e82]
+          - generic [ref=e85]: "@lelettricaleoni"
+      - generic [ref=e86]:
+        - paragraph [ref=e87]: © 2026 Lelettrica. Tutti i diritti riservati.
+        - paragraph [ref=e88]: P.IVA 02622600225 • LELETTRICA DI LEONI GABRIELE
+        - generic [ref=e89]:
+          - link "Privacy Policy" [ref=e90] [cursor=pointer]:
+            - /url: /it/privacy
+          - button "Impostazioni cookie" [ref=e91] [cursor=pointer]
+  - button "Open Next.js Dev Tools" [ref=e97] [cursor=pointer]:
+    - img [ref=e98]

@@ -1,0 +1,152 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - navigation [ref=e3]:
+      - link "Lelettrica" [ref=e4] [cursor=pointer]:
+        - /url: /it
+        - img "Lelettrica" [ref=e5]
+      - generic [ref=e6]:
+        - link "Servizi" [ref=e7] [cursor=pointer]:
+          - /url: /it#servizi
+        - link "Prezzi" [ref=e8] [cursor=pointer]:
+          - /url: /it#prezzi
+        - link "Contatti" [ref=e9] [cursor=pointer]:
+          - /url: /it#contatti
+        - link "Percorsi" [ref=e10] [cursor=pointer]:
+          - /url: /it/routes
+      - generic [ref=e12]:
+        - link "IT IT" [ref=e13] [cursor=pointer]:
+          - /url: /it/routes
+          - img "IT" [ref=e14]
+          - generic [ref=e15]: IT
+        - link "EN EN" [ref=e16] [cursor=pointer]:
+          - /url: /en/routes
+          - img "EN" [ref=e17]
+          - generic [ref=e18]: EN
+        - link "DE DE" [ref=e19] [cursor=pointer]:
+          - /url: /de/routes
+          - img "DE" [ref=e20]
+          - generic [ref=e21]: DE
+  - generic [ref=e23]:
+    - heading "Percorsi consigliati" [level=1] [ref=e24]
+    - paragraph [ref=e25]: Esplora il Lago di Garda e le valli circostanti in e-bike o bici
+  - main [ref=e26]:
+    - generic [ref=e28]:
+      - generic [ref=e29]:
+        - generic [ref=e30]:
+          - generic [ref=e31]: "Difficoltà:"
+          - button "Facile" [ref=e32]
+          - button "Medio" [ref=e33]
+          - button "Difficile" [ref=e34]
+          - button "Esperto" [ref=e35]
+        - generic [ref=e36]:
+          - generic [ref=e37]: "Bike:"
+          - button "eMTB" [ref=e38]:
+            - generic [ref=e39]:
+              - img [ref=e40]
+              - img [ref=e42]
+            - text: eMTB
+          - button "MTB" [ref=e44]:
+            - img [ref=e46]
+            - text: MTB
+          - button "Road Bike" [ref=e48]:
+            - img [ref=e50]
+            - text: Road Bike
+          - button "E-Road Bike" [ref=e54]:
+            - generic [ref=e55]:
+              - img [ref=e56]
+              - img [ref=e60]
+            - text: E-Road Bike
+          - button "Gravel" [ref=e62]:
+            - img [ref=e64]
+            - text: Gravel
+          - button "E-Gravel" [ref=e68]:
+            - generic [ref=e69]:
+              - img [ref=e70]
+              - img [ref=e74]
+            - text: E-Gravel
+          - button "City Bike" [ref=e76]:
+            - img [ref=e78]
+            - text: City Bike
+          - button "E-City Bike" [ref=e82]:
+            - generic [ref=e83]:
+              - img [ref=e84]
+              - img [ref=e88]
+            - text: E-City Bike
+      - link "Downhill in paganella Esperto Downhill in paganella eMTB MTB Road Bike E-Road Bike Gravel E-Gravel City Bike E-City Bike 23.50 km 1616 ↑ m 2h51m durata Sterrato fondo" [ref=e91] [cursor=pointer]:
+        - /url: /it/routes/2783fc56
+        - generic [ref=e92]:
+          - img "Downhill in paganella" [ref=e93]
+          - generic [ref=e94]: Esperto
+        - generic [ref=e95]:
+          - heading "Downhill in paganella" [level=3] [ref=e96]
+          - generic [ref=e97]:
+            - generic [ref=e98]:
+              - generic [ref=e99]:
+                - img [ref=e100]
+                - img [ref=e102]
+              - text: eMTB
+            - generic [ref=e104]:
+              - img [ref=e106]
+              - text: MTB
+            - generic [ref=e108]:
+              - img [ref=e110]
+              - text: Road Bike
+            - generic [ref=e114]:
+              - generic [ref=e115]:
+                - img [ref=e116]
+                - img [ref=e120]
+              - text: E-Road Bike
+            - generic [ref=e122]:
+              - img [ref=e124]
+              - text: Gravel
+            - generic [ref=e128]:
+              - generic [ref=e129]:
+                - img [ref=e130]
+                - img [ref=e134]
+              - text: E-Gravel
+            - generic [ref=e136]:
+              - img [ref=e138]
+              - text: City Bike
+            - generic [ref=e142]:
+              - generic [ref=e143]:
+                - img [ref=e144]
+                - img [ref=e148]
+              - text: E-City Bike
+          - generic [ref=e150]:
+            - generic [ref=e151]:
+              - paragraph [ref=e152]: "23.50"
+              - paragraph [ref=e153]: km
+            - generic [ref=e154]:
+              - paragraph [ref=e155]: "1616"
+              - paragraph [ref=e156]: ↑ m
+            - generic [ref=e157]:
+              - paragraph [ref=e158]: 2h51m
+              - paragraph [ref=e159]: durata
+            - generic [ref=e160]:
+              - paragraph [ref=e161]: Sterrato
+              - paragraph [ref=e162]: fondo
+  - contentinfo [ref=e163]:
+    - generic [ref=e164]:
+      - generic [ref=e165]:
+        - link "Lelettrica" [ref=e166] [cursor=pointer]:
+          - /url: /it
+          - img "Lelettrica" [ref=e167]
+        - generic [ref=e168]:
+          - paragraph [ref=e169]: Via Roma, 90 — Dro, TN 38074, Italia
+          - paragraph [ref=e170]:
+            - link "+39 338 123 2434" [ref=e171] [cursor=pointer]:
+              - /url: tel:+393381232434
+            - text: ·
+            - link "info@lelettricaleoni.com" [ref=e172] [cursor=pointer]:
+              - /url: mailto:info@lelettricaleoni.com
+        - link "Instagram" [ref=e173] [cursor=pointer]:
+          - /url: https://www.instagram.com/lelettricaleoni
+          - img [ref=e174]
+          - generic [ref=e177]: "@lelettricaleoni"
+      - generic [ref=e178]:
+        - paragraph [ref=e179]: © 2026 Lelettrica. Tutti i diritti riservati.
+        - paragraph [ref=e180]: P.IVA 02622600225 • LELETTRICA DI LEONI GABRIELE
+        - generic [ref=e181]:
+          - link "Privacy Policy" [ref=e182] [cursor=pointer]:
+            - /url: /it/privacy
+          - button "Impostazioni cookie" [ref=e183] [cursor=pointer]

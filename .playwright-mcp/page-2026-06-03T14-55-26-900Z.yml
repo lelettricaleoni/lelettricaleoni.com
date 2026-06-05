@@ -1,0 +1,108 @@
+- generic [ref=e1]:
+  - banner [ref=e2]:
+    - navigation [ref=e3]:
+      - link "Lelettrica" [ref=e4] [cursor=pointer]:
+        - /url: /it
+        - img "Lelettrica" [ref=e5]
+      - generic [ref=e6]:
+        - link "Servizi" [ref=e7] [cursor=pointer]:
+          - /url: /it#servizi
+        - link "Prezzi" [ref=e8] [cursor=pointer]:
+          - /url: /it#prezzi
+        - link "Contatti" [ref=e9] [cursor=pointer]:
+          - /url: /it#contatti
+        - link "Percorsi" [ref=e10] [cursor=pointer]:
+          - /url: /it/routes
+      - generic [ref=e12]:
+        - link "IT IT" [ref=e13] [cursor=pointer]:
+          - /url: /it/routes
+          - img "IT" [ref=e14]
+          - generic [ref=e15]: IT
+        - link "EN EN" [ref=e16] [cursor=pointer]:
+          - /url: /en/routes
+          - img "EN" [ref=e17]
+          - generic [ref=e18]: EN
+        - link "DE DE" [ref=e19] [cursor=pointer]:
+          - /url: /de/routes
+          - img "DE" [ref=e20]
+          - generic [ref=e21]: DE
+  - main [ref=e22]:
+    - generic [ref=e23]:
+      - generic [ref=e24]:
+        - heading "Percorsi consigliati" [level=1] [ref=e25]
+        - paragraph [ref=e26]: Selezione di itinerari attorno a Dro e al Lago di Garda, adatti a ogni livello. Scegli il tuo percorso e parti per un'avventura.
+      - generic [ref=e27]:
+        - generic [ref=e28]:
+          - generic [ref=e29]:
+            - generic [ref=e30]: "Difficoltà:"
+            - button "Tutti" [ref=e31] [cursor=pointer]
+            - button "Esperto" [ref=e32] [cursor=pointer]
+          - generic [ref=e33]:
+            - generic [ref=e34]: "Bike:"
+            - button "Tutti" [ref=e35] [cursor=pointer]
+            - button "eMTB" [ref=e36] [cursor=pointer]:
+              - img [ref=e37]
+              - text: eMTB
+            - button "MTB" [ref=e39] [cursor=pointer]:
+              - img [ref=e40]
+              - text: MTB
+        - link "GIro in paganella Esperto GIro in paganella eMTB MTB 23.50 km 1616 ↑ m 2h51m durata Misto fondo" [active] [ref=e43] [cursor=pointer]:
+          - /url: /it/routes/edbaa497
+          - generic [ref=e44]:
+            - img "GIro in paganella" [ref=e45]
+            - generic [ref=e46]: Esperto
+          - generic [ref=e47]:
+            - heading "GIro in paganella" [level=3] [ref=e48]
+            - generic [ref=e49]:
+              - generic [ref=e50]:
+                - img [ref=e51]
+                - text: eMTB
+              - generic [ref=e53]:
+                - img [ref=e54]
+                - text: MTB
+            - generic [ref=e56]:
+              - generic [ref=e57]:
+                - paragraph [ref=e58]: "23.50"
+                - paragraph [ref=e59]: km
+              - generic [ref=e60]:
+                - paragraph [ref=e61]: "1616"
+                - paragraph [ref=e62]: ↑ m
+              - generic [ref=e63]:
+                - paragraph [ref=e64]: 2h51m
+                - paragraph [ref=e65]: durata
+              - generic [ref=e66]:
+                - paragraph [ref=e67]: Misto
+                - paragraph [ref=e68]: fondo
+  - contentinfo [ref=e69]:
+    - generic [ref=e70]:
+      - generic [ref=e71]:
+        - link "Lelettrica" [ref=e72] [cursor=pointer]:
+          - /url: /it
+          - img "Lelettrica" [ref=e73]
+        - generic [ref=e74]:
+          - paragraph [ref=e75]: Via Roma, 90, Dro (TN) 38074, Italia
+          - paragraph [ref=e76]:
+            - link "+39 338 123 2434" [ref=e77] [cursor=pointer]:
+              - /url: tel:+393381232434
+            - text: ·
+            - link "info@lelettricaleoni.com" [ref=e78] [cursor=pointer]:
+              - /url: mailto:info@lelettricaleoni.com
+        - link "Instagram" [ref=e79] [cursor=pointer]:
+          - /url: https://www.instagram.com/lelettricaleoni
+          - img [ref=e80]
+          - generic [ref=e83]: "@lelettricaleoni"
+      - generic [ref=e84]:
+        - paragraph [ref=e85]: © 2026 Lelettrica. Tutti i diritti riservati.
+        - paragraph [ref=e86]: P.IVA 02622600225 • LELETTRICA DI LEONI GABRIELE
+        - generic [ref=e87]:
+          - link "Privacy Policy" [ref=e88] [cursor=pointer]:
+            - /url: /it/privacy
+          - button "Impostazioni cookie" [ref=e89] [cursor=pointer]
+  - button "Open Next.js Dev Tools" [ref=e99] [cursor=pointer]:
+    - generic [ref=e102]:
+      - text: Compiling
+      - generic [ref=e103]:
+        - generic [ref=e104]: .
+        - generic [ref=e105]: .
+        - generic [ref=e106]: .
+  - alert [ref=e107]

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
+import { ArrowLeft } from 'lucide-react'
 import { getDictionary, hasLocale } from '../dictionaries'
 import { Navbar } from '@/components/navbar'
 import { Footer } from '@/components/footer'
@@ -40,9 +41,9 @@ export default async function PrivacyPage({
         <div className="max-w-2xl mx-auto px-4 sm:px-6 py-16">
           <Link
             href={`/${lang}`}
-            className="text-sm text-muted-foreground hover:text-primary transition-colors mb-8 inline-block"
+            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors mb-8"
           >
-            ← {lang === 'it' ? 'Torna alla home' : lang === 'de' ? 'Zurück zur Startseite' : 'Back to home'}
+            <ArrowLeft size={14} /> {lang === 'it' ? 'Torna alla home' : lang === 'de' ? 'Zurück zur Startseite' : 'Back to home'}
           </Link>
 
           <h1 className="text-3xl font-bold text-foreground mb-2">{p.title}</h1>
@@ -54,7 +55,7 @@ export default async function PrivacyPage({
             <section>
               <h2 className="text-lg font-semibold mb-3">{p.controller_title}</h2>
               <p className="text-muted-foreground leading-relaxed">
-                Leoni Gabriele — Via Roma, 90, 38074 Dro (TN), Italia<br />
+                Leoni Gabriele, Via Roma 90, 38074 Dro (TN), Italia<br />
                 info@lelettricaleoni.com
               </p>
             </section>
@@ -97,6 +98,15 @@ export default async function PrivacyPage({
             <section>
               <h2 className="text-lg font-semibold mb-3">{p.contact_title}</h2>
               <p className="text-muted-foreground leading-relaxed">{p.contact_body}</p>
+            </section>
+
+            <Separator />
+
+            <section>
+              <h2 className="text-lg font-semibold mb-3">
+                {lang === 'it' ? 'Contenuti proprietari' : lang === 'de' ? 'Proprietäre Inhalte' : 'Proprietary content'}
+              </h2>
+              <p className="text-muted-foreground leading-relaxed">{dict.routes.copyright_notice}</p>
             </section>
           </div>
         </div>

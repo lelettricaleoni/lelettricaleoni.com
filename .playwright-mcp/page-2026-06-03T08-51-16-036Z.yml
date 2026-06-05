@@ -1,0 +1,92 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - navigation [ref=e3]:
+      - link "Lelettrica" [ref=e4] [cursor=pointer]:
+        - /url: /it
+        - img "Lelettrica" [ref=e5]
+      - generic [ref=e6]:
+        - link "Servizi" [ref=e7] [cursor=pointer]:
+          - /url: /it#servizi
+        - link "Prezzi" [ref=e8] [cursor=pointer]:
+          - /url: /it#prezzi
+        - link "Contatti" [ref=e9] [cursor=pointer]:
+          - /url: /it#contatti
+        - link "Percorsi" [ref=e10] [cursor=pointer]:
+          - /url: /it/routes
+      - generic [ref=e12]:
+        - link "IT IT" [ref=e13] [cursor=pointer]:
+          - /url: /it/routes
+          - img "IT" [ref=e14]
+          - generic [ref=e15]: IT
+        - link "EN EN" [ref=e16] [cursor=pointer]:
+          - /url: /en/routes
+          - img "EN" [ref=e17]
+          - generic [ref=e18]: EN
+        - link "DE DE" [ref=e19] [cursor=pointer]:
+          - /url: /de/routes
+          - img "DE" [ref=e20]
+          - generic [ref=e21]: DE
+  - generic [ref=e23]:
+    - heading "Percorsi consigliati" [level=1] [ref=e24]
+    - paragraph [ref=e25]: Esplora il Lago di Garda e le valli circostanti in e-bike o bici
+  - main [ref=e26]:
+    - generic [ref=e28]:
+      - generic [ref=e29]:
+        - generic [ref=e30]:
+          - generic [ref=e31]: "Difficoltà:"
+          - button "Facile" [ref=e32]
+          - button "Medio" [ref=e33]
+          - button "Difficile" [ref=e34]
+          - button "Esperto" [ref=e35]
+        - generic [ref=e36]:
+          - generic [ref=e37]: "Bike:"
+          - button "eMTB" [ref=e38]
+          - button "MTB" [ref=e39]
+      - link "Downhill in paganella Esperto Downhill in paganella eMTB MTB 23.50 km 1616 ↑ m 2h51m durata Sterrato fondo" [ref=e41] [cursor=pointer]:
+        - /url: /it/routes/2783fc56
+        - generic [ref=e42]:
+          - img "Downhill in paganella" [ref=e43]
+          - generic [ref=e44]: Esperto
+        - generic [ref=e45]:
+          - heading "Downhill in paganella" [level=3] [ref=e46]
+          - generic [ref=e47]:
+            - generic [ref=e48]: eMTB
+            - generic [ref=e49]: MTB
+          - generic [ref=e50]:
+            - generic [ref=e51]:
+              - paragraph [ref=e52]: "23.50"
+              - paragraph [ref=e53]: km
+            - generic [ref=e54]:
+              - paragraph [ref=e55]: "1616"
+              - paragraph [ref=e56]: ↑ m
+            - generic [ref=e57]:
+              - paragraph [ref=e58]: 2h51m
+              - paragraph [ref=e59]: durata
+            - generic [ref=e60]:
+              - paragraph [ref=e61]: Sterrato
+              - paragraph [ref=e62]: fondo
+  - contentinfo [ref=e63]:
+    - generic [ref=e64]:
+      - generic [ref=e65]:
+        - link "Lelettrica" [ref=e66] [cursor=pointer]:
+          - /url: /it
+          - img "Lelettrica" [ref=e67]
+        - generic [ref=e68]:
+          - paragraph [ref=e69]: Via Roma, 90 — Dro, TN 38074, Italia
+          - paragraph [ref=e70]:
+            - link "+39 338 123 2434" [ref=e71] [cursor=pointer]:
+              - /url: tel:+393381232434
+            - text: ·
+            - link "info@lelettricaleoni.com" [ref=e72] [cursor=pointer]:
+              - /url: mailto:info@lelettricaleoni.com
+        - link "Instagram" [ref=e73] [cursor=pointer]:
+          - /url: https://www.instagram.com/lelettricaleoni
+          - img [ref=e74]
+          - generic [ref=e77]: "@lelettricaleoni"
+      - generic [ref=e78]:
+        - paragraph [ref=e79]: © 2026 Lelettrica. Tutti i diritti riservati.
+        - paragraph [ref=e80]: P.IVA 02622600225 • LELETTRICA DI LEONI GABRIELE
+        - generic [ref=e81]:
+          - link "Privacy Policy" [ref=e82] [cursor=pointer]:
+            - /url: /it/privacy
+          - button "Impostazioni cookie" [ref=e83] [cursor=pointer]
