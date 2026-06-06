@@ -19,6 +19,7 @@ export const routes = pgTable('routes', {
   stravaUrl:   text('strava_url'),
   komootUrl:   text('komoot_url'),
   gpxKey:      text('gpx_key'),
+  videoKey:    text('video_key'),
   isPublished: boolean('is_published').notNull().default(false),
   createdAt:   timestamp('created_at').notNull().defaultNow(),
   updatedAt:   timestamp('updated_at').notNull().defaultNow(),

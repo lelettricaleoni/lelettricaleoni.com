@@ -7,6 +7,7 @@ import { db, routes, routeTranslations, routePhotos } from '@/lib/db'
 import { getAdminUser } from '@/lib/supabase/server'
 import { translateFromItalian } from './translate'
 import { deleteR2Object, getPresignedUploadUrl } from '@/lib/r2'
+import { getVideoPresignedUploadUrl, deleteMinioObject } from '@/lib/minio'
 import { shortRouteId } from '@/lib/utils'
 
 const RouteSchema = z.object({
@@ -21,6 +22,7 @@ const RouteSchema = z.object({
   stravaUrl:       z.string().url().optional().or(z.literal('')),
   komootUrl:       z.string().url().optional().or(z.literal('')),
   gpxKey:          z.string().optional(),
+  videoKey:        z.string().optional(),
 })
 
 export type RouteFormState = {
@@ -89,6 +91,7 @@ export async function createRouteAction(
     stravaUrl:       formData.get('stravaUrl') || undefined,
     komootUrl:       formData.get('komootUrl') || undefined,
     gpxKey:          formData.get('gpxKey') || undefined,
+    videoKey:        formData.get('videoKey') || undefined,
   }
 
   const parsed = RouteSchema.safeParse(raw)
@@ -110,6 +113,7 @@ export async function createRouteAction(
     stravaUrl: routeData.stravaUrl || null,
     komootUrl: routeData.komootUrl || null,
     gpxKey: routeData.gpxKey || null,
+    videoKey: routeData.videoKey || null,
   }).returning()
 
   const [nameTranslations, descTranslations] = await Promise.all([
@@ -154,6 +158,7 @@ export async function updateRouteAction(
     stravaUrl:       formData.get('stravaUrl') || undefined,
     komootUrl:       formData.get('komootUrl') || undefined,
     gpxKey:          formData.get('gpxKey') || undefined,
+    videoKey:        formData.get('videoKey') || undefined,
   }
 
   const parsed = RouteSchema.safeParse(raw)
@@ -175,6 +180,7 @@ export async function updateRouteAction(
     stravaUrl: routeData.stravaUrl || null,
     komootUrl: routeData.komootUrl || null,
     gpxKey: routeData.gpxKey || null,
+    videoKey: routeData.videoKey || null,
     updatedAt: new Date(),
   }).where(eq(routes.id, id))
 
@@ -222,6 +228,7 @@ export async function deleteRouteAction(id: string) {
   const photos = await db.select().from(routePhotos).where(eq(routePhotos.routeId, id))
   await Promise.all(photos.map((p) => deleteR2Object(p.storageKey)))
   if (route.gpxKey) await deleteR2Object(route.gpxKey)
+  if (route.videoKey) await deleteMinioObject(route.videoKey)
 
   await db.delete(routes).where(eq(routes.id, id))
 
@@ -252,6 +259,18 @@ export async function getPresignedUploadUrlAction(
     ? `route-gpx/${routeId}/track.gpx`
     : `route-photos/${routeId}/${crypto.randomUUID()}.${ext}`
   const url = await getPresignedUploadUrl(key, contentType)
+  return { url, key }
+}
+
+export async function getVideoPresignedUploadUrlAction(
+  routeId: string,
+  fileName: string,
+  contentType: string
+) {
+  await requireAdmin()
+  const ext = fileName.split('.').pop() ?? 'mp4'
+  const key = `route-videos/${routeId}/original.${ext}`
+  const url = await getVideoPresignedUploadUrl(key, contentType)
   return { url, key }
 }
 

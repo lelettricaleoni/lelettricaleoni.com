@@ -9,6 +9,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Switch } from '@/components/ui/switch'
 import { GpxUpload } from './gpx-upload'
 import { PhotoUpload } from './photo-upload'
+import { VideoUpload } from './video-upload'
 import type { RouteFormState } from '@/lib/actions/routes'
 import type { Route, RouteTranslation, RoutePhoto } from '@/lib/db'
 
@@ -35,6 +36,7 @@ export function RouteForm({ action, route, translations, photos }: RouteFormProp
   const [stravaUrl, setStravaUrl] = useState(route?.stravaUrl ?? '')
   const [komootUrl, setKomootUrl] = useState(route?.komootUrl ?? '')
   const [bikeTypes, setBikeTypes] = useState<string[]>(route?.bikeTypes ?? [])
+  const [videoKey, setVideoKey] = useState<string>(route?.videoKey ?? '')
 
   function handleGpxUploaded(_key: string, stats: { distanceKm: number; elevationM: number; durationMin?: number }) {
     setDistanceKm(stats.distanceKm.toString())
@@ -85,6 +87,21 @@ export function RouteForm({ action, route, translations, photos }: RouteFormProp
           defaultGpxKey={route?.gpxKey ?? undefined}
           onUploaded={handleGpxUploaded}
         />
+      </section>
+
+      {/* Video */}
+      <section className="space-y-3">
+        <h2 className="text-lg font-semibold text-[#1e3a5f]">Video originale</h2>
+        <p className="text-sm text-muted-foreground">
+          Il video originale verrà ottimizzato automaticamente dal worker ffmpeg per lo streaming HLS.
+        </p>
+        <VideoUpload
+          routeId={route?.id ?? 'new'}
+          defaultVideoKey={route?.videoKey ?? undefined}
+          onUploaded={(key) => setVideoKey(key)}
+          onRemoved={() => setVideoKey('')}
+        />
+        <input type="hidden" name="videoKey" value={videoKey} />
       </section>
 
       {/* Stats */}
