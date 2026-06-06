@@ -6,6 +6,7 @@ import {
 export const difficultyEnum = pgEnum('difficulty', ['easy', 'medium', 'hard', 'expert'])
 export const surfaceEnum = pgEnum('surface', ['asphalt', 'dirt', 'mixed'])
 export const localeEnum = pgEnum('locale', ['it', 'en', 'de'])
+export const mediaTypeEnum = pgEnum('media_type', ['photo', 'video'])
 
 export const routes = pgTable('routes', {
   id:          uuid('id').primaryKey().defaultRandom(),
@@ -38,6 +39,7 @@ export const routePhotos = pgTable('route_photos', {
   id:           uuid('id').primaryKey().defaultRandom(),
   routeId:      uuid('route_id').notNull().references(() => routes.id, { onDelete: 'cascade' }),
   storageKey:   text('storage_key').notNull(),
+  mediaType:    mediaTypeEnum('media_type').notNull().default('photo'),
   displayOrder: integer('display_order').notNull().default(0),
   altText:      text('alt_text'),
   createdAt:    timestamp('created_at').notNull().defaultNow(),

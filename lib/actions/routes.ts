@@ -22,7 +22,6 @@ const RouteSchema = z.object({
   stravaUrl:       z.string().url().optional().or(z.literal('')),
   komootUrl:       z.string().url().optional().or(z.literal('')),
   gpxKey:          z.string().optional(),
-  videoKey:        z.string().optional(),
 })
 
 export type RouteFormState = {
@@ -78,7 +77,8 @@ export async function createRouteAction(
   await requireAdmin()
 
   const bikeTypes = formData.getAll('bikeTypes') as string[]
-  const photoKeys = formData.getAll('photoKey') as string[]
+  const mediaItemsRaw = formData.get('mediaItems') as string | null
+  const mediaItems: { key: string; type: 'photo' | 'video' }[] = mediaItemsRaw ? JSON.parse(mediaItemsRaw) : []
   const raw = {
     nameIt:          formData.get('nameIt'),
     descriptionIt:   formData.get('descriptionIt'),
@@ -91,7 +91,6 @@ export async function createRouteAction(
     stravaUrl:       formData.get('stravaUrl') || undefined,
     komootUrl:       formData.get('komootUrl') || undefined,
     gpxKey:          formData.get('gpxKey') || undefined,
-    videoKey:        formData.get('videoKey') || undefined,
   }
 
   const parsed = RouteSchema.safeParse(raw)
@@ -113,7 +112,6 @@ export async function createRouteAction(
     stravaUrl: routeData.stravaUrl || null,
     komootUrl: routeData.komootUrl || null,
     gpxKey: routeData.gpxKey || null,
-    videoKey: routeData.videoKey || null,
   }).returning()
 
   const [nameTranslations, descTranslations] = await Promise.all([
@@ -127,9 +125,11 @@ export async function createRouteAction(
     { routeId: newRoute.id, locale: 'de', name: nameTranslations.de, description: descTranslations.de, isAutoTranslated: true },
   ])
 
-  if (photoKeys.length > 0) {
+  if (mediaItems.length > 0) {
     await db.insert(routePhotos).values(
-      photoKeys.map((storageKey, displayOrder) => ({ routeId: newRoute.id, storageKey, displayOrder }))
+      mediaItems.map(({ key, type }, displayOrder) => ({
+        routeId: newRoute.id, storageKey: key, mediaType: type, displayOrder,
+      }))
     )
   }
 
@@ -145,7 +145,8 @@ export async function updateRouteAction(
   await requireAdmin()
 
   const bikeTypes = formData.getAll('bikeTypes') as string[]
-  const photoKeys = formData.getAll('photoKey') as string[]
+  const mediaItemsRaw = formData.get('mediaItems') as string | null
+  const mediaItems: { key: string; type: 'photo' | 'video' }[] = mediaItemsRaw ? JSON.parse(mediaItemsRaw) : []
   const raw = {
     nameIt:          formData.get('nameIt'),
     descriptionIt:   formData.get('descriptionIt'),
@@ -158,7 +159,6 @@ export async function updateRouteAction(
     stravaUrl:       formData.get('stravaUrl') || undefined,
     komootUrl:       formData.get('komootUrl') || undefined,
     gpxKey:          formData.get('gpxKey') || undefined,
-    videoKey:        formData.get('videoKey') || undefined,
   }
 
   const parsed = RouteSchema.safeParse(raw)
@@ -180,14 +180,15 @@ export async function updateRouteAction(
     stravaUrl: routeData.stravaUrl || null,
     komootUrl: routeData.komootUrl || null,
     gpxKey: routeData.gpxKey || null,
-    videoKey: routeData.videoKey || null,
     updatedAt: new Date(),
   }).where(eq(routes.id, id))
 
   await db.delete(routePhotos).where(eq(routePhotos.routeId, id))
-  if (photoKeys.length > 0) {
+  if (mediaItems.length > 0) {
     await db.insert(routePhotos).values(
-      photoKeys.map((storageKey, displayOrder) => ({ routeId: id, storageKey, displayOrder }))
+      mediaItems.map(({ key, type }, displayOrder) => ({
+        routeId: id, storageKey: key, mediaType: type, displayOrder,
+      }))
     )
   }
 
@@ -225,10 +226,11 @@ export async function deleteRouteAction(id: string) {
   const [route] = await db.select().from(routes).where(eq(routes.id, id))
   if (!route) return
 
-  const photos = await db.select().from(routePhotos).where(eq(routePhotos.routeId, id))
-  await Promise.all(photos.map((p) => deleteR2Object(p.storageKey)))
+  const media = await db.select().from(routePhotos).where(eq(routePhotos.routeId, id))
+  await Promise.all(media.map((m) =>
+    m.mediaType === 'video' ? deleteMinioObject(m.storageKey) : deleteR2Object(m.storageKey)
+  ))
   if (route.gpxKey) await deleteR2Object(route.gpxKey)
-  if (route.videoKey) await deleteMinioObject(route.videoKey)
 
   await db.delete(routes).where(eq(routes.id, id))
 
@@ -269,7 +271,7 @@ export async function getVideoPresignedUploadUrlAction(
 ) {
   await requireAdmin()
   const ext = fileName.split('.').pop() ?? 'mp4'
-  const key = `route-videos/${routeId}/original.${ext}`
+  const key = `private/route-videos/${routeId}/${crypto.randomUUID()}.${ext}`
   const url = await getVideoPresignedUploadUrl(key, contentType)
   return { url, key }
 }
