@@ -18,6 +18,7 @@ import { RouteExternalLinks } from '@/components/route-external-links'
 import { RouteViewTracker } from '@/components/route-view-tracker'
 import { db, routes, routeTranslations, routePhotos } from '@/lib/db'
 import { s3, R2_BUCKET, r2PublicUrl } from '@/lib/r2'
+import { minioObjectExists, deriveHlsPrefix } from '@/lib/minio'
 import { parseGpxPoints } from '@/lib/gpx'
 import { shortRouteId } from '@/lib/utils'
 
@@ -91,9 +92,18 @@ export default async function RouteDetailPage({
     and(eq(routeTranslations.routeId, route.id), eq(routeTranslations.locale, lang as 'it' | 'en' | 'de'))
   )
 
-  const allMedia = await db.select().from(routePhotos)
+  const rawMedia = await db.select().from(routePhotos)
     .where(eq(routePhotos.routeId, route.id))
     .orderBy(routePhotos.displayOrder)
+
+  // Exclude videos whose HLS isn't ready yet
+  const allMedia = (await Promise.all(
+    rawMedia.map(async (m) => {
+      if (m.mediaType !== 'video') return m
+      const ready = await minioObjectExists(deriveHlsPrefix(m.storageKey) + 'playlist.m3u8')
+      return ready ? m : null
+    })
+  )).filter((m): m is NonNullable<typeof m> => m !== null)
 
   const coverPhoto = allMedia.find((m) => m.mediaType === 'photo')
 

@@ -13,6 +13,7 @@ interface RouteWithData {
   translation: RouteTranslation
   coverMedia: RoutePhoto | undefined
   gpxPath?: string
+  mapCenter?: { lat: number; lon: number; zoom: number }
 }
 
 interface RouteFiltersProps {
@@ -120,13 +121,14 @@ export function RouteFilters({ routes, lang, dict }: RouteFiltersProps) {
             ? 'grid-cols-1 max-w-sm'
             : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'
         )}>
-          {filtered.map(({ route, translation, coverMedia, gpxPath }) => (
+          {filtered.map(({ route, translation, coverMedia, gpxPath, mapCenter }) => (
             <RouteCard
               key={route.id}
               route={route}
               translation={translation}
               coverMedia={coverMedia}
               gpxPath={gpxPath}
+              mapCenter={mapCenter}
               lang={lang}
               dict={dict}
             />

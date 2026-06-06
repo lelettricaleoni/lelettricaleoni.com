@@ -11,11 +11,12 @@ interface RouteCardProps {
   translation: RouteTranslation
   coverMedia: RoutePhoto | undefined
   gpxPath?: string
+  mapCenter?: { lat: number; lon: number; zoom: number }
   lang: string
   dict: { routes: Record<string, string> }
 }
 
-export function RouteCard({ route, translation, coverMedia, gpxPath, lang, dict }: RouteCardProps) {
+export function RouteCard({ route, translation, coverMedia, gpxPath, mapCenter, lang, dict }: RouteCardProps) {
   const d = dict.routes
 
   return (
@@ -24,7 +25,7 @@ export function RouteCard({ route, translation, coverMedia, gpxPath, lang, dict 
       className="group block rounded-xl overflow-hidden border bg-card hover:shadow-md transition-shadow"
     >
       <div className="relative h-48 bg-[#c8dae8] overflow-hidden">
-        <RouteCardMedia media={coverMedia} gpxPath={gpxPath} routeName={translation.name} />
+        <RouteCardMedia media={coverMedia} gpxPath={gpxPath} mapCenter={mapCenter} difficulty={route.difficulty} routeName={translation.name} />
         <DifficultyBadge
           difficulty={route.difficulty}
           label={d[`difficulty_${route.difficulty}` as keyof typeof d] ?? route.difficulty}

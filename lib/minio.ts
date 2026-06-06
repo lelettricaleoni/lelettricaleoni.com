@@ -1,4 +1,4 @@
-import { S3Client, PutObjectCommand, DeleteObjectCommand, ListObjectsV2Command, DeleteObjectsCommand } from '@aws-sdk/client-s3'
+import { S3Client, PutObjectCommand, DeleteObjectCommand, ListObjectsV2Command, HeadObjectCommand } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 
 export { minioPublicUrl, deriveHlsPrefix, minioHlsUrl } from './minio-client'
@@ -30,6 +30,15 @@ export async function deleteMinioObject(key: string): Promise<void> {
   await minioClient.send(new DeleteObjectCommand({ Bucket: MINIO_BUCKET, Key: key }))
 }
 
+export async function minioObjectExists(key: string): Promise<boolean> {
+  try {
+    await minioClient.send(new HeadObjectCommand({ Bucket: MINIO_BUCKET, Key: key }))
+    return true
+  } catch {
+    return false
+  }
+}
+
 export async function deleteMinioPrefix(prefix: string): Promise<void> {
   let token: string | undefined
   do {
@@ -39,12 +48,9 @@ export async function deleteMinioPrefix(prefix: string): Promise<void> {
       ContinuationToken: token,
     }))
     const keys = (res.Contents ?? []).map((c) => c.Key!).filter(Boolean)
-    if (keys.length > 0) {
-      await minioClient.send(new DeleteObjectsCommand({
-        Bucket: MINIO_BUCKET,
-        Delete: { Objects: keys.map((k) => ({ Key: k })) },
-      }))
-    }
+    await Promise.all(keys.map((key) =>
+      minioClient.send(new DeleteObjectCommand({ Bucket: MINIO_BUCKET, Key: key }))
+    ))
     token = res.NextContinuationToken
   } while (token)
 }

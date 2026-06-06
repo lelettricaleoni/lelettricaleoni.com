@@ -9,8 +9,9 @@ import { RouteFilters } from '@/components/route-filters'
 import { SectionViewTracker } from '@/components/section-view-tracker'
 import { db, routes, routeTranslations, routePhotos } from '@/lib/db'
 import { s3, R2_BUCKET } from '@/lib/r2'
+import { minioObjectExists, deriveHlsPrefix } from '@/lib/minio'
 import { parseGpxPoints } from '@/lib/gpx'
-import { gpxPointsToSvgPath } from '@/lib/gpx-svg'
+import { gpxPointsToSvgPath, gpxBboxCenter } from '@/lib/gpx-svg'
 import { shortRouteId } from '@/lib/utils'
 
 export const revalidate = 3600
@@ -61,24 +62,36 @@ export default async function RoutesPage({
             eq(routeTranslations.locale, lang as 'it' | 'en' | 'de')
           ))
 
-        const [coverMedia] = await db
+        const mediaItems = await db
           .select()
           .from(routePhotos)
           .where(eq(routePhotos.routeId, route.id))
           .orderBy(routePhotos.displayOrder)
-          .limit(1)
+
+        // Exclude videos whose HLS isn't ready yet
+        const readyMedia = await Promise.all(
+          mediaItems.map(async (m) => {
+            if (m.mediaType !== 'video') return m
+            const ready = await minioObjectExists(deriveHlsPrefix(m.storageKey) + 'playlist.m3u8')
+            return ready ? m : null
+          })
+        )
+        const coverMedia = readyMedia.find(Boolean) ?? undefined
 
         let gpxPath: string | undefined
+        let mapCenter: { lat: number; lon: number; zoom: number } | undefined
         if (!coverMedia && route.gpxKey) {
           try {
             const res = await s3.send(new GetObjectCommand({ Bucket: R2_BUCKET, Key: route.gpxKey }))
             const chunks: Buffer[] = []
             for await (const chunk of res.Body as AsyncIterable<Buffer>) chunks.push(Buffer.from(chunk))
-            gpxPath = gpxPointsToSvgPath(parseGpxPoints(Buffer.concat(chunks).toString('utf-8')))
+            const pts = parseGpxPoints(Buffer.concat(chunks).toString('utf-8'))
+            gpxPath = gpxPointsToSvgPath(pts)
+            mapCenter = gpxBboxCenter(pts)
           } catch { /* silently skip */ }
         }
 
-        return translation ? { route, translation, coverMedia, gpxPath } : null
+        return translation ? { route, translation, coverMedia, gpxPath, mapCenter } : null
       })
     )
   ).filter((i) => i !== null)
