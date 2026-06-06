@@ -22,6 +22,10 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: 'trails-bucket.lelettricaleoni.com',
       },
+      {
+        protocol: 'https',
+        hostname: 'dev-lelettrica-trails.lelettricaleoni.com',
+      },
     ],
   },
   async redirects() {
