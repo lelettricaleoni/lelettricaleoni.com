@@ -91,11 +91,11 @@ export default async function RouteDetailPage({
     and(eq(routeTranslations.routeId, route.id), eq(routeTranslations.locale, lang as 'it' | 'en' | 'de'))
   )
 
-  const photos = await db.select().from(routePhotos)
-    .where(and(eq(routePhotos.routeId, route.id), eq(routePhotos.mediaType, 'photo')))
+  const allMedia = await db.select().from(routePhotos)
+    .where(eq(routePhotos.routeId, route.id))
     .orderBy(routePhotos.displayOrder)
 
-  const coverPhoto = photos[0]
+  const coverPhoto = allMedia.find((m) => m.mediaType === 'photo')
 
   let gpxPoints: [number, number, number][] = []
   if (route.gpxKey) {
@@ -206,9 +206,9 @@ export default async function RouteDetailPage({
         )}
 
         {/* Gallery */}
-        {photos.length > 0 && (
+        {allMedia.length > 0 && (
           <section className="space-y-3">
-            <RouteGallery photos={photos} routeName={translation?.name ?? id} />
+            <RouteGallery media={allMedia} routeName={translation?.name ?? id} />
           </section>
         )}
 

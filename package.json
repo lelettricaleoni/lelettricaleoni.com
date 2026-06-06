@@ -38,6 +38,7 @@
     "drizzle-orm": "^0.45.2",
     "fast-xml-parser": "^5.8.0",
     "framer-motion": "^12.38.0",
+    "hls.js": "^1.6.16",
     "lucide-react": "^1.8.0",
     "maplibre-gl": "^5.24.0",
     "negotiator": "^1.0.0",
@@ -59,6 +60,7 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@types/hls.js": "^0.13.3",
     "@types/negotiator": "^0.6.4",
     "@types/node": "^20",
     "@types/pg": "^8.20.0",

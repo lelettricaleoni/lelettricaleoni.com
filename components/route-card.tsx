@@ -1,21 +1,21 @@
 import Link from 'next/link'
-import Image from 'next/image'
 import { Badge } from '@/components/ui/badge'
 import { BikeTypeIcon, bikeTypeBadgeClass } from '@/components/bike-type-icon'
 import { DifficultyBadge } from '@/components/difficulty-badge'
-import { r2PublicUrl } from '@/lib/r2'
+import { RouteCardMedia } from '@/components/route-card-media'
 import { shortRouteId } from '@/lib/utils'
 import type { Route, RouteTranslation, RoutePhoto } from '@/lib/db'
 
 interface RouteCardProps {
   route: Route
   translation: RouteTranslation
-  coverPhoto: RoutePhoto | undefined
+  coverMedia: RoutePhoto | undefined
+  gpxPath?: string
   lang: string
   dict: { routes: Record<string, string> }
 }
 
-export function RouteCard({ route, translation, coverPhoto, lang, dict }: RouteCardProps) {
+export function RouteCard({ route, translation, coverMedia, gpxPath, lang, dict }: RouteCardProps) {
   const d = dict.routes
 
   return (
@@ -23,20 +23,12 @@ export function RouteCard({ route, translation, coverPhoto, lang, dict }: RouteC
       href={`/${lang}/routes/${shortRouteId(route.id)}`}
       className="group block rounded-xl overflow-hidden border bg-card hover:shadow-md transition-shadow"
     >
-      <div className="relative h-48 bg-[#c8dae8]">
-        {coverPhoto && (
-          <Image
-            src={r2PublicUrl(coverPhoto.storageKey)}
-            alt={coverPhoto.altText ?? translation.name}
-            fill
-            className="object-cover group-hover:scale-105 transition-transform duration-300"
-            sizes="(max-width: 768px) 100vw, 50vw"
-          />
-        )}
+      <div className="relative h-48 bg-[#c8dae8] overflow-hidden">
+        <RouteCardMedia media={coverMedia} gpxPath={gpxPath} routeName={translation.name} />
         <DifficultyBadge
           difficulty={route.difficulty}
           label={d[`difficulty_${route.difficulty}` as keyof typeof d] ?? route.difficulty}
-          className="absolute top-3 right-3 shadow-sm"
+          className="absolute top-3 right-3 shadow-sm z-10"
         />
       </div>
 

@@ -7,7 +7,7 @@ import { db, routes, routeTranslations, routePhotos } from '@/lib/db'
 import { getAdminUser } from '@/lib/supabase/server'
 import { translateFromItalian } from './translate'
 import { deleteR2Object, getPresignedUploadUrl } from '@/lib/r2'
-import { getVideoPresignedUploadUrl, deleteMinioObject } from '@/lib/minio'
+import { getVideoPresignedUploadUrl, deleteMinioObject, deleteMinioPrefix, deriveHlsPrefix } from '@/lib/minio'
 import { shortRouteId } from '@/lib/utils'
 
 const RouteSchema = z.object({
@@ -183,6 +183,15 @@ export async function updateRouteAction(
     updatedAt: new Date(),
   }).where(eq(routes.id, id))
 
+  const oldMedia = await db.select().from(routePhotos).where(eq(routePhotos.routeId, id))
+  const newKeys = new Set(mediaItems.map((i) => i.key))
+  const removed = oldMedia.filter((m) => !newKeys.has(m.storageKey))
+  await Promise.all(removed.map((m) =>
+    m.mediaType === 'video'
+      ? Promise.all([deleteMinioObject(m.storageKey), deleteMinioPrefix(deriveHlsPrefix(m.storageKey))])
+      : deleteR2Object(m.storageKey)
+  ))
+
   await db.delete(routePhotos).where(eq(routePhotos.routeId, id))
   if (mediaItems.length > 0) {
     await db.insert(routePhotos).values(
@@ -228,7 +237,9 @@ export async function deleteRouteAction(id: string) {
 
   const media = await db.select().from(routePhotos).where(eq(routePhotos.routeId, id))
   await Promise.all(media.map((m) =>
-    m.mediaType === 'video' ? deleteMinioObject(m.storageKey) : deleteR2Object(m.storageKey)
+    m.mediaType === 'video'
+      ? Promise.all([deleteMinioObject(m.storageKey), deleteMinioPrefix(deriveHlsPrefix(m.storageKey))])
+      : deleteR2Object(m.storageKey)
   ))
   if (route.gpxKey) await deleteR2Object(route.gpxKey)
 

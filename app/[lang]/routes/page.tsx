@@ -1,12 +1,16 @@
 import { notFound } from 'next/navigation'
 import { eq, and } from 'drizzle-orm'
 import type { Metadata } from 'next'
+import { GetObjectCommand } from '@aws-sdk/client-s3'
 import { getDictionary, hasLocale } from '../dictionaries'
 import { Navbar } from '@/components/navbar'
 import { Footer } from '@/components/footer'
 import { RouteFilters } from '@/components/route-filters'
 import { SectionViewTracker } from '@/components/section-view-tracker'
 import { db, routes, routeTranslations, routePhotos } from '@/lib/db'
+import { s3, R2_BUCKET } from '@/lib/r2'
+import { parseGpxPoints } from '@/lib/gpx'
+import { gpxPointsToSvgPath } from '@/lib/gpx-svg'
 import { shortRouteId } from '@/lib/utils'
 
 export const revalidate = 3600
@@ -57,14 +61,24 @@ export default async function RoutesPage({
             eq(routeTranslations.locale, lang as 'it' | 'en' | 'de')
           ))
 
-        const [coverPhoto] = await db
+        const [coverMedia] = await db
           .select()
           .from(routePhotos)
-          .where(and(eq(routePhotos.routeId, route.id), eq(routePhotos.mediaType, 'photo')))
+          .where(eq(routePhotos.routeId, route.id))
           .orderBy(routePhotos.displayOrder)
           .limit(1)
 
-        return translation ? { route, translation, coverPhoto } : null
+        let gpxPath: string | undefined
+        if (!coverMedia && route.gpxKey) {
+          try {
+            const res = await s3.send(new GetObjectCommand({ Bucket: R2_BUCKET, Key: route.gpxKey }))
+            const chunks: Buffer[] = []
+            for await (const chunk of res.Body as AsyncIterable<Buffer>) chunks.push(Buffer.from(chunk))
+            gpxPath = gpxPointsToSvgPath(parseGpxPoints(Buffer.concat(chunks).toString('utf-8')))
+          } catch { /* silently skip */ }
+        }
+
+        return translation ? { route, translation, coverMedia, gpxPath } : null
       })
     )
   ).filter((i) => i !== null)
@@ -77,11 +91,11 @@ export default async function RoutesPage({
     name: dict.routes.page_title,
     url: `${siteUrl}/${lang}/routes`,
     numberOfItems: routesWithData.length,
-    itemListElement: routesWithData.map(({ route, translation }, i) => ({
+    itemListElement: routesWithData.map(({ route, translation: t }, i) => ({
       '@type': 'ListItem',
       position: i + 1,
       url: `${siteUrl}/${lang}/routes/${shortRouteId(route.id)}`,
-      name: translation?.name ?? shortRouteId(route.id),
+      name: t?.name ?? shortRouteId(route.id),
     })),
   }
 

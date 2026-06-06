@@ -11,7 +11,8 @@ import type { Route, RouteTranslation, RoutePhoto } from '@/lib/db'
 interface RouteWithData {
   route: Route
   translation: RouteTranslation
-  coverPhoto: RoutePhoto | undefined
+  coverMedia: RoutePhoto | undefined
+  gpxPath?: string
 }
 
 interface RouteFiltersProps {
@@ -119,12 +120,13 @@ export function RouteFilters({ routes, lang, dict }: RouteFiltersProps) {
             ? 'grid-cols-1 max-w-sm'
             : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'
         )}>
-          {filtered.map(({ route, translation, coverPhoto }) => (
+          {filtered.map(({ route, translation, coverMedia, gpxPath }) => (
             <RouteCard
               key={route.id}
               route={route}
               translation={translation}
-              coverPhoto={coverPhoto}
+              coverMedia={coverMedia}
+              gpxPath={gpxPath}
               lang={lang}
               dict={dict}
             />

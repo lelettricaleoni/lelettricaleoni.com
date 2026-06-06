@@ -1,5 +1,7 @@
-import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3'
+import { S3Client, PutObjectCommand, DeleteObjectCommand, ListObjectsV2Command, DeleteObjectsCommand } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
+
+export { minioPublicUrl, deriveHlsPrefix, minioHlsUrl } from './minio-client'
 
 export const minioClient = new S3Client({
   endpoint: process.env.MINIO_ENDPOINT!,
@@ -14,11 +16,6 @@ export const minioClient = new S3Client({
 })
 
 export const MINIO_BUCKET = process.env.MINIO_BUCKET_NAME!
-export const MINIO_PUBLIC_URL = (process.env.NEXT_PUBLIC_MINIO_PUBLIC_URL ?? '').replace(/\/$/, '')
-
-export function minioPublicUrl(key: string): string {
-  return `${MINIO_PUBLIC_URL}/${key}`
-}
 
 export async function getVideoPresignedUploadUrl(key: string, contentType: string): Promise<string> {
   const command = new PutObjectCommand({
@@ -31,4 +28,23 @@ export async function getVideoPresignedUploadUrl(key: string, contentType: strin
 
 export async function deleteMinioObject(key: string): Promise<void> {
   await minioClient.send(new DeleteObjectCommand({ Bucket: MINIO_BUCKET, Key: key }))
+}
+
+export async function deleteMinioPrefix(prefix: string): Promise<void> {
+  let token: string | undefined
+  do {
+    const res = await minioClient.send(new ListObjectsV2Command({
+      Bucket: MINIO_BUCKET,
+      Prefix: prefix,
+      ContinuationToken: token,
+    }))
+    const keys = (res.Contents ?? []).map((c) => c.Key!).filter(Boolean)
+    if (keys.length > 0) {
+      await minioClient.send(new DeleteObjectsCommand({
+        Bucket: MINIO_BUCKET,
+        Delete: { Objects: keys.map((k) => ({ Key: k })) },
+      }))
+    }
+    token = res.NextContinuationToken
+  } while (token)
 }
