@@ -60,7 +60,9 @@ export default async function RoutesPage({
         const [coverPhoto] = await db
           .select()
           .from(routePhotos)
-          .where(and(eq(routePhotos.routeId, route.id), eq(routePhotos.displayOrder, 0)))
+          .where(and(eq(routePhotos.routeId, route.id), eq(routePhotos.mediaType, 'photo')))
+          .orderBy(routePhotos.displayOrder)
+          .limit(1)
 
         return translation ? { route, translation, coverPhoto } : null
       })

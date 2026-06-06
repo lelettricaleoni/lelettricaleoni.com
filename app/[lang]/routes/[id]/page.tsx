@@ -47,9 +47,10 @@ export async function generateMetadata({
   const [translation] = await db.select().from(routeTranslations).where(
     and(eq(routeTranslations.routeId, route.id), eq(routeTranslations.locale, lang as 'it' | 'en' | 'de'))
   )
-  const [coverPhoto] = await db.select().from(routePhotos).where(
-    and(eq(routePhotos.routeId, route.id), eq(routePhotos.displayOrder, 0))
-  )
+  const [coverPhoto] = await db.select().from(routePhotos)
+    .where(and(eq(routePhotos.routeId, route.id), eq(routePhotos.mediaType, 'photo')))
+    .orderBy(routePhotos.displayOrder)
+    .limit(1)
 
   const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://www.lelettricaleoni.com').replace(/\/$/, '')
   const title = translation?.name ?? id
@@ -91,7 +92,7 @@ export default async function RouteDetailPage({
   )
 
   const photos = await db.select().from(routePhotos)
-    .where(eq(routePhotos.routeId, route.id))
+    .where(and(eq(routePhotos.routeId, route.id), eq(routePhotos.mediaType, 'photo')))
     .orderBy(routePhotos.displayOrder)
 
   const coverPhoto = photos[0]
