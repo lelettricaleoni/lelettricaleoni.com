@@ -142,7 +142,7 @@ export function PricingSection({ dict }: { dict: PricingDict }) {
                   { label: p.days_2,    front: '€72',   alu: '€115',  carbon: '€125'  },
                   { label: p.days_3,    front: '€100',  alu: '€160',  carbon: '€180'  },
                   { label: p.days_4,    front: '€120',  alu: '€195',  carbon: '€220'  },
-                  { label: p.days_5,    front: '€138',  alu: '€125',  carbon: '€250'  },
+                  { label: p.days_5,    front: '€138',  alu: '€225',  carbon: '€250'  },
                   { label: p.days_6,    front: '€154',  alu: null,    carbon: null     },
                   { label: p.days_7,    front: '€180',  alu: null,    carbon: null     },
                   { label: p.afternoon, front: '€27',   alu: null,    carbon: null     },
