@@ -1,19 +1,17 @@
 'use client'
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { SlidersHorizontal } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { trackEvent } from '@/lib/analytics'
 import { RouteCard } from './route-card'
 import { BikeTypeIcon } from './bike-type-icon'
 import { DIFFICULTY_STYLES, DIFFICULTY_ACTIVE_STYLES } from './difficulty-badge'
-import type { Route, RouteTranslation, RoutePhoto } from '@/lib/db'
+import type { Route, RouteTranslation } from '@/lib/db'
 
 interface RouteWithData {
   route: Route
   translation: RouteTranslation
-  coverMedia: RoutePhoto | undefined
-  gpxPath?: string
-  mapCenter?: { lat: number; lon: number; zoom: number }
+  media: ReactNode
 }
 
 interface RouteFiltersProps {
@@ -121,14 +119,12 @@ export function RouteFilters({ routes, lang, dict }: RouteFiltersProps) {
             ? 'grid-cols-1 max-w-sm'
             : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'
         )}>
-          {filtered.map(({ route, translation, coverMedia, gpxPath, mapCenter }) => (
+          {filtered.map(({ route, translation, media }) => (
             <RouteCard
               key={route.id}
               route={route}
               translation={translation}
-              coverMedia={coverMedia}
-              gpxPath={gpxPath}
-              mapCenter={mapCenter}
+              media={media}
               lang={lang}
               dict={dict}
             />

@@ -1,17 +1,15 @@
+import { Suspense } from 'react'
 import { notFound } from 'next/navigation'
 import { eq, and } from 'drizzle-orm'
 import type { Metadata } from 'next'
-import { GetObjectCommand } from '@aws-sdk/client-s3'
 import { getDictionary, hasLocale } from '../dictionaries'
 import { Navbar } from '@/components/navbar'
 import { Footer } from '@/components/footer'
 import { RouteFilters } from '@/components/route-filters'
+import { RouteCardMediaAsync } from '@/components/route-card-media-async'
 import { SectionViewTracker } from '@/components/section-view-tracker'
-import { db, routes, routeTranslations, routePhotos } from '@/lib/db'
-import { s3, R2_BUCKET } from '@/lib/r2'
-import { minioObjectExists, deriveHlsPrefix } from '@/lib/minio'
-import { parseGpxPoints } from '@/lib/gpx'
-import { gpxPointsToSvgPath, gpxPointsToMercatorPath, gpxBboxCenter } from '@/lib/gpx-svg'
+import { Skeleton } from '@/components/ui/skeleton'
+import { db, routes, routeTranslations } from '@/lib/db'
 import { shortRouteId } from '@/lib/utils'
 
 export const revalidate = 3600
@@ -51,6 +49,9 @@ export default async function RoutesPage({
     .from(routes)
     .where(eq(routes.isPublished, true))
 
+  // Only the fast DB-backed bits (text, stats, filters) block the page. Each card's media —
+  // cover photo/video and GPX map preview — depends on MinIO/R2 lookups that can be slow or
+  // unreachable, so it's resolved in its own Suspense boundary instead of blocking everything else.
   const routesWithData = (
     await Promise.all(
       publishedRoutes.map(async (route) => {
@@ -62,40 +63,15 @@ export default async function RoutesPage({
             eq(routeTranslations.locale, lang as 'it' | 'en' | 'de')
           ))
 
-        const mediaItems = await db
-          .select()
-          .from(routePhotos)
-          .where(eq(routePhotos.routeId, route.id))
-          .orderBy(routePhotos.displayOrder)
+        if (!translation) return null
 
-        // Exclude videos whose HLS isn't ready yet
-        const readyMedia = await Promise.all(
-          mediaItems.map(async (m) => {
-            if (m.mediaType !== 'video') return m
-            const ready = await minioObjectExists(deriveHlsPrefix(m.storageKey) + 'playlist.m3u8')
-            return ready ? m : null
-          })
+        const media = (
+          <Suspense fallback={<Skeleton className="h-48 w-full rounded-none" />}>
+            <RouteCardMediaAsync route={route} routeName={translation.name} />
+          </Suspense>
         )
-        const coverMedia = readyMedia.find(Boolean) ?? undefined
 
-        let gpxPath: string | undefined
-        let mapCenter: { lat: number; lon: number; zoom: number } | undefined
-        if (!coverMedia && route.gpxKey) {
-          try {
-            const res = await s3.send(new GetObjectCommand({ Bucket: R2_BUCKET, Key: route.gpxKey }))
-            const chunks: Buffer[] = []
-            for await (const chunk of res.Body as AsyncIterable<Buffer>) chunks.push(Buffer.from(chunk))
-            const pts = parseGpxPoints(Buffer.concat(chunks).toString('utf-8'))
-            mapCenter = gpxBboxCenter(pts)
-            // With a map center the card renders real basemap tiles, so the path must follow the
-            // same Web Mercator projection as those tiles instead of the schematic bbox-stretched one.
-            gpxPath = mapCenter
-              ? gpxPointsToMercatorPath(pts, mapCenter.zoom, mapCenter.lat, mapCenter.lon)
-              : gpxPointsToSvgPath(pts)
-          } catch { /* silently skip */ }
-        }
-
-        return translation ? { route, translation, coverMedia, gpxPath, mapCenter } : null
+        return { route, translation, media }
       })
     )
   ).filter((i) => i !== null)
