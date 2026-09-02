@@ -82,12 +82,12 @@ export function RouteCardMedia({ media, gpxPath, mapCenter, difficulty, routeNam
         // Shift so the route center aligns with the card center
         const shiftX = Math.round(256 + fracX * 256)
         const shiftY = Math.round(256 + fracY * 256)
+        const cartoApiKey = process.env.NEXT_PUBLIC_CARTO_API_KEY
         const tiles: string[] = []
         for (let dy = -1; dy <= 1; dy++) {
           for (let dx = -1; dx <= 1; dx++) {
-            tiles.push(
-              `https://basemaps.cartocdn.com/rastertiles/voyager/${zoom}/${tx + dx}/${ty + dy}.png`
-            )
+            const tileUrl = `https://basemaps.cartocdn.com/rastertiles/voyager/${zoom}/${tx + dx}/${ty + dy}.png`
+            tiles.push(cartoApiKey ? `${tileUrl}?key=${cartoApiKey}` : tileUrl)
           }
         }
         return (
