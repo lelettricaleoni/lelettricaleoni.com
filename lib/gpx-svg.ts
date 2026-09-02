@@ -26,3 +26,31 @@ export function gpxPointsToSvgPath(points: [number, number, number][]): string {
     .map((p, i) => `${i === 0 ? 'M' : 'L'}${toX(p[0]).toFixed(1)},${toY(p[1]).toFixed(1)}`)
     .join(' ')
 }
+
+// Web Mercator pixel coords at a given zoom — same projection the XYZ tile grid uses,
+// so a path built from this lines up with the raster tiles instead of a bbox-stretched approximation.
+function mercatorPixel(lat: number, lon: number, zoom: number) {
+  const n = Math.pow(2, zoom) * 256
+  const x = (lon + 180) / 360 * n
+  const sinLat = Math.sin(lat * Math.PI / 180)
+  const y = (1 - Math.log((1 + sinLat) / Math.cos(lat * Math.PI / 180)) / Math.PI) / 2 * n
+  return { x, y }
+}
+
+// SVG path in pixels relative to (centerLat, centerLon) at `zoom`, meant to be drawn on top of
+// the 3×3 tile grid centered on that same point (see route-card-media.tsx).
+export function gpxPointsToMercatorPath(
+  points: [number, number, number][],
+  zoom: number,
+  centerLat: number,
+  centerLon: number
+): string {
+  if (points.length < 2) return ''
+  const center = mercatorPixel(centerLat, centerLon, zoom)
+  return points
+    .map((p, i) => {
+      const { x, y } = mercatorPixel(p[1], p[0], zoom)
+      return `${i === 0 ? 'M' : 'L'}${(x - center.x).toFixed(1)},${(y - center.y).toFixed(1)}`
+    })
+    .join(' ')
+}

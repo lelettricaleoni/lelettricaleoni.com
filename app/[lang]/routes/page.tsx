@@ -11,7 +11,7 @@ import { db, routes, routeTranslations, routePhotos } from '@/lib/db'
 import { s3, R2_BUCKET } from '@/lib/r2'
 import { minioObjectExists, deriveHlsPrefix } from '@/lib/minio'
 import { parseGpxPoints } from '@/lib/gpx'
-import { gpxPointsToSvgPath, gpxBboxCenter } from '@/lib/gpx-svg'
+import { gpxPointsToSvgPath, gpxPointsToMercatorPath, gpxBboxCenter } from '@/lib/gpx-svg'
 import { shortRouteId } from '@/lib/utils'
 
 export const revalidate = 3600
@@ -86,8 +86,12 @@ export default async function RoutesPage({
             const chunks: Buffer[] = []
             for await (const chunk of res.Body as AsyncIterable<Buffer>) chunks.push(Buffer.from(chunk))
             const pts = parseGpxPoints(Buffer.concat(chunks).toString('utf-8'))
-            gpxPath = gpxPointsToSvgPath(pts)
             mapCenter = gpxBboxCenter(pts)
+            // With a map center the card renders real basemap tiles, so the path must follow the
+            // same Web Mercator projection as those tiles instead of the schematic bbox-stretched one.
+            gpxPath = mapCenter
+              ? gpxPointsToMercatorPath(pts, mapCenter.zoom, mapCenter.lat, mapCenter.lon)
+              : gpxPointsToSvgPath(pts)
           } catch { /* silently skip */ }
         }
 

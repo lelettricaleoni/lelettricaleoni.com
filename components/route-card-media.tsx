@@ -82,49 +82,48 @@ export function RouteCardMedia({ media, gpxPath, mapCenter, difficulty, routeNam
         // Shift so the route center aligns with the card center
         const shiftX = Math.round(256 + fracX * 256)
         const shiftY = Math.round(256 + fracY * 256)
-        const cartoApiKey = process.env.NEXT_PUBLIC_CARTO_API_KEY
         const tiles: string[] = []
         for (let dy = -1; dy <= 1; dy++) {
           for (let dx = -1; dx <= 1; dx++) {
-            const tileUrl = `https://basemaps.cartocdn.com/rastertiles/voyager/${zoom}/${tx + dx}/${ty + dy}.png`
-            tiles.push(cartoApiKey ? `${tileUrl}?key=${cartoApiKey}` : tileUrl)
+            tiles.push(`/api/map-tile/${zoom}/${tx + dx}/${ty + dy}`)
           }
         }
         return (
           <div ref={containerRef} className="relative w-full h-full overflow-hidden">
-            {/* Map tile grid — 3×3 tiles centered on route bbox center */}
+            {/* Map tile grid — 3×3 tiles centered on route bbox center. The GPX path lives inside
+                this same transformed box, in the tiles' own Web Mercator pixel space, so it lines
+                up with the terrain instead of a separately-scaled schematic overlay. */}
             <div
               className="absolute"
               style={{
                 left: '50%',
                 top: '50%',
                 transform: `translate(-${shiftX}px, -${shiftY}px)`,
-                display: 'grid',
-                gridTemplateColumns: 'repeat(3, 256px)',
                 width: '768px',
                 height: '768px',
               }}
             >
-              {tiles.map((url, i) => (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img key={i} src={url} alt="" width={256} height={256} style={{ display: 'block' }} />
-              ))}
+              <div
+                className="absolute inset-0"
+                style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 256px)' }}
+              >
+                {tiles.map((url, i) => (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img key={i} src={url} alt="" width={256} height={256} style={{ display: 'block' }} />
+                ))}
+              </div>
+              <svg viewBox="0 0 768 768" className="absolute inset-0 w-full h-full">
+                <path
+                  d={gpxPath}
+                  fill="none"
+                  stroke={DIFFICULTY_COLORS[difficulty ?? ''] ?? '#795F91'}
+                  strokeWidth="4"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  transform={`translate(${shiftX}, ${shiftY})`}
+                />
+              </svg>
             </div>
-            {/* Route SVG overlay */}
-            <svg
-              viewBox="0 0 200 200"
-              className="absolute inset-0 w-full h-full"
-              style={{ padding: '16px' }}
-            >
-              <path
-                d={gpxPath}
-                fill="none"
-                stroke={DIFFICULTY_COLORS[difficulty ?? ''] ?? '#795F91'}
-                strokeWidth="4"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
           </div>
         )
       }
