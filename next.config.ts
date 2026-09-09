@@ -5,6 +5,13 @@ const nextConfig: NextConfig = {
     // Cesium is loaded via script tag (UMD global) to avoid SWC parsing GLSL shaders
     // with octal escape sequences — this maps `import cesium` to window.Cesium
     config.externals = [...(config.externals ?? []), { cesium: 'Cesium' }]
+    // The Playwright MCP server writes console logs and snapshots into
+    // .playwright-mcp/ inside the project. Watching it creates a feedback loop:
+    // the page logs, the log file changes, Fast Refresh rebuilds, the page logs again.
+    config.watchOptions = {
+      ...config.watchOptions,
+      ignored: ['**/node_modules/**', '**/.git/**', '**/.playwright-mcp/**'],
+    }
     return config
   },
   images: {
