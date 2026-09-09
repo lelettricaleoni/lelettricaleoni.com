@@ -1,0 +1,43 @@
+name: CI
+
+# Runs on every pull request, and on pushes to the long-lived branches so the
+# branch tip is always known-good. Nothing here needs secrets: the checks are
+# typecheck, lint and unit tests, all of which run without touching Supabase,
+# R2, MinIO or Vercel Flags. `npm run build` is deliberately absent — it needs
+# a live database, and CI gets it once the fake services from
+# docs/superpowers/specs/2026-09-09-test-suite-design.md exist.
+
+on:
+  pull_request:
+  push:
+    branches: [main, staging]
+
+# A new push to the same branch makes the previous run pointless
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: verify
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      # ci, not install: fails when package-lock.json and package.json disagree
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Unit tests
+        run: npm test
