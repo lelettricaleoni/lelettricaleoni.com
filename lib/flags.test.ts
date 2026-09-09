@@ -1,42 +1,63 @@
 import { describe, it, expect } from 'vitest'
-import { readFlags, FLAG_DEFAULTS, type FlagName } from './flags'
+import { applyCascade, readDevOverrides, FLAG_DEFAULTS, type FlagName, type Flags } from './flags'
 
-const names = Object.keys(FLAG_DEFAULTS) as FlagName[]
+const allOn = (): Flags =>
+  Object.fromEntries((Object.keys(FLAG_DEFAULTS) as FlagName[]).map((n) => [n, true])) as Flags
 
-describe('readFlags', () => {
-  it('turns every feature on when nothing is configured', () => {
-    const flags = readFlags({})
-    for (const name of names) expect(flags[name]).toBe(true)
-  })
-
-  it('turns a feature off with "off"', () => {
-    expect(readFlags({ FEATURE_ROUTES: 'off' }).routes).toBe(false)
-  })
-
-  it('accepts the other spellings people actually type', () => {
-    for (const value of ['0', 'false', 'no', 'OFF', ' off ']) {
-      expect(readFlags({ FEATURE_ROUTES: value }).routes).toBe(false)
-    }
-  })
-
-  it('treats an unrecognised value as on, so a typo never hides the site', () => {
-    expect(readFlags({ FEATURE_ROUTES: 'disabled' }).routes).toBe(true)
-    expect(readFlags({ FEATURE_ROUTES: '' }).routes).toBe(true)
-  })
-
-  it('leaves the other features alone when one is switched off', () => {
-    const flags = readFlags({ FEATURE_ROUTE_PHOTOS: 'off' })
-    expect(flags.routePhotos).toBe(false)
-    expect(flags.routes).toBe(true)
-    expect(flags.routeVideos).toBe(true)
+describe('applyCascade', () => {
+  it('leaves the flags alone when the section is on', () => {
+    const out = applyCascade({ ...allOn(), routePhotos: false })
+    expect(out.routes).toBe(true)
+    expect(out.routePhotos).toBe(false)
+    expect(out.routeVideos).toBe(true)
   })
 
   it('switches off everything under routes when routes itself is off', () => {
-    const flags = readFlags({ FEATURE_ROUTES: 'off' })
-    expect(flags.routes).toBe(false)
-    expect(flags.routePhotos).toBe(false)
-    expect(flags.routeVideos).toBe(false)
-    expect(flags.routeFlyover).toBe(false)
-    expect(flags.routeGpxDownload).toBe(false)
+    const out = applyCascade({ ...allOn(), routes: false })
+    expect(out.routes).toBe(false)
+    expect(out.routePhotos).toBe(false)
+    expect(out.routeVideos).toBe(false)
+    expect(out.routeFlyover).toBe(false)
+    expect(out.routeGpxDownload).toBe(false)
+  })
+
+  it('does not mutate its argument', () => {
+    const input = { ...allOn(), routes: false }
+    applyCascade(input)
+    expect(input.routePhotos).toBe(true)
+  })
+})
+
+describe('readDevOverrides', () => {
+  it('returns nothing when no variable is set', () => {
+    expect(readDevOverrides({})).toEqual({})
+  })
+
+  it('reads an override that switches a flag off', () => {
+    expect(readDevOverrides({ FEATURE_ROUTES: 'off' })).toEqual({ routes: false })
+  })
+
+  it('reads an override that forces a flag on', () => {
+    expect(readDevOverrides({ FEATURE_ROUTES: 'on' })).toEqual({ routes: true })
+  })
+
+  it('accepts the spellings people actually type', () => {
+    for (const value of ['0', 'false', 'no', 'OFF', ' off ']) {
+      expect(readDevOverrides({ FEATURE_ROUTES: value })).toEqual({ routes: false })
+    }
+    for (const value of ['1', 'true', 'yes', 'ON', ' on ']) {
+      expect(readDevOverrides({ FEATURE_ROUTES: value })).toEqual({ routes: true })
+    }
+  })
+
+  it('ignores a value it does not recognise, so a typo overrides nothing', () => {
+    expect(readDevOverrides({ FEATURE_ROUTES: 'disabled' })).toEqual({})
+    expect(readDevOverrides({ FEATURE_ROUTES: '' })).toEqual({})
+  })
+
+  it('reads each flag from its own variable', () => {
+    expect(
+      readDevOverrides({ FEATURE_ROUTE_PHOTOS: 'off', FEATURE_ROUTE_FLYOVER: 'off' })
+    ).toEqual({ routePhotos: false, routeFlyover: false })
   })
 })

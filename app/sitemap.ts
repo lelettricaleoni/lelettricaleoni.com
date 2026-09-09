@@ -10,7 +10,7 @@ const LAST_MODIFIED = new Date('2026-04-20')
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // A section that is switched off must stop being advertised to search engines
-  const flags = getFlags()
+  const flags = await getFlags()
 
   const staticRoutes: { path: string; priority: number; freq: MetadataRoute.Sitemap[number]['changeFrequency'] }[] = [
     { path: '',          priority: 1.0, freq: 'weekly'  },

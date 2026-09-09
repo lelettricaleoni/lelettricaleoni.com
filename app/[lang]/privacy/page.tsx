@@ -6,6 +6,7 @@ import { getDictionary, hasLocale } from '../dictionaries'
 import { Navbar } from '@/components/navbar'
 import { Footer } from '@/components/footer'
 import { Separator } from '@/components/ui/separator'
+import { getFlags } from '@/lib/flags'
 
 const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://www.lelettricaleoni.com').replace(/\/$/, '')
 
@@ -36,7 +37,7 @@ export default async function PrivacyPage({
 
   return (
     <>
-      <Navbar lang={lang} dict={dict} />
+      <Navbar lang={lang} dict={dict} showRoutes={(await getFlags()).routes} />
       <div className="min-h-screen bg-white pt-16">
         <div className="max-w-2xl mx-auto px-4 sm:px-6 py-16">
           <Link

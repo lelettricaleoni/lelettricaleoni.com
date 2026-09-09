@@ -41,7 +41,7 @@ export async function generateMetadata({
   const { lang, id } = await params
   if (!hasLocale(lang)) return {}
   // Without this the 404 would still carry the route's title and canonical
-  if (!getFlags().routes) return {}
+  if (!(await getFlags()).routes) return {}
 
   const [route] = await db.select().from(routes).where(
     and(sql`left(${routes.id}::text, 8) = ${id}`, eq(routes.isPublished, true))
@@ -82,7 +82,7 @@ export default async function RouteDetailPage({
 }: { params: Promise<{ lang: string; id: string }> }) {
   const { lang, id } = await params
   if (!hasLocale(lang)) notFound()
-  const flags = getFlags()
+  const flags = await getFlags()
   if (!flags.routes) notFound()
 
   const dict = await getDictionary(lang)
@@ -150,7 +150,7 @@ export default async function RouteDetailPage({
     <>
       <RouteViewTracker routeId={id} difficulty={route.difficulty} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-      <Navbar lang={lang} dict={dict} />
+      <Navbar lang={lang} dict={dict} showRoutes={flags.routes} />
       <main className="w-full pt-24 pb-8">
       <div className="max-w-6xl mx-auto px-12 sm:px-20 space-y-8">
         {/* Back */}

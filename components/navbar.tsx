@@ -2,7 +2,6 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { LanguageSwitcher } from './language-switcher'
 import { MobileMenu } from './mobile-menu'
-import { getFlags } from '@/lib/flags'
 
 interface NavbarProps {
   lang: string
@@ -10,16 +9,21 @@ interface NavbarProps {
     nav: { services: string; pricing: string; contact: string }
     routes?: { nav_label: string }
   }
+  /**
+   * Whether the routes section is reachable. Passed in rather than read here:
+   * this component is rendered from client pages too, so it must not depend on
+   * server-only state.
+   */
+  showRoutes?: boolean
 }
 
-export function Navbar({ lang, dict }: NavbarProps) {
-  const flags = getFlags()
+export function Navbar({ lang, dict, showRoutes = true }: NavbarProps) {
   const navLinks = [
     { href: `/${lang}`, label: 'Home' },
     { href: `/${lang}#servizi`, label: dict.nav.services },
     { href: `/${lang}#prezzi`, label: dict.nav.pricing },
     { href: `/${lang}#contatti`, label: dict.nav.contact },
-    ...(flags.routes && dict.routes ? [{ href: `/${lang}/routes`, label: dict.routes.nav_label }] : []),
+    ...(showRoutes && dict.routes ? [{ href: `/${lang}/routes`, label: dict.routes.nav_label }] : []),
   ]
 
   return (
@@ -46,7 +50,7 @@ export function Navbar({ lang, dict }: NavbarProps) {
           <Link href={`/${lang}#contatti`} className="hover:text-primary transition-colors">
             {dict.nav.contact}
           </Link>
-          {flags.routes && dict.routes && (
+          {showRoutes && dict.routes && (
             <Link href={`/${lang}/routes`} className="hover:text-primary transition-colors">
               {dict.routes.nav_label}
             </Link>

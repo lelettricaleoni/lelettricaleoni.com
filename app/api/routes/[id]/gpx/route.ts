@@ -12,7 +12,7 @@ export async function GET(
   const { id } = await params
 
   // Hiding the button is not enough: the endpoint has to stop serving too
-  if (!getFlags().routeGpxDownload) {
+  if (!(await getFlags()).routeGpxDownload) {
     return new NextResponse('Not Found', { status: 404 })
   }
 
