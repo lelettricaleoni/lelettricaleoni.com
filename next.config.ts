@@ -8,9 +8,20 @@ const nextConfig: NextConfig = {
     // The Playwright MCP server writes console logs and snapshots into
     // .playwright-mcp/ inside the project. Watching it creates a feedback loop:
     // the page logs, the log file changes, Fast Refresh rebuilds, the page logs again.
+    //
+    // Next has no config option for this, so we reach into the webpack config —
+    // which its docs warn is outside semver. Its own default ignores node_modules,
+    // .git and .next (baseWatchOptions in next/dist/build/webpack-config.js); we
+    // restate those, because replacing `ignored` drops them. Only `--webpack`
+    // builds run this hook: under Turbopack the loop would come back.
     config.watchOptions = {
       ...config.watchOptions,
-      ignored: ['**/node_modules/**', '**/.git/**', '**/.playwright-mcp/**'],
+      ignored: [
+        '**/node_modules/**',
+        '**/.git/**',
+        '**/.next/**',
+        '**/.playwright-mcp/**',
+      ],
     }
     return config
   },
