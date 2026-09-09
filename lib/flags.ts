@@ -155,8 +155,10 @@ export async function getFlags(): Promise<Flags> {
     names.map(async (name) => {
       try {
         return [name, await definitions[name]()] as const
-      } catch {
-        // An unreachable flags service must never take a section down
+      } catch (err) {
+        // An unreachable flags service must never take a section down, but
+        // failing silently would hide a misconfigured flag for months
+        console.error(`[flags] could not evaluate "${name}", defaulting to on:`, err)
         return [name, true] as const
       }
     })
