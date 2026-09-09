@@ -33,6 +33,8 @@
     "@radix-ui/react-tabs": "^1.1.13",
     "@supabase/ssr": "^0.10.3",
     "@supabase/supabase-js": "^2.106.2",
+    "@videojs/hlsjs-video": "^10.0.0-rc.1",
+    "@videojs/react": "^10.0.0-rc.1",
     "cesium": "^1.141.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -58,7 +60,6 @@
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.5.0",
     "vanilla-cookieconsent": "^3.1.0",
-    "video.js": "^8.24.0",
     "yet-another-react-lightbox": "^3.32.0",
     "zod": "^4.4.3"
   },
