@@ -1,19 +1,21 @@
 'use client'
 import { useEffect, useRef } from 'react'
-import videojs from 'video.js'
-import type Player from 'video.js/dist/types/player'
-import 'video.js/dist/video-js.css'
+import { VideoPlayer as VjsPlayer, VideoSkin } from '@videojs/react/video'
+import { HlsJsVideo } from '@videojs/react/media/hlsjs-video'
+import '@videojs/react/video/skin.css'
 
 /**
- * Video.js player for the route videos.
+ * Video.js v10 player for the route videos.
  *
- * Video.js bundles @videojs/http-streaming, so it plays the HLS streams
- * directly and hls.js is not needed here.
+ * v10 is a ground-up rewrite of Video.js, published as @videojs/react and
+ * currently at 10.0.0-rc.1 — a release candidate, not a stable release. The
+ * player is composed rather than configured: a player shell, a skin, and a
+ * media provider. HLS comes from @videojs/hlsjs-video via the HlsJsVideo
+ * component.
  *
- * Sized to fill its container rather than sitting at the intrinsic video size,
- * which is what left the old `<video>` element small and marooned in the middle
- * of the lightbox. The fullscreen button is removed on purpose: inside a
- * lightbox that already covers the screen it does nothing a viewer wants.
+ * Sized to fill its container rather than the video's intrinsic size, which is
+ * what left the old bare <video> small and marooned in the middle of the
+ * lightbox.
  */
 export function VideoPlayer({
   src,
@@ -25,56 +27,42 @@ export function VideoPlayer({
   active: boolean
   onError?: () => void
 }) {
-  const containerRef = useRef<HTMLDivElement>(null)
-  const playerRef = useRef<Player | null>(null)
-  // Held in a ref so a changing callback never tears down the player
-  const onErrorRef = useRef(onError)
-  useEffect(() => {
-    onErrorRef.current = onError
-  }, [onError])
-
-  useEffect(() => {
-    if (!containerRef.current || playerRef.current) return
-
-    // Video.js replaces the element it is handed, so give it a fresh one
-    const el = document.createElement('video-js')
-    el.classList.add('vjs-big-play-centered')
-    containerRef.current.appendChild(el)
-
-    const player = videojs(el, {
-      controls: true,
-      preload: 'auto',
-      playsinline: true,
-      fill: true,
-      responsive: true,
-      controlBar: {
-        // Redundant inside a lightbox that already covers the screen
-        fullscreenToggle: false,
-        pictureInPictureToggle: false,
-      },
-      sources: [{ src, type: 'application/x-mpegURL' }],
-    })
-
-    player.on('error', () => onErrorRef.current?.())
-    playerRef.current = player
-
-    return () => {
-      playerRef.current?.dispose()
-      playerRef.current = null
-    }
-  }, [src])
+  const videoRef = useRef<HTMLVideoElement>(null)
 
   // Play only the slide on screen; the others stay mounted but silent
   useEffect(() => {
-    const player = playerRef.current
-    if (!player) return
+    const video = videoRef.current
+    if (!video) return
     if (active) {
-      const started = player.play()
-      if (started) started.catch(() => { /* autoplay refused: the viewer can press play */ })
+      video.play().catch(() => { /* autoplay refused: the viewer can press play */ })
     } else {
-      player.pause()
+      video.pause()
     }
   }, [active])
 
-  return <div ref={containerRef} className="w-full h-full" data-vjs-player />
+  // VideoPlayer takes no className of its own, so sizing lives on a wrapper.
+  // Fullscreen, picture-in-picture and cast are hidden rather than configured
+  // away: the skin exposes no props for it, and inside a lightbox that already
+  // covers the screen none of the three does anything a viewer wants.
+  return (
+    <div
+      className="w-full h-full
+        [&_video]:w-full [&_video]:h-full [&_video]:object-contain
+        [&_.media-fullscreen-button]:hidden
+        [&_.media-pip-button]:hidden
+        [&_.media-cast-button]:hidden"
+    >
+      <VjsPlayer>
+        <VideoSkin>
+          <HlsJsVideo
+            ref={videoRef}
+            src={src}
+            playsInline
+            preload="auto"
+            onError={onError}
+          />
+        </VideoSkin>
+      </VjsPlayer>
+    </div>
+  )
 }
