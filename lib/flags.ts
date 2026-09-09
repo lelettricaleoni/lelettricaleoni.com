@@ -147,10 +147,36 @@ export function readDevOverrides(env: Record<string, string | undefined>): Parti
   return overrides
 }
 
-/** The flags for this request. Server-side only. */
-export async function getFlags(): Promise<Flags> {
-  const names = Object.keys(FLAG_DEFAULTS) as FlagName[]
+/**
+ * How long an evaluation is reused before asking the flags service again.
+ *
+ * Every evaluation is a network round-trip, and a page calls getFlags more
+ * than once — generateMetadata, the page body, the navbar prop. Measured
+ * without this cache, five evaluations per call turned a 0.15 s home page into
+ * 6.2 s. The cost of the cache is that switching a flag takes up to this long
+ * to reach visitors, which is still "immediately" for a kill switch and far
+ * better than the redeploy it replaced.
+ */
+const CACHE_TTL_MS = 30_000
 
+/**
+ * How long the very first call — the one with nothing cached yet — waits for
+ * the flags service before falling back to the defaults. The refresh keeps
+ * running and fills the cache for the next request.
+ *
+ * Measured evaluation cost against the live service is around 6 s, which is
+ * absurd for a flag lookup and is probably down to the flags not existing in
+ * the dashboard yet. Whatever the reason, no visitor should ever wait on it.
+ */
+const COLD_TIMEOUT_MS = 1_500
+
+let cache: { flags: Flags; at: number } | null = null
+/** Refresh in progress, shared so concurrent requests don't stampede. */
+let refreshing: Promise<Flags> | null = null
+
+/** Ask the flags service for every flag, in parallel, once. */
+async function evaluateAll(): Promise<Flags> {
+  const names = Object.keys(FLAG_DEFAULTS) as FlagName[]
   const resolved = await Promise.all(
     names.map(async (name) => {
       try {
@@ -163,12 +189,61 @@ export async function getFlags(): Promise<Flags> {
       }
     })
   )
+  return Object.fromEntries(resolved) as Flags
+}
 
-  const flags = Object.fromEntries(resolved) as Flags
+/** Drop the cached evaluation. Exists for tests. */
+export function clearFlagsCache(): void {
+  cache = null
+  refreshing = null
+}
+
+/** Refresh the cache, sharing one evaluation across concurrent callers. */
+function refresh(): Promise<Flags> {
+  if (refreshing) return refreshing
+  refreshing = evaluateAll()
+    .then((flags) => {
+      cache = { flags, at: Date.now() }
+      return flags
+    })
+    .finally(() => {
+      refreshing = null
+    })
+  return refreshing
+}
+
+const ALL_ON = (): Flags =>
+  Object.fromEntries((Object.keys(FLAG_DEFAULTS) as FlagName[]).map((n) => [n, true])) as Flags
+
+/**
+ * The flags for this request. Server-side only.
+ *
+ * A request never waits on the flags service beyond the cold-start timeout:
+ * a stale value is served while a refresh runs in the background. Waiting
+ * would put the service's latency on the critical path of every page, which
+ * is how this ended up making the home page 40x slower once already.
+ */
+export async function getFlags(): Promise<Flags> {
+  // Overrides are read every time: they cost nothing and stay instant in dev
   const overrides =
     process.env.NODE_ENV === 'production'
       ? {}
       : readDevOverrides(process.env as Record<string, string | undefined>)
 
+  if (cache) {
+    // Stale: serve what we have and refresh behind the request
+    if (Date.now() - cache.at > CACHE_TTL_MS && !refreshing) void refresh()
+    return applyCascade({ ...cache.flags, ...overrides })
+  }
+
+  // Nothing cached, but someone is already fetching: don't queue up behind
+  // them. Only the caller that started the refresh ever waits.
+  if (refreshing) return applyCascade({ ...ALL_ON(), ...overrides })
+
+  // First caller: wait, but only briefly, then fall back to on
+  const flags = await Promise.race([
+    refresh(),
+    new Promise<Flags>((resolve) => setTimeout(() => resolve(ALL_ON()), COLD_TIMEOUT_MS)),
+  ])
   return applyCascade({ ...flags, ...overrides })
 }
