@@ -18,7 +18,7 @@ import { RouteExternalLinks } from '@/components/route-external-links'
 import { RouteViewTracker } from '@/components/route-view-tracker'
 import { db, routes, routeTranslations, routePhotos } from '@/lib/db'
 import { s3, R2_BUCKET, r2PublicUrl } from '@/lib/r2'
-import { minioObjectExists, deriveHlsPrefix } from '@/lib/minio'
+import { resolveHlsUrl } from '@/lib/minio'
 import { parseGpxPoints } from '@/lib/gpx'
 import { getFlags } from '@/lib/flags'
 import { shortRouteId } from '@/lib/utils'
@@ -107,12 +107,13 @@ export default async function RouteDetailPage({
     m.mediaType === 'video' ? flags.routeVideos : flags.routePhotos
   )
 
-  // Exclude videos whose HLS isn't ready yet
+  // Exclude videos the worker hasn't finished, and carry the resolved manifest
+  // URL down so the client doesn't have to guess which one exists
   const allMedia = (await Promise.all(
     permittedMedia.map(async (m) => {
       if (m.mediaType !== 'video') return m
-      const ready = await minioObjectExists(deriveHlsPrefix(m.storageKey) + 'playlist.m3u8')
-      return ready ? m : null
+      const hlsUrl = await resolveHlsUrl(m.storageKey)
+      return hlsUrl ? { ...m, hlsUrl } : null
     })
   )).filter((m): m is NonNullable<typeof m> => m !== null)
 

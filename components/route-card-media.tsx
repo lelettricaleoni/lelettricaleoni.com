@@ -4,7 +4,7 @@ import Image from 'next/image'
 import Hls from 'hls.js'
 import { Mountain, Loader2 } from 'lucide-react'
 import { r2PublicUrl } from '@/lib/r2'
-import { minioHlsUrl } from '@/lib/minio-client'
+import { minioHlsUrl, type MediaWithHls } from '@/lib/minio-client'
 import type { RoutePhoto } from '@/lib/db'
 
 interface MapCenter { lat: number; lon: number; zoom: number }
@@ -17,7 +17,7 @@ const DIFFICULTY_COLORS: Record<string, string> = {
 }
 
 interface RouteCardMediaProps {
-  media?: RoutePhoto
+  media?: MediaWithHls
   gpxPath?: string
   mapCenter?: MapCenter
   difficulty?: string | null
@@ -53,7 +53,7 @@ export function RouteCardMedia({ media, gpxPath, mapCenter, difficulty, routeNam
 
   useEffect(() => {
     if (!media || media.mediaType !== 'video' || !videoRef.current || !isVisible) return
-    const hlsUrl = minioHlsUrl(media.storageKey)
+    const hlsUrl = media.hlsUrl ?? minioHlsUrl(media.storageKey)
     let hls: Hls | null = null
     setVideoError(false)
 
