@@ -67,10 +67,14 @@ const CHILDREN_OF_ROUTES: FlagName[] = [
 ]
 
 /**
- * The flag declarations. `key` is the name to create in the Vercel Flags
+ * The flag declarations. `key` is the name shown in the Vercel Flags
  * dashboard; `defaultValue` is what applies when no value comes back.
+ *
+ * Exported for the flags discovery endpoint at
+ * `app/.well-known/vercel/flags/route.ts`, which is how Vercel learns these
+ * flags exist and offers them as drafts to promote.
  */
-const definitions = {
+export const definitions = {
   routes: flag<boolean>({
     key: 'routes',
     adapter: vercelAdapter(),

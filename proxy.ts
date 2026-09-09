@@ -31,6 +31,14 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next()
   }
 
+  // Well-known endpoints are addressed by their exact path — the flags
+  // discovery endpoint among them. Prefixing a locale would make Vercel follow
+  // a redirect instead of reading the flag list, and the dashboard would stay
+  // empty with nothing to explain why.
+  if (pathname.startsWith('/.well-known/')) {
+    return NextResponse.next()
+  }
+
   // Admin area protection
   if (pathname.startsWith('/manage')) {
     let supabaseResponse = NextResponse.next({ request })
