@@ -3,7 +3,7 @@ import { GetObjectCommand } from '@aws-sdk/client-s3'
 import { db, routePhotos } from '@/lib/db'
 import type { Route } from '@/lib/db'
 import { s3, R2_BUCKET } from '@/lib/r2'
-import { minioObjectExists, deriveHlsPrefix } from '@/lib/minio'
+import { resolveHlsUrl } from '@/lib/minio'
 import { parseGpxPoints } from '@/lib/gpx'
 import { gpxPointsToSvgPath, gpxPointsToMercatorPath, gpxBboxCenter } from '@/lib/gpx-svg'
 import { RouteCardMedia } from './route-card-media'
@@ -26,8 +26,8 @@ export async function RouteCardMediaAsync({ route, routeName }: RouteCardMediaAs
   const readyMedia = await Promise.all(
     mediaItems.map(async (m) => {
       if (m.mediaType !== 'video') return m
-      const ready = await minioObjectExists(deriveHlsPrefix(m.storageKey) + 'playlist.m3u8')
-      return ready ? m : null
+      const hlsUrl = await resolveHlsUrl(m.storageKey)
+      return hlsUrl ? { ...m, hlsUrl } : null
     })
   )
   const coverMedia = readyMedia.find(Boolean) ?? undefined

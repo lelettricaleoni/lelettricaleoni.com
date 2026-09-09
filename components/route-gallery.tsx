@@ -6,8 +6,9 @@ import 'yet-another-react-lightbox/styles.css'
 import Zoom from 'yet-another-react-lightbox/plugins/zoom'
 import Hls from 'hls.js'
 import { Loader2 } from 'lucide-react'
+import { VideoPlayer } from '@/components/video-player'
 import { r2PublicUrl } from '@/lib/r2'
-import { minioHlsUrl } from '@/lib/minio-client'
+import { minioHlsUrl, type MediaWithHls } from '@/lib/minio-client'
 import type { Slide } from 'yet-another-react-lightbox'
 import type { RoutePhoto } from '@/lib/db'
 
@@ -77,39 +78,10 @@ function VideoThumbAutoplay({ hlsUrl }: { hlsUrl: string }) {
   )
 }
 
-/** Full HLS video player rendered inside the YARL lightbox.
+/** Video slide inside the YARL lightbox.
  *  `active` (offset===0) controls play/pause — YARL keeps adjacent slides mounted. */
 function HlsVideoSlide({ hlsUrl, active }: { hlsUrl: string; active: boolean }) {
-  const videoRef = useRef<HTMLVideoElement>(null)
   const [error, setError] = useState(false)
-
-  useEffect(() => {
-    if (!videoRef.current) return
-    let hls: Hls | null = null
-    if (Hls.isSupported()) {
-      hls = new Hls()
-      hls.loadSource(hlsUrl)
-      hls.attachMedia(videoRef.current)
-      hls.on(Hls.Events.ERROR, (_, data) => { if (data.fatal) setError(true) })
-    } else if (videoRef.current.canPlayType('application/vnd.apple.mpegurl')) {
-      videoRef.current.src = hlsUrl
-      videoRef.current.onerror = () => setError(true)
-    } else {
-      setError(true)
-    }
-    return () => hls?.destroy()
-  }, [hlsUrl])
-
-  // Play only when this slide is the active one; pause otherwise
-  useEffect(() => {
-    const video = videoRef.current
-    if (!video) return
-    if (active) {
-      video.play().catch(() => {})
-    } else {
-      video.pause()
-    }
-  }, [active])
 
   if (error) {
     return (
@@ -120,13 +92,11 @@ function HlsVideoSlide({ hlsUrl, active }: { hlsUrl: string; active: boolean }) 
     )
   }
 
+  // Bounded so the player fills the lightbox without overflowing it
   return (
-    <video
-      ref={videoRef}
-      controls
-      className="max-h-[90vh] max-w-full rounded"
-      style={{ aspectRatio: '16/9', background: '#000' }}
-    />
+    <div className="w-full h-full max-h-[90vh] max-w-[90vw] mx-auto">
+      <VideoPlayer src={hlsUrl} active={active} onError={() => setError(true)} />
+    </div>
   )
 }
 
@@ -141,7 +111,7 @@ function MediaThumb({
   sizes,
   extraLabel,
 }: {
-  item: RoutePhoto
+  item: MediaWithHls
   index: number
   autoplay: boolean
   routeName: string
@@ -158,7 +128,7 @@ function MediaThumb({
     >
       {item.mediaType === 'video' ? (
         autoplay ? (
-          <VideoThumbAutoplay hlsUrl={minioHlsUrl(item.storageKey)} />
+          <VideoThumbAutoplay hlsUrl={item.hlsUrl ?? minioHlsUrl(item.storageKey)} />
         ) : (
           <div className="absolute inset-0 bg-zinc-900" />
         )
@@ -181,14 +151,14 @@ function MediaThumb({
   )
 }
 
-export function RouteGallery({ media, routeName }: { media: RoutePhoto[]; routeName: string }) {
+export function RouteGallery({ media, routeName }: { media: MediaWithHls[]; routeName: string }) {
   const [lightboxIndex, setLightboxIndex] = useState(-1)
 
   if (media.length === 0) return null
 
   const slides: Slide[] = media.map((m) =>
     m.mediaType === 'video'
-      ? ({ type: 'hls' as const, hlsUrl: minioHlsUrl(m.storageKey) } satisfies HlsSlide)
+      ? ({ type: 'hls' as const, hlsUrl: m.hlsUrl ?? minioHlsUrl(m.storageKey) } satisfies HlsSlide)
       : { src: r2PublicUrl(m.storageKey), alt: m.altText ?? `${routeName}` }
   )
 
@@ -208,7 +178,7 @@ export function RouteGallery({ media, routeName }: { media: RoutePhoto[]; routeN
       )}
 
       {media.length === 2 && (
-        <div className="grid grid-cols-2 gap-2 h-64 sm:h-80">
+        <div className="grid grid-cols-2 gap-2 h-72 sm:h-[420px]">
           {media.map((item, i) => (
             <MediaThumb
               key={item.id}
@@ -226,7 +196,7 @@ export function RouteGallery({ media, routeName }: { media: RoutePhoto[]; routeN
       )}
 
       {media.length >= 3 && (
-        <div className="grid grid-cols-3 grid-rows-2 gap-2 h-64 sm:h-80">
+        <div className="grid grid-cols-3 grid-rows-2 gap-2 h-72 sm:h-[420px]">
           <MediaThumb
             item={media[0]}
             index={0}

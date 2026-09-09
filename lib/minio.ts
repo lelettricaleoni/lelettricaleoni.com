@@ -1,7 +1,9 @@
 import { S3Client, PutObjectCommand, DeleteObjectCommand, ListObjectsV2Command, HeadObjectCommand } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 
-export { minioPublicUrl, deriveHlsPrefix, minioHlsUrl } from './minio-client'
+import { deriveHlsPrefix, minioHlsUrl, HLS_MANIFESTS } from './minio-client'
+
+export { minioPublicUrl, deriveHlsPrefix, minioHlsUrl, HLS_MANIFESTS } from './minio-client'
 
 export const minioClient = new S3Client({
   endpoint: process.env.MINIO_ENDPOINT!,
@@ -53,4 +55,20 @@ export async function deleteMinioPrefix(prefix: string): Promise<void> {
     ))
     token = res.NextContinuationToken
   } while (token)
+}
+
+/**
+ * Public URL of a video's HLS manifest, or null when the worker has not
+ * finished (or never ran).
+ *
+ * Doubles as the readiness check: a video with no manifest is not ready to
+ * show. Tries the adaptive `master.m3u8` first and falls back to the older flat
+ * `playlist.m3u8` — see HLS_MANIFESTS for why both exist.
+ */
+export async function resolveHlsUrl(storageKey: string): Promise<string | null> {
+  const prefix = deriveHlsPrefix(storageKey)
+  for (const manifest of HLS_MANIFESTS) {
+    if (await minioObjectExists(prefix + manifest)) return minioHlsUrl(storageKey, manifest)
+  }
+  return null
 }
