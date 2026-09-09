@@ -23,6 +23,12 @@ i18n nativo (IT/EN/DE): `proxy.ts` + `app/[lang]/` + `messages/{it,en,de}.json`.
 - Installare anche: `clsx`, `tailwind-merge`, `class-variance-authority`, `@radix-ui/react-slot`, `lucide-react`
 - `lucide-react` non include icone di brand (es. Instagram) → usare SVG inline
 
+## Igiene del repository
+- La root è per la configurazione, non per i file di lavoro: screenshot, dump, esportazioni e output di debug vanno nella cartella scratchpad di sessione, mai nel progetto
+- Gli artefatti degli strumenti non si versionano: `.playwright-mcp/`, `temp/`, `.superpowers/`, `public/cesium/`
+- Prima di committare guarda `git status`: se compare un file che non hai scritto di proposito, non aggiungerlo
+- Se un file di scarto serve davvero, dagli una collocazione (`docs/`, `public/`) e un nome che dica cos'è — altrimenti cancellalo
+
 ## Comandi utili
 - `npm run dev` — dev server su http://localhost:3000
 - `npm run build` — verifica TypeScript + build produzione

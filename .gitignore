@@ -47,3 +47,9 @@ temp/
 
 # cesium static assets (generati da scripts/copy-cesium.mjs)
 /public/cesium/
+
+# playwright mcp artifacts (console logs, snapshots, screenshots)
+/.playwright-mcp/
+
+# debug screenshots must not live in the project root
+/*.png

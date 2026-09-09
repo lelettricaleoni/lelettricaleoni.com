@@ -6,6 +6,7 @@ import { ServicesSection } from '@/components/services-section'
 import { PricingSection } from '@/components/pricing-section'
 import { MapSection } from '@/components/map-section'
 import { Footer } from '@/components/footer'
+import { getFlags } from '@/lib/flags'
 
 export default async function HomePage({
   params,
@@ -19,7 +20,7 @@ export default async function HomePage({
 
   return (
     <>
-      <Navbar lang={lang} dict={dict} />
+      <Navbar lang={lang} dict={dict} showRoutes={(await getFlags()).routes} />
       <main>
         <HeroSection lang={lang} dict={dict} />
         <ServicesSection dict={dict} />
