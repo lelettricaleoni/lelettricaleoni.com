@@ -178,7 +178,7 @@ export function RouteGallery({ media, routeName }: { media: MediaWithHls[]; rout
       )}
 
       {media.length === 2 && (
-        <div className="grid grid-cols-2 gap-2 h-64 sm:h-80">
+        <div className="grid grid-cols-2 gap-2 h-72 sm:h-[420px]">
           {media.map((item, i) => (
             <MediaThumb
               key={item.id}
@@ -196,7 +196,7 @@ export function RouteGallery({ media, routeName }: { media: MediaWithHls[]; rout
       )}
 
       {media.length >= 3 && (
-        <div className="grid grid-cols-3 grid-rows-2 gap-2 h-64 sm:h-80">
+        <div className="grid grid-cols-3 grid-rows-2 gap-2 h-72 sm:h-[420px]">
           <MediaThumb
             item={media[0]}
             index={0}
