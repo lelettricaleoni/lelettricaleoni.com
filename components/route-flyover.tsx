@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Play, Square } from 'lucide-react'
 import { MapLoader } from '@/components/map-loader'
 import { trackEvent } from '@/lib/analytics'
+import { pickSampleIndices, interpolateHeights } from '@/lib/terrain'
 
 type Coord = [number, number, number] // [lon, lat, ele]
 
@@ -15,6 +16,13 @@ declare global {
 }
 
 const CESIUM_BASE = '/cesium'
+
+// Terrain queries are batched per tile, but every sample still costs work —
+// 300 across the track is plenty, since interpolateHeights fills the gaps.
+const TERRAIN_SAMPLE_CAP = 300
+// Metres above the terrain, enough to clear it without visibly hovering.
+const TRACK_OFFSET_M = 2
+const MARKER_OFFSET_M = 4
 
 // Module-level state machine — handles concurrent mounts and retries cleanly
 type LoadState = 'idle' | 'loading' | 'loaded'
@@ -57,6 +65,9 @@ export function RouteFlyover({ points, difficulty }: { points: Coord[]; difficul
   const cesiumRef = useRef<CesiumType>(null)
   const entityRef = useRef<CesiumType>(null)
   const cameraHandlerRef = useRef<CesiumType>(null)
+  // Height to draw each track point at: terrain height where terrain is
+  // available, GPX elevation otherwise. See lib/terrain.ts for why.
+  const heightsRef = useRef<number[]>(points.map(([, , ele]) => ele))
   const [flying, setFlying] = useState(false)
   const [ready, setReady] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -64,6 +75,8 @@ export function RouteFlyover({ points, difficulty }: { points: Coord[]; difficul
   useEffect(() => {
     if (!containerRef.current || points.length < 2) return
     let destroyed = false
+    // Reset so a previous route's terrain heights are never reused
+    heightsRef.current = points.map(([, , ele]) => ele)
 
     ;(async () => {
       try {
@@ -133,12 +146,36 @@ export function RouteFlyover({ points, difficulty }: { points: Coord[]; difficul
         // Labels overlay: city names, peaks, lakes, boundaries
         viewer.imageryLayers.addImageryProvider(esriLabels)
 
+        // Re-anchor the track to the terrain. GPX elevations are above mean sea
+        // level while Cesium heights are above the ellipsoid, so using them
+        // directly buries the track by ~46 m here and leaves it floating where
+        // the DEM dips. Falls back to GPX elevations when terrain is missing.
+        if (terrainProvider) {
+          try {
+            const indices = pickSampleIndices(points.length, TERRAIN_SAMPLE_CAP)
+            const samples = indices.map((i) =>
+              Cesium.Cartographic.fromDegrees(points[i][0], points[i][1])
+            )
+            await Cesium.sampleTerrainMostDetailed(terrainProvider, samples)
+            if (destroyed) return
+            const sampled = interpolateHeights(
+              points.length,
+              indices,
+              samples.map((c: CesiumType) => c.height)
+            )
+            if (sampled.length === points.length) heightsRef.current = sampled
+          } catch {
+            // Keep the GPX elevations — a misplaced track beats no track
+          }
+        }
+        const heights = heightsRef.current
+
         const trackColor = DIFFICULTY_COLORS[difficulty ?? ''] ?? '#795F91'
 
         viewer.entities.add({
           polyline: {
             positions: Cesium.Cartesian3.fromDegreesArrayHeights(
-              points.flatMap(([lon, lat, ele]) => [lon, lat, ele + 3])
+              points.flatMap(([lon, lat], i) => [lon, lat, heights[i] + TRACK_OFFSET_M])
             ),
             width: 5,
             material: new Cesium.PolylineGlowMaterialProperty({
@@ -148,8 +185,8 @@ export function RouteFlyover({ points, difficulty }: { points: Coord[]; difficul
           },
         })
 
-        const positions = points.map(([lon, lat, ele]) =>
-          Cesium.Cartesian3.fromDegrees(lon, lat, ele)
+        const positions = points.map(([lon, lat], i) =>
+          Cesium.Cartesian3.fromDegrees(lon, lat, heights[i])
         )
         viewer.camera.flyToBoundingSphere(
           Cesium.BoundingSphere.fromPoints(positions),
@@ -203,9 +240,10 @@ export function RouteFlyover({ points, difficulty }: { points: Coord[]; difficul
       interpolationDegree: 3,
       interpolationAlgorithm: Cesium.HermitePolynomialApproximation,
     })
-    points.forEach(([lon, lat, ele], i) => {
+    const heights = heightsRef.current
+    points.forEach(([lon, lat], i) => {
       const t = Cesium.JulianDate.addSeconds(start, (i / (points.length - 1)) * DURATION_S, new Cesium.JulianDate())
-      pos.addSample(t, Cesium.Cartesian3.fromDegrees(lon, lat, ele + 5))
+      pos.addSample(t, Cesium.Cartesian3.fromDegrees(lon, lat, heights[i] + MARKER_OFFSET_M))
     })
 
     if (entityRef.current) viewer.entities.remove(entityRef.current)
@@ -282,7 +320,8 @@ export function RouteFlyover({ points, difficulty }: { points: Coord[]; difficul
     cameraHandlerRef.current = null
     viewer.camera.lookAtTransform(Cesium.Matrix4.IDENTITY)
     setFlying(false)
-    const positions = points.map(([lon, lat, ele]) => Cesium.Cartesian3.fromDegrees(lon, lat, ele))
+    const heights = heightsRef.current
+    const positions = points.map(([lon, lat], i) => Cesium.Cartesian3.fromDegrees(lon, lat, heights[i]))
     viewer.camera.flyToBoundingSphere(
       Cesium.BoundingSphere.fromPoints(positions),
       { duration: 1.5, offset: new Cesium.HeadingPitchRange(0, Cesium.Math.toRadians(-40), 0) }
