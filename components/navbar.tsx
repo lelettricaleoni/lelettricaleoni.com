@@ -2,6 +2,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { LanguageSwitcher } from './language-switcher'
 import { MobileMenu } from './mobile-menu'
+import { getFlags } from '@/lib/flags'
 
 interface NavbarProps {
   lang: string
@@ -12,12 +13,13 @@ interface NavbarProps {
 }
 
 export function Navbar({ lang, dict }: NavbarProps) {
+  const flags = getFlags()
   const navLinks = [
     { href: `/${lang}`, label: 'Home' },
     { href: `/${lang}#servizi`, label: dict.nav.services },
     { href: `/${lang}#prezzi`, label: dict.nav.pricing },
     { href: `/${lang}#contatti`, label: dict.nav.contact },
-    ...(dict.routes ? [{ href: `/${lang}/routes`, label: dict.routes.nav_label }] : []),
+    ...(flags.routes && dict.routes ? [{ href: `/${lang}/routes`, label: dict.routes.nav_label }] : []),
   ]
 
   return (
@@ -44,7 +46,7 @@ export function Navbar({ lang, dict }: NavbarProps) {
           <Link href={`/${lang}#contatti`} className="hover:text-primary transition-colors">
             {dict.nav.contact}
           </Link>
-          {dict.routes && (
+          {flags.routes && dict.routes && (
             <Link href={`/${lang}/routes`} className="hover:text-primary transition-colors">
               {dict.routes.nav_label}
             </Link>

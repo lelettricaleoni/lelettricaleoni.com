@@ -20,6 +20,7 @@ import { db, routes, routeTranslations, routePhotos } from '@/lib/db'
 import { s3, R2_BUCKET, r2PublicUrl } from '@/lib/r2'
 import { minioObjectExists, deriveHlsPrefix } from '@/lib/minio'
 import { parseGpxPoints } from '@/lib/gpx'
+import { getFlags } from '@/lib/flags'
 import { shortRouteId } from '@/lib/utils'
 
 export const revalidate = 3600
@@ -39,6 +40,8 @@ export async function generateMetadata({
 }: { params: Promise<{ lang: string; id: string }> }): Promise<Metadata> {
   const { lang, id } = await params
   if (!hasLocale(lang)) return {}
+  // Without this the 404 would still carry the route's title and canonical
+  if (!getFlags().routes) return {}
 
   const [route] = await db.select().from(routes).where(
     and(sql`left(${routes.id}::text, 8) = ${id}`, eq(routes.isPublished, true))
@@ -79,6 +82,8 @@ export default async function RouteDetailPage({
 }: { params: Promise<{ lang: string; id: string }> }) {
   const { lang, id } = await params
   if (!hasLocale(lang)) notFound()
+  const flags = getFlags()
+  if (!flags.routes) notFound()
 
   const dict = await getDictionary(lang)
   const d = dict.routes
@@ -96,9 +101,15 @@ export default async function RouteDetailPage({
     .where(eq(routePhotos.routeId, route.id))
     .orderBy(routePhotos.displayOrder)
 
+  // Drop what the flags disallow before the HLS check, so switching videos off
+  // also skips the MinIO round-trips they would have cost
+  const permittedMedia = rawMedia.filter((m) =>
+    m.mediaType === 'video' ? flags.routeVideos : flags.routePhotos
+  )
+
   // Exclude videos whose HLS isn't ready yet
   const allMedia = (await Promise.all(
-    rawMedia.map(async (m) => {
+    permittedMedia.map(async (m) => {
       if (m.mediaType !== 'video') return m
       const ready = await minioObjectExists(deriveHlsPrefix(m.storageKey) + 'playlist.m3u8')
       return ready ? m : null
@@ -107,8 +118,9 @@ export default async function RouteDetailPage({
 
   const coverPhoto = allMedia.find((m) => m.mediaType === 'photo')
 
+  // Only the flyover consumes the track, so skip the R2 fetch when it is off
   let gpxPoints: [number, number, number][] = []
-  if (route.gpxKey) {
+  if (flags.routeFlyover && route.gpxKey) {
     try {
       const res = await s3.send(new GetObjectCommand({ Bucket: R2_BUCKET, Key: route.gpxKey }))
       const chunks: Buffer[] = []
@@ -230,7 +242,7 @@ export default async function RouteDetailPage({
             openStrava={d.open_strava}
             openKomoot={d.open_komoot}
           />
-          {route.gpxKey && (
+          {flags.routeGpxDownload && route.gpxKey && (
             <RouteGpxModal
               shortId={id}
               routeName={translation?.name ?? id}

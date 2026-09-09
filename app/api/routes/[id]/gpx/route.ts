@@ -3,12 +3,18 @@ import { and, eq, sql } from 'drizzle-orm'
 import { db, routes, routeTranslations } from '@/lib/db'
 import { r2PublicUrl } from '@/lib/r2'
 import { watermarkGpx } from '@/lib/gpx'
+import { getFlags } from '@/lib/flags'
 
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params
+
+  // Hiding the button is not enough: the endpoint has to stop serving too
+  if (!getFlags().routeGpxDownload) {
+    return new NextResponse('Not Found', { status: 404 })
+  }
 
   const [route] = await db.select().from(routes).where(
     and(sql`left(${routes.id}::text, 8) = ${id}`, eq(routes.isPublished, true))
