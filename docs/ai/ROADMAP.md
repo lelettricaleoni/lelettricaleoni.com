@@ -13,6 +13,14 @@ _(niente in lavorazione)_
 
 ## Prossimo
 
+- **Video fantasma a storage irraggiungibile** — con MinIO giù il video compare lo stesso
+  con la scritta "Video in elaborazione", invece di sparire come faceva prima. Sospetto
+  che la cache Redis del manifesto (7 giorni) lo faccia risultare pronto anche quando lo
+  storage non risponde. Da decidere: se un errore di rete debba invalidare la voce, e che
+  messaggio mostrare — "in elaborazione" è falso quando il problema è lo storage.
+
+- **Il worker espone la secret key** — la passa come argomento a `mc`, quindi finisce nei
+  log del container e in `ps`. Va letta da variabile d'ambiente o da file.
 - **Suite di test, fase 1** — fondamenta vitest con ambiente DOM, più i test su `proxy.ts`
   e sull'allineamento delle chiavi dei dizionari. → `docs/superpowers/specs/2026-09-09-test-suite-design.md`
 - **Test di ogni pagina e budget di prestazioni** — richiesti esplicitamente dopo che una

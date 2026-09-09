@@ -43,6 +43,34 @@ Traduzioni IT→EN/DE generate da **Azure Translator**: l'admin scrive solo l'it
 Se R2 o MinIO rallentano, le card dei percorsi si degradano da sole — i media stanno in un
 confine Suspense separato apposta, per non bloccare il resto della pagina.
 
+**Cache di lettura su Upstash Redis** (`lib/cache.ts`): URL dei manifesti HLS e punti GPX
+già analizzati, che non cambiano mai una volta prodotti. Senza credenziali è un no-op, e
+ogni lettura fallisce aperta entro 250 ms — nessuna richiesta può restare appesa al servizio.
+
+## Infrastruttura MinIO
+
+Dal 2026-09-09 MinIO **non è più su Kubernetes**. Gira in Docker Compose sulla VM
+`clustrenode1` (Oracle Cloud, ARM64, Milano), insieme al worker di transcodifica e a Nginx
+Proxy Manager, che fa da ingresso pubblico. Il cluster k3s è stato smontato del tutto:
+niente più Longhorn, etcd, Traefik né tunnel Cloudflare.
+
+| | |
+|---|---|
+| Compose | `~/docker/minio` (MinIO + worker), `~/docker/npm` (proxy), rete condivisa `proxy-net` |
+| Domini | `cluster-bucket` (API) e `cluster-bucket-console`, record A su `80.225.95.153`, **DNS only** |
+| TLS | Let's Encrypt gestito da NPM, non più terminato da Cloudflare |
+| Porte MinIO | pubblicate solo su `127.0.0.1`: l'ingresso passa da NPM |
+| Bucket | `lelettricaleoni.com` (quota 100 GiB), `dev.lelettricaleoni.com` (10 GiB) |
+| Accesso anonimo | in sola lettura sul **solo prefisso `public/`**; `private/` resta chiuso |
+| Notifiche | `notify_webhook:videoworker` → `http://video-worker:8080`, evento `put` su `private/route-videos/` |
+
+Non essendoci più il proxy Cloudflare davanti all'endpoint S3, **è caduto il limite di
+100 MB per richiesta** che tagliava i caricamenti dei video più grandi.
+
+Il worker esegue ora l'immagine con ABR: produce `master.m3u8` più `1080p/720p/480p`.
+Fino al 2026-09-09 girava una versione più vecchia che produceva una sola qualità piatta,
+ed è per questo che `resolveHlsUrl` accetta entrambi i formati.
+
 ## Decisioni vincolanti, e perché
 
 **Tutto è renderizzato su richiesta.** Il layout radice legge `x-locale` con `await
@@ -85,6 +113,11 @@ nulla segnalasse errore. Dopo aver creato un flag, verificare sempre i valori pe
 **`pkill -f "next dev"` non funziona su Windows.** Lascia vivo il server figlio, che
 continua a occupare la porta 3000; il nuovo server finisce sulla 3001 e le misure parlano
 con quello vecchio. Usare PowerShell sui PID.
+
+**`mc mirror` copia solo gli oggetti.** Utenti, policy, credenziali, notifiche e permessi
+anonimi dei bucket non vengono replicati: per un trasloco servono `mc admin cluster iam
+export/import`, `mc event add` e `mc anonymous set`. Le secret key degli utenti non sono
+rileggibili, quindi ricrearli a mano è impossibile.
 
 **`vercel env pull .env.local` distrugge le chiavi locali.** Il progetto Vercel contiene
 solo `VERCEL_OIDC_TOKEN` e `FLAGS_SECRET`; R2, MinIO, Supabase e Azure vivono solo in
