@@ -67,6 +67,10 @@ niente più Longhorn, etcd, Traefik né tunnel Cloudflare.
 Non essendoci più il proxy Cloudflare davanti all'endpoint S3, **è caduto il limite di
 100 MB per richiesta** che tagliava i caricamenti dei video più grandi.
 
+**I 17 MB su quel volume sono l'unica copia dei video del sito**: il worker cancella il
+sorgente dopo la transcodifica, non ci sono backup, e la VM è dichiarata effimera. È la
+voce più urgente della roadmap.
+
 Il worker esegue ora l'immagine con ABR: produce `master.m3u8` più `1080p/720p/480p`.
 Fino al 2026-09-09 girava una versione più vecchia che produceva una sola qualità piatta,
 ed è per questo che `resolveHlsUrl` accetta entrambi i formati.

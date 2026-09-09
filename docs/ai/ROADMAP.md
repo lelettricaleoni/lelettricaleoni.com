@@ -9,7 +9,15 @@
 
 ## Adesso
 
-_(niente in lavorazione)_
+- **Coda del video worker e stato visibile** — approvato, tre fasi, nessuna implementata.
+  → `docs/superpowers/specs/2026-09-09-video-worker-queue-design.md`
+  - *Fase 0, la più urgente*: i dati MinIO sono 17 MB su un volume che vive solo dentro la
+    VM, e il worker cancella il sorgente dopo la transcodifica — **gli HLS su quella
+    macchina sono l'unica copia dei video del sito**. Versionare `~/docker`, e replicare
+    dati ed export IAM su R2.
+  - *Fase 1*: BullMQ con Redis locale, coda ricostruita da MinIO invece che resa durevole,
+    progresso reale da ffmpeg, secret key fuori dalla riga di comando, stato su Upstash.
+  - *Fase 2*: card di stato in `/manage`, dentro `media-upload.tsx`.
 
 ## Prossimo
 
@@ -18,9 +26,7 @@ _(niente in lavorazione)_
   che la cache Redis del manifesto (7 giorni) lo faccia risultare pronto anche quando lo
   storage non risponde. Da decidere: se un errore di rete debba invalidare la voce, e che
   messaggio mostrare — "in elaborazione" è falso quando il problema è lo storage.
-
-- **Il worker espone la secret key** — la passa come argomento a `mc`, quindi finisce nei
-  log del container e in `ps`. Va letta da variabile d'ambiente o da file.
+  Da riprendere **dopo** la fase 1 sopra, che gli dà il dato oggi inesistente.
 - **Suite di test, fase 1** — fondamenta vitest con ambiente DOM, più i test su `proxy.ts`
   e sull'allineamento delle chiavi dei dizionari. → `docs/superpowers/specs/2026-09-09-test-suite-design.md`
 - **Test di ogni pagina e budget di prestazioni** — richiesti esplicitamente dopo che una
@@ -59,6 +65,13 @@ _(niente in lavorazione)_
   sepolta a tratti. Ancorare al terreno risolve entrambi.
 - **Test end-to-end del flyover 3D** — WebGL headless più un token Cesium Ion: lento,
   ballerino, e verrebbe disattivato al primo fallimento casuale. Meglio un buco dichiarato.
+- **Coda BullMQ ospitata su Upstash** — sposterebbe la coda fuori dalla VM, ma i job
+  sopravvissuti punterebbero a un bucket sparito, e il polling a vuoto è stimato in
+  ~600.000 comandi al mese contro un piano gratuito da 500.000.
+- **Adottare un transcoder già fatto invece del worker custom** — i servizi gestiti (Mux,
+  Cloudflare Stream) si pagano a minuto e portano fuori dal proprio storage; gli open
+  source sono progetti personali, non prodotti; Tdarr e FileFlows lavorano su cartelle di
+  libreria, non su eventi S3. Non mancava il transcoder, mancava la coda.
 - **404 vero al posto del 200 per una sezione spenta** — si otterrebbe spostando il
   controllo in `proxy.ts`, al prezzo di perdere la pagina "Pagina non trovata" curata. Il
   `noindex` iniettato da Next copre già il lato SEO.
