@@ -3,7 +3,6 @@ import Link from 'next/link'
 import type { Metadata } from 'next'
 import { eq, and, sql } from 'drizzle-orm'
 import { ArrowLeft, Ruler, TrendingUp, Clock, Layers } from 'lucide-react'
-import { GetObjectCommand } from '@aws-sdk/client-s3'
 import { getDictionary, hasLocale } from '../../dictionaries'
 import { Navbar } from '@/components/navbar'
 import { Footer } from '@/components/footer'
@@ -17,9 +16,9 @@ import { RouteShareModal } from '@/components/route-share-modal'
 import { RouteExternalLinks } from '@/components/route-external-links'
 import { RouteViewTracker } from '@/components/route-view-tracker'
 import { db, routes, routeTranslations, routePhotos } from '@/lib/db'
-import { s3, R2_BUCKET, r2PublicUrl } from '@/lib/r2'
+import { r2PublicUrl } from '@/lib/r2'
 import { resolveHlsUrl } from '@/lib/minio'
-import { parseGpxPoints } from '@/lib/gpx'
+import { loadGpxPoints } from '@/lib/route-gpx'
 import { getFlags } from '@/lib/flags'
 import { shortRouteId } from '@/lib/utils'
 
@@ -119,19 +118,11 @@ export default async function RouteDetailPage({
 
   const coverPhoto = allMedia.find((m) => m.mediaType === 'photo')
 
-  // Only the flyover consumes the track, so skip the R2 fetch when it is off
-  let gpxPoints: [number, number, number][] = []
-  if (flags.routeFlyover && route.gpxKey) {
-    try {
-      const res = await s3.send(new GetObjectCommand({ Bucket: R2_BUCKET, Key: route.gpxKey }))
-      const chunks: Buffer[] = []
-      for await (const chunk of res.Body as AsyncIterable<Buffer>) chunks.push(Buffer.from(chunk))
-      gpxPoints = parseGpxPoints(Buffer.concat(chunks).toString('utf-8'))
-    } catch (err) {
-      console.error('[RouteDetailPage] R2/GPX error:', err)
-      gpxPoints = []
-    }
-  }
+  // Only the flyover consumes the track, so skip the fetch when it is off
+  const gpxPoints =
+    flags.routeFlyover && route.gpxKey
+      ? await loadGpxPoints(route.gpxKey, route.updatedAt)
+      : []
 
   const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://www.lelettricaleoni.com').replace(/\/$/, '')
 

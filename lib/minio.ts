@@ -2,6 +2,10 @@ import { S3Client, PutObjectCommand, DeleteObjectCommand, ListObjectsV2Command, 
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 
 import { deriveHlsPrefix, minioHlsUrl, HLS_MANIFESTS } from './minio-client'
+import { readThrough } from './cache'
+
+/** A resolved manifest never moves, so it can be kept for a long time. */
+const HLS_URL_TTL_S = 7 * 24 * 60 * 60
 
 export { minioPublicUrl, deriveHlsPrefix, minioHlsUrl, HLS_MANIFESTS } from './minio-client'
 
@@ -66,9 +70,15 @@ export async function deleteMinioPrefix(prefix: string): Promise<void> {
  * `playlist.m3u8` — see HLS_MANIFESTS for why both exist.
  */
 export async function resolveHlsUrl(storageKey: string): Promise<string | null> {
-  const prefix = deriveHlsPrefix(storageKey)
-  for (const manifest of HLS_MANIFESTS) {
-    if (await minioObjectExists(prefix + manifest)) return minioHlsUrl(storageKey, manifest)
-  }
-  return null
+  return readThrough(
+    `hls:v1:${storageKey}`,
+    async () => {
+      const prefix = deriveHlsPrefix(storageKey)
+      for (const manifest of HLS_MANIFESTS) {
+        if (await minioObjectExists(prefix + manifest)) return minioHlsUrl(storageKey, manifest)
+      }
+      return null
+    },
+    HLS_URL_TTL_S
+  )
 }
