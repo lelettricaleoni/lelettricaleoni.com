@@ -53,3 +53,6 @@ temp/
 
 # debug screenshots must not live in the project root
 /*.png
+
+# note effimere assorbite dall hook di fine sessione
+docs/ai/journal/.notes
