@@ -30,11 +30,11 @@ Lo stato di fatto al 2026-09-09:
 
 | Sintomo | Evidenza |
 |---|---|
-| Il documento umano è marcito | `README.md` descrive `/percorsi`, `/manage/percorsi`, `/api/percorsi/[slug]/gpx` e `components/admin/admin-sidebar.tsx`. Il codice usa `/routes`, `/manage/routes`, `/api/routes/[id]/gpx`, e la sidebar non esiste più. Mancano Cesium, MapLibre, HLS, MinIO. |
+| Il documento umano è marcito | `README.md` descrive `/[lang]/percorsi`, `/manage/percorsi` e `/api/percorsi/[slug]/gpx`; il codice usa `app/[lang]/routes`, `app/manage/routes` e `app/api/routes/[id]/gpx`. Nessuna menzione di Cesium, MapLibre, HLS o MinIO, tutti presenti in `package.json` e in `lib/`. |
 | La memoria AI è fuori dal repo | `~/.claude/projects/C--GitHub-lelettricaleoni-com/memory/`, 6 file, 368 righe. Non versionata, non condivisa, invisibile a chi legge il progetto. |
 | La memoria è pesante | `project_comingsoon.md` da solo è 174 righe e mescola fatti stabili, cronaca e dettagli già presenti nel codice. |
-| Le decisioni passate non sono indicizzate | 4 plan e 2 spec in `docs/superpowers/` senza indice: nessuno le trova. |
-| Le regole sono sparse | `AGENTS.md` (1 regola), `CLAUDE.md` (gotcha Next 16, i18n, shadcn), `feedback_*.md` (129 righe di preferenze). |
+| Le decisioni passate non sono indicizzate | 4 plan e 2 spec pre-esistenti in `docs/superpowers/` senza indice: nessuno le trova. |
+| Le regole sono sparse | `AGENTS.md` (1 regola), `CLAUDE.md` (gotcha Next 16, i18n, shadcn), i tre `feedback_*.md` (164 righe complessive, di cui 129 nel solo `feedback_preferences.md`). |
 
 La causa comune: **nessun documento ha una regola di ammissione**. Tutto ciò che sembrava utile è finito ovunque, e quindi niente viene mantenuto.
 
@@ -136,19 +136,28 @@ In testa a ogni file mese, aggiornato da `/distill`:
 
 Comportamento:
 
-1. Legge il JSON su stdin (`session_id`, `transcript_path`, `cwd`, `reason`).
-2. Legge il transcript JSONL e ne estrae, in modo difensivo:
+1. Legge il JSON su stdin con `readFileSync(0, "utf8")` e ne ricava l'id di sessione da `session_id`, con fallback su `conversation_id`.
+2. Localizza il transcript: usa `transcript_path` se presente nell'input, altrimenti lo ricostruisce come `~/.claude/projects/<cwd-codificato>/<session_id>.jsonl`.
+3. Legge il transcript JSONL e ne estrae, in modo difensivo:
    - la prima richiesta dell'utente, troncata a 200 caratteri
    - i percorsi passati a `Write` / `Edit` / `NotebookEdit`
    - gli hash e i soggetti dei commit creati durante la sessione
-3. Legge il branch corrente da git.
-4. Legge `docs/ai/journal/.notes` se esiste.
-5. **Se non ci sono né file toccati, né commit, né note: esce con codice 0 senza scrivere.** È questa condizione che evita il rumore delle sessioni improduttive.
-6. Altrimenti appende la voce a `docs/ai/journal/<YYYY-MM>.md`, creando il file se serve, e svuota `.notes`.
+4. Ricava il branch dal campo `gitBranch` delle righe del transcript; solo se assente interroga git.
+5. Legge `docs/ai/journal/.notes` se esiste.
+6. **Se non ci sono né file toccati, né commit, né note: esce con codice 0 senza scrivere.** È questa condizione che evita il rumore delle sessioni improduttive.
+7. Altrimenti appende la voce a `docs/ai/journal/<YYYY-MM>.md`, creando il file se serve, e svuota `.notes`.
 
 **Robustezza.** Il formato del transcript non è un'API stabile: ogni accesso a un campo è difensivo e qualsiasi eccezione viene inghiottita uscendo con codice 0. Un hook che fallisce non deve mai disturbare la chiusura di una sessione.
 
-**Da verificare in implementazione:** lo schema esatto dell'input `SessionEnd` e la sintassi del blocco `hooks` in `settings.json`, contro la documentazione hook corrente. Non assumerlo a memoria.
+**Formato del transcript — verificato il 2026-09-09** ispezionando un transcript reale di questo progetto e gli hook del plugin Vercel installati in `~/.claude/plugins/cache/`:
+
+- I transcript vivono in `~/.claude/projects/<cwd-codificato>/<session_id>.jsonl`, un oggetto JSON per riga.
+- Ogni riga porta `type`, `timestamp`, `sessionId`, `cwd` e **`gitBranch`**: il branch si legge dal transcript, senza invocare git.
+- Le chiamate a strumento sono blocchi `{ type: "tool_use", name, input }` dentro `message.content`; per `Write` e `Edit` il percorso sta in `input.file_path` ed è **assoluto e in formato Windows**, quindi va normalizzato a percorso relativo al repo.
+- Il campo `type` assume molti valori oltre a `user` e `assistant` — `last-prompt`, `mode`, `permission-mode`, `attachment`, `file-history-snapshot`, `system`, `ai-title`, `file-history-delta`, `queue-operation`. Per isolare la richiesta iniziale dell'utente occorre filtrare su `type === "user"` **escludendo** le righe con `isMeta` e quelle il cui contenuto è un risultato di tool.
+- Nessun hook installato localmente usa `transcript_path`: la sua presenza nell'input non è confermata, da cui il fallback per ricostruzione del percorso descritto al punto 2.
+
+**Formato di `settings.json` — verificato** contro `hooks.json` del plugin Vercel: `SessionStart` accetta un `matcher` (`"startup|resume|clear|compact"`), `SessionEnd` è dichiarato senza matcher, e ogni voce contiene una lista `hooks` di oggetti `{ "type": "command", "command": "..." }`.
 
 ### 6. `docs/ai/journal/.notes` — il ponte fra modello e hook
 
@@ -158,7 +167,7 @@ Risolve il limite strutturale dell'hook automatico senza chiedere a nessuno di r
 
 ### 7. Hook `SessionStart` — `.claude/hooks/journal-reminder.mjs`
 
-L'output di `SessionEnd` non è visibile: il promemoria va messo all'avvio, dove lo stdout dell'hook entra nel contesto.
+L'output di `SessionEnd` non è visibile: il promemoria va messo all'avvio, dove lo stdout dell'hook entra nel contesto. Comportamento verificato su `inject-claude-md.mjs` del plugin Vercel, che su Claude Code emette **testo semplice** su stdout (la variante JSON `{ additional_context }` serve a Cursor).
 
 Conta le voci con `ts` successivo al massimo `distilled-through` fra i file mese. Se sono **più di 15**, stampa una riga che invita a lanciare `/distill`. Sotto soglia non stampa nulla. Come l'altro hook, qualsiasi errore esce in silenzio con codice 0.
 
