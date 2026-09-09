@@ -41,12 +41,19 @@ export function VideoPlayer({
   }, [active])
 
   // VideoPlayer takes no className of its own, so sizing lives on a wrapper.
+  //
   // Fullscreen, picture-in-picture and cast are hidden rather than configured
   // away: the skin exposes no props for it, and inside a lightbox that already
   // covers the screen none of the three does anything a viewer wants.
+  //
+  // .video-controls-backdrop is the scrim the skin paints over the video when
+  // the control bar appears, darkening the picture you came to watch. Hiding
+  // the element rather than blanking --media-controls-gradient, because the
+  // skin redefines that variable further down the tree than we can reach.
   return (
     <div
       className="w-full h-full
+        [&_.video-controls-backdrop]:hidden
         [&_video]:w-full [&_video]:h-full [&_video]:object-contain
         [&_.media-fullscreen-button]:hidden
         [&_.media-pip-button]:hidden
@@ -58,7 +65,11 @@ export function VideoPlayer({
             ref={videoRef}
             src={src}
             playsInline
-            preload="auto"
+            // Only the slide on screen preloads aggressively. The lightbox
+            // keeps neighbouring slides mounted, so "auto" everywhere meant
+            // several HLS engines pulling segments at once, competing with the
+            // autoplaying thumbnails behind the lightbox.
+            preload={active ? 'auto' : 'metadata'}
             onError={onError}
           />
         </VideoSkin>
