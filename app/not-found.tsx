@@ -9,15 +9,15 @@ export default function NotFound() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 px-4 text-center">
       {/* Logo */}
-      <Link href="/it" className="mb-12 opacity-80 hover:opacity-100 transition-opacity">
-        <Image
-          src="/svg/LogoLelettrica_full.svg"
-          alt="Lelettrica"
-          width={320}
-          height={100}
-          className="h-20 sm:h-28 w-auto"
-        />
-      </Link>
+      {/* Non cliccabile: i pulsanti qui sotto dicono già dove andare, e un logo
+          che porta altrove sorprende chi sta cercando di capire dove è finito. */}
+      <Image
+        src="/svg/LogoLelettrica_full.svg"
+        alt="Lelettrica"
+        width={320}
+        height={100}
+        className="mb-12 h-20 sm:h-28 w-auto opacity-80"
+      />
 
       {/* 404 number */}
       <p className="text-[9rem] sm:text-[12rem] font-black leading-none text-primary/10 select-none tabular-nums">
