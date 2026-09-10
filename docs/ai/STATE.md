@@ -36,7 +36,8 @@ pannello di amministrazione privato.
 ## Dati e servizi
 
 Postgres su **Supabase** via Drizzle (`routes`, `route_translations`, `route_photos`).
-Autenticazione admin con Supabase Auth: serve `user_metadata.role = 'admin'`.
+Autenticazione admin con Supabase Auth: `getAdminUser()` richiede `app_metadata.role =
+'admin'` — **non** `user_metadata`, che è modificabile dall'utente stesso.
 Foto, GPX, video e flussi HLS su **Cloudflare R2**.
 Traduzioni IT→EN/DE generate da **Azure Translator**: l'admin scrive solo l'italiano.
 
@@ -67,8 +68,8 @@ minuti che il worker impiega a cancellarlo.
 |---|---|
 | Trova il lavoro | elencando R2: un sorgente senza manifesto **è** il lavoro da fare |
 | Coda | BullMQ, job id = l'oggetto, tre tentativi con backoff |
-| Stato | su Upstash, chiavi `videojob:v1:*`, lette da `lib/video-jobs.ts` |
-| Altri lavori | registro in `jobs/__init__.py`: un modulo, una riga in `HANDLERS`, e per i cron una in `SCHEDULES` |
+| Stato | su Upstash, `videojob:v1:*`, letto da `lib/video-jobs.ts` |
+| Altri lavori | registro in `jobs/__init__.py`: un modulo, una riga in `HANDLERS`, per i cron una in `SCHEDULES` |
 
 La coda è **ricostruibile, non durevole**: non può esserlo più dei dati che serve, e la
 verità sta nello storage — per questo il webhook di MinIO è sparito invece di essere
