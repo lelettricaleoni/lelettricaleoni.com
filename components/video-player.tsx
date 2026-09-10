@@ -8,7 +8,7 @@ import '@videojs/react/video/skin.css'
  * Video.js v10 player for the route videos.
  *
  * v10 is a ground-up rewrite of Video.js, published as @videojs/react and
- * currently at 10.0.0-rc.1 — a release candidate, not a stable release. The
+ * currently at 10.0.0-rc.2 — a release candidate, not a stable release. The
  * player is composed rather than configured: a player shell, a skin, and a
  * media provider. HLS comes from @videojs/hlsjs-video via the HlsJsVideo
  * component.
