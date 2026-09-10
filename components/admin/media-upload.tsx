@@ -332,7 +332,7 @@ export function MediaUpload({
           <Upload size={16} />
           <span>Aggiungi foto o video (trascina o clicca)</span>
         </div>
-        <p className="text-xs text-muted-foreground mt-1">Foto e video su R2 · i video vengono elaborati dopo il caricamento</p>
+        <p className="text-xs text-muted-foreground mt-1">Dopo il caricamento i video vengono preparati per la riproduzione: può volerci qualche minuto</p>
       </div>
 
       <input type="hidden" name="mediaItems" value={mediaItemsJson} />

@@ -194,7 +194,7 @@ export function RouteForm({ action, route, translations, photos }: RouteFormProp
       <section className="space-y-3">
         <h2 className="text-lg font-semibold text-[#1e3a5f]">Foto e video</h2>
         <p className="text-sm text-muted-foreground">
-          Il primo elemento è la copertina. Trascina per riordinare. Foto su R2, video su MinIO.
+          Il primo elemento è la copertina. Trascina per riordinare.
         </p>
         <MediaUpload
           routeId={route?.id ?? 'new'}
