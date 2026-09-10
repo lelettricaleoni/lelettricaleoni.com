@@ -10,71 +10,55 @@ import {
   useSortable, verticalListSortingStrategy, arrayMove,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { GripVertical, X, Upload, Video, Image } from 'lucide-react'
+import { GripVertical, X, Upload, Video } from 'lucide-react'
 import { toast } from 'sonner'
 import { r2PublicUrl } from '@/lib/r2'
 import { getPresignedUploadUrlAction, getVideoPresignedUploadUrlAction } from '@/lib/actions/routes'
 import { getVideoJobStatuses } from '@/lib/actions/video-jobs'
 import type { VideoJobStatus } from '@/lib/video-jobs'
+import { mediaProgress, type UploadState } from '@/lib/media-progress'
 
 export interface MediaItem {
   id: string
   storageKey: string
   mediaType: 'photo' | 'video'
   preview: string
-  /** Uploaded in this session: the worker may not have noticed it yet. */
-  isNew?: boolean
+  /** Shown while uploading, when the storage key means nothing to a human. */
+  fileName?: string
+  /** Present only until the file has finished leaving the browser. */
+  upload?: UploadState
 }
 
-const PHASE_LABELS: Record<VideoJobStatus['phase'], string> = {
-  queued: 'In coda',
-  downloading: 'Scaricamento',
-  transcoding: 'Elaborazione',
-  uploading: 'Salvataggio',
-  done: 'Pronto',
-  failed: 'Non riuscito',
-}
+function ProgressBar({
+  item,
+  job,
+}: {
+  item: MediaItem
+  job?: VideoJobStatus
+}) {
+  const progress = mediaProgress(item.mediaType, item.upload, job)
+  if (!progress) return null
 
-function VideoJobBadge({ job, isNew }: { job?: VideoJobStatus; isNew?: boolean }) {
-  // A video uploaded a moment ago has no status yet: the worker finds it by
-  // listing the bucket, so there is a gap between the upload and the first
-  // report. Saying nothing there would look like nothing is happening.
-  if (!job) {
-    if (!isNew) return null
-    return <span className="text-[10px] text-muted-foreground">In attesa del worker…</span>
-  }
+  const barColour =
+    progress.tone === 'error' ? 'bg-destructive'
+    : progress.tone === 'ready' ? 'bg-green-600'
+    : 'bg-[#366DA1]'
+  const textColour =
+    progress.tone === 'error' ? 'text-destructive'
+    : progress.tone === 'ready' ? 'text-green-700'
+    : 'text-muted-foreground'
 
-  if (job.phase === 'failed') {
-    return (
-      <span className="text-[10px] font-medium text-destructive" title={job.error}>
-        {PHASE_LABELS.failed}
-        {job.attempt ? ` dopo ${job.attempt} tentativi` : ''}
-      </span>
-    )
-  }
-
-  if (job.phase === 'done') {
-    return <span className="text-[10px] font-medium text-green-700">{PHASE_LABELS.done}</span>
-  }
-
-  const pct = job.progress ?? 0
   return (
-    <div className="flex items-center gap-1.5">
-      <div className="w-16 bg-muted rounded-full h-1">
-        <div className="bg-[#366DA1] h-1 rounded-full transition-all duration-500" style={{ width: `${pct}%` }} />
+    <div className="mt-1 flex items-center gap-2" title={progress.detail}>
+      <div className="flex-1 bg-muted rounded-full h-1">
+        <div
+          className={`${barColour} h-1 rounded-full transition-all duration-500`}
+          style={{ width: `${progress.percent}%` }}
+        />
       </div>
-      <span className="text-[10px] text-muted-foreground">
-        {PHASE_LABELS[job.phase]}{job.phase === 'transcoding' ? ` ${pct}%` : ''}
-      </span>
+      <span className={`text-[10px] whitespace-nowrap ${textColour}`}>{progress.label}</span>
     </div>
   )
-}
-
-interface UploadingItem {
-  id: string
-  name: string
-  mediaType: 'photo' | 'video'
-  progress: number
 }
 
 function SortableItem({
@@ -86,56 +70,53 @@ function SortableItem({
   job?: VideoJobStatus
   onRemove: () => void
 }) {
-  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: item.id })
+  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
+    id: item.id,
+    // Reordering something that is still arriving would fight the upload.
+    disabled: Boolean(item.upload),
+  })
+  const uploading = Boolean(item.upload)
+
   return (
     <div
       ref={setNodeRef}
       style={{ transform: CSS.Transform.toString(transform), transition }}
-      className="flex items-center gap-3 bg-card border rounded-lg p-2"
+      className={`flex items-center gap-3 bg-card border rounded-lg p-2 ${uploading ? 'opacity-70' : ''}`}
     >
-      <button type="button" {...attributes} {...listeners} className="text-muted-foreground hover:text-foreground cursor-grab shrink-0">
-        <GripVertical size={16} />
-      </button>
-      {item.mediaType === 'photo' ? (
+      {uploading ? (
+        <div className="w-4 shrink-0" />
+      ) : (
+        <button type="button" {...attributes} {...listeners} className="text-muted-foreground hover:text-foreground cursor-grab shrink-0">
+          <GripVertical size={16} />
+        </button>
+      )}
+
+      {item.mediaType === 'photo' && item.preview ? (
+        // eslint-disable-next-line @next/next/no-img-element
         <img src={item.preview} alt="" className="w-16 h-12 object-cover rounded shrink-0" />
       ) : (
         <div className="w-16 h-12 rounded bg-muted flex items-center justify-center shrink-0">
           <Video size={20} className="text-muted-foreground" />
         </div>
       )}
+
       <div className="flex-1 min-w-0">
-        <span className="text-xs text-muted-foreground truncate block">{item.storageKey.split('/').pop()}</span>
+        <span className="text-xs text-muted-foreground truncate block">
+          {item.fileName ?? item.storageKey.split('/').pop()}
+        </span>
         <div className="flex items-center gap-2">
           <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${item.mediaType === 'video' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'}`}>
             {item.mediaType === 'video' ? 'Video' : 'Foto'}
           </span>
-          {item.mediaType === 'video' && <VideoJobBadge job={job} isNew={item.isNew} />}
         </div>
+        <ProgressBar item={item} job={job} />
       </div>
-      <button type="button" onClick={onRemove} className="text-destructive hover:text-destructive/80 cursor-pointer shrink-0">
-        <X size={14} />
-      </button>
-    </div>
-  )
-}
 
-function ProgressItem({ item }: { item: UploadingItem }) {
-  return (
-    <div className="flex items-center gap-3 bg-card border rounded-lg p-2 opacity-70">
-      <div className="w-4 shrink-0" />
-      <div className="w-16 h-12 rounded bg-muted flex items-center justify-center shrink-0">
-        {item.mediaType === 'video' ? <Video size={20} className="text-muted-foreground" /> : <Image size={20} className="text-muted-foreground" />}
-      </div>
-      <div className="flex-1 min-w-0">
-        <span className="text-xs text-muted-foreground truncate block">{item.name}</span>
-        <div className="mt-1 w-full bg-muted rounded-full h-1.5">
-          <div
-            className="bg-[#366DA1] h-1.5 rounded-full transition-all duration-200"
-            style={{ width: `${item.progress}%` }}
-          />
-        </div>
-        <span className="text-[10px] text-muted-foreground">{item.progress}%</span>
-      </div>
+      {!uploading && (
+        <button type="button" onClick={onRemove} className="text-destructive hover:text-destructive/80 cursor-pointer shrink-0">
+          <X size={14} />
+        </button>
+      )}
     </div>
   )
 }
@@ -155,13 +136,20 @@ export function MediaUpload({
       preview: m.mediaType === 'photo' ? r2PublicUrl(m.storageKey) : '',
     }))
   )
-  const [uploading, setUploading] = useState<UploadingItem[]>([])
   const [jobs, setJobs] = useState<Record<string, VideoJobStatus>>({})
 
-  // A string, not an array: an array literal would be a new object on every
-  // render and restart the poll each time.
-  const videoKeys = items.filter((i) => i.mediaType === 'video').map((i) => i.storageKey).join('|')
-  const freshKeys = items.filter((i) => i.mediaType === 'video' && i.isNew).map((i) => i.storageKey).join('|')
+  // Strings, not arrays: an array literal would be a new object on every render
+  // and restart the poll each time.
+  const videoKeys = items
+    .filter((i) => i.mediaType === 'video' && !i.upload)
+    .map((i) => i.storageKey)
+    .join('|')
+  // Videos that arrived in this session are worth waiting on even before the
+  // worker has said anything; older ones simply never had a status.
+  const freshKeys = items
+    .filter((i) => i.mediaType === 'video' && !i.upload && i.fileName)
+    .map((i) => i.storageKey)
+    .join('|')
 
   useEffect(() => {
     const all = videoKeys ? videoKeys.split('|') : []
@@ -171,7 +159,7 @@ export function MediaUpload({
     let cancelled = false
     let timer: ReturnType<typeof setTimeout> | undefined
     // A worker that never picks the job up must not leave the panel polling
-    // forever: after this many rounds the badge simply stops moving.
+    // forever: after this many rounds the bar simply stops moving.
     let rounds = 100
 
     async function tick(keys: string[]) {
@@ -179,17 +167,15 @@ export function MediaUpload({
       try {
         statuses = await getVideoJobStatuses(keys)
       } catch {
-        // The panel showing a stale badge beats it showing an error.
+        // A stale bar beats an error message in the panel.
         return
       }
       if (cancelled) return
       setJobs((prev) => ({ ...prev, ...statuses }))
 
-      const active = keys.filter((k) => {
-        const phase = statuses[k]?.phase
-        // No status at all is only worth waiting on for something just
-        // uploaded; an older video simply never had one.
-        if (!phase) return fresh.has(k)
+      const active = keys.filter((key) => {
+        const phase = statuses[key]?.phase
+        if (!phase) return fresh.has(key)
         return phase !== 'done' && phase !== 'failed'
       })
 
@@ -221,23 +207,39 @@ export function MediaUpload({
 
   const uploadFile = useCallback(async (file: File) => {
     const isVideo = file.type.startsWith('video/')
-    const tempId = crypto.randomUUID()
-    setUploading((prev) => [...prev, { id: tempId, name: file.name, mediaType: isVideo ? 'video' : 'photo', progress: 0 }])
+
+    // The key is known before a single byte moves, so the item can join the
+    // list now and keep its identity all the way to "pronto". It used to live
+    // in a second list and be replaced on completion, which is what put a gap
+    // in the middle of the journey.
+    let key: string
+    let url: string | null = null
+    try {
+      const result = isVideo
+        ? await getVideoPresignedUploadUrlAction(effectiveRouteId, file.name, file.type)
+        : await getPresignedUploadUrlAction(effectiveRouteId, file.name, file.type, 'photo')
+      key = result.key
+      url = result.url
+    } catch (err) {
+      console.error(err)
+      toast.error(`Caricamento fallito: ${file.name}`)
+      return
+    }
+
+    const preview = isVideo ? '' : URL.createObjectURL(file)
+    setItems((prev) => [...prev, {
+      id: key,
+      storageKey: key,
+      mediaType: isVideo ? 'video' : 'photo',
+      preview,
+      fileName: file.name,
+      upload: { progress: 0 },
+    }])
+
+    const patch = (upload: UploadState | undefined) =>
+      setItems((prev) => prev.map((i) => (i.storageKey === key ? { ...i, upload } : i)))
 
     try {
-      let key: string
-      let url: string | null = null
-
-      if (isVideo) {
-        const result = await getVideoPresignedUploadUrlAction(effectiveRouteId, file.name, file.type)
-        key = result.key
-        url = result.url
-      } else {
-        const result = await getPresignedUploadUrlAction(effectiveRouteId, file.name, file.type, 'photo')
-        key = result.key
-        url = result.url
-      }
-
       await new Promise<void>((resolve, reject) => {
         const xhr = new XMLHttpRequest()
         if (isVideo && url) {
@@ -248,8 +250,7 @@ export function MediaUpload({
         }
         xhr.upload.onprogress = (e) => {
           if (e.lengthComputable) {
-            const pct = Math.round((e.loaded / e.total) * 100)
-            setUploading((prev) => prev.map((u) => u.id === tempId ? { ...u, progress: pct } : u))
+            patch({ progress: Math.round((e.loaded / e.total) * 100) })
           }
         }
         xhr.onload = () => xhr.status >= 200 && xhr.status < 300 ? resolve() : reject(new Error(`${xhr.status}`))
@@ -265,19 +266,12 @@ export function MediaUpload({
         }
       })
 
-      const newItem: MediaItem = {
-        id: key,
-        storageKey: key,
-        mediaType: isVideo ? 'video' : 'photo',
-        preview: isVideo ? '' : URL.createObjectURL(file),
-        isNew: isVideo,
-      }
-      setItems((prev) => [...prev, newItem])
+      // Dropping `upload` hands the bar over to the worker's status.
+      patch(undefined)
     } catch (err) {
       console.error(err)
       toast.error(`Caricamento fallito: ${file.name}`)
-    } finally {
-      setUploading((prev) => prev.filter((u) => u.id !== tempId))
+      patch({ progress: 0, failed: true })
     }
   }, [effectiveRouteId])
 
@@ -304,7 +298,13 @@ export function MediaUpload({
     }
   }
 
-  const mediaItemsJson = JSON.stringify(items.map((i) => ({ key: i.storageKey, type: i.mediaType })))
+  // Only what has actually landed in storage is saved: a form submitted
+  // mid-upload must not record a video that is not there.
+  const mediaItemsJson = JSON.stringify(
+    items
+      .filter((i) => !i.upload)
+      .map((i) => ({ key: i.storageKey, type: i.mediaType }))
+  )
 
   return (
     <div className="space-y-2">
@@ -321,8 +321,6 @@ export function MediaUpload({
         </SortableContext>
       </DndContext>
 
-      {uploading.map((u) => <ProgressItem key={u.id} item={u} />)}
-
       <div
         {...getRootProps()}
         className={`border-2 border-dashed rounded-lg p-4 text-center cursor-pointer transition-colors ${
@@ -334,7 +332,7 @@ export function MediaUpload({
           <Upload size={16} />
           <span>Aggiungi foto o video (trascina o clicca)</span>
         </div>
-        <p className="text-xs text-muted-foreground mt-1">Foto → R2 · Video → MinIO private/</p>
+        <p className="text-xs text-muted-foreground mt-1">Foto e video su R2 · i video vengono elaborati dopo il caricamento</p>
       </div>
 
       <input type="hidden" name="mediaItems" value={mediaItemsJson} />
