@@ -32,6 +32,11 @@ importato qui sopra. Non duplicarli in questo file.
   file non esisteva. Se una conclusione dipende da un elenco, verificalo mirato.
 
 ## Regole sempre valide
+- **Mai commit diretti su `main` o `staging`.** Ogni modifica passa da una PR, anche una
+  riga di documentazione: la CI costa quaranta secondi. La protezione su GitHub esenta gli
+  amministratori, quindi non ferma nessuno di noi due — per questo c'è
+  `.githooks/pre-commit`, attivo con `git config core.hooksPath .githooks` (va rifatto su
+  ogni clone nuovo). Prima di committare, `git branch --show-current`.
 - **Server Action, non route handler.** Le rotte `app/api/` si aggiungono solo quando a
   chiamare è qualcosa che *non* è il nostro frontend — un servizio esterno, un webhook, il
   video worker — perché le Server Action si invocano con un id generato al build e non sono
