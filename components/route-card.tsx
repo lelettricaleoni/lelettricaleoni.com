@@ -38,11 +38,13 @@ export function RouteCard({ route, translation, media, lang, dict }: RouteCardPr
   return (
     <Link
       href={`/${lang}/routes/${shortRouteId(route.id)}`}
-      // grid-cols-1 con figli min-w-0: senza, ogni figlio prende min-width
-      // auto e si rifiuta di scendere sotto la larghezza del proprio
-      // contenuto, così la fascia dei tag e quella delle statistiche
-      // sbordavano e venivano tagliate dall'overflow-hidden qui sopra.
-      className="group grid grid-cols-1 grid-rows-subgrid row-span-4 gap-y-3 mb-6 rounded-xl overflow-hidden border bg-card hover:shadow-md transition-shadow [&>*]:min-w-0"
+      // min-w-0 sulla card e sui suoi figli. Senza il primo, la card come
+      // elemento della griglia esterna prende min-width: auto: la sua
+      // larghezza intrinseca diventa quella del contenuto più largo — la
+      // fila dei tag — e la griglia la comprime solo all'apparenza, mentre
+      // dentro tutto resta oltre il bordo e l'overflow-hidden lo taglia.
+      // Misurato: colonna interna a 397px in una card da 315.
+      className="group grid grid-cols-1 grid-rows-subgrid row-span-4 min-w-0 gap-y-3 mb-6 rounded-xl overflow-hidden border bg-card hover:shadow-md transition-shadow [&>*]:min-w-0"
     >
       <div className="relative h-48 bg-[#c8dae8] overflow-hidden">
         {media}
@@ -63,7 +65,7 @@ export function RouteCard({ route, translation, media, lang, dict }: RouteCardPr
           without moving; pan-x keeps a sideways drag from reading as a tap on
           the link. */}
       <div className="relative px-4 after:pointer-events-none after:absolute after:inset-y-0 after:right-4 after:w-8 after:bg-gradient-to-l after:from-card after:to-transparent">
-        <div className="flex gap-1.5 overflow-x-auto [scrollbar-width:none] [touch-action:pan-x] [&::-webkit-scrollbar]:hidden">
+        <div className="flex w-full min-w-0 gap-1.5 overflow-x-auto [scrollbar-width:none] [touch-action:pan-x] [&::-webkit-scrollbar]:hidden">
           {route.bikeTypes.map((type) => (
             <Badge
               key={type}
