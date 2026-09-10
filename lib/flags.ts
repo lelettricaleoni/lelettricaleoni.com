@@ -179,8 +179,27 @@ let cache: { flags: Flags; at: number } | null = null
 /** Refresh in progress, shared so concurrent requests don't stampede. */
 let refreshing: Promise<Flags> | null = null
 
+/**
+ * Whether there is anything to ask.
+ *
+ * Evaluating a flag needs two things Vercel puts in a deployment: the OIDC
+ * token, and the snapshot of flag definitions bundled at build time. Neither
+ * exists on a developer's machine, so the SDK throws — five stack traces per
+ * request, all of them meaning "you are not on Vercel".
+ *
+ * That noise stopped being harmless when the flag read moved into its own
+ * Suspense boundary: React sees the throw, gives up on the boundary and re-runs
+ * it on the client, which shows as error #419 in the console. The answer off
+ * Vercel is already known, so ask nobody — the defaults apply and the
+ * environment overrides below still work, exactly as they did when the SDK was
+ * throwing.
+ */
+const HAS_FLAGS_SERVICE = Boolean(process.env.VERCEL)
+
 /** Ask the flags service for every flag, in parallel, once. */
 async function evaluateAll(): Promise<Flags> {
+  if (!HAS_FLAGS_SERVICE) return ALL_ON()
+
   const names = Object.keys(FLAG_DEFAULTS) as FlagName[]
   const resolved = await Promise.all(
     names.map(async (name) => {
