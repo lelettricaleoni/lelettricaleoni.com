@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { deriveHlsPrefix, minioHlsUrl, HLS_MANIFESTS } from './minio-client'
+import { deriveHlsPrefix, hlsUrl, HLS_MANIFESTS } from './media-client'
 
 describe('deriveHlsPrefix', () => {
   it('moves private/ to public/ and strips the extension', () => {
@@ -29,14 +29,14 @@ describe('HLS_MANIFESTS', () => {
   })
 })
 
-describe('minioHlsUrl', () => {
+describe('hlsUrl', () => {
   it('builds the URL for a given manifest', () => {
-    const url = minioHlsUrl('private/route-videos/abc/def.mp4', 'master.m3u8')
+    const url = hlsUrl('private/route-videos/abc/def.mp4', 'master.m3u8')
     expect(url.endsWith('public/route-videos/abc/def/master.m3u8')).toBe(true)
   })
 
   it('falls back to the legacy manifest when none is named', () => {
-    const url = minioHlsUrl('private/route-videos/abc/def.mp4')
+    const url = hlsUrl('private/route-videos/abc/def.mp4')
     expect(url.endsWith('public/route-videos/abc/def/playlist.m3u8')).toBe(true)
   })
 })

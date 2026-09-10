@@ -15,11 +15,10 @@ export const s3 = new S3Client({
 })
 
 export const R2_BUCKET = process.env.R2_BUCKET_NAME!
-export const R2_PUBLIC_URL = (process.env.NEXT_PUBLIC_R2_PUBLIC_URL ?? '').replace(/\/$/, '')
 
-export function r2PublicUrl(key: string): string {
-  return `${R2_PUBLIC_URL}/${key}`
-}
+// Single source for the public origin: photos, GPX files and HLS streams all
+// share one bucket since videos moved off MinIO on 2026-09-10.
+export { MEDIA_PUBLIC_URL as R2_PUBLIC_URL, mediaPublicUrl as r2PublicUrl } from './media-client'
 
 export async function getPresignedUploadUrl(key: string, contentType: string): Promise<string> {
   const command = new PutObjectCommand({

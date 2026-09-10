@@ -1,9 +1,20 @@
 import type { RoutePhoto } from './db'
 
-export const MINIO_PUBLIC_URL = (process.env.NEXT_PUBLIC_MINIO_PUBLIC_URL ?? '').replace(/\/$/, '')
+/**
+ * Media URL helpers safe to import from client components.
+ *
+ * Everything here is a pure string transform over the public bucket URL, so it
+ * carries no credentials and no AWS SDK. The server-side counterparts — the
+ * ones that actually talk to R2 — live in `./r2`.
+ *
+ * Videos moved from MinIO to R2 on 2026-09-10, which is why photos, GPX files
+ * and HLS streams now share one bucket and one public origin.
+ */
 
-export function minioPublicUrl(key: string): string {
-  return `${MINIO_PUBLIC_URL}/${key}`
+export const MEDIA_PUBLIC_URL = (process.env.NEXT_PUBLIC_R2_PUBLIC_URL ?? '').replace(/\/$/, '')
+
+export function mediaPublicUrl(key: string): string {
+  return `${MEDIA_PUBLIC_URL}/${key}`
 }
 
 export function deriveHlsPrefix(privateKey: string): string {
@@ -25,8 +36,8 @@ export function deriveHlsPrefix(privateKey: string): string {
 export const HLS_MANIFESTS = ['master.m3u8', 'playlist.m3u8'] as const
 
 /** Public URL of one manifest for a stored video. */
-export function minioHlsUrl(privateKey: string, manifest: string = HLS_MANIFESTS[1]): string {
-  return minioPublicUrl(deriveHlsPrefix(privateKey) + manifest)
+export function hlsUrl(privateKey: string, manifest: string = HLS_MANIFESTS[1]): string {
+  return mediaPublicUrl(deriveHlsPrefix(privateKey) + manifest)
 }
 
 /**
