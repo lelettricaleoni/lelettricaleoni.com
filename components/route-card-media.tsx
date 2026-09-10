@@ -182,7 +182,17 @@ export function RouteCardMedia({ media, gpxPath, mapCenter, difficulty, routeNam
         fill
         loading="lazy"
         className="object-cover group-hover:scale-105 transition-transform duration-300"
-        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+        // Misurato sulla produzione il 2026-09-10: la card è larga 292px a
+        // 390 di viewport, 290 a 768, 356 a 900, e **313 da 1200 in su** —
+        // il contenitore è `max-w-6xl`, quindi oltre quella soglia la card
+        // non cresce più. Le unità `vw` sono lo strumento sbagliato lì: il
+        // vecchio `33vw` chiedeva 1920px per una card da 313, e `100vw` sotto
+        // i 768 ne chiedeva 1920 per una da 290. Sei volte il necessario.
+        sizes="(max-width: 639px) calc(100vw - 96px), (max-width: 1023px) calc((100vw - 184px) / 2), 340px"
+        // Una miniatura resa a 313px non ha bisogno della qualità di una foto
+        // a piena pagina, e Lighthouse indicava la compressione come il primo
+        // risparmio dopo le dimensioni.
+        quality={68}
       />
     </div>
   )

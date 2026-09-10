@@ -36,17 +36,57 @@ jobs:
             echo "::notice::VERCEL_AUTOMATION_BYPASS_SECRET non impostato: i test browser sono saltati."
           fi
 
-      # Vercel is still building when the pull request opens. Waiting for the
-      # deployment beats guessing a delay, which is either too short to be
-      # reliable or too long to be worth having.
+      # Vercel is still building when the pull request opens, so the URL has to
+      # be waited for rather than guessed.
+      #
+      # Written out rather than taken from a ready-made action because those
+      # poll the preview without the bypass token: a protected deployment
+      # answers 401, they read that as "not ready", and keep going until they
+      # give up — thirteen minutes, on the first run of this workflow.
+      #
+      # Readiness is confirmed by fetching a page with the token, not by the
+      # deployment being listed as successful: those are not the same thing,
+      # and the second is the one Playwright depends on.
       - name: Wait for the Vercel preview
         if: steps.secret.outputs.present == 'true'
         id: preview
-        uses: patrickedqvist/wait-for-vercel-preview@v1.3.2
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          max_timeout: 600
-          check_interval: 10
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BYPASS: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+          SHA: ${{ github.event.pull_request.head.sha }}
+          REPO: ${{ github.repository }}
+        run: |
+          for attempt in $(seq 1 60); do
+            id=$(gh api "repos/$REPO/deployments?sha=$SHA&environment=Preview" --jq '.[0].id // empty' 2>/dev/null)
+
+            if [ -n "$id" ]; then
+              state=$(gh api "repos/$REPO/deployments/$id/statuses" --jq '.[0].state // empty' 2>/dev/null)
+              target=$(gh api "repos/$REPO/deployments/$id/statuses" --jq '.[0].environment_url // .[0].target_url // empty' 2>/dev/null)
+
+              if [ "$state" = "success" ] && [ -n "$target" ]; then
+                code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 \
+                  -H "x-vercel-protection-bypass: $BYPASS" \
+                  -H "x-vercel-set-bypass-cookie: true" \
+                  "$target/it")
+
+                if [ "$code" = "200" ]; then
+                  echo "url=$target" >> "$GITHUB_OUTPUT"
+                  echo "Preview raggiungibile dopo $attempt tentativi: $target"
+                  exit 0
+                fi
+                echo "[$attempt] deploy pronto ma risponde $code"
+              else
+                echo "[$attempt] deploy in stato '${state:-assente}'"
+              fi
+            else
+              echo "[$attempt] nessun deployment ancora registrato"
+            fi
+
+            sleep 10
+          done
+
+          echo "::error::Il preview non è diventato raggiungibile in dieci minuti."
+          exit 1
 
       - uses: actions/setup-node@v4
         if: steps.secret.outputs.present == 'true'

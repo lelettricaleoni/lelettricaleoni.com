@@ -35,7 +35,9 @@ const nextConfig: NextConfig = {
     return config
   },
   images: {
-    qualities: [75, 80, 82, 100],
+    // 68 per le miniature delle card, che sono rese a ~313px; le altre
+    // per le immagini a piena pagina.
+    qualities: [68, 75, 80, 82, 100],
     remotePatterns: [
       {
         protocol: 'https',
