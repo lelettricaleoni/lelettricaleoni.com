@@ -9,24 +9,25 @@
 
 ## Adesso
 
-- **Coda del video worker e stato visibile** — approvato, tre fasi, nessuna implementata.
-  → `docs/superpowers/specs/2026-09-09-video-worker-queue-design.md`
-  - *Fase 0, la più urgente*: i dati MinIO sono 17 MB su un volume che vive solo dentro la
-    VM, e il worker cancella il sorgente dopo la transcodifica — **gli HLS su quella
-    macchina sono l'unica copia dei video del sito**. Versionare `~/docker`, e replicare
-    dati ed export IAM su R2.
-  - *Fase 1*: BullMQ con Redis locale, coda ricostruita da MinIO invece che resa durevole,
-    progresso reale da ffmpeg, secret key fuori dalla riga di comando, stato su Upstash.
-  - *Fase 2*: card di stato in `/manage`, dentro `media-upload.tsx`.
+- **Spegnere MinIO** — non ospita più niente di vivo dal 2026-09-10, ma resta acceso sulla
+  VM con la sua copia dei video, come rete di sicurezza. Da spegnere quando la migrazione
+  è considerata definitiva: con lui vanno via Nginx Proxy Manager, i domini
+  `cluster-bucket` e `cluster-bucket-console`, e i loro certificati. Prima di cancellare
+  il volume, un export IAM conservato altrove.
 
 ## Prossimo
 
-- **Video fantasma a storage irraggiungibile** — con MinIO giù il video compare lo stesso
-  con la scritta "Video in elaborazione", invece di sparire come faceva prima. Sospetto
-  che la cache Redis del manifesto (7 giorni) lo faccia risultare pronto anche quando lo
-  storage non risponde. Da decidere: se un errore di rete debba invalidare la voce, e che
-  messaggio mostrare — "in elaborazione" è falso quando il problema è lo storage.
-  Da riprendere **dopo** la fase 1 sopra, che gli dà il dato oggi inesistente.
+- **Video fantasma a storage irraggiungibile** — con lo storage giù il video compare lo
+  stesso con la scritta "Video in elaborazione", invece di sparire. Sospetto che la cache
+  del manifesto (7 giorni) lo faccia risultare pronto anche quando lo storage non risponde.
+  Ora il dato per distinguere i due casi esiste: il worker pubblica lo stato reale su
+  Upstash, e la pagina pubblica può leggerlo invece di dedurlo.
+
+- **Primi lavori non-video sul worker** — promemoria prenotazioni ed estratti conto, che
+  Kevin ha in programma. L'impalcatura c'è: `jobs/__init__.py` è il registro, un modulo più
+  una riga in `HANDLERS`, e per i cron una riga in `SCHEDULES` con lo scheduler di BullMQ.
+  Nota: **il piano Vercel è hobby**, quindi i cron di Vercel (due per progetto, uno al
+  giorno) non sono un'alternativa per lavori più frequenti.
 - **Suite di test, fase 1** — fondamenta vitest con ambiente DOM, più i test su `proxy.ts`
   e sull'allineamento delle chiavi dei dizionari. → `docs/superpowers/specs/2026-09-09-test-suite-design.md`
 - **Test di ogni pagina e budget di prestazioni** — richiesti esplicitamente dopo che una
@@ -68,6 +69,19 @@
 - **Coda BullMQ ospitata su Upstash** — sposterebbe la coda fuori dalla VM, ma i job
   sopravvissuti punterebbero a un bucket sparito, e il polling a vuoto è stimato in
   ~600.000 comandi al mese contro un piano gratuito da 500.000.
+- **Migrare da R2 a MinIO** (la direzione opposta a quella presa) — porterebbe dentro
+  l'unico posto fragile i dati che stanno in quello solido, e metterebbe la VM sul percorso
+  di rendering di ogni pagina. Inoltre lo storage OCI costa **$0.0425/GB-mese** contro i
+  **$0.015** di R2, con un tetto di 200 GB già esaurito dal disco della VM.
+- **Windmill o Temporal come orchestratore** — valutati il 2026-09-10 per far girare più
+  lavori diversi. Windmill gira su ARM e darebbe UI, cron e log già pronti, al prezzo di
+  Postgres e ~2 GB di RAM su una macchina con due sole CPU che ffmpeg satura. Scelto invece
+  di estendere il worker che c'è. Da riprendere se i lavori diventano molti e la mancanza
+  di una UI comincia a pesare.
+- **Cloudflare Stream al posto del worker** — farebbe transcodifica, storage e player, con
+  encoding gratuito. Ma lo storage è prepagato a scatti di **$5/mese ogni 1.000 minuti**,
+  quindi per quattro video corti si pagherebbero 60 euro l'anno contro lo zero attuale.
+  Diventa conveniente quando i video crescono di numero o durata.
 - **Adottare un transcoder già fatto invece del worker custom** — i servizi gestiti (Mux,
   Cloudflare Stream) si pagano a minuto e portano fuori dal proprio storage; gli open
   source sono progetti personali, non prodotti; Tdarr e FileFlows lavorano su cartelle di

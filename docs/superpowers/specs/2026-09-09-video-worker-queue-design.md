@@ -1,7 +1,19 @@
 # Coda del video worker e stato visibile — design
 
-> Approvato il 2026-09-09. **Rivisto il 2026-09-10**: la scoperta che la VM è effimera ha
-> portato a spostare i video su R2 e a spegnere MinIO, il che ha semplificato il resto.
+> Approvato il 2026-09-09, rivisto e **implementato il 2026-09-10**. Resta aperta solo la
+> fase 4, lo spegnimento di MinIO, che aspetta la conferma sul campo.
+>
+> Due cose sono cambiate in corsa rispetto a quanto scritto sotto, entrambe su richiesta di
+> Kevin, e le sezioni successive vanno lette con queste in mente:
+>
+> - **Lo stato non passa dal sito.** Il worker scrive direttamente su Upstash con un utente
+>   ACL che può solo `SET` su `videojob:*` e non può leggere. L'endpoint `/api/worker/...`
+>   previsto sotto è stato scritto e poi rimosso: un salto in meno, un endpoint in meno, e
+>   un deploy in corso non fa più perdere aggiornamenti.
+> - **Il worker è diventato un runner generico.** `main.py` avvia un worker per ogni coda in
+>   `jobs/__init__.py`; la transcodifica è uno dei possibili lavori. I cron passano dallo
+>   scheduler di BullMQ, non da un loop nostro.
+>
 > Riguarda il repo `lelettricaleoni/videoStream-bucketWorker` (privato) e questo repo.
 
 ## Il problema
