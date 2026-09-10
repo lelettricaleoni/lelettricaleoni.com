@@ -45,9 +45,8 @@ Se R2 rallenta, le card dei percorsi si degradano da sole: i media stanno in un 
 Suspense separato apposta, per non bloccare il resto della pagina.
 
 **Cache di lettura su Upstash Redis** (`lib/cache.ts`): URL dei manifesti HLS e punti GPX
-già analizzati, che non cambiano mai una volta prodotti. Senza credenziali è un no-op, e
-ogni lettura fallisce aperta entro 250 ms — nessuna richiesta può restare appesa al servizio.
-Lo stesso Upstash tiene lo stato di transcodifica che il worker pubblica.
+già analizzati, che non cambiano mai. Senza credenziali è un no-op, e ogni lettura fallisce
+aperta entro 250 ms. Lo stesso Upstash tiene lo stato di transcodifica del worker.
 
 ## Infrastruttura dei media
 
