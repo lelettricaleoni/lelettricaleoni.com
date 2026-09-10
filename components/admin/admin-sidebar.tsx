@@ -1,12 +1,13 @@
 'use client'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Map, LogOut } from 'lucide-react'
+import { Map, Users, LogOut } from 'lucide-react'
 import { logoutAction } from '@/lib/actions/auth'
 import { cn } from '@/lib/utils'
 
 const navItems = [
   { href: '/manage/routes', label: 'Routes', icon: Map },
+  { href: '/manage/users', label: 'Access', icon: Users },
 ]
 
 export function AdminSidebar() {
