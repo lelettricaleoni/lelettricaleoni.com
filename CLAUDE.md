@@ -32,6 +32,10 @@ importato qui sopra. Non duplicarli in questo file.
   file non esisteva. Se una conclusione dipende da un elenco, verificalo mirato.
 
 ## Regole sempre valide
+- **Server Action, non route handler.** Le rotte `app/api/` si aggiungono solo quando a
+  chiamare è qualcosa che *non* è il nostro frontend — un servizio esterno, un webhook, il
+  video worker — perché le Server Action si invocano con un id generato al build e non sono
+  un'interfaccia pubblica stabile. Per tutto ciò che parte dal nostro client, Server Action.
 - **Codice in inglese**: path URL, identificatori, funzioni, commenti. Solo i contenuti di
   `messages/{it,en,de}.json` sono in lingua.
 - **Nessun CDN esterno**: tutto self-hosted, niente unpkg/cdnjs/jsdelivr. Eccezioni note e

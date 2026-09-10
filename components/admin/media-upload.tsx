@@ -1,5 +1,5 @@
 'use client'
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import { useDropzone } from 'react-dropzone'
 import {
   DndContext, closestCenter,
@@ -14,12 +14,60 @@ import { GripVertical, X, Upload, Video, Image } from 'lucide-react'
 import { toast } from 'sonner'
 import { r2PublicUrl } from '@/lib/r2'
 import { getPresignedUploadUrlAction, getVideoPresignedUploadUrlAction } from '@/lib/actions/routes'
+import { getVideoJobStatuses } from '@/lib/actions/video-jobs'
+import type { VideoJobStatus } from '@/lib/video-jobs'
 
 export interface MediaItem {
   id: string
   storageKey: string
   mediaType: 'photo' | 'video'
   preview: string
+  /** Uploaded in this session: the worker may not have noticed it yet. */
+  isNew?: boolean
+}
+
+const PHASE_LABELS: Record<VideoJobStatus['phase'], string> = {
+  queued: 'In coda',
+  downloading: 'Scaricamento',
+  transcoding: 'Elaborazione',
+  uploading: 'Salvataggio',
+  done: 'Pronto',
+  failed: 'Non riuscito',
+}
+
+function VideoJobBadge({ job, isNew }: { job?: VideoJobStatus; isNew?: boolean }) {
+  // A video uploaded a moment ago has no status yet: the worker finds it by
+  // listing the bucket, so there is a gap between the upload and the first
+  // report. Saying nothing there would look like nothing is happening.
+  if (!job) {
+    if (!isNew) return null
+    return <span className="text-[10px] text-muted-foreground">In attesa del worker…</span>
+  }
+
+  if (job.phase === 'failed') {
+    return (
+      <span className="text-[10px] font-medium text-destructive" title={job.error}>
+        {PHASE_LABELS.failed}
+        {job.attempt ? ` dopo ${job.attempt} tentativi` : ''}
+      </span>
+    )
+  }
+
+  if (job.phase === 'done') {
+    return <span className="text-[10px] font-medium text-green-700">{PHASE_LABELS.done}</span>
+  }
+
+  const pct = job.progress ?? 0
+  return (
+    <div className="flex items-center gap-1.5">
+      <div className="w-16 bg-muted rounded-full h-1">
+        <div className="bg-[#366DA1] h-1 rounded-full transition-all duration-500" style={{ width: `${pct}%` }} />
+      </div>
+      <span className="text-[10px] text-muted-foreground">
+        {PHASE_LABELS[job.phase]}{job.phase === 'transcoding' ? ` ${pct}%` : ''}
+      </span>
+    </div>
+  )
 }
 
 interface UploadingItem {
@@ -31,9 +79,11 @@ interface UploadingItem {
 
 function SortableItem({
   item,
+  job,
   onRemove,
 }: {
   item: MediaItem
+  job?: VideoJobStatus
   onRemove: () => void
 }) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: item.id })
@@ -55,9 +105,12 @@ function SortableItem({
       )}
       <div className="flex-1 min-w-0">
         <span className="text-xs text-muted-foreground truncate block">{item.storageKey.split('/').pop()}</span>
-        <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${item.mediaType === 'video' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'}`}>
-          {item.mediaType === 'video' ? 'Video' : 'Foto'}
-        </span>
+        <div className="flex items-center gap-2">
+          <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${item.mediaType === 'video' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'}`}>
+            {item.mediaType === 'video' ? 'Video' : 'Foto'}
+          </span>
+          {item.mediaType === 'video' && <VideoJobBadge job={job} isNew={item.isNew} />}
+        </div>
       </div>
       <button type="button" onClick={onRemove} className="text-destructive hover:text-destructive/80 cursor-pointer shrink-0">
         <X size={14} />
@@ -103,6 +156,54 @@ export function MediaUpload({
     }))
   )
   const [uploading, setUploading] = useState<UploadingItem[]>([])
+  const [jobs, setJobs] = useState<Record<string, VideoJobStatus>>({})
+
+  // A string, not an array: an array literal would be a new object on every
+  // render and restart the poll each time.
+  const videoKeys = items.filter((i) => i.mediaType === 'video').map((i) => i.storageKey).join('|')
+  const freshKeys = items.filter((i) => i.mediaType === 'video' && i.isNew).map((i) => i.storageKey).join('|')
+
+  useEffect(() => {
+    const all = videoKeys ? videoKeys.split('|') : []
+    if (all.length === 0) return
+    const fresh = new Set(freshKeys ? freshKeys.split('|') : [])
+
+    let cancelled = false
+    let timer: ReturnType<typeof setTimeout> | undefined
+    // A worker that never picks the job up must not leave the panel polling
+    // forever: after this many rounds the badge simply stops moving.
+    let rounds = 100
+
+    async function tick(keys: string[]) {
+      let statuses: Record<string, VideoJobStatus> = {}
+      try {
+        statuses = await getVideoJobStatuses(keys)
+      } catch {
+        // The panel showing a stale badge beats it showing an error.
+        return
+      }
+      if (cancelled) return
+      setJobs((prev) => ({ ...prev, ...statuses }))
+
+      const active = keys.filter((k) => {
+        const phase = statuses[k]?.phase
+        // No status at all is only worth waiting on for something just
+        // uploaded; an older video simply never had one.
+        if (!phase) return fresh.has(k)
+        return phase !== 'done' && phase !== 'failed'
+      })
+
+      if (active.length > 0 && (rounds -= 1) > 0) {
+        timer = setTimeout(() => tick(active), 3000)
+      }
+    }
+
+    tick(all)
+    return () => {
+      cancelled = true
+      clearTimeout(timer)
+    }
+  }, [videoKeys, freshKeys])
 
   const effectiveRouteId = useRef(
     routeId !== 'new' ? routeId : (() => {
@@ -169,6 +270,7 @@ export function MediaUpload({
         storageKey: key,
         mediaType: isVideo ? 'video' : 'photo',
         preview: isVideo ? '' : URL.createObjectURL(file),
+        isNew: isVideo,
       }
       setItems((prev) => [...prev, newItem])
     } catch (err) {
@@ -212,6 +314,7 @@ export function MediaUpload({
             <SortableItem
               key={item.id}
               item={item}
+              job={jobs[item.storageKey]}
               onRemove={() => setItems((prev) => prev.filter((i) => i.id !== item.id))}
             />
           ))}
