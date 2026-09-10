@@ -64,14 +64,23 @@ jobs:
               target=$(gh api "repos/$REPO/deployments/$id/statuses" --jq '.[0].environment_url // .[0].target_url // empty' 2>/dev/null)
 
               if [ "$state" = "success" ] && [ -n "$target" ]; then
-                code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 \
+                # -L perché il preview reindirizza al proprio URL canonico, e
+                # proxy.ts reindirizza per conto suo. Pretendere un 200 secco
+                # legge un deploy sano come rotto — ed è quello che ha fatto,
+                # per dieci minuti, su tre pull request.
+                code=$(curl -sL -o /dev/null -w '%{http_code}' --max-time 20 \
                   -H "x-vercel-protection-bypass: $BYPASS" \
                   -H "x-vercel-set-bypass-cookie: true" \
                   "$target/it")
 
-                if [ "$code" = "200" ]; then
-                  echo "url=$target" >> "$GITHUB_OUTPUT"
-                  echo "Preview raggiungibile dopo $attempt tentativi: $target"
+                if [ "${code:-0}" -lt 400 ]; then
+                  # L'URL finale, non quello di partenza: se il preview
+                  # reindirizza al proprio nome canonico, è là che Playwright
+                  # deve puntare, altrimenti ogni test paga il salto.
+                  final=$(curl -sL -o /dev/null -w '%{url_effective}' --max-time 20                     -H "x-vercel-protection-bypass: $BYPASS"                     -H "x-vercel-set-bypass-cookie: true"                     "$target/it")
+                  base="${final%/it*}"
+                  echo "url=${base:-$target}" >> "$GITHUB_OUTPUT"
+                  echo "Preview raggiungibile dopo $attempt tentativi: ${base:-$target}"
                   exit 0
                 fi
                 echo "[$attempt] deploy pronto ma risponde $code"
