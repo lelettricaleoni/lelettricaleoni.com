@@ -26,6 +26,18 @@ _(niente in lavorazione)_
   alla stabile appena esce. Nello stesso giro anche `hls.js`, fermo a `^1.6.16` con la
   1.7.2 disponibile.
 
+- **Card dei percorsi allineate fra loro** — nella lista le card si sfalsano: il titolo ha
+  `line-clamp-2` ma se sta su una riga la card si accorcia, e i tag delle bici vanno a capo
+  quando sono molti. Kevin propone di riservare sempre due righe al titolo; meglio ancora
+  **`grid-rows-subgrid`**, che fa ereditare alle card le righe della griglia in
+  `route-filters.tsx:117` — titolo, tag e statistiche si allineano da soli e senza spazio
+  sprecato quando i titoli sono corti. I tag su **una riga sola con scroll orizzontale
+  manuale** e una sfumatura sul bordo: l'auto-scroll obbliga ad aspettare che il tag
+  ripassi, e andrebbe comunque disattivato con `prefers-reduced-motion`.
+
+- **Il logo nella 404 non deve essere premibile** — `app/not-found.tsx:12` lo avvolge in un
+  `<Link href="/it">`, mentre sotto ci sono già i pulsanti per tornare indietro.
+
 - **Un gradino più basso per chi ha poca linea** — la scala adattiva si ferma al 480p, che
   pretende ~1 Mbps stabile: sotto quella soglia hls.js non ha dove scendere e il video si
   pianta invece di degradarsi. I clienti guardano questi video sui sentieri sopra Dro, dove
