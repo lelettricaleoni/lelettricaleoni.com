@@ -61,3 +61,6 @@ docs/ai/journal/.notes
 /test-results/
 /playwright-report/
 /blob-report/
+
+# Worktree degli agenti
+.claude/worktrees/
