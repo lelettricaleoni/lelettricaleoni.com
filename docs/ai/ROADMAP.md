@@ -26,6 +26,15 @@ _(niente in lavorazione)_
   alla stabile appena esce. Nello stesso giro anche `hls.js`, fermo a `^1.6.16` con la
   1.7.2 disponibile.
 
+- **Qualità costante al posto del bitrate fisso nel worker** — misurato il 2026-09-10 su un
+  video reale di 93 s: **72 MiB, cioè 46 MiB al minuto** con le tre rendition (1080p 55%,
+  720p 29%, 480p 16%). Il worker usa `-b:v` fisso, quindi spende lo stesso su un'inquadratura
+  ferma e su una discesa. Con `-crf` più un tetto `-maxrate` le tre qualità **restano tutte**
+  e il video parte prima su connessioni lente: meno byte a parità di resa, non meno qualità.
+  Kevin vuole tenere le tre rendition e l'esperienza migliore possibile — questa voce non le
+  toglie, ma va misurata sul suo materiale prima di adottarla.
+  Per dimensionare: 10 GB gratuiti R2 = ~222 minuti; 100 GB costerebbero $1,35 al mese.
+
 - **Video fantasma a storage irraggiungibile** — con lo storage giù il video compare lo
   stesso con la scritta "Video in elaborazione", invece di sparire. Sospetto che la cache
   del manifesto (7 giorni) lo faccia risultare pronto anche quando lo storage non risponde.
