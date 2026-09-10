@@ -36,7 +36,8 @@ pannello di amministrazione privato.
 ## Dati e servizi
 
 Postgres su **Supabase** via Drizzle (`routes`, `route_translations`, `route_photos`).
-Autenticazione admin con Supabase Auth: serve `user_metadata.role = 'admin'`.
+Autenticazione admin con Supabase Auth: `getAdminUser()` richiede `app_metadata.role =
+'admin'` — **non** `user_metadata`, che è modificabile dall'utente stesso.
 Foto, GPX, video e flussi HLS su **Cloudflare R2**.
 Traduzioni IT→EN/DE generate da **Azure Translator**: l'admin scrive solo l'italiano.
 
@@ -44,9 +45,8 @@ Se R2 rallenta, le card dei percorsi si degradano da sole: i media stanno in un 
 Suspense separato apposta, per non bloccare il resto della pagina.
 
 **Cache di lettura su Upstash Redis** (`lib/cache.ts`): URL dei manifesti HLS e punti GPX
-già analizzati, che non cambiano mai una volta prodotti. Senza credenziali è un no-op, e
-ogni lettura fallisce aperta entro 250 ms — nessuna richiesta può restare appesa al servizio.
-Lo stesso Upstash tiene lo stato di transcodifica che il worker pubblica.
+già analizzati, che non cambiano mai. Senza credenziali è un no-op, e ogni lettura fallisce
+aperta entro 250 ms. Lo stesso Upstash tiene lo stato di transcodifica del worker.
 
 ## Infrastruttura dei media
 
@@ -67,8 +67,8 @@ minuti che il worker impiega a cancellarlo.
 |---|---|
 | Trova il lavoro | elencando R2: un sorgente senza manifesto **è** il lavoro da fare |
 | Coda | BullMQ, job id = l'oggetto, tre tentativi con backoff |
-| Stato | su Upstash, chiavi `videojob:v1:*`, lette da `lib/video-jobs.ts` |
-| Altri lavori | registro in `jobs/__init__.py`: un modulo, una riga in `HANDLERS`, e per i cron una in `SCHEDULES` |
+| Stato | su Upstash, `videojob:v1:*`, letto da `lib/video-jobs.ts` |
+| Altri lavori | registro in `jobs/__init__.py`: un modulo, una riga in `HANDLERS`, per i cron una in `SCHEDULES` |
 
 La coda è **ricostruibile, non durevole**: non può esserlo più dei dati che serve, e la
 verità sta nello storage — per questo il webhook di MinIO è sparito invece di essere

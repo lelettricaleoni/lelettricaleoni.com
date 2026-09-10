@@ -14,7 +14,7 @@ _(niente in lavorazione)_
 ## Prossimo
 
 - **Pannello per gli account amministratori** — oggi un admin si crea solo dalla console
-  Supabase, mettendo a mano `user_metadata.role = 'admin'`: non è una cosa che Kevin possa
+  Supabase, mettendo a mano `app_metadata.role = 'admin'`: non è una cosa che Kevin possa
   fare da solo quando serve. Serve una sezione in `/manage` che inviti un utente, gli
   assegni il ruolo e lo revochi. Va costruita sull'API admin di Supabase, quindi con la
   service role key, che non deve mai raggiungere il client — e va decisa la regola che
