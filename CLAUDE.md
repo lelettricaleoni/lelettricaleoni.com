@@ -36,6 +36,11 @@ importato qui sopra. Non duplicarli in questo file.
   chiamare è qualcosa che *non* è il nostro frontend — un servizio esterno, un webhook, il
   video worker — perché le Server Action si invocano con un id generato al build e non sono
   un'interfaccia pubblica stabile. Per tutto ciò che parte dal nostro client, Server Action.
+- **Nessun dettaglio infrastrutturale nei testi che l'utente legge.** L'interfaccia dice
+  cosa succede e perché conta per chi la usa, mai dove finiscono i file o con quale
+  tecnologia: "Foto su R2, video su MinIO" non aiuta nessuno a caricare un video, e invecchia
+  male — quella riga è rimasta a nominare MinIO per un giorno dopo che era stato spento.
+  Vale per il pannello quanto per le pagine pubbliche.
 - **Codice in inglese**: path URL, identificatori, funzioni, commenti. Solo i contenuti di
   `messages/{it,en,de}.json` sono in lingua.
 - **Nessun CDN esterno**: tutto self-hosted, niente unpkg/cdnjs/jsdelivr. Eccezioni note e

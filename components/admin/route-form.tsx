@@ -51,7 +51,7 @@ export function RouteForm({ action, route, translations, photos }: RouteFormProp
       {/* Italian text */}
       <section className="space-y-4">
         <h2 className="text-lg font-semibold text-[#1e3a5f]">Content (Italian)</h2>
-        <p className="text-sm text-muted-foreground">EN and DE are auto-generated with Azure Translator on save.</p>
+        <p className="text-sm text-muted-foreground">EN and DE are generated automatically on save.</p>
 
         <div className="space-y-1">
           <Label htmlFor="nameIt">Route name *</Label>
@@ -72,7 +72,7 @@ export function RouteForm({ action, route, translations, photos }: RouteFormProp
         {route && (
           <div className="flex items-center gap-2 text-sm">
             <Switch name="retranslate" id="retranslate" value="true" />
-            <Label htmlFor="retranslate">Regenerate EN/DE translations (Azure)</Label>
+            <Label htmlFor="retranslate">Regenerate EN/DE translations</Label>
           </div>
         )}
       </section>
@@ -194,7 +194,7 @@ export function RouteForm({ action, route, translations, photos }: RouteFormProp
       <section className="space-y-3">
         <h2 className="text-lg font-semibold text-[#1e3a5f]">Foto e video</h2>
         <p className="text-sm text-muted-foreground">
-          Il primo elemento è la copertina. Trascina per riordinare. Foto su R2, video su MinIO.
+          Il primo elemento è la copertina. Trascina per riordinare.
         </p>
         <MediaUpload
           routeId={route?.id ?? 'new'}
