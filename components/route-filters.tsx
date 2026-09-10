@@ -113,8 +113,12 @@ export function RouteFilters({ routes, lang, dict }: RouteFiltersProps) {
           </button>
         </div>
       ) : (
+        // Le card spannano quattro righe di questa griglia e le condividono
+        // con le vicine (grid-rows-subgrid), così le loro fasce si allineano.
+        // Il gap verticale qui vale fra quelle righe, cioè *dentro* la card:
+        // sta a zero, e lo spazio fra card lo mette la card stessa con mb-6.
         <div className={cn(
-          'grid gap-6',
+          'grid gap-x-6 gap-y-0',
           filtered.length === 1
             ? 'grid-cols-1 max-w-sm'
             : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'
