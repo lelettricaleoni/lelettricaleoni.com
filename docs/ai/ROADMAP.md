@@ -38,6 +38,17 @@ _(niente in lavorazione)_
 - **Il logo nella 404 non deve essere premibile** — `app/not-found.tsx:12` lo avvolge in un
   `<Link href="/it">`, mentre sotto ci sono già i pulsanti per tornare indietro.
 
+- **Rifare la barra dei filtri della lista percorsi** — oggi è una fila di pillole per
+  difficoltà e una per tipo di bici, che cresce male: con cinque tipi di bici la seconda
+  riga è già lunga, e non c'è modo di combinare i filtri in modo leggibile né di vedere a
+  colpo d'occhio quanti percorsi restano. Da ripensare come sezione, non da ritoccare.
+
+- **Interruttore foto ↔ mappa sulle card** — come quello di Google Maps che passa fra
+  mappa e satellite. Oggi la card mostra la foto *oppure*, se non ce n'è, la traccia GPX
+  disegnata: chi vuole vedere dove passa un percorso con le foto deve aprirlo. Il disegno
+  della mappa semplificata esiste già (`gpxPointsToMercatorPath` in `lib/gpx-svg.ts`), va
+  reso alternabile invece che di ripiego.
+
 - **Un gradino più basso per chi ha poca linea** — la scala adattiva si ferma al 480p, che
   pretende ~1 Mbps stabile: sotto quella soglia hls.js non ha dove scendere e il video si
   pianta invece di degradarsi. I clienti guardano questi video sui sentieri sopra Dro, dove
