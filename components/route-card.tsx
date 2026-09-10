@@ -38,7 +38,11 @@ export function RouteCard({ route, translation, media, lang, dict }: RouteCardPr
   return (
     <Link
       href={`/${lang}/routes/${shortRouteId(route.id)}`}
-      className="group grid grid-rows-subgrid row-span-4 gap-y-3 mb-6 rounded-xl overflow-hidden border bg-card hover:shadow-md transition-shadow"
+      // grid-cols-1 con figli min-w-0: senza, ogni figlio prende min-width
+      // auto e si rifiuta di scendere sotto la larghezza del proprio
+      // contenuto, così la fascia dei tag e quella delle statistiche
+      // sbordavano e venivano tagliate dall'overflow-hidden qui sopra.
+      className="group grid grid-cols-1 grid-rows-subgrid row-span-4 gap-y-3 mb-6 rounded-xl overflow-hidden border bg-card hover:shadow-md transition-shadow [&>*]:min-w-0"
     >
       <div className="relative h-48 bg-[#c8dae8] overflow-hidden">
         {media}
