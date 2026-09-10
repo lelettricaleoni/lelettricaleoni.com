@@ -50,28 +50,29 @@ Lo stesso Upstash tiene lo stato di transcodifica che il worker pubblica.
 
 ## Infrastruttura dei media
 
-Dal 2026-09-10 **tutti i media stanno su Cloudflare R2**: foto, GPX, video e flussi HLS,
-un bucket per ambiente (`lelettrica-trails`, `dev-lelettrica-trails`), serviti da
-`trails-bucket.lelettricaleoni.com`. MinIO non ospita più niente di vivo.
+Dal 2026-09-10 **tutti i media stanno su Cloudflare R2**: un bucket per ambiente
+(`lelettrica-trails`, `dev-lelettrica-trails`), serviti da `trails-bucket.lelettricaleoni.com`.
+**MinIO è stato eliminato** con Nginx Proxy Manager, i domini `cluster-bucket` e i relativi
+certificati: sulla VM restano il worker e il suo Redis, senza porte aperte.
 
 Le chiavi non sono cambiate nel trasloco, quindi il database non è stato toccato: sorgenti
 in `private/route-videos/`, flussi in `public/route-videos/`. **Su R2 quel `private/` non
 protegge nulla** — un dominio pubblico espone tutto il bucket — ma il sorgente vive solo i
 minuti che il worker impiega a cancellarlo.
 
-**Il worker** (`lelettricaleoni/videoStream-bucketWorker`) gira in Docker Compose sulla VM
-`clustrenode1` (Oracle Cloud, ARM64, 2 CPU), in `~/docker/worker`, accanto a un Redis con
-append-only per la coda BullMQ. **Nessuna porta aperta**: parla solo in uscita.
+**Il worker** (`lelettricaleoni/videoStream-bucketWorker`) sta in `~/docker/worker` sulla VM
+`clustrenode1` (Oracle Cloud, ARM64, 2 CPU), con un Redis append-only per la coda BullMQ.
 
 | | |
 |---|---|
-| Come trova il lavoro | elenca R2: un sorgente senza manifesto **è** il lavoro da fare |
+| Trova il lavoro | elencando R2: un sorgente senza manifesto **è** il lavoro da fare |
 | Coda | BullMQ, job id = l'oggetto, tre tentativi con backoff |
-| Stato | scritto su Upstash, chiavi `videojob:v1:*`, lette da `lib/video-jobs.ts` |
-| Altri lavori | `jobs/__init__.py` è il registro: un modulo, una riga in `HANDLERS`, e per i cron una in `SCHEDULES` |
+| Stato | su Upstash, chiavi `videojob:v1:*`, lette da `lib/video-jobs.ts` |
+| Altri lavori | registro in `jobs/__init__.py`: un modulo, una riga in `HANDLERS`, e per i cron una in `SCHEDULES` |
 
 La coda è **ricostruibile, non durevole**: non può esserlo più dei dati che serve, e la
-verità sta nello storage — per questo il webhook è sparito invece di essere ripuntato.
+verità sta nello storage — per questo il webhook di MinIO è sparito invece di essere
+ripuntato altrove.
 Il token Upstash del worker può **solo `SET` su `videojob:*`** e non può leggere: rubato
 dalla VM, non raggiunge le cache HLS e GPX che stanno lì accanto.
 

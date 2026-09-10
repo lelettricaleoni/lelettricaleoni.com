@@ -9,11 +9,7 @@
 
 ## Adesso
 
-- **Spegnere MinIO** — non ospita più niente di vivo dal 2026-09-10, ma resta acceso sulla
-  VM con la sua copia dei video, come rete di sicurezza. Da spegnere quando la migrazione
-  è considerata definitiva: con lui vanno via Nginx Proxy Manager, i domini
-  `cluster-bucket` e `cluster-bucket-console`, e i loro certificati. Prima di cancellare
-  il volume, un export IAM conservato altrove.
+_(niente in lavorazione)_
 
 ## Prossimo
 
