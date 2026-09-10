@@ -78,6 +78,6 @@
     "eslint-config-next": "16.2.4",
     "tailwindcss": "^4.3.3",
     "typescript": "^5",
-    "vitest": "^4.1.7"
+    "vitest": "^4.1.11"
   }
 }
