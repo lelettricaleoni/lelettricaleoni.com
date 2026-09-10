@@ -8,6 +8,7 @@ import { getAdminUser } from '@/lib/supabase/server'
 import { translateFromItalian } from './translate'
 import { deleteR2Object, getPresignedUploadUrl } from '@/lib/r2'
 import { getVideoPresignedUploadUrl, deleteR2Prefix, deriveHlsPrefix } from '@/lib/media'
+import { needsRetranslation } from '@/lib/translations'
 import { shortRouteId } from '@/lib/utils'
 
 const RouteSchema = z.object({
@@ -201,7 +202,17 @@ export async function updateRouteAction(
     )
   }
 
-  const reTranslate = formData.get('retranslate') === 'true'
+  // The Italian text decides whether EN and DE are regenerated. Leaving that to
+  // a switch meant an edit could silently leave the other two languages saying
+  // something the Italian no longer says.
+  const [currentIt] = await db.select().from(routeTranslations).where(
+    and(eq(routeTranslations.routeId, id), eq(routeTranslations.locale, 'it'))
+  )
+  const reTranslate = needsRetranslation(
+    currentIt ? { name: currentIt.name, description: currentIt.description ?? '' } : undefined,
+    { name: nameIt, description: descriptionIt },
+    formData.get('retranslate') === 'true'
+  )
   if (reTranslate) {
     const [nameT, descT] = await Promise.all([
       translateFromItalian(nameIt),
