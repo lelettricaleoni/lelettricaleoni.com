@@ -1,0 +1,80 @@
+name: browser
+
+# Layout and content checks, run against the preview Vercel builds for the pull
+# request. That preview is a real environment with the real services behind it,
+# which is why nothing here needs the fake services the September spec planned.
+#
+# Two things this catches that `verify` cannot. A page here answers 200 even
+# when its section is switched off — streaming plus notFound() — so only the
+# content settles it. And a layout fault can be invisible at one column and
+# obvious at three, so the width is part of the test.
+#
+# Skips itself, rather than failing, when the bypass secret is absent: a fork
+# has no access to it, and a check that cannot run must not look broken.
+
+on:
+  pull_request:
+
+concurrency:
+  group: browser-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  browser:
+    name: browser
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check for the bypass secret
+        id: secret
+        run: |
+          if [ -n "${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}" ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::VERCEL_AUTOMATION_BYPASS_SECRET non impostato: i test browser sono saltati."
+          fi
+
+      # Vercel is still building when the pull request opens. Waiting for the
+      # deployment beats guessing a delay, which is either too short to be
+      # reliable or too long to be worth having.
+      - name: Wait for the Vercel preview
+        if: steps.secret.outputs.present == 'true'
+        id: preview
+        uses: patrickedqvist/wait-for-vercel-preview@v1.3.2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          max_timeout: 600
+          check_interval: 10
+
+      - uses: actions/setup-node@v4
+        if: steps.secret.outputs.present == 'true'
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        if: steps.secret.outputs.present == 'true'
+        run: npm ci
+
+      - name: Install Chromium
+        if: steps.secret.outputs.present == 'true'
+        run: npx playwright install --with-deps chromium
+
+      - name: Run browser tests
+        if: steps.secret.outputs.present == 'true'
+        run: npm run test:browser
+        env:
+          BASE_URL: ${{ steps.preview.outputs.url }}
+          VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+
+      # The trace of a failure is worth more than the log line that reports it.
+      - uses: actions/upload-artifact@v4
+        if: failure() && steps.secret.outputs.present == 'true'
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
