@@ -1,6 +1,12 @@
 import type { NextConfig } from "next"
 
 const nextConfig: NextConfig = {
+  // The root layout lives under app/[lang]/, so there is no single top-level
+  // layout to build a 404 from for URLs that match no route. This turns on
+  // app/global-not-found.tsx, which renders its own document.
+  experimental: {
+    globalNotFound: true,
+  },
   webpack: (config) => {
     // Cesium is loaded via script tag (UMD global) to avoid SWC parsing GLSL shaders
     // with octal escape sequences — this maps `import cesium` to window.Cesium

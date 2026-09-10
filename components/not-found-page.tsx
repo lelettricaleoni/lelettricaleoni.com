@@ -3,9 +3,9 @@ import Image from 'next/image'
 import { MapPin, ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
-export const metadata = { title: '404 - Pagina non trovata | Lelettrica' }
 
-export default function NotFound() {
+
+export function NotFoundPage() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 px-4 text-center">
       {/* Logo */}

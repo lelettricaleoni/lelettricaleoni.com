@@ -1,12 +1,47 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
+import { Geist } from 'next/font/google'
+import Script from 'next/script'
+import { CookieConsentInit } from '@/components/cookie-consent'
 import { hasLocale } from './dictionaries'
 import { notFound } from 'next/navigation'
+import '../globals.css'
+
+/**
+ * Root layout of the public site.
+ *
+ * This used to be `app/layout.tsx`, which read the locale from the `x-locale`
+ * header the proxy injects. `headers()` is request data, so it made the whole
+ * tree render on demand — `export const revalidate` on the routes pages never
+ * had any effect, and no page could ever be prerendered.
+ *
+ * Next supports putting the root layout under a dynamic segment for exactly
+ * this reason (see `node_modules/next/dist/docs/01-app/02-guides/internationalization.md`).
+ * The locale now comes from the URL, which `generateStaticParams` enumerates,
+ * so `<html lang>` is known at build time and the pages under it can be
+ * prerendered.
+ *
+ * Consequence to know: `app/manage/` and any other top-level folder are now
+ * root layouts of their own and render their own `<html>`/`<body>`. Navigating
+ * between them and the public site is a full page load, which it already was in
+ * practice.
+ */
+
+const geist = Geist({
+  variable: '--font-geist-sans',
+  subsets: ['latin'],
+})
 
 const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://www.lelettricaleoni.com').replace(/\/$/, '')
 const locales = ['it', 'en', 'de']
 
 export async function generateStaticParams() {
   return [{ lang: 'it' }, { lang: 'en' }, { lang: 'de' }]
+}
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  themeColor: '#366DA1',
 }
 
 export async function generateMetadata({
@@ -301,13 +336,46 @@ export default async function LangLayout({
   const { lang } = await params
   if (!hasLocale(lang)) notFound()
 
+  const gaId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID
+
   return (
-    <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
-      {children}
-    </>
+    <html lang={lang} className={`${geist.variable} antialiased`}>
+      <body className="min-h-screen flex flex-col bg-background text-foreground">
+        {gaId && (
+          <>
+            {/* Consent Mode v2 — defaults denied, wait 500ms for banner response */}
+            <Script
+              id="ga4-consent-init"
+              strategy="beforeInteractive"
+              dangerouslySetInnerHTML={{
+                __html: `
+                  window.dataLayer=window.dataLayer||[];
+                  function gtag(){dataLayer.push(arguments);}
+                  gtag('consent','default',{
+                    analytics_storage:'denied',
+                    ad_storage:'denied',
+                    ad_user_data:'denied',
+                    ad_personalization:'denied',
+                    wait_for_update:500
+                  });
+                  gtag('js',new Date());
+                  gtag('config','${gaId}');
+                `,
+              }}
+            />
+            <Script
+              src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`}
+              strategy="afterInteractive"
+            />
+          </>
+        )}
+        <CookieConsentInit locale={lang} />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+        {children}
+      </body>
+    </html>
   )
 }
