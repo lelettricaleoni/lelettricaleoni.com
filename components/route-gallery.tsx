@@ -8,7 +8,7 @@ import Hls from 'hls.js'
 import { Loader2 } from 'lucide-react'
 import { VideoPlayer } from '@/components/video-player'
 import { r2PublicUrl } from '@/lib/r2'
-import { minioHlsUrl, type MediaWithHls } from '@/lib/minio-client'
+import { hlsUrl, type MediaWithHls } from '@/lib/media-client'
 import type { Slide } from 'yet-another-react-lightbox'
 import type { RoutePhoto } from '@/lib/db'
 
@@ -128,7 +128,7 @@ function MediaThumb({
     >
       {item.mediaType === 'video' ? (
         autoplay ? (
-          <VideoThumbAutoplay hlsUrl={item.hlsUrl ?? minioHlsUrl(item.storageKey)} />
+          <VideoThumbAutoplay hlsUrl={item.hlsUrl ?? hlsUrl(item.storageKey)} />
         ) : (
           <div className="absolute inset-0 bg-zinc-900" />
         )
@@ -158,7 +158,7 @@ export function RouteGallery({ media, routeName }: { media: MediaWithHls[]; rout
 
   const slides: Slide[] = media.map((m) =>
     m.mediaType === 'video'
-      ? ({ type: 'hls' as const, hlsUrl: m.hlsUrl ?? minioHlsUrl(m.storageKey) } satisfies HlsSlide)
+      ? ({ type: 'hls' as const, hlsUrl: m.hlsUrl ?? hlsUrl(m.storageKey) } satisfies HlsSlide)
       : { src: r2PublicUrl(m.storageKey), alt: m.altText ?? `${routeName}` }
   )
 

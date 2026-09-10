@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm'
 import { db, routePhotos } from '@/lib/db'
 import type { Route } from '@/lib/db'
-import { resolveHlsUrl } from '@/lib/minio'
+import { resolveHlsUrl } from '@/lib/media'
 import { loadGpxPoints } from '@/lib/route-gpx'
 import { gpxPointsToSvgPath, gpxPointsToMercatorPath, gpxBboxCenter } from '@/lib/gpx-svg'
 import { RouteCardMedia } from './route-card-media'
