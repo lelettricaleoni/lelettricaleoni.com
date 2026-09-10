@@ -23,6 +23,15 @@ const nextConfig: NextConfig = {
         '**/.playwright-mcp/**',
       ],
     }
+    // @vercel/flags-core imports @vercel/flags-definitions, which it has never
+    // published — the name 404s on npm. Production builds drop the branch, but
+    // dev retries the resolution on every compile and logs the failure each
+    // time. `false` tells webpack the module resolves to nothing, which is what
+    // it already effectively is.
+    config.resolve = {
+      ...config.resolve,
+      alias: { ...config.resolve?.alias, '@vercel/flags-definitions': false },
+    }
     return config
   },
   images: {
