@@ -26,6 +26,14 @@ _(niente in lavorazione)_
   alla stabile appena esce. Nello stesso giro anche `hls.js`, fermo a `^1.6.16` con la
   1.7.2 disponibile.
 
+- **Un gradino più basso per chi ha poca linea** — la scala adattiva si ferma al 480p, che
+  pretende ~1 Mbps stabile: sotto quella soglia hls.js non ha dove scendere e il video si
+  pianta invece di degradarsi. I clienti guardano questi video sui sentieri sopra Dro, dove
+  la linea è scarsa. Serve un **360p attorno ai 500-600k** (+~8% di spazio), e i player
+  vanno fatti partire dal gradino più basso: oggi `startLevel: -1` in `route-card-media.tsx`
+  e `route-gallery.tsx` lascia stimare la banda a hls.js, che parte ottimista e fa vedere la
+  rotella prima di scendere.
+
 - **Qualità costante al posto del bitrate fisso nel worker** — misurato il 2026-09-10 su un
   video reale di 93 s: **72 MiB, cioè 46 MiB al minuto** con le tre rendition (1080p 55%,
   720p 29%, 480p 16%). Il worker usa `-b:v` fisso, quindi spende lo stesso su un'inquadratura
