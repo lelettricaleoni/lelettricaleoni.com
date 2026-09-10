@@ -13,6 +13,25 @@ _(niente in lavorazione)_
 
 ## Prossimo
 
+- **Pannello per gli account amministratori** — oggi un admin si crea solo dalla console
+  Supabase, mettendo a mano `user_metadata.role = 'admin'`: non è una cosa che Kevin possa
+  fare da solo quando serve. Serve una sezione in `/manage` che inviti un utente, gli
+  assegni il ruolo e lo revochi. Va costruita sull'API admin di Supabase, quindi con la
+  service role key, che non deve mai raggiungere il client — e va decisa la regola che
+  impedisce a un admin di togliere il ruolo all'ultimo rimasto.
+
+- **Un solo progresso per il video, dal caricamento al pronto** — nel pannello oggi ci sono
+  due barre diverse che non si conoscono: `ProgressItem` segue l'upload e sparisce, poi
+  `VideoJobBadge` mostra la transcodifica quando il worker si accorge del file. Fra le due
+  c'è un buco, e chi guarda vede il lavoro fermarsi e ripartire. Vanno unite in un unico
+  avanzamento continuo — caricamento, attesa, elaborazione, pronto — con una sola barra.
+
+- **Aggiornare il player video** — siamo su `@videojs/react` e `@videojs/hlsjs-video`
+  `10.0.0-rc.1`; il 2026-09-09 è uscita la **rc.2**, che è fuori dalla beta ma ancora una
+  release candidate: la 10.0.0 stabile non è pubblicata. Da aggiornare alla rc.2 subito e
+  alla stabile appena esce. Nello stesso giro anche `hls.js`, fermo a `^1.6.16` con la
+  1.7.2 disponibile.
+
 - **Video fantasma a storage irraggiungibile** — con lo storage giù il video compare lo
   stesso con la scritta "Video in elaborazione", invece di sparire. Sospetto che la cache
   del manifesto (7 giorni) lo faccia risultare pronto anche quando lo storage non risponde.
