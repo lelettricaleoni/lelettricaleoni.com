@@ -20,12 +20,6 @@ _(niente in lavorazione)_
   service role key, che non deve mai raggiungere il client — e va decisa la regola che
   impedisce a un admin di togliere il ruolo all'ultimo rimasto.
 
-- **Un solo progresso per il video, dal caricamento al pronto** — nel pannello oggi ci sono
-  due barre diverse che non si conoscono: `ProgressItem` segue l'upload e sparisce, poi
-  `VideoJobBadge` mostra la transcodifica quando il worker si accorge del file. Fra le due
-  c'è un buco, e chi guarda vede il lavoro fermarsi e ripartire. Vanno unite in un unico
-  avanzamento continuo — caricamento, attesa, elaborazione, pronto — con una sola barra.
-
 - **Aggiornare il player video** — siamo su `@videojs/react` e `@videojs/hlsjs-video`
   `10.0.0-rc.1`; il 2026-09-09 è uscita la **rc.2**, che è fuori dalla beta ma ancora una
   release candidate: la 10.0.0 stabile non è pubblicata. Da aggiornare alla rc.2 subito e
