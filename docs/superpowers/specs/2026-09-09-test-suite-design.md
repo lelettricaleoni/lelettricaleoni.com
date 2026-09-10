@@ -2,7 +2,10 @@
 
 **Data**: 2026-09-09
 **Branch**: `fix/flyover-terrain-anchoring`
-**Stato**: approvato, pronto per implementazione
+**Stato**: strato 1 implementato (70 test in CI). **Strati 2 e 3 superati** da
+`2026-09-10-tests-against-preview-design.md`: i finti servizi non servono più, perché il
+deploy di preview di ogni PR è un ambiente vero e Vercel offre un token di bypass per
+l'automazione.
 
 ---
 

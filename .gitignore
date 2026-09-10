@@ -56,3 +56,8 @@ temp/
 
 # note effimere assorbite dall hook di fine sessione
 docs/ai/journal/.notes
+
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/

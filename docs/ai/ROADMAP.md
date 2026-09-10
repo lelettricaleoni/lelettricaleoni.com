@@ -77,13 +77,18 @@ _(niente in lavorazione)_
   una riga in `HANDLERS`, e per i cron una riga in `SCHEDULES` con lo scheduler di BullMQ.
   Nota: **il piano Vercel è hobby**, quindi i cron di Vercel (due per progetto, uno al
   giorno) non sono un'alternativa per lavori più frequenti.
-- **Suite di test, fase 1** — fondamenta vitest con ambiente DOM, più i test su `proxy.ts`
-  e sull'allineamento delle chiavi dei dizionari. → `docs/superpowers/specs/2026-09-09-test-suite-design.md`
-- **Test di ogni pagina e budget di prestazioni** — richiesti esplicitamente dopo che una
-  regressione da 40× è arrivata in produzione senza che nulla la fermasse. Devono
-  verificare il **contenuto**, non il codice HTTP: qui una pagina spenta risponde 200.
-- **Suite di test, fase 2** — finti servizi dietro `USE_FAKE_SERVICES`, per lavorare a
-  Supabase o R2 irraggiungibili e per far girare build ed end-to-end in CI.
+- **Test contro il deploy di preview** — approvato il 2026-09-10, tre fasi.
+  → `docs/superpowers/specs/2026-09-10-tests-against-preview-design.md`
+  - *Geometria*: nessun elemento sborda dal proprio contenitore, a tre larghezze. Avrebbe
+    preso entrambe le versioni rotte delle card di oggi.
+  - *Contenuto*: ogni pagina mostra ciò che deve, guardando il **contenuto** e non il codice
+    HTTP, che qui è 200 anche a sezione spenta.
+  - *Budget*: TTFB, peso trasferito e numero di richieste, con tetti ricavati misurando la
+    produzione sana. È la misura che avrebbe fermato i 6,2 s della home a giugno e i 49 s
+    di `/manage/routes` oggi.
+  - Serve da Kevin: generare `VERCEL_AUTOMATION_BYPASS_SECRET` in Deployment Protection e
+    metterlo nei secret del repository.
+
 - **Regole di dominio come skill di progetto** — previste dalla spec del sistema di
   documentazione, non ancora scritte: `nextjs-16`, `i18n`, `db-migrations`,
   `media-storage`, `maps`.

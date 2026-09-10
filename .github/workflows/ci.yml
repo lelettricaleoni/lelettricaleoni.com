@@ -3,9 +3,9 @@ name: CI
 # Runs on every pull request, and on pushes to the long-lived branches so the
 # branch tip is always known-good. Nothing here needs secrets: the checks are
 # typecheck, lint and unit tests, all of which run without touching Supabase,
-# R2, MinIO or Vercel Flags. `npm run build` is deliberately absent — it needs
-# a live database, and CI gets it once the fake services from
-# docs/superpowers/specs/2026-09-09-test-suite-design.md exist.
+# R2 or Vercel Flags. `npm run build` is deliberately absent — it needs a live
+# database, and the browser workflow covers what a build would have proved by
+# testing the preview Vercel builds anyway.
 
 on:
   pull_request:
