@@ -1,6 +1,5 @@
 import { Suspense } from 'react'
 import { notFound } from 'next/navigation'
-import { eq, and } from 'drizzle-orm'
 import type { Metadata } from 'next'
 import { getDictionary, hasLocale } from '../dictionaries'
 import { Navbar } from '@/components/navbar'
@@ -9,11 +8,10 @@ import { RouteFilters } from '@/components/route-filters'
 import { RouteCardMediaAsync } from '@/components/route-card-media-async'
 import { SectionViewTracker } from '@/components/section-view-tracker'
 import { Skeleton } from '@/components/ui/skeleton'
-import { db, routes, routeTranslations } from '@/lib/db'
+import { listPublishedRoutes } from '@/lib/routes-data'
 import { shortRouteId } from '@/lib/utils'
 import { getFlags } from '@/lib/flags'
 
-export const revalidate = 3600
 
 export async function generateMetadata({
   params,
@@ -49,37 +47,18 @@ export default async function RoutesPage({
 
   const dict = await getDictionary(lang)
 
-  const publishedRoutes = await db
-    .select()
-    .from(routes)
-    .where(eq(routes.isPublished, true))
-
   // Only the fast DB-backed bits (text, stats, filters) block the page. Each card's media —
-  // cover photo/video and GPX map preview — depends on MinIO/R2 lookups that can be slow or
+  // cover photo/video and GPX map preview — depends on R2 lookups that can be slow or
   // unreachable, so it's resolved in its own Suspense boundary instead of blocking everything else.
-  const routesWithData = (
-    await Promise.all(
-      publishedRoutes.map(async (route) => {
-        const [translation] = await db
-          .select()
-          .from(routeTranslations)
-          .where(and(
-            eq(routeTranslations.routeId, route.id),
-            eq(routeTranslations.locale, lang as 'it' | 'en' | 'de')
-          ))
-
-        if (!translation) return null
-
-        const media = (
-          <Suspense fallback={<Skeleton className="h-48 w-full rounded-none" />}>
-            <RouteCardMediaAsync route={route} routeName={translation.name} />
-          </Suspense>
-        )
-
-        return { route, translation, media }
-      })
-    )
-  ).filter((i) => i !== null)
+  const routesWithData = (await listPublishedRoutes(lang)).map(({ route, translation }) => ({
+    route,
+    translation,
+    media: (
+      <Suspense fallback={<Skeleton className="h-48 w-full rounded-none" />}>
+        <RouteCardMediaAsync route={route} routeName={translation.name} />
+      </Suspense>
+    ),
+  }))
 
   const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://www.lelettricaleoni.com').replace(/\/$/, '')
 

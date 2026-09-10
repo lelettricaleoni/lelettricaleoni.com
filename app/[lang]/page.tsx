@@ -1,12 +1,11 @@
 import { notFound } from 'next/navigation'
 import { getDictionary, hasLocale } from './dictionaries'
-import { Navbar } from '@/components/navbar'
+import { SiteNavbar } from '@/components/site-navbar'
 import { HeroSection } from '@/components/hero-section'
 import { ServicesSection } from '@/components/services-section'
 import { PricingSection } from '@/components/pricing-section'
 import { MapSection } from '@/components/map-section'
 import { Footer } from '@/components/footer'
-import { getFlags } from '@/lib/flags'
 
 export default async function HomePage({
   params,
@@ -20,7 +19,7 @@ export default async function HomePage({
 
   return (
     <>
-      <Navbar lang={lang} dict={dict} showRoutes={(await getFlags()).routes} />
+      <SiteNavbar lang={lang} dict={dict} />
       <main>
         <HeroSection lang={lang} dict={dict} />
         <ServicesSection dict={dict} />

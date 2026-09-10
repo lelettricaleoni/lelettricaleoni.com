@@ -1,9 +1,8 @@
 import Image from 'next/image'
 import { notFound } from 'next/navigation'
 import { getDictionary, hasLocale } from '../dictionaries'
-import { Navbar } from '@/components/navbar'
+import { SiteNavbar } from '@/components/site-navbar'
 import { LoginForm } from './login-form'
-import { getFlags } from '@/lib/flags'
 
 export default async function LoginPage({
   params,
@@ -21,7 +20,7 @@ export default async function LoginPage({
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Navbar lang={lang} dict={dict} showRoutes={(await getFlags()).routes} />
+      <SiteNavbar lang={lang} dict={dict} />
 
       <div className="flex flex-1 pt-16">
         {/* Left panel */}

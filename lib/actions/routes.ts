@@ -1,5 +1,5 @@
 'use server'
-import { revalidatePath } from 'next/cache'
+import { revalidatePath, updateTag } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { z } from 'zod'
 import { eq, and, desc } from 'drizzle-orm'
@@ -10,6 +10,7 @@ import { deleteR2Object, getPresignedUploadUrl } from '@/lib/r2'
 import { getVideoPresignedUploadUrl, deleteR2Prefix, deriveHlsPrefix } from '@/lib/media'
 import { needsRetranslation } from '@/lib/translations'
 import { shortRouteId } from '@/lib/utils'
+import { ROUTES_TAG } from '@/lib/routes-data'
 
 const RouteSchema = z.object({
   nameIt:          z.string().min(2).max(200),
@@ -134,6 +135,7 @@ export async function createRouteAction(
     )
   }
 
+  updateTag(ROUTES_TAG)
   revalidatePath('/[lang]/routes', 'page')
   redirect('/manage/routes')
 }
@@ -235,6 +237,7 @@ export async function updateRouteAction(
       .where(and(eq(routeTranslations.routeId, id), eq(routeTranslations.locale, 'it')))
   }
 
+  updateTag(ROUTES_TAG)
   revalidatePath('/[lang]/routes', 'page')
   revalidatePath(`/[lang]/routes/${shortRouteId(id)}`, 'page')
   redirect('/manage/routes')
@@ -256,6 +259,7 @@ export async function deleteRouteAction(id: string) {
 
   await db.delete(routes).where(eq(routes.id, id))
 
+  updateTag(ROUTES_TAG)
   revalidatePath('/[lang]/routes', 'page')
 }
 
@@ -267,6 +271,7 @@ export async function togglePublishAction(id: string, isPublished: boolean) {
     .where(eq(routes.id, id))
     .returning()
 
+  updateTag(ROUTES_TAG)
   revalidatePath('/[lang]/routes', 'page')
   if (route) revalidatePath(`/[lang]/routes/${shortRouteId(route.id)}`, 'page')
 }
@@ -309,6 +314,7 @@ export async function savePhotosAction(
       photos.map((p) => ({ routeId, ...p }))
     )
   }
+  updateTag(ROUTES_TAG)
   const [route] = await db.select().from(routes).where(eq(routes.id, routeId))
   if (route) revalidatePath(`/[lang]/routes/${shortRouteId(route.id)}`, 'page')
 }

@@ -1,6 +1,5 @@
-import { eq } from 'drizzle-orm'
-import { db, routePhotos } from '@/lib/db'
 import type { Route } from '@/lib/db'
+import { listRouteMedia } from '@/lib/routes-data'
 import { resolveHlsUrl } from '@/lib/media'
 import { loadGpxPoints } from '@/lib/route-gpx'
 import { gpxPointsToSvgPath, gpxPointsToMercatorPath, gpxBboxCenter } from '@/lib/gpx-svg'
@@ -12,14 +11,10 @@ interface RouteCardMediaAsyncProps {
 }
 
 // Resolves cover media (skipping videos whose HLS isn't ready) and the GPX map preview —
-// the two checks that hit MinIO/R2 and can be slow or unreachable. Rendered inside a
+// the two checks that hit R2 and can be slow or unreachable. Rendered inside a
 // Suspense boundary per card so a slow/down media backend can't block the rest of the page.
 export async function RouteCardMediaAsync({ route, routeName }: RouteCardMediaAsyncProps) {
-  const mediaItems = await db
-    .select()
-    .from(routePhotos)
-    .where(eq(routePhotos.routeId, route.id))
-    .orderBy(routePhotos.displayOrder)
+  const mediaItems = await listRouteMedia(route.id)
 
   const readyMedia = await Promise.all(
     mediaItems.map(async (m) => {

@@ -41,6 +41,7 @@
 
 import { flag } from 'flags/next'
 import { vercelAdapter } from '@flags-sdk/vercel'
+import { connection } from 'next/server'
 
 export const FLAG_DEFAULTS = {
   /** The whole routes section: pages, navbar link, sitemap entries. */
@@ -228,6 +229,17 @@ const ALL_ON = (): Flags =>
  * is how this ended up making the home page 40x slower once already.
  */
 export async function getFlags(): Promise<Flags> {
+  // A kill switch is request-time data by definition: its whole point is to
+  // change without a deploy, so a build can never know its value. Saying so
+  // here, before anything else runs, is what lets the rest of a page prerender
+  // around this call instead of the call quietly dragging the page — and every
+  // page that renders a navbar — into on-demand rendering.
+  //
+  // It also keeps the build honest. Without it, prerendering would reach the
+  // `Date.now()` below and the `headers()` inside the flags SDK, and whether a
+  // page came out static depended on which render happened to touch them first.
+  await connection()
+
   // Overrides are read every time: they cost nothing and stay instant in dev
   const overrides =
     process.env.NODE_ENV === 'production'

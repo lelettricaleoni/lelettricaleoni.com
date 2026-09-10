@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import type { Metadata } from 'next'
-import { eq, and, sql } from 'drizzle-orm'
+import { eq } from 'drizzle-orm'
 import { ArrowLeft, Ruler, TrendingUp, Clock, Layers } from 'lucide-react'
 import { getDictionary, hasLocale } from '../../dictionaries'
 import { Navbar } from '@/components/navbar'
@@ -15,14 +15,14 @@ import { RouteGpxModal } from '@/components/route-gpx-modal'
 import { RouteShareModal } from '@/components/route-share-modal'
 import { RouteExternalLinks } from '@/components/route-external-links'
 import { RouteViewTracker } from '@/components/route-view-tracker'
-import { db, routes, routeTranslations, routePhotos } from '@/lib/db'
+import { db, routes } from '@/lib/db'
+import { getPublishedRoute, listRouteMedia } from '@/lib/routes-data'
 import { r2PublicUrl } from '@/lib/r2'
 import { resolveHlsUrl } from '@/lib/media'
 import { loadGpxPoints } from '@/lib/route-gpx'
 import { getFlags } from '@/lib/flags'
 import { shortRouteId } from '@/lib/utils'
 
-export const revalidate = 3600
 
 export async function generateStaticParams() {
   try {
@@ -42,18 +42,11 @@ export async function generateMetadata({
   // Without this the 404 would still carry the route's title and canonical
   if (!(await getFlags()).routes) return {}
 
-  const [route] = await db.select().from(routes).where(
-    and(sql`left(${routes.id}::text, 8) = ${id}`, eq(routes.isPublished, true))
-  )
-  if (!route) return {}
+  const found = await getPublishedRoute(id, lang)
+  if (!found) return {}
+  const { route, translation } = found
 
-  const [translation] = await db.select().from(routeTranslations).where(
-    and(eq(routeTranslations.routeId, route.id), eq(routeTranslations.locale, lang as 'it' | 'en' | 'de'))
-  )
-  const [coverPhoto] = await db.select().from(routePhotos)
-    .where(and(eq(routePhotos.routeId, route.id), eq(routePhotos.mediaType, 'photo')))
-    .orderBy(routePhotos.displayOrder)
-    .limit(1)
+  const coverPhoto = (await listRouteMedia(route.id)).find((m) => m.mediaType === 'photo')
 
   const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://www.lelettricaleoni.com').replace(/\/$/, '')
   const title = translation?.name ?? id
@@ -87,21 +80,17 @@ export default async function RouteDetailPage({
   const dict = await getDictionary(lang)
   const d = dict.routes
 
-  const [route] = await db.select().from(routes).where(
-    and(sql`left(${routes.id}::text, 8) = ${id}`, eq(routes.isPublished, true))
-  ).catch((err: unknown) => { console.error('[RouteDetailPage] DB error:', err); throw err })
-  if (!route) notFound()
+  const found = await getPublishedRoute(id, lang).catch((err: unknown) => {
+    console.error('[RouteDetailPage] DB error:', err)
+    throw err
+  })
+  if (!found) notFound()
+  const { route, translation } = found
 
-  const [translation] = await db.select().from(routeTranslations).where(
-    and(eq(routeTranslations.routeId, route.id), eq(routeTranslations.locale, lang as 'it' | 'en' | 'de'))
-  )
-
-  const rawMedia = await db.select().from(routePhotos)
-    .where(eq(routePhotos.routeId, route.id))
-    .orderBy(routePhotos.displayOrder)
+  const rawMedia = await listRouteMedia(route.id)
 
   // Drop what the flags disallow before the HLS check, so switching videos off
-  // also skips the MinIO round-trips they would have cost
+  // also skips the R2 round-trips they would have cost
   const permittedMedia = rawMedia.filter((m) =>
     m.mediaType === 'video' ? flags.routeVideos : flags.routePhotos
   )

@@ -1,6 +1,12 @@
 import type { NextConfig } from "next"
 
 const nextConfig: NextConfig = {
+  // Cache Components: nothing is cached unless it says so, and what is cached
+  // becomes the page's prerendered shell. It is what makes the flag reads a
+  // declared hole in an otherwise static page instead of a silent bailout that
+  // takes the whole route dynamic — which is what used to happen, differently
+  // on each build depending on which render touched `headers()` first.
+  cacheComponents: true,
   // The root layout lives under app/[lang]/, so there is no single top-level
   // layout to build a 404 from for URLs that match no route. This turns on
   // app/global-not-found.tsx, which renders its own document.
