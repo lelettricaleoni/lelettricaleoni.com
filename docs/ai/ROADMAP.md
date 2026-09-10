@@ -13,6 +13,12 @@ _(niente in lavorazione)_
 
 ## Prossimo
 
+- **Rendere obbligatori i controlli nuovi su `main`** — oggi la protezione richiede solo
+  `verify`. Vanno aggiunti `browser` e `codeql`, altrimenti restano suggerimenti. Da fare
+  dopo qualche giro, quando si sa che non danno falsi allarmi. Va deciso anche se
+  richiedere una revisione prima del merge, e se togliere l'esenzione amministratore: è
+  quella che mi ha lasciato pushare due volte dritto su `main`.
+
 - **Pannello per gli account amministratori** — oggi un admin si crea solo dalla console
   Supabase, mettendo a mano `app_metadata.role = 'admin'`: non è una cosa che Kevin possa
   fare da solo quando serve. Serve una sezione in `/manage` che inviti un utente, gli
