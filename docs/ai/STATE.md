@@ -4,7 +4,7 @@
 > componenti si ricava con `ls`; il motivo per cui i tile CARTO passano dal server no.
 > Se questo file supera le ~150 righe, qualcosa è entrato che non doveva.
 >
-> Ultimo allineamento: 2026-09-09.
+> Ultimo allineamento: 2026-09-10.
 
 ## Prodotto
 
@@ -37,43 +37,43 @@ pannello di amministrazione privato.
 
 Postgres su **Supabase** via Drizzle (`routes`, `route_translations`, `route_photos`).
 Autenticazione admin con Supabase Auth: serve `user_metadata.role = 'admin'`.
-Foto e GPX su **Cloudflare R2**; i video e i loro flussi HLS su **MinIO**.
+Foto, GPX, video e flussi HLS su **Cloudflare R2**.
 Traduzioni IT→EN/DE generate da **Azure Translator**: l'admin scrive solo l'italiano.
 
-Se R2 o MinIO rallentano, le card dei percorsi si degradano da sole — i media stanno in un
-confine Suspense separato apposta, per non bloccare il resto della pagina.
+Se R2 rallenta, le card dei percorsi si degradano da sole: i media stanno in un confine
+Suspense separato apposta, per non bloccare il resto della pagina.
 
 **Cache di lettura su Upstash Redis** (`lib/cache.ts`): URL dei manifesti HLS e punti GPX
 già analizzati, che non cambiano mai una volta prodotti. Senza credenziali è un no-op, e
 ogni lettura fallisce aperta entro 250 ms — nessuna richiesta può restare appesa al servizio.
+Lo stesso Upstash tiene lo stato di transcodifica che il worker pubblica.
 
-## Infrastruttura MinIO
+## Infrastruttura dei media
 
-Dal 2026-09-09 MinIO **non è più su Kubernetes**. Gira in Docker Compose sulla VM
-`clustrenode1` (Oracle Cloud, ARM64, Milano), insieme al worker di transcodifica e a Nginx
-Proxy Manager, che fa da ingresso pubblico. Il cluster k3s è stato smontato del tutto:
-niente più Longhorn, etcd, Traefik né tunnel Cloudflare.
+Dal 2026-09-10 **tutti i media stanno su Cloudflare R2**: foto, GPX, video e flussi HLS,
+un bucket per ambiente (`lelettrica-trails`, `dev-lelettrica-trails`), serviti da
+`trails-bucket.lelettricaleoni.com`. MinIO non ospita più niente di vivo.
+
+Le chiavi non sono cambiate nel trasloco, quindi il database non è stato toccato: sorgenti
+in `private/route-videos/`, flussi in `public/route-videos/`. **Su R2 quel `private/` non
+protegge nulla** — un dominio pubblico espone tutto il bucket — ma il sorgente vive solo i
+minuti che il worker impiega a cancellarlo.
+
+**Il worker** (`lelettricaleoni/videoStream-bucketWorker`) gira in Docker Compose sulla VM
+`clustrenode1` (Oracle Cloud, ARM64, 2 CPU), in `~/docker/worker`, accanto a un Redis con
+append-only per la coda BullMQ. **Nessuna porta aperta**: parla solo in uscita.
 
 | | |
 |---|---|
-| Compose | `~/docker/minio` (MinIO + worker), `~/docker/npm` (proxy), rete condivisa `proxy-net` |
-| Domini | `cluster-bucket` (API) e `cluster-bucket-console`, record A su `80.225.95.153`, **DNS only** |
-| TLS | Let's Encrypt gestito da NPM, non più terminato da Cloudflare |
-| Porte MinIO | pubblicate solo su `127.0.0.1`: l'ingresso passa da NPM |
-| Bucket | `lelettricaleoni.com` (quota 100 GiB), `dev.lelettricaleoni.com` (10 GiB) |
-| Accesso anonimo | in sola lettura sul **solo prefisso `public/`**; `private/` resta chiuso |
-| Notifiche | `notify_webhook:videoworker` → `http://video-worker:8080`, evento `put` su `private/route-videos/` |
+| Come trova il lavoro | elenca R2: un sorgente senza manifesto **è** il lavoro da fare |
+| Coda | BullMQ, job id = l'oggetto, tre tentativi con backoff |
+| Stato | scritto su Upstash, chiavi `videojob:v1:*`, lette da `lib/video-jobs.ts` |
+| Altri lavori | `jobs/__init__.py` è il registro: un modulo, una riga in `HANDLERS`, e per i cron una in `SCHEDULES` |
 
-Non essendoci più il proxy Cloudflare davanti all'endpoint S3, **è caduto il limite di
-100 MB per richiesta** che tagliava i caricamenti dei video più grandi.
-
-**I 17 MB su quel volume sono l'unica copia dei video del sito**: il worker cancella il
-sorgente dopo la transcodifica, non ci sono backup, e la VM è dichiarata effimera. È la
-voce più urgente della roadmap.
-
-Il worker esegue ora l'immagine con ABR: produce `master.m3u8` più `1080p/720p/480p`.
-Fino al 2026-09-09 girava una versione più vecchia che produceva una sola qualità piatta,
-ed è per questo che `resolveHlsUrl` accetta entrambi i formati.
+La coda è **ricostruibile, non durevole**: non può esserlo più dei dati che serve, e la
+verità sta nello storage — per questo il webhook è sparito invece di essere ripuntato.
+Il token Upstash del worker può **solo `SET` su `videojob:*`** e non può leggere: rubato
+dalla VM, non raggiunge le cache HLS e GPX che stanno lì accanto.
 
 ## Decisioni vincolanti, e perché
 
@@ -124,22 +124,22 @@ export/import`, `mc event add` e `mc anonymous set`. Le secret key degli utenti 
 rileggibili, quindi ricrearli a mano è impossibile.
 
 **`vercel env pull .env.local` distrugge le chiavi locali.** Il progetto Vercel contiene
-solo `VERCEL_OIDC_TOKEN` e `FLAGS_SECRET`; R2, MinIO, Supabase e Azure vivono solo in
-`.env.local`. Scaricare fuori dal progetto e copiare la singola riga che serve.
+solo `VERCEL_OIDC_TOKEN` e `FLAGS_SECRET`; R2, Supabase e Azure vivono solo in `.env.local`.
+Scaricare fuori dal progetto e copiare la riga che serve. Le variabili marcate *Secret* non
+si scaricano affatto: escono come `[SENSITIVE]`.
 
-**La CLI Vercel installata (48.9.0) non ha il comando `flags`** e cade silenziosamente su
-`deploy`. Usare `npx vercel@latest`.
+**Usare `npx vercel@latest`**: la CLI installata localmente è vecchia, non ha il comando
+`flags` e cade in silenzio su `deploy`.
 
 ## Debito noto
 
-- **`README.md` è disallineato**: descrive `/percorsi`, `/manage/percorsi`,
-  `/api/percorsi/[slug]/gpx`, mentre il codice usa `/routes`. Non cita Cesium, MapLibre,
-  HLS né MinIO.
+- **`README.md` è disallineato**: descrive `/percorsi` e `/api/percorsi/[slug]/gpx`, mentre
+  il codice usa `/routes`; non cita Cesium, MapLibre né HLS.
 - **`revalidate = 3600` è codice morto** (vedi sopra). È la voce con l'impatto maggiore su
   prestazioni e costi fra quelle aperte.
 - **Nessun finto servizio**, quindi la CI non può eseguire build né test end-to-end.
-- Tre avvisi `react-hooks/set-state-in-effect` su codice funzionante: il pattern `mounted`
-  in `mobile-menu.tsx` e `route-card-media.tsx`, e la chiusura del menù al cambio pagina.
+- Tre avvisi `react-hooks/set-state-in-effect`: il pattern `mounted` in `mobile-menu.tsx` e
+  `route-card-media.tsx`, e la chiusura del menù al cambio pagina.
 
 ## Decisioni passate ancora rilevanti
 
