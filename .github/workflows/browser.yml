@@ -112,7 +112,7 @@ jobs:
           echo "::error::Il preview non è diventato raggiungibile in venti minuti."
           exit 1
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         if: steps.secret.outputs.present == 'true'
         with:
           node-version: 22
