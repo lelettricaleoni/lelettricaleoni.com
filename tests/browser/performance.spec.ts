@@ -95,6 +95,7 @@ async function measure(browser: Browser, path: string): Promise<Sample> {
   const origin = new URL(baseURL ?? 'http://localhost:3000').origin
   const sizes: Promise<number>[] = []
 
+  let unfinished = 0
   let inFlight = 0
   let lastActivity = Date.now()
   const settle = () => { inFlight = Math.max(inFlight - 1, 0); lastActivity = Date.now() }
@@ -108,14 +109,22 @@ async function measure(browser: Browser, path: string): Promise<Sample> {
 
   page.on('response', (response) => {
     if (!response.url().startsWith(origin)) return
+    // sizes() resolves only once the body has finished, and a response that
+    // streams for as long as the page is open never does: on the preview that
+    // held every test to its three-minute timeout. Past the cap it counts as a
+    // request of unknown weight, and is reported.
     sizes.push(
-      response
-        .request()
-        .sizes()
-        .then((s) => Math.max(s.responseBodySize + s.responseHeadersSize, 0))
-        // A request the browser abandons has no sizes to report; it still
-        // counts as a request, which is why the entry stays in the array.
-        .catch(() => 0),
+      new Promise<number>((resolve) => {
+        const cap = setTimeout(() => { unfinished++; resolve(0) }, 2_000)
+        response
+          .request()
+          .sizes()
+          .then((s) => Math.max(s.responseBodySize + s.responseHeadersSize, 0))
+          // A request the browser abandons has no sizes to report; it still
+          // counts as a request, which is why the entry stays in the array.
+          .catch(() => 0)
+          .then((bytes) => { clearTimeout(cap); resolve(bytes) })
+      }),
     )
   })
 
@@ -140,6 +149,7 @@ async function measure(browser: Browser, path: string): Promise<Sample> {
   // function took to produce that byte.
   const timing = response!.request().timing()
   const bytes = (await Promise.all(sizes)).reduce((a, b) => a + b, 0)
+  if (unfinished) console.log(`${path}: ${unfinished} risposte non concluse, peso non contato`)
   await context.close()
 
   return { ttfb: Math.round(timing.responseStart - timing.requestStart), kb: Math.round(bytes / 1024), req: sizes.length }
