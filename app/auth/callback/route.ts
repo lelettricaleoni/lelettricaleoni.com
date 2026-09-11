@@ -16,7 +16,14 @@ export async function GET(request: NextRequest) {
   const code = searchParams.get('code')
   const tokenHash = searchParams.get('token_hash')
   const type = searchParams.get('type')
-  const next = searchParams.get('next') ?? '/manage/routes'
+  // `next` is glued to the origin, so it must be a path on this site: an
+  // "@elsewhere.com" would make the origin read as credentials and send the
+  // freshly signed-in admin to another host, and "//elsewhere.com" would do
+  // the same through a protocol-relative URL.
+  const requested = searchParams.get('next')
+  const next = requested?.startsWith('/') && !requested.startsWith('//') && !requested.startsWith('/\\')
+    ? requested
+    : '/manage/routes'
 
   const cookieStore = await cookies()
   const supabase = createServerClient(
