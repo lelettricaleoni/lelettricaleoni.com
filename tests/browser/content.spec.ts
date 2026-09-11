@@ -64,17 +64,25 @@ test('il dettaglio di un percorso mostra titolo e statistiche', async ({ page })
 test('la privacy ha il suo testo, non un guscio', async ({ page }) => {
   await visit(page, '/it/privacy')
   // Questa pagina non usa <main>, quindi si guarda il corpo meno le parti
-  // comuni: quello che resta è la policy.
-  const text = await page.locator('body').innerText()
-  expect(text.length, 'pagina privacy troppo corta per contenere una policy').toBeGreaterThan(1000)
+  // comuni: quello che resta è la policy. Con expect.poll e non con una
+  // lettura sola: il testo arriva in streaming dopo il titolo, e leggerlo
+  // subito misurava il guscio.
   await expect(page.locator('h1')).not.toBeEmpty()
+  await expect
+    .poll(async () => (await page.locator('body').innerText()).length, {
+      message: 'pagina privacy troppo corta per contenere una policy',
+    })
+    .toBeGreaterThan(1000)
 })
 
 test('il tedesco rende in tedesco', async ({ page }) => {
   await visit(page, '/de/routes')
   await expect(page.locator('html')).toHaveAttribute('lang', 'de')
 
-  // The dictionaries are what could silently fall back to Italian.
+  // The dictionaries are what could silently fall back to Italian. Wait for
+  // the page to have content first: a negative check on a page that has not
+  // arrived yet passes without looking at anything.
+  await expect(page.locator('main h1').first()).not.toBeEmpty()
   const text = await page.locator('main').innerText()
   expect(text).not.toContain('Percorsi consigliati')
 })
