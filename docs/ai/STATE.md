@@ -4,7 +4,7 @@
 > componenti si ricava con `ls`; il motivo per cui i tile CARTO passano dal server no.
 > Se questo file supera le ~150 righe, qualcosa è entrato che non doveva.
 >
-> Ultimo allineamento: 2026-09-10.
+> Ultimo allineamento: 2026-09-11.
 
 ## Prodotto
 
@@ -21,6 +21,7 @@ pannello di amministrazione privato.
 | Progetto Vercel | `lelettricaleoni`, team `lelettrica` |
 | Branch `staging` | esiste sul remoto, protetto come `main` |
 | Merge | solo via PR: il controllo `verify` deve passare (amministratori esenti) |
+| CI | `verify` (lint, tipi, unit), `browser` (Playwright contro il preview), CodeQL in default setup, suite `extended` |
 
 ## Superfici
 
@@ -35,7 +36,9 @@ pannello di amministrazione privato.
 
 ## Dati e servizi
 
-Postgres su **Supabase** via Drizzle (`routes`, `route_translations`, `route_photos`).
+Postgres su **Supabase** via Drizzle (`routes`, `route_translations`, `route_photos`),
+**sempre dal pooler in transaction mode** (porta 6543): `lib/db/pooler.ts` corregge la porta
+anche se la variabile su Vercel dice 5432. Vedi le trappole.
 Autenticazione admin con Supabase Auth: `getAdminUser()` richiede `app_metadata.role =
 'admin'` — **non** `user_metadata`, che è modificabile dall'utente stesso.
 Foto, GPX, video e flussi HLS su **Cloudflare R2**.
@@ -50,18 +53,16 @@ aperta entro 250 ms. Lo stesso Upstash tiene lo stato di transcodifica del worke
 
 ## Infrastruttura dei media
 
-Dal 2026-09-10 **tutti i media stanno su Cloudflare R2**: un bucket per ambiente
-(`lelettrica-trails`, `dev-lelettrica-trails`), serviti da `trails-bucket.lelettricaleoni.com`.
-**MinIO è stato eliminato** con Nginx Proxy Manager, i domini `cluster-bucket` e i relativi
-certificati: sulla VM restano il worker e il suo Redis, senza porte aperte.
-
-Le chiavi non sono cambiate nel trasloco, quindi il database non è stato toccato: sorgenti
-in `private/route-videos/`, flussi in `public/route-videos/`. **Su R2 quel `private/` non
-protegge nulla** — un dominio pubblico espone tutto il bucket — ma il sorgente vive solo i
-minuti che il worker impiega a cancellarlo.
+**Tutti i media stanno su Cloudflare R2**, un bucket per ambiente (`lelettrica-trails`,
+`dev-lelettrica-trails`), serviti da `trails-bucket.lelettricaleoni.com`. MinIO non esiste
+più. Sorgenti in `private/route-videos/`, flussi in `public/route-videos/`: **su R2 quel
+`private/` non protegge nulla** — il dominio pubblico espone tutto il bucket — ma il
+sorgente vive solo i minuti che il worker impiega a cancellarlo.
 
 **Il worker** (`lelettricaleoni/videoStream-bucketWorker`) sta in `~/docker/worker` sulla VM
-`clustrenode1` (Oracle Cloud, ARM64, 2 CPU), con un Redis append-only per la coda BullMQ.
+`clustrenode1` (Oracle Cloud, ARM64, 2 CPU), con un Redis append-only per la coda BullMQ,
+nessuna porta aperta. Immagine pinnata per digest in `docker-compose.yml`: dopo una build va
+aggiornato a mano. Quattro rendition HLS (1080/720/480/360p), segmenti da 4 s allineati.
 
 | | |
 |---|---|
@@ -71,18 +72,18 @@ minuti che il worker impiega a cancellarlo.
 | Altri lavori | registro in `jobs/__init__.py`: un modulo, una riga in `HANDLERS`, per i cron una in `SCHEDULES` |
 
 La coda è **ricostruibile, non durevole**: non può esserlo più dei dati che serve, e la
-verità sta nello storage — per questo il webhook di MinIO è sparito invece di essere
-ripuntato altrove.
+verità sta nello storage.
 Il token Upstash del worker può **solo `SET` su `videojob:*`** e non può leggere: rubato
 dalla VM, non raggiunge le cache HLS e GPX che stanno lì accanto.
 
 ## Decisioni vincolanti, e perché
 
 **Tutto è renderizzato su richiesta.** Il layout radice legge `x-locale` con `await
-headers()`, e questo rende dinamico l'intero albero. Conseguenza da conoscere:
-`export const revalidate = 3600` sulle pagine percorsi **non ha mai avuto effetto**, quindi
-ogni visita interroga Supabase e scarica il GPX da R2. Verificato leggendo l'output di
-`next build`: tutte le rotte sono marcate `ƒ`.
+headers()`, e questo rende dinamico l'intero albero: ogni visita interroga Supabase e
+scarica il GPX da R2. `revalidate` sulle pagine percorsi **non ha mai avuto effetto** — ed
+era peggio che inutile: se il database non rispondeva durante la build, `generateStaticParams`
+tornava vuoto, Next trattava il dettaglio come ISR e `headers()` lanciava, **500 su ogni
+percorso** (produzione, 2026-09-11). Tolti dal dettaglio; resta `revalidate` sulla lista.
 
 **La traccia GPX si ancora al terreno, non alla propria quota.** Le quote GPX sono
 ortometriche, quelle di Cesium ellissoidiche: misurato su un percorso reale, scarto mediano
@@ -115,37 +116,34 @@ codice HTTP per verificare se una sezione è accesa: guarda il contenuto.**
 in sviluppo. Creare i cinque flag ha spento la sezione percorsi in produzione senza che
 nulla segnalasse errore. Dopo aver creato un flag, verificare sempre i valori per ambiente.
 
-**`pkill -f "next dev"` non funziona su Windows.** Lascia vivo il server figlio, che
-continua a occupare la porta 3000; il nuovo server finisce sulla 3001 e le misure parlano
-con quello vecchio. Usare PowerShell sui PID.
+**Produzione e preview condividono il database, e il pooler.** In session mode sono quindici
+posti, uno per istanza collegata: il 2026-09-11 sei PR in test insieme li hanno presi tutti
+e la lista percorsi in produzione è andata in errore due volte (`EMAXCONNSESSION`). Ora si
+passa dalla transaction mode con `idle_timeout`. Se ricapita: `pg_terminate_backend` sulle
+sessioni `Supavisor` inattive le libera subito, i client si riconnettono da soli.
 
-**`mc mirror` copia solo gli oggetti.** Utenti, policy, credenziali, notifiche e permessi
-anonimi dei bucket non vengono replicati: per un trasloco servono `mc admin cluster iam
-export/import`, `mc event add` e `mc anonymous set`. Le secret key degli utenti non sono
-rileggibili, quindi ricrearli a mano è impossibile.
-
-**`vercel env pull .env.local` distrugge le chiavi locali.** Il progetto Vercel contiene
-solo `VERCEL_OIDC_TOKEN` e `FLAGS_SECRET`; R2, Supabase e Azure vivono solo in `.env.local`.
-Scaricare fuori dal progetto e copiare la riga che serve. Le variabili marcate *Secret* non
-si scaricano affatto: escono come `[SENSITIVE]`.
-
-**Usare `npx vercel@latest`**: la CLI installata localmente è vecchia, non ha il comando
-`flags` e cade in silenzio su `deploy`.
+**`vercel env pull .env.local` distrugge le chiavi locali**, che puntano al database di
+sviluppo mentre Vercel punta alla produzione. Scaricare fuori dal progetto. Quasi tutte le
+variabili su Vercel sono *Secret*: escono come `[SENSITIVE]`, non si rileggono. E sempre
+`npx vercel@latest`: la CLI locale è vecchia, senza `flags`, e cade in silenzio su `deploy`.
 
 ## Debito noto
 
 - **`README.md` è disallineato**: descrive `/percorsi` e `/api/percorsi/[slug]/gpx`, mentre
   il codice usa `/routes`; non cita Cesium, MapLibre né HLS.
-- **`revalidate = 3600` è codice morto** (vedi sopra). È la voce con l'impatto maggiore su
-  prestazioni e costi fra quelle aperte.
-- **Nessun finto servizio**, quindi la CI non può eseguire build né test end-to-end.
+- **`revalidate = 3600` sulla lista è codice morto** (vedi sopra). Rendere reale la cache è
+  la voce con l'impatto maggiore su prestazioni e costi: WIP su `feat/routes-caching`.
+- **`maplibre-gl` è una dipendenza inutilizzata**: la mappa è passata a Cesium, nessun file
+  la importa più. Da togliere.
+- **Le PR npm di Dependabot hanno il lockfile rotto**: il suo npm 11 toglie l'`esbuild`
+  opzionale di vite, che `npm ci` con npm 10 (Node 22, in CI) poi rifiuta.
 - Tre avvisi `react-hooks/set-state-in-effect`: il pattern `mounted` in `mobile-menu.tsx` e
   `route-card-media.tsx`, e la chiusura del menù al cambio pagina.
 
 ## Decisioni passate ancora rilevanti
 
 - `docs/superpowers/specs/2026-09-09-ai-docs-system-design.md` — questo sistema
-- `docs/superpowers/specs/2026-09-09-test-suite-design.md` — suite di test, approvata, tre
-  fasi, nessuna implementata
+- `docs/superpowers/specs/2026-09-10-tests-against-preview-design.md` — test browser contro
+  il preview: geometria, contenuto, budget di prestazione
 - `docs/superpowers/specs/2026-05-29-percorsi-admin-design.md` — sezione percorsi e admin
 - `docs/superpowers/plans/2026-05-29-route-detail-redesign.md` — flyover 3D e bento grid

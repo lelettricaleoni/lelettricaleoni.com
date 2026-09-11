@@ -17,32 +17,22 @@ _(niente in lavorazione)_
   `verify`. Vanno aggiunti `browser` e `codeql`, altrimenti restano suggerimenti. Da fare
   dopo qualche giro, quando si sa che non danno falsi allarmi. Va deciso anche se
   richiedere una revisione prima del merge, e se togliere l'esenzione amministratore: è
-  quella che mi ha lasciato pushare due volte dritto su `main`.
+  quella che mi ha lasciato pushare due volte dritto su `main`. Il 2026-09-11 `browser` ha
+  preso un guasto della produzione prima di chiunque: è il candidato più forte.
 
-- **Pannello per gli account amministratori** — oggi un admin si crea solo dalla console
-  Supabase, mettendo a mano `app_metadata.role = 'admin'`: non è una cosa che Kevin possa
-  fare da solo quando serve. Serve una sezione in `/manage` che inviti un utente, gli
-  assegni il ruolo e lo revochi. Va costruita sull'API admin di Supabase, quindi con la
-  service role key, che non deve mai raggiungere il client — e va decisa la regola che
-  impedisce a un admin di togliere il ruolo all'ultimo rimasto.
+- **Preview sul database di sviluppo** — oggi le preview leggono e scrivono il database di
+  produzione, e i test browser di più PR insieme sono carico su di esso: il 2026-09-11
+  hanno esaurito il pooler e fatto cadere la lista percorsi in produzione. Serve che il
+  database di sviluppo abbia percorsi pubblicati, altrimenti i test di contenuto non hanno
+  cosa guardare.
 
-- **Aggiornare il player video** — siamo su `@videojs/react` e `@videojs/hlsjs-video`
-  `10.0.0-rc.1`; il 2026-09-09 è uscita la **rc.2**, che è fuori dalla beta ma ancora una
-  release candidate: la 10.0.0 stabile non è pubblicata. Da aggiornare alla rc.2 subito e
-  alla stabile appena esce. Nello stesso giro anche `hls.js`, fermo a `^1.6.16` con la
-  1.7.2 disponibile.
+- **Lockfile delle PR npm di Dependabot** — escono tutte rotte (`npm ci` rifiuta l'`esbuild`
+  opzionale di vite, tolto dal suo npm 11). Strade: CI su Node 24/npm 11, o un passo che
+  rigeneri il lockfile sul branch di Dependabot. Finché non si risolve, ogni suo
+  aggiornamento npm va rifatto a mano come in #63.
 
-- **Card dei percorsi allineate fra loro** — nella lista le card si sfalsano: il titolo ha
-  `line-clamp-2` ma se sta su una riga la card si accorcia, e i tag delle bici vanno a capo
-  quando sono molti. Kevin propone di riservare sempre due righe al titolo; meglio ancora
-  **`grid-rows-subgrid`**, che fa ereditare alle card le righe della griglia in
-  `route-filters.tsx:117` — titolo, tag e statistiche si allineano da soli e senza spazio
-  sprecato quando i titoli sono corti. I tag su **una riga sola con scroll orizzontale
-  manuale** e una sfumatura sul bordo: l'auto-scroll obbliga ad aspettare che il tag
-  ripassi, e andrebbe comunque disattivato con `prefers-reduced-motion`.
-
-- **Il logo nella 404 non deve essere premibile** — `app/not-found.tsx:12` lo avvolge in un
-  `<Link href="/it">`, mentre sotto ci sono già i pulsanti per tornare indietro.
+- **Togliere `maplibre-gl`** — nessun file lo importa più dal passaggio a Cesium, e la
+  versione 5 aveva una vulnerabilità critica: una dipendenza morta porta rischi veri.
 
 - **Rifare la barra dei filtri della lista percorsi** — oggi è una fila di pillole per
   difficoltà e una per tipo di bici, che cresce male: con cinque tipi di bici la seconda
@@ -55,22 +45,11 @@ _(niente in lavorazione)_
   della mappa semplificata esiste già (`gpxPointsToMercatorPath` in `lib/gpx-svg.ts`), va
   reso alternabile invece che di ripiego.
 
-- **Un gradino più basso per chi ha poca linea** — la scala adattiva si ferma al 480p, che
-  pretende ~1 Mbps stabile: sotto quella soglia hls.js non ha dove scendere e il video si
-  pianta invece di degradarsi. I clienti guardano questi video sui sentieri sopra Dro, dove
-  la linea è scarsa. Serve un **360p attorno ai 500-600k** (+~8% di spazio), e i player
-  vanno fatti partire dal gradino più basso: oggi `startLevel: -1` in `route-card-media.tsx`
-  e `route-gallery.tsx` lascia stimare la banda a hls.js, che parte ottimista e fa vedere la
-  rotella prima di scendere.
-
-- **Qualità costante al posto del bitrate fisso nel worker** — misurato il 2026-09-10 su un
-  video reale di 93 s: **72 MiB, cioè 46 MiB al minuto** con le tre rendition (1080p 55%,
-  720p 29%, 480p 16%). Il worker usa `-b:v` fisso, quindi spende lo stesso su un'inquadratura
-  ferma e su una discesa. Con `-crf` più un tetto `-maxrate` le tre qualità **restano tutte**
-  e il video parte prima su connessioni lente: meno byte a parità di resa, non meno qualità.
-  Kevin vuole tenere le tre rendition e l'esperienza migliore possibile — questa voce non le
-  toglie, ma va misurata sul suo materiale prima di adottarla.
-  Per dimensionare: 10 GB gratuiti R2 = ~222 minuti; 100 GB costerebbero $1,35 al mese.
+- **Far partire i player dal gradino più basso** — il worker produce ora anche un 360p
+  (~550k), con segmenti da 4 s allineati fra le rendition. Resta il lato player: `startLevel:
+  -1` in `route-card-media.tsx` e `route-gallery.tsx` lascia stimare la banda a hls.js, che
+  parte ottimista e fa vedere la rotella prima di scendere. Vale solo per i video
+  ritrascodificati: quelli vecchi non hanno il 360p.
 
 - **Video fantasma a storage irraggiungibile** — con lo storage giù il video compare lo
   stesso con la scritta "Video in elaborazione", invece di sparire. Sospetto che la cache
@@ -83,18 +62,6 @@ _(niente in lavorazione)_
   una riga in `HANDLERS`, e per i cron una riga in `SCHEDULES` con lo scheduler di BullMQ.
   Nota: **il piano Vercel è hobby**, quindi i cron di Vercel (due per progetto, uno al
   giorno) non sono un'alternativa per lavori più frequenti.
-- **Test contro il deploy di preview** — approvato il 2026-09-10, tre fasi.
-  → `docs/superpowers/specs/2026-09-10-tests-against-preview-design.md`
-  - *Geometria*: nessun elemento sborda dal proprio contenitore, a tre larghezze. Avrebbe
-    preso entrambe le versioni rotte delle card di oggi.
-  - *Contenuto*: ogni pagina mostra ciò che deve, guardando il **contenuto** e non il codice
-    HTTP, che qui è 200 anche a sezione spenta.
-  - *Budget*: TTFB, peso trasferito e numero di richieste, con tetti ricavati misurando la
-    produzione sana. È la misura che avrebbe fermato i 6,2 s della home a giugno e i 49 s
-    di `/manage/routes` oggi.
-  - Serve da Kevin: generare `VERCEL_AUTOMATION_BYPASS_SECRET` in Deployment Protection e
-    metterlo nei secret del repository.
-
 - **Regole di dominio come skill di progetto** — previste dalla spec del sistema di
   documentazione, non ancora scritte: `nextjs-16`, `i18n`, `db-migrations`,
   `media-storage`, `maps`.
@@ -103,7 +70,9 @@ _(niente in lavorazione)_
 
 - **Rendere reale la cache delle pagine percorsi.** Oggi `revalidate = 3600` non ha effetto
   perché il layout radice legge `headers()`. Recuperarla significa ripensare come arriva la
-  lingua, ed è la voce con il maggior guadagno su prestazioni e costi.
+  lingua, ed è la voce con il maggior guadagno su prestazioni e costi. Un tentativo è sul
+  branch `feat/routes-caching` (lingua dall'URL invece che da `headers()`): fermo a metà,
+  **senza misure** — prima di riprenderlo, misurare.
 - **Riscrivere `README.md`**, che descrive rotte e stack non più esistenti. È il documento
   per lettori umani e va trattato come tale, non fuso con `STATE.md`.
 - **Sistemare i tre `set-state-in-effect`** in `mobile-menu.tsx` e `route-card-media.tsx`,
@@ -146,6 +115,10 @@ _(niente in lavorazione)_
   Cloudflare Stream) si pagano a minuto e portano fuori dal proprio storage; gli open
   source sono progetti personali, non prodotti; Tdarr e FileFlows lavorano su cartelle di
   libreria, non su eventi S3. Non mancava il transcoder, mancava la coda.
+- **CRF al posto del bitrate nel worker** — misurato il 2026-09-11 su un video reale: a
+  parità di VMAF solo −5%, distribuito su tutte le rendition, quindi nulla per chi ha poca
+  linea. E renderebbe la banda dichiarata di ogni gradino una proprietà del girato, che è
+  il numero su cui hls.js decide se scendere. Dettagli nella PR #5 del worker.
 - **404 vero al posto del 200 per una sezione spenta** — si otterrebbe spostando il
   controllo in `proxy.ts`, al prezzo di perdere la pagina "Pagina non trovata" curata. Il
   `noindex` iniettato da Next copre già il lato SEO.

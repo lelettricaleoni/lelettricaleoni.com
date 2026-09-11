@@ -4,7 +4,7 @@
 
 ## Progetto
 Sito di "Lelettrica di Leoni Gabriele" — noleggio e-bike (Flyer) + riparazioni, Dro (TN).
-Stack: Next.js 16.2.4 · React 19 · Tailwind v4 · shadcn/ui · TypeScript · App Router.
+Stack: Next.js 16.3.4 · React 19 · Tailwind v4 · shadcn/ui · TypeScript · App Router.
 i18n nativo (IT/EN/DE): `proxy.ts` + `app/[lang]/` + `messages/{it,en,de}.json`.
 
 Lo stato corrente, le decisioni vincolanti e le trappole stanno in `docs/ai/STATE.md`,
