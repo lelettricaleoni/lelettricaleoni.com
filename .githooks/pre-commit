@@ -1,0 +1,21 @@
+#!/bin/sh
+# Rifiuta i commit diretti su main e staging.
+#
+# La protezione su GitHub esenta gli amministratori, quindi non ferma né Kevin
+# né un agente che opera con le sue credenziali. Il 2026-09-10 sono finiti tre
+# commit su main perché ero convinto di essere sul branch di una PR e non ho
+# guardato: nessun danno, ma nessun controllo li ha fermati.
+#
+# Per un caso genuinamente eccezionale: `git commit --no-verify`.
+
+branch=$(git rev-parse --abbrev-ref HEAD)
+
+case "$branch" in
+  main|staging)
+    echo "Commit rifiutato: '$branch' è protetto."
+    echo
+    echo "  git switch -c <nome-branch>   e riprova, poi apri una PR."
+    echo "  git commit --no-verify        solo per un'emergenza vera."
+    exit 1
+    ;;
+esac

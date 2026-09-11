@@ -1,0 +1,43 @@
+version: 2
+
+# Dependabot già chiude le vulnerabilità da sé. Questo file gli chiede anche
+# gli aggiornamenti ordinari, che è ciò che stamattina è stato fatto a mano su
+# 36 pacchetti — e che senza qualcuno che lo ricordi non si fa più.
+#
+# Le patch e le minor arrivano raggruppate: separarle produrrebbe una decina di
+# pull request a settimana, che è il modo più rapido perché nessuno le guardi
+# più. Le major restano singole, perché ognuna va letta.
+
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Europe/Rome
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: deps
+    groups:
+      # Una PR sola per tutto ciò che non cambia comportamento.
+      patch-e-minor:
+        update-types: [minor, patch]
+    ignore:
+      # Next si aggiorna leggendo prima le note di rilascio: il progetto è su
+      # una versione con cambiamenti sostanziali rispetto a quanto è noto, e
+      # AGENTS.md chiede di consultare node_modules/next/dist/docs/ prima di
+      # toccare il codice.
+      - dependency-name: next
+        update-types: [version-update:semver-major]
+      - dependency-name: react
+        update-types: [version-update:semver-major]
+      - dependency-name: react-dom
+        update-types: [version-update:semver-major]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    commit-message:
+      prefix: ci

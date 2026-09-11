@@ -23,6 +23,14 @@ jobs:
   browser:
     name: browser
     runs-on: ubuntu-latest
+
+    # Anything not listed becomes `none`, so this is not decoration: without
+    # `deployments` the wait below cannot read the preview URL, and gh exits
+    # non-zero into a `bash -e` shell, which ends the whole step mid-loop.
+    permissions:
+      contents: read
+      deployments: read
+
     steps:
       - uses: actions/checkout@v4
 
@@ -56,22 +64,34 @@ jobs:
           SHA: ${{ github.event.pull_request.head.sha }}
           REPO: ${{ github.repository }}
         run: |
+          # `|| true` ovunque: una chiamata che fallisce è un tentativo
+          # perso, non una ragione per terminare il passo — cosa che `bash -e`
+          # farebbe altrimenti, come è successo al settimo giro.
           for attempt in $(seq 1 60); do
-            id=$(gh api "repos/$REPO/deployments?sha=$SHA&environment=Preview" --jq '.[0].id // empty' 2>/dev/null)
+            id=$(gh api "repos/$REPO/deployments?sha=$SHA&environment=Preview" --jq '.[0].id // empty' 2>/dev/null || true)
 
             if [ -n "$id" ]; then
-              state=$(gh api "repos/$REPO/deployments/$id/statuses" --jq '.[0].state // empty' 2>/dev/null)
-              target=$(gh api "repos/$REPO/deployments/$id/statuses" --jq '.[0].environment_url // .[0].target_url // empty' 2>/dev/null)
+              state=$(gh api "repos/$REPO/deployments/$id/statuses" --jq '.[0].state // empty' 2>/dev/null || true)
+              target=$(gh api "repos/$REPO/deployments/$id/statuses" --jq '.[0].environment_url // .[0].target_url // empty' 2>/dev/null || true)
 
               if [ "$state" = "success" ] && [ -n "$target" ]; then
-                code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 \
+                # -L perché il preview reindirizza al proprio URL canonico, e
+                # proxy.ts reindirizza per conto suo. Pretendere un 200 secco
+                # legge un deploy sano come rotto — ed è quello che ha fatto,
+                # per dieci minuti, su tre pull request.
+                code=$(curl -sL -o /dev/null -w '%{http_code}' --max-time 20 \
                   -H "x-vercel-protection-bypass: $BYPASS" \
                   -H "x-vercel-set-bypass-cookie: true" \
-                  "$target/it")
+                  "$target/it" || true)
 
-                if [ "$code" = "200" ]; then
-                  echo "url=$target" >> "$GITHUB_OUTPUT"
-                  echo "Preview raggiungibile dopo $attempt tentativi: $target"
+                if [ "${code:-0}" -lt 400 ]; then
+                  # L'URL finale, non quello di partenza: se il preview
+                  # reindirizza al proprio nome canonico, è là che Playwright
+                  # deve puntare, altrimenti ogni test paga il salto.
+                  final=$(curl -sL -o /dev/null -w '%{url_effective}' --max-time 20                     -H "x-vercel-protection-bypass: $BYPASS"                     -H "x-vercel-set-bypass-cookie: true"                     "$target/it" || true)
+                  base="${final%/it*}"
+                  echo "url=${base:-$target}" >> "$GITHUB_OUTPUT"
+                  echo "Preview raggiungibile dopo $attempt tentativi: ${base:-$target}"
                   exit 0
                 fi
                 echo "[$attempt] deploy pronto ma risponde $code"

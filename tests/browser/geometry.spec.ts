@@ -75,16 +75,19 @@ function findOverflows(tolerance: number): Overflow[] {
 /**
  * Reach a page and wait for its layout to settle.
  *
- * Not 'load': a streamed page can hold its connection open long after the
- * layout is final, and the dev server does exactly that — waiting for it turns
- * a layout test into a timeout that says nothing about layout. The cards being
- * present is the real signal that there is something to measure.
+ * Never 'networkidle': the cards play HLS video, which keeps fetching segments
+ * for as long as the page is open, so the network is never idle. Waiting for it
+ * cost fifteen seconds on every test, and a test with two visits ran out of
+ * time before asserting anything — then reported the closed page as empty.
+ *
+ * 'load' plus the fonts is enough: next/image reserves each image's box, so
+ * the images arriving later do not move the layout.
  */
 async function visit(page: Page, path: string) {
   const response = await page.goto(path, { waitUntil: 'domcontentloaded' })
-  // Images settle late and change layout when they do; a page with none must
-  // not wait the full timeout for an event that will not come.
-  await page.waitForLoadState('networkidle', { timeout: 15_000 }).catch(() => {})
+  // A streamed page can hold 'load' back; past the cap, measure what is there.
+  await page.waitForLoadState('load', { timeout: 10_000 }).catch(() => {})
+  await page.evaluate(() => document.fonts.ready)
   return response
 }
 
