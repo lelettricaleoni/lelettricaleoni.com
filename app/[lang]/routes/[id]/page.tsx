@@ -22,9 +22,11 @@ import { loadGpxPoints } from '@/lib/route-gpx'
 import { getFlags } from '@/lib/flags'
 
 // No `revalidate` and no `generateStaticParams`: the root layout reads
-// headers(), so this page can only render per request. With both exports,
-// a build whose database lookup failed returned no params, and Next 16.3 then
-// served every route as ISR, where headers() throws: a 500 on each page.
+// headers(), so this page can only render per request. With both exports, a
+// build whose database lookup failed returned no params, and Next then served
+// every route as ISR, where headers() throws: a 500 on each page. It happened
+// in production on 2026-09-11, on 16.2.4, when a build ran while the database
+// pool was exhausted.
 
 export async function generateMetadata({
   params,
