@@ -21,8 +21,19 @@ jobs:
   verify:
     name: verify
     runs-on: ubuntu-latest
+
+    # Checkout is the only thing here that touches the API, so read on the
+    # contents is all the token needs; every other scope becomes `none`.
+    # The repository default is already read-only, but that is a setting
+    # outside the repository: flipping it back to read/write would silently
+    # re-arm every workflow at once. Declared here it is versioned, reviewed,
+    # and survives that flip — which matters because `npm ci` runs the
+    # lifecycle scripts of the whole dependency tree with this token in reach.
+    permissions:
+      contents: read
+
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: actions/setup-node@v4
         with:

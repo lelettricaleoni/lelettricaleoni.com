@@ -32,7 +32,7 @@ jobs:
       deployments: read
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Check for the bypass secret
         id: secret
@@ -130,7 +130,7 @@ jobs:
           VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
 
       # The trace of a failure is worth more than the log line that reports it.
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: failure() && steps.secret.outputs.present == 'true'
         with:
           name: playwright-report
