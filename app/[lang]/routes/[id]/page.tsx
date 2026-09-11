@@ -20,19 +20,13 @@ import { r2PublicUrl } from '@/lib/r2'
 import { resolveHlsUrl } from '@/lib/media'
 import { loadGpxPoints } from '@/lib/route-gpx'
 import { getFlags } from '@/lib/flags'
-import { shortRouteId } from '@/lib/utils'
 
-export const revalidate = 3600
-
-export async function generateStaticParams() {
-  try {
-    const published = await db.select({ id: routes.id }).from(routes).where(eq(routes.isPublished, true))
-    const langs = ['it', 'en', 'de']
-    return langs.flatMap((lang) => published.map(({ id }) => ({ lang, id: shortRouteId(id) })))
-  } catch {
-    return []
-  }
-}
+// No `revalidate` and no `generateStaticParams`: the root layout reads
+// headers(), so this page can only render per request. With both exports, a
+// build whose database lookup failed returned no params, and Next then served
+// every route as ISR, where headers() throws: a 500 on each page. It happened
+// in production on 2026-09-11, on 16.2.4, when a build ran while the database
+// pool was exhausted.
 
 export async function generateMetadata({
   params,
