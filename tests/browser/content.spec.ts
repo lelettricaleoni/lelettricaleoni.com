@@ -13,9 +13,11 @@ import { test, expect, type Page } from '@playwright/test'
  * would fail the day he does.
  */
 
+// No 'networkidle' anywhere: the video on the cards never stops fetching, so
+// that wait always ran to its timeout — see visit() in geometry.spec.ts. The
+// assertions below retry on their own until the content arrives.
 async function visit(page: Page, path: string) {
   const response = await page.goto(path, { waitUntil: 'domcontentloaded' })
-  await page.waitForLoadState('networkidle', { timeout: 15_000 }).catch(() => {})
 
   expect(response?.status(), `${path} non risponde`).toBeLessThan(400)
   // A protected preview answers with Vercel's login page, which would satisfy
@@ -79,7 +81,6 @@ test('il tedesco rende in tedesco', async ({ page }) => {
 
 test('una pagina inesistente non finge di esistere', async ({ page }) => {
   await page.goto('/it/routes/00000000', { waitUntil: 'domcontentloaded' })
-  await page.waitForLoadState('networkidle', { timeout: 15_000 }).catch(() => {})
 
   // The status is 200 here — streaming again — so Next marks the page noindex
   // instead. That tag is the only honest signal, and the site's SEO rests on it.
