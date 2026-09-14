@@ -1,6 +1,19 @@
 import type { NextConfig } from "next"
 
 const nextConfig: NextConfig = {
+  cacheComponents: true,
+  experimental: {
+    globalNotFound: true,
+  },
+  cacheLife: {
+    // Matches the ~30s in-memory TTL lib/flags.ts already uses, so a
+    // kill-switch reaches visitors about as fast as it does today.
+    routesFlags: {
+      stale: 30,
+      revalidate: 30,
+      expire: 120,
+    },
+  },
   webpack: (config) => {
     // Cesium is loaded via script tag (UMD global) to avoid SWC parsing GLSL shaders
     // with octal escape sequences — this maps `import cesium` to window.Cesium
