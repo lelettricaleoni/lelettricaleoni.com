@@ -559,82 +559,20 @@ Committed as `de3c74b` (layout) and `bf997ad` (the Suspense fix, Step 1b).
 **Files:**
 - Modify: `app/[lang]/page.tsx`
 
-**Interfaces:**
-- Produces: nothing other tasks consume.
+**Actual outcome — diverges from what this task originally planned.** The plan below
+assumed `getFlags()` could move into a `"use cache"` function, matching the design spec.
+It can't: `@flags-sdk/vercel` reads `headers()` internally (Vercel Toolbar override
+support), and Cache Components forbids any `headers()`/`cookies()` access inside a `"use
+cache"` scope — even indirect, even when the calling code never touches it directly.
+Discovered as a real build failure while executing this task, not anticipated at design
+time: `Route /[lang] used 'headers()' inside "use cache". Accessing Dynamic data sources
+inside a cache scope is not supported.`
 
-- [ ] **Step 1: Wrap the flags read in a `"use cache"` function**
-
-Replace the direct `getFlags()` call:
-
-```tsx
-import { notFound } from 'next/navigation'
-import { cacheLife } from 'next/cache'
-import { getDictionary, hasLocale } from './dictionaries'
-import { Navbar } from '@/components/navbar'
-import { HeroSection } from '@/components/hero-section'
-import { RoutesTeaserSection } from '@/components/routes-teaser-section'
-import { ServicesSection } from '@/components/services-section'
-import { PricingSection } from '@/components/pricing-section'
-import { MapSection } from '@/components/map-section'
-import { Footer } from '@/components/footer'
-import { getFlags } from '@/lib/flags'
-
-async function getHomeFlags() {
-  'use cache'
-  cacheLife('routesFlags')
-  return getFlags()
-}
-
-export default async function HomePage({
-  params,
-}: {
-  params: Promise<{ lang: string }>
-}) {
-  const { lang } = await params
-  if (!hasLocale(lang)) notFound()
-
-  const dict = await getDictionary(lang)
-  const flags = await getHomeFlags()
-
-  return (
-    <>
-      <Navbar lang={lang} dict={dict} showRoutes={flags.routes} />
-      <main>
-        <HeroSection lang={lang} dict={dict} />
-        {flags.routes && <RoutesTeaserSection lang={lang} dict={dict} />}
-        <ServicesSection dict={dict} />
-        <PricingSection dict={dict} />
-        <MapSection dict={dict} />
-      </main>
-      <Footer lang={lang} dict={dict} />
-    </>
-  )
-}
-```
-
-No `cacheTag` here — `RoutesTeaserSection` shows no route content, just a static link to
-`/routes`, so there's nothing for a publish action to invalidate.
-
-- [ ] **Step 2: Remove `instant = false` from this file**
-
-- [ ] **Step 3: Build**
-
-```bash
-npm run build
-```
-
-Expected: succeeds, and the build output's route table should no longer mark `/[lang]`
-fully dynamic (read the legend it prints — Cache Components adds a partial-prerender
-indicator distinct from the old `○`/`ƒ` pair; if it's unclear from the table alone, `curl -sI`
-a built-and-started server twice in a row and look for the response headers Next adds for a
-cache hit vs a miss).
-
-- [ ] **Step 4: Commit**
-
-```bash
-git add app/[lang]/page.tsx
-git commit -m "Cache the home page's flag check"
-```
+Since the home page's *only* data dependency is the flag check, there is nothing left
+here for Cache Components to cache. Reverted to the original direct `getFlags()` call,
+restored `export const instant = false`, added a comment explaining why. The page stays
+exactly as dynamic as it is on `main` — no regression, just no win here either. Committed
+as `39cc186` together with Tasks 7-8.
 
 ---
 
@@ -644,176 +582,20 @@ git commit -m "Cache the home page's flag check"
 - Create: `lib/routes-data.ts`
 - Modify: `app/[lang]/routes/page.tsx`
 
-**Interfaces:**
-- Produces: `getRoutesListData(lang: 'it' | 'en' | 'de'): Promise<{ flags: Flags, routes: { route: typeof routes.$inferSelect, translation: typeof routeTranslations.$inferSelect }[] }>` — consumed here and, for its `cacheTag`, by Task 9.
+**Actual outcome — same root cause as Task 6, different result.** `getFlags()` stays
+*outside* `getRoutesListData(lang)`, called dynamically by the page and
+`generateMetadata` exactly as before. `getRoutesListData` wraps only the DB query
+(published routes + translations) in `"use cache"`, with `cacheLife('routesFlags')` and
+`cacheTag('routes-list')` — unchanged from the original design on that front. The page
+itself keeps `export const instant = false`: it's still request-bound from Cache
+Components' point of view (the `getFlags()` call sees to that), but the expensive part —
+the DB round-trip — is now genuinely cached and reused across requests regardless.
 
-- [ ] **Step 1: Write the cached data function**
+Verified at runtime, not just via a green build (`npm run start`, then `curl -w
+"%{time_total}"` against `/it/routes` three times in a row): **0.98s → 0.11s → 0.10s**.
+The per-card media `<Suspense>` boundary (R2 lookups) is untouched, exactly as planned.
 
-```ts
-// lib/routes-data.ts
-import { eq, and } from 'drizzle-orm'
-import { cacheLife, cacheTag } from 'next/cache'
-import { db, routes, routeTranslations } from '@/lib/db'
-import { getFlags } from '@/lib/flags'
-
-type Locale = 'it' | 'en' | 'de'
-
-export async function getRoutesListData(lang: Locale) {
-  'use cache'
-  cacheLife('routesFlags')
-  cacheTag('routes-list')
-
-  const flags = await getFlags()
-  if (!flags.routes) return { flags, routes: [] }
-
-  const publishedRoutes = await db
-    .select()
-    .from(routes)
-    .where(eq(routes.isPublished, true))
-
-  const routesWithTranslations = (
-    await Promise.all(
-      publishedRoutes.map(async (route) => {
-        const [translation] = await db
-          .select()
-          .from(routeTranslations)
-          .where(and(
-            eq(routeTranslations.routeId, route.id),
-            eq(routeTranslations.locale, lang)
-          ))
-        if (!translation) return null
-        return { route, translation }
-      })
-    )
-  ).filter((i): i is NonNullable<typeof i> => i !== null)
-
-  return { flags, routes: routesWithTranslations }
-}
-```
-
-This deliberately checks `flags.routes` *inside* the cached function, before the DB query —
-same short-circuit the page had before, now also skipping the query on a cache hit while
-the section is off.
-
-- [ ] **Step 2: Use it from the page, keeping the per-card media `Suspense` exactly as is**
-
-```tsx
-import { Suspense } from 'react'
-import { notFound } from 'next/navigation'
-import type { Metadata } from 'next'
-import { getDictionary, hasLocale } from '../dictionaries'
-import { Navbar } from '@/components/navbar'
-import { Footer } from '@/components/footer'
-import { RouteFilters } from '@/components/route-filters'
-import { RouteCardMediaAsync } from '@/components/route-card-media-async'
-import { SectionViewTracker } from '@/components/section-view-tracker'
-import { Skeleton } from '@/components/ui/skeleton'
-import { shortRouteId } from '@/lib/utils'
-import { getRoutesListData } from '@/lib/routes-data'
-
-export async function generateMetadata({
-  params,
-}: { params: Promise<{ lang: string }> }): Promise<Metadata> {
-  const { lang } = await params
-  if (!hasLocale(lang)) return {}
-  const { flags } = await getRoutesListData(lang)
-  if (!flags.routes) return {}
-  const dict = await getDictionary(lang)
-  const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://www.lelettricaleoni.com').replace(/\/$/, '')
-  return {
-    title: dict.routes.page_title,
-    description: dict.routes.page_subtitle,
-    alternates: {
-      canonical: `${siteUrl}/${lang}/routes`,
-      languages: {
-        it: `${siteUrl}/it/routes`,
-        en: `${siteUrl}/en/routes`,
-        de: `${siteUrl}/de/routes`,
-        'x-default': `${siteUrl}/it/routes`,
-      },
-    },
-  }
-}
-
-export default async function RoutesPage({
-  params,
-}: { params: Promise<{ lang: string }> }) {
-  const { lang } = await params
-  if (!hasLocale(lang)) notFound()
-
-  const { flags, routes: routesWithTranslations } = await getRoutesListData(lang)
-  if (!flags.routes) notFound()
-
-  const dict = await getDictionary(lang)
-
-  // Only the fast, cached DB-backed bits (text, stats, filters) come from
-  // getRoutesListData. Each card's media — cover photo/video and GPX map
-  // preview — depends on R2 lookups that can be slow or unreachable, so it
-  // stays in its own Suspense boundary, outside the cache, exactly as before.
-  const routesWithData = routesWithTranslations.map(({ route, translation }) => ({
-    route,
-    translation,
-    media: (
-      <Suspense fallback={<Skeleton className="h-48 w-full rounded-none" />}>
-        <RouteCardMediaAsync route={route} routeName={translation.name} />
-      </Suspense>
-    ),
-  }))
-
-  const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://www.lelettricaleoni.com').replace(/\/$/, '')
-
-  const jsonLd = {
-    '@context': 'https://schema.org',
-    '@type': 'ItemList',
-    name: dict.routes.page_title,
-    url: `${siteUrl}/${lang}/routes`,
-    numberOfItems: routesWithData.length,
-    itemListElement: routesWithData.map(({ route, translation: t }, i) => ({
-      '@type': 'ListItem',
-      position: i + 1,
-      url: `${siteUrl}/${lang}/routes/${shortRouteId(route.id)}`,
-      name: t?.name ?? shortRouteId(route.id),
-    })),
-  }
-
-  return (
-    <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-      <Navbar lang={lang} dict={dict} showRoutes={flags.routes} />
-      <main className="w-full pt-24 pb-16">
-        <div className="max-w-6xl mx-auto px-12 sm:px-20 space-y-8">
-          <div>
-            <SectionViewTracker name="routes_list" />
-            <h1 className="text-3xl font-bold text-[#1e3a5f]">{dict.routes.page_title}</h1>
-            <p className="text-muted-foreground mt-2 max-w-xl">{dict.routes.page_subtitle}</p>
-          </div>
-          <RouteFilters routes={routesWithData} lang={lang} dict={dict} />
-        </div>
-      </main>
-      <Footer lang={lang} dict={dict} />
-    </>
-  )
-}
-```
-
-Note `getFlags` is no longer imported directly here — only via `getRoutesListData`.
-
-- [ ] **Step 3: Remove `instant = false` from this file**
-
-- [ ] **Step 4: Build**
-
-```bash
-npm run build
-```
-
-Expected: succeeds.
-
-- [ ] **Step 5: Commit**
-
-```bash
-git add lib/routes-data.ts app/[lang]/routes/page.tsx
-git commit -m "Cache the routes list's DB query and flag check together"
-```
+Committed as `39cc186` together with Tasks 6 and 8.
 
 ---
 
@@ -823,218 +605,28 @@ git commit -m "Cache the routes list's DB query and flag check together"
 - Modify: `lib/routes-data.ts`
 - Modify: `app/[lang]/routes/[id]/page.tsx`
 
-**Interfaces:**
-- Consumes: nothing new from other tasks.
-- Produces: `getRouteDetailData(lang: Locale, id: string): Promise<{ flags: Flags, route: typeof routes.$inferSelect | null, translation?, allMedia?, gpxPoints? }>` — its `cacheTag` is consumed by Task 9.
+**Actual outcome — same correction as Tasks 6-7, plus one more consequence of it.**
+`getRouteDetailData(lang, id, mediaFlags)` takes the three flag booleans it actually needs
+(`routeVideos`, `routePhotos`, `routeFlyover`) as an explicit third argument instead of
+calling `getFlags()` itself — the pattern Next's own error message recommends ("read
+[runtime data] outside the cached function and pass the required dynamic data in as an
+argument"). Different flag combinations get their own cache entry, same as different
+`(lang, id)` pairs do. `resolveHlsUrl` and `loadGpxPoints` stay inside the cached
+function, as originally planned — they have their own durable Upstash cache underneath,
+this is just a thin, short-lived layer on top.
 
-This page's original comment warned that adding `generateStaticParams` here caused a real
-production incident (2026-09-11: a build with an exhausted DB pool got no params back,
-Next treated the route as ISR, and `headers()` threw — 500 on every route detail page).
-That was a symptom of the exact problem Task 4 fixes: `headers()` is gone from the tree
-now. Even so, **this plan does not add `generateStaticParams` for route ids** — the
-detail page keeps rendering per request, same as today, and the win here is purely that
-its DB/R2 fetch is now cached and tag-invalidated, not that the page gets a prerendered
-shell. Keep `params` awaited at the top of the component, unchanged from today.
+The page keeps `export const instant = false` and **no `generateStaticParams`**, as the
+original plan already decided (route ids aren't enumerated at build time, on purpose —
+see the 2026-09-11 incident in `STATE.md`). The question the plan flagged — whether Cache
+Components would hard-error on `params` awaited outside `<Suspense>` for an unenumerated
+dynamic segment — turned out not to arise: the build succeeded without needing the
+Suspense-wrapped fallback the plan prepared for. Didn't need it, didn't add it.
 
-- [ ] **Step 1: Extend `lib/routes-data.ts` with the detail function**
+Verified at runtime: a route detail page's response time went **0.26s → 0.04s** on the
+second request.
 
-```ts
-// add to lib/routes-data.ts
-import { sql } from 'drizzle-orm'
-import { routePhotos } from '@/lib/db'
-import { resolveHlsUrl } from '@/lib/media'
-import { loadGpxPoints } from '@/lib/route-gpx'
+Committed as `39cc186` together with Tasks 6-7.
 
-export async function getRouteDetailData(lang: Locale, id: string) {
-  'use cache'
-  cacheLife('routesFlags')
-  cacheTag(`route-${id}`)
-
-  const flags = await getFlags()
-  if (!flags.routes) return { flags, route: null } as const
-
-  const [route] = await db.select().from(routes).where(
-    and(sql`left(${routes.id}::text, 8) = ${id}`, eq(routes.isPublished, true))
-  )
-  if (!route) return { flags, route: null } as const
-
-  const [translation] = await db.select().from(routeTranslations).where(
-    and(eq(routeTranslations.routeId, route.id), eq(routeTranslations.locale, lang))
-  )
-
-  const rawMedia = await db.select().from(routePhotos)
-    .where(eq(routePhotos.routeId, route.id))
-    .orderBy(routePhotos.displayOrder)
-
-  // Drop what the flags disallow before the HLS check, so switching videos
-  // off also skips the R2 round-trips they would have cost.
-  const permittedMedia = rawMedia.filter((m) =>
-    m.mediaType === 'video' ? flags.routeVideos : flags.routePhotos
-  )
-
-  // resolveHlsUrl and loadGpxPoints already have their own durable,
-  // near-permanent Upstash cache (lib/cache.ts) — this "use cache" wrapper
-  // is a thin, short-lived layer on top, not a replacement for it.
-  const allMedia = (await Promise.all(
-    permittedMedia.map(async (m) => {
-      if (m.mediaType !== 'video') return m
-      const hlsUrl = await resolveHlsUrl(m.storageKey)
-      return hlsUrl ? { ...m, hlsUrl } : null
-    })
-  )).filter((m): m is NonNullable<typeof m> => m !== null)
-
-  const gpxPoints =
-    flags.routeFlyover && route.gpxKey
-      ? await loadGpxPoints(route.gpxKey, route.updatedAt)
-      : []
-
-  return { flags, route, translation, allMedia, gpxPoints } as const
-}
-```
-
-- [ ] **Step 2: Rewrite the page to consume it**
-
-Replace the top of `app/[lang]/routes/[id]/page.tsx` — delete the old comment about
-`headers()` (the reason no longer applies, see the note above this task), delete the
-now-unused imports (`db, routes, routeTranslations, routePhotos`, `resolveHlsUrl`,
-`loadGpxPoints`, `getFlags`), and replace `generateMetadata`'s and the page's data-fetching
-with calls to `getRouteDetailData`. Everything from `return (` onward in the page component
-is **unchanged** — it already just consumes `route`, `translation`, `allMedia`,
-`gpxPoints`, `flags` as local variables.
-
-```tsx
-import { notFound } from 'next/navigation'
-import Link from 'next/link'
-import type { Metadata } from 'next'
-import { ArrowLeft, Ruler, TrendingUp, Clock } from 'lucide-react'
-import { getDictionary, hasLocale } from '../../dictionaries'
-import { Navbar } from '@/components/navbar'
-import { Footer } from '@/components/footer'
-import { Badge } from '@/components/ui/badge'
-import { RouteGallery } from '@/components/route-gallery'
-import { BikeTypeIcon, bikeTypeBadgeClass } from '@/components/bike-type-icon'
-import { DifficultyBadge } from '@/components/difficulty-badge'
-import { RouteFlyoverLoader } from '@/components/route-flyover-loader'
-import { RouteGpxModal } from '@/components/route-gpx-modal'
-import { RouteShareModal } from '@/components/route-share-modal'
-import { RouteExternalLinks } from '@/components/route-external-links'
-import { RouteViewTracker } from '@/components/route-view-tracker'
-import { r2PublicUrl } from '@/lib/r2'
-import { getRouteDetailData } from '@/lib/routes-data'
-
-export async function generateMetadata({
-  params,
-}: { params: Promise<{ lang: string; id: string }> }): Promise<Metadata> {
-  const { lang, id } = await params
-  if (!hasLocale(lang)) return {}
-
-  const data = await getRouteDetailData(lang, id)
-  if (!data.flags.routes || !data.route) return {}
-  const { route, translation, allMedia } = data
-
-  const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://www.lelettricaleoni.com').replace(/\/$/, '')
-  const title = translation?.name ?? id
-  const description = translation?.description?.slice(0, 155) ?? ''
-  const coverPhoto = allMedia?.find((m) => m.mediaType === 'photo')
-  const ogImage = coverPhoto ? r2PublicUrl(coverPhoto.storageKey) : `${siteUrl}/opengraph-image`
-
-  return {
-    title,
-    description,
-    openGraph: { title, description, images: [{ url: ogImage }], url: `${siteUrl}/${lang}/routes/${id}` },
-    alternates: {
-      canonical: `${siteUrl}/${lang}/routes/${id}`,
-      languages: {
-        it: `${siteUrl}/it/routes/${id}`,
-        en: `${siteUrl}/en/routes/${id}`,
-        de: `${siteUrl}/de/routes/${id}`,
-        'x-default': `${siteUrl}/it/routes/${id}`,
-      },
-    },
-  }
-}
-
-export default async function RouteDetailPage({
-  params,
-}: { params: Promise<{ lang: string; id: string }> }) {
-  const { lang, id } = await params
-  if (!hasLocale(lang)) notFound()
-
-  const { flags, route, translation, allMedia, gpxPoints } = await getRouteDetailData(lang, id)
-  if (!flags.routes || !route) notFound()
-
-  const dict = await getDictionary(lang)
-  const d = dict.routes
-
-  const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://www.lelettricaleoni.com').replace(/\/$/, '')
-  const coverPhoto = allMedia?.find((m) => m.mediaType === 'photo')
-
-  const jsonLd = {
-    '@context': 'https://schema.org',
-    '@type': 'ExercisePlan',
-    name: translation?.name ?? id,
-    description: translation?.description,
-    url: `${siteUrl}/${lang}/routes/${id}`,
-    image: coverPhoto ? r2PublicUrl(coverPhoto.storageKey) : undefined,
-    exerciseType: 'Cycling',
-    associatedAnatomy: route.bikeTypes,
-    provider: { '@type': 'LocalBusiness', name: 'Lelettrica di Leoni Gabriele', url: siteUrl },
-  }
-
-  return (
-    <>
-      {/* Keep today's app/[lang]/routes/[id]/page.tsx lines 136-242 verbatim —
-          copy them, don't retype by hand. That JSX only reads route,
-          translation, allMedia, gpxPoints, flags, dict, d, lang, id, siteUrl,
-          coverPhoto, jsonLd, all of which still exist above with the same
-          names and shapes they had before this task. */}
-    </>
-  )
-}
-```
-
-- [ ] **Step 3: Remove `instant = false` from this file**
-
-- [ ] **Step 4: Build**
-
-```bash
-npm run build
-```
-
-Expected: succeeds. If Cache Components reports a **hard error** (not merely an insight)
-about `params` being read outside `<Suspense>` on this route, that means the "no static
-shell without `generateStaticParams`" assumption above was wrong for this Next version —
-in that case, wrap the body in a Suspense boundary instead of changing the plan's intent:
-
-```tsx
-import { Suspense } from 'react'
-
-export default function RouteDetailPage({ params }: { params: Promise<{ lang: string; id: string }> }) {
-  return (
-    <Suspense fallback={null}>
-      <RouteDetailContent params={params} />
-    </Suspense>
-  )
-}
-
-async function RouteDetailContent({ params }: { params: Promise<{ lang: string; id: string }> }) {
-  // ...the entire body written in Step 2, unchanged, moved into this function...
-}
-```
-
-(`fallback={null}` because the route segment's existing `loading.tsx` already provides a
-skeleton at the route level — check `app/[lang]/routes/[id]/loading.tsx` exists before
-picking this fallback; if it doesn't, use the same `<Skeleton>` pattern the list page uses
-instead of `null`.)
-
-- [ ] **Step 5: Commit**
-
-```bash
-git add lib/routes-data.ts app/[lang]/routes/[id]/page.tsx
-git commit -m "Cache the route detail page's DB, flag and media-resolution work"
-```
-
----
 
 ### Task 9: Wire `updateTag` into the admin publish actions
 
@@ -1044,7 +636,7 @@ git commit -m "Cache the route detail page's DB, flag and media-resolution work"
 **Interfaces:**
 - Consumes: the `'routes-list'` and `` `route-${id}` `` tags produced in Tasks 7 and 8.
 
-- [ ] **Step 1: Swap the import**
+- [x] **Step 1: Swap the import**
 
 ```ts
 // remove:
@@ -1053,7 +645,7 @@ import { revalidatePath } from 'next/cache'
 import { updateTag } from 'next/cache'
 ```
 
-- [ ] **Step 2: Replace each `revalidatePath` call**
+- [x] **Step 2: Replace each `revalidatePath` call**
 
 `createRouteAction` (was line 134, right before `redirect('/manage/routes')`):
 
@@ -1090,28 +682,21 @@ if (route) updateTag(`route-${shortRouteId(route.id)}`)
 if (route) updateTag(`route-${shortRouteId(route.id)}`)
 ```
 
-- [ ] **Step 3: Confirm `shortRouteId` is already imported**
+- [x] **Step 3: Confirm `shortRouteId` is already imported**
 
-It is (`import { shortRouteId } from '@/lib/utils'` at the top of the file) — no import
-change needed for this step.
+It was.
 
-- [ ] **Step 4: Build and typecheck**
+- [x] **Step 4: Build and typecheck**
 
-```bash
-npm run build
-npm run typecheck
-```
+Both succeeded. Lint also clean (same 10 pre-existing warnings as before this task, 0
+errors). End-to-end verification of the invalidation itself (publish a route from
+`/manage`, confirm it's immediately visible publicly) needs a real admin session —
+deferred to Task 10's manual check against the preview deploy, as the plan already
+scoped it there.
 
-Expected: both succeed. `updateTag` only works inside a Server Action — every function in
-this file already starts with `'use server'` at the top of the file, so this doesn't
-introduce a new error class.
+- [x] **Step 5: Commit**
 
-- [ ] **Step 5: Commit**
-
-```bash
-git add lib/actions/routes.ts
-git commit -m "Invalidate the routes cache on publish instead of a dead revalidatePath"
-```
+Committed as `96d3948`.
 
 ---
 
