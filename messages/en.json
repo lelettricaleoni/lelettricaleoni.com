@@ -60,6 +60,11 @@
     "hours_value": "Every day 09:00 – 13:00 / 14:00 – 19:00",
     "directions": "Get directions"
   },
+  "routes_teaser": {
+    "title": "A landscape made for two wheels",
+    "copy": "Trails and gravel roads around Lake Garda, with verified GPX tracks and the stats to pick the right one.",
+    "cta": "See the recommended routes"
+  },
   "map": {
     "title": "Find us on Google Maps",
     "load_prompt": "Click to load the map",

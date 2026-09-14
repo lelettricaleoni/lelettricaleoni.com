@@ -32,6 +32,12 @@ test('la home mostra le sue sezioni', async ({ page }) => {
   await expect(page.locator('#servizi')).toBeAttached()
   await expect(page.locator('#prezzi')).toBeAttached()
   await expect(page.locator('#contatti')).toBeAttached()
+  // The routes teaser is gated by the same flag as the routes section
+  // itself, so this doubles as a check that the flag is on in whichever
+  // environment the suite is pointed at.
+  const teaser = page.locator('#routes-teaser')
+  await expect(teaser).toBeAttached()
+  await expect(teaser.locator('a[href*="/routes"]')).toBeVisible()
 })
 
 test('la lista percorsi mostra delle card complete', async ({ page }) => {
