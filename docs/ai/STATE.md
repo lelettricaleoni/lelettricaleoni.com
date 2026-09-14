@@ -133,11 +133,13 @@ variabili su Vercel sono *Secret*: escono come `[SENSITIVE]`, non si rileggono. 
 ## Debito noto
 
 - **`README.md` è disallineato**: descrive `/percorsi` e `/api/percorsi/[slug]/gpx`, mentre
-  il codice usa `/routes`; non cita Cesium, MapLibre né HLS.
+  il codice usa `/routes`; non cita Cesium né HLS.
 - **`revalidate = 3600` sulla lista è codice morto** (vedi sopra). Rendere reale la cache è
   la voce con l'impatto maggiore su prestazioni e costi: WIP su `feat/routes-caching`.
 - **Le PR npm di Dependabot hanno il lockfile rotto**: il suo npm 11 toglie l'`esbuild`
-  opzionale di vite, che `npm ci` con npm 10 (Node 22, in CI) poi rifiuta.
+  opzionale di vite, che `npm ci` con npm 10 (Node 22, in CI) poi rifiuta. Non superano
+  nemmeno davvero il check `browser`: senza i secret il workflow si salta da solo e
+  riporta successo, quindi un verde lì non prova che i test abbiano girato.
 - Tre avvisi `react-hooks/set-state-in-effect`: il pattern `mounted` in `mobile-menu.tsx` e
   `route-card-media.tsx`, e la chiusura del menù al cambio pagina.
 
