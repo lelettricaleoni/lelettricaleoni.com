@@ -1,5 +1,5 @@
 {
-  "id": "22cf095e-fab7-45e4-a36a-15b3fd058313",
+  "id": "cb1b209b-b1bd-4e5d-8f85-619d98e0b275",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -26,14 +26,6 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true
-        },
-        "media_type": {
-          "name": "media_type",
-          "type": "media_type",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'photo'"
         },
         "display_order": {
           "name": "display_order",
@@ -130,6 +122,12 @@
           "primaryKey": false,
           "notNull": true
         },
+        "start_point_label": {
+          "name": "start_point_label",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
         "is_auto_translated": {
           "name": "is_auto_translated",
           "type": "boolean",
@@ -224,6 +222,14 @@
           "primaryKey": false,
           "notNull": false
         },
+        "surface": {
+          "name": "surface",
+          "type": "surface",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'mixed'"
+        },
         "bike_types": {
           "name": "bike_types",
           "type": "text[]",
@@ -245,12 +251,6 @@
         },
         "gpx_key": {
           "name": "gpx_key",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "video_key": {
-          "name": "video_key",
           "type": "text",
           "primaryKey": false,
           "notNull": false
@@ -345,12 +345,13 @@
         "de"
       ]
     },
-    "public.media_type": {
-      "name": "media_type",
+    "public.surface": {
+      "name": "surface",
       "schema": "public",
       "values": [
-        "photo",
-        "video"
+        "asphalt",
+        "dirt",
+        "mixed"
       ]
     }
   },
