@@ -43,9 +43,10 @@ test('la lista percorsi mostra delle card complete', async ({ page }) => {
 
   const first = cards.first()
   await expect(first.locator('h3')).not.toBeEmpty()
-  // Four stats: distance, elevation, duration, surface. Three of them meant a
-  // cut-off band that shipped twice on 2026-09-10.
-  await expect(first.locator('.divide-x > div')).toHaveCount(4)
+  // Three stats: distance, elevation, duration — surface was dropped on
+  // 2026-09-14. Fewer than that meant a cut-off band that shipped twice on
+  // 2026-09-10.
+  await expect(first.locator('.divide-x > div')).toHaveCount(3)
 })
 
 test('il dettaglio di un percorso mostra titolo e statistiche', async ({ page }) => {
@@ -58,7 +59,7 @@ test('il dettaglio di un percorso mostra titolo e statistiche', async ({ page })
   await visit(page, href!)
   await expect(page.locator('h1')).not.toBeEmpty()
   // The stat tiles carry the units, and are the page's reason to exist.
-  await expect(page.getByText('fondo', { exact: false }).first()).toBeVisible()
+  await expect(page.getByText('durata', { exact: false }).first()).toBeVisible()
 })
 
 test('la privacy ha il suo testo, non un guscio', async ({ page }) => {

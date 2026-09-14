@@ -28,7 +28,6 @@ export function RouteForm({ action, route, translations, photos }: RouteFormProp
   const [nameIt, setNameIt] = useState(itTranslation?.name ?? '')
   const [descriptionIt, setDescriptionIt] = useState(itTranslation?.description ?? '')
   const [difficulty, setDifficulty] = useState(route?.difficulty ?? 'easy')
-  const [surface, setSurface] = useState(route?.surface ?? 'mixed')
   const [distanceKm, setDistanceKm] = useState(route?.distanceKm ?? '')
   const [elevationM, setElevationM] = useState(route?.elevationM?.toString() ?? '')
   const [durationMin, setDurationMin] = useState(route?.durationMin?.toString() ?? '')
@@ -101,17 +100,6 @@ export function RouteForm({ action, route, translations, photos }: RouteFormProp
                 <SelectItem value="medium">Medium</SelectItem>
                 <SelectItem value="hard">Hard</SelectItem>
                 <SelectItem value="expert">Expert</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-1">
-            <Label htmlFor="surface">Surface *</Label>
-            <Select name="surface" value={surface} onValueChange={(v) => setSurface(v as typeof surface)}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="asphalt">Asphalt</SelectItem>
-                <SelectItem value="dirt">Dirt</SelectItem>
-                <SelectItem value="mixed">Mixed</SelectItem>
               </SelectContent>
             </Select>
           </div>

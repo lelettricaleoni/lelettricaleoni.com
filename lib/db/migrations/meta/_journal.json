@@ -15,6 +15,27 @@
       "when": 1748952000000,
       "tag": "0001_drop_start_point_label",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1780745072000,
+      "tag": "0002_add_video_key_to_routes",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1780751353000,
+      "tag": "0003_add_media_type_to_route_photos",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1789379999000,
+      "tag": "0004_drop_surface",
+      "breakpoints": true
     }
   ]
 }

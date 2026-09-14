@@ -4,7 +4,6 @@ import {
 } from 'drizzle-orm/pg-core'
 
 export const difficultyEnum = pgEnum('difficulty', ['easy', 'medium', 'hard', 'expert'])
-export const surfaceEnum = pgEnum('surface', ['asphalt', 'dirt', 'mixed'])
 export const localeEnum = pgEnum('locale', ['it', 'en', 'de'])
 export const mediaTypeEnum = pgEnum('media_type', ['photo', 'video'])
 
@@ -15,7 +14,6 @@ export const routes = pgTable('routes', {
   distanceKm:  numeric('distance_km', { precision: 6, scale: 2 }),
   elevationM:  integer('elevation_m'),
   durationMin: integer('duration_min'),
-  surface:     surfaceEnum('surface').notNull().default('mixed'),
   bikeTypes:   text('bike_types').array().notNull().default([]),
   stravaUrl:   text('strava_url'),
   komootUrl:   text('komoot_url'),
