@@ -29,7 +29,12 @@ export default async function RootLayout({
 }) {
   const headersList = await headers()
   const locale = headersList.get('x-locale') ?? 'it'
-  const gaId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID
+  // Preview shares the same measurement ID as production — there's only one
+  // GA4 property — so without this guard every pull request's Playwright run
+  // sent real events to it. VERCEL_ENV is unset when running locally, so
+  // 'production' here means the actual production deployment, not a build
+  // done on a laptop with NODE_ENV=production.
+  const gaId = process.env.VERCEL_ENV === 'production' ? process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID : undefined
 
   return (
     <html lang={locale} className={`${geist.variable} antialiased`}>

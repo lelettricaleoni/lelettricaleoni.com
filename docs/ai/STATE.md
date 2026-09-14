@@ -4,7 +4,7 @@
 > componenti si ricava con `ls`; il motivo per cui i tile CARTO passano dal server no.
 > Se questo file supera le ~150 righe, qualcosa è entrato che non doveva.
 >
-> Ultimo allineamento: 2026-09-11.
+> Ultimo allineamento: 2026-09-14.
 
 ## Prodotto
 
@@ -116,11 +116,12 @@ codice HTTP per verificare se una sezione è accesa: guarda il contenuto.**
 in sviluppo. Creare i cinque flag ha spento la sezione percorsi in produzione senza che
 nulla segnalasse errore. Dopo aver creato un flag, verificare sempre i valori per ambiente.
 
-**Produzione e preview condividono il database, e il pooler.** In session mode sono quindici
-posti, uno per istanza collegata: il 2026-09-11 sei PR in test insieme li hanno presi tutti
-e la lista percorsi in produzione è andata in errore due volte (`EMAXCONNSESSION`). Ora si
-passa dalla transaction mode con `idle_timeout`. Se ricapita: `pg_terminate_backend` sulle
-sessioni `Supavisor` inattive le libera subito, i client si riconnettono da soli.
+**Produzione e Preview usavano lo stesso database e lo stesso pooler**, copiati una volta sola
+108 giorni prima e mai più separati: il 2026-09-11 sei PR in test insieme hanno esaurito i
+quindici posti del pooler in session mode e mandato in errore la lista percorsi in produzione,
+due volte. Dal 2026-09-14 Preview ha il proprio progetto Supabase e il proprio bucket R2 —
+dettagli in `docs/environment-variables.md`. Se un blocco simile ricapitasse (stessa causa,
+ambiente diverso): `pg_terminate_backend` sulle sessioni `Supavisor` inattive le libera subito.
 
 **`vercel env pull .env.local` distrugge le chiavi locali**, che puntano al database di
 sviluppo mentre Vercel punta alla produzione. Scaricare fuori dal progetto. Quasi tutte le
