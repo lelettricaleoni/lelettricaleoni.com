@@ -32,7 +32,11 @@ jobs:
 
       - name: Run Claude Code
         id: claude
-        uses: anthropics/claude-code-action@v1
+        # Pinned to a commit, not the "v1" tag: a tag can move to different
+        # code without this workflow's diff changing, and this step runs
+        # with write access to secrets.CLAUDE_CODE_OAUTH_TOKEN. Flagged by
+        # CodeQL's Actions analysis on this same PR.
+        uses: anthropics/claude-code-action@9cdae7f0d995e3ba7c33f226087fdf82a59cd520 # v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
 
