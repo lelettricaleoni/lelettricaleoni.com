@@ -151,7 +151,7 @@ under `/manage`, in scope for nothing in this plan) redirects to `/login`, which
 works after deletion: that redirect goes through the browser and re-enters `proxy.ts`,
 which resolves it to `/it/login` regardless of whether `app/login/page.tsx` exists.
 
-- [ ] **Step 1: Confirm the route is unreachable**
+- [x] **Step 1: Confirm the route is unreachable**
 
 ```bash
 npm run dev
@@ -166,26 +166,23 @@ curl -sI http://localhost:3000/login
 Expected: `HTTP/1.1 308` (or 301) `location: /it/login` — proxy redirects before the page
 ever renders. Stop the dev server.
 
-- [ ] **Step 2: Delete the three files**
+- [x] **Step 2: Delete the three files**
 
 ```bash
 git rm app/login/page.tsx app/login/layout.tsx app/login/login-form.tsx
 ```
 
-- [ ] **Step 3: Confirm the app still builds**
+- [x] **Step 3: Confirm the app still builds**
 
-```bash
-npm run build
-```
+Needed `rm -rf .next` first — a stale `.next/dev` type-check cache from the dev server run
+in Step 1 still referenced the deleted `app/login/page.js`/`layout.js` and failed
+typecheck. Not a real regression, just the CLAUDE.md-documented trap about comparing
+against a stale `.next`. After clearing it, `npm run build` succeeded and `/login` is gone
+from the route table (`/manage/login` still present, unaffected).
 
-Expected: succeeds — nothing imports these files (verify with a search first if unsure:
-`grep -rn "app/login" app components lib` should return nothing but this deletion itself).
+- [x] **Step 4: Commit**
 
-- [ ] **Step 4: Commit**
-
-```bash
-git commit -m "Drop the dead top-level /login routes"
-```
+Committed as `382b5fd`.
 
 ---
 
@@ -203,7 +200,7 @@ git commit -m "Drop the dead top-level /login routes"
 This has to land before Task 4 deletes `app/layout.tsx` — once that root layout is gone,
 `app/not-found.tsx` has no `<html>/<body>` to render into.
 
-- [ ] **Step 1: Extract the existing markup into a shared component**
+- [x] **Step 1: Extract the existing markup into a shared component**
 
 Create `components/not-found-page.tsx` with the exact content of today's
 `app/not-found.tsx` (imports of `Link`, `Image`, `MapPin`, `ArrowLeft`, `Button` unchanged),
@@ -262,7 +259,7 @@ export function NotFoundPage() {
 (The hardcoded `/it` link and Italian-only copy are pre-existing behaviour, not something
 this plan is scoped to fix — `app/not-found.tsx` was already like this for every locale.)
 
-- [ ] **Step 2: Create the in-tree not-found for `[lang]` routes**
+- [x] **Step 2: Create the in-tree not-found for `[lang]` routes**
 
 This one inherits `<html lang>` from `app/[lang]/layout.tsx` (Task 4) — no `<html>/<body>`
 of its own:
@@ -278,7 +275,7 @@ export default function NotFound() {
 }
 ```
 
-- [ ] **Step 3: Create the true global not-found**
+- [x] **Step 3: Create the true global not-found**
 
 For requests that match no route at all, outside `[lang]` and outside `/manage` (Next
 "skips rendering" and serves this directly — see
@@ -309,31 +306,26 @@ export default function GlobalNotFound() {
 }
 ```
 
-- [ ] **Step 4: Delete the old top-level not-found**
+- [x] **Step 4: Delete the old top-level not-found**
 
-```bash
-git rm app/not-found.tsx
-```
+Git recorded it as a 94% rename into `components/not-found-page.tsx` rather than a
+separate delete — same net effect.
 
-- [ ] **Step 5: Build and manually check both paths**
+- [x] **Step 5: Build and manually check both paths**
 
-```bash
-npm run build && npm run start
-```
+Corrected the manual check from what the plan wrote: `curl -sI
+http://localhost:3000/this-matches-nothing-at-all` does **not** reach
+`global-not-found` — `proxy.ts` redirects every non-excluded, non-locale-prefixed path
+to `/{locale}${pathname}` first (confirmed: `301` → `/it/this-matches-nothing-at-all`,
+which then genuinely 404s, but via `app/[lang]/not-found.tsx`, not the global one). The
+global one only renders for a path proxy's matcher excludes outright — verified with
+`/images/nonexistent-file.png` (excluded: `images/.*` is in the matcher's negative
+lookahead), which returns `lang="it"` and the not-found copy. Both confirmed working;
+the plan's example curl for "global" was pointed at the wrong kind of path.
 
-```bash
-curl -s http://localhost:3000/it/routes/doesnotexist | grep -o '<h1[^<]*<[^>]*>[^<]*' # streamed 200, not-found UI
-curl -sI http://localhost:3000/this-matches-nothing-at-all             # should hit global-not-found
-```
+- [x] **Step 6: Commit**
 
-Stop the server after checking.
-
-- [ ] **Step 6: Commit**
-
-```bash
-git add components/not-found-page.tsx app/[lang]/not-found.tsx app/global-not-found.tsx
-git commit -m "Move not-found into [lang] plus a true global-not-found"
-```
+Committed as `8893c55`.
 
 ---
 
