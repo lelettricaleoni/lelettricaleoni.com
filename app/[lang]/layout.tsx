@@ -1,12 +1,27 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
+import { Geist } from 'next/font/google'
+import Script from 'next/script'
+import { CookieConsentInit } from '@/components/cookie-consent'
 import { hasLocale } from './dictionaries'
 import { notFound } from 'next/navigation'
+import '../globals.css'
+
+const geist = Geist({
+  variable: '--font-geist-sans',
+  subsets: ['latin'],
+})
 
 const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://www.lelettricaleoni.com').replace(/\/$/, '')
 const locales = ['it', 'en', 'de']
 
 export async function generateStaticParams() {
-  return [{ lang: 'it' }, { lang: 'en' }, { lang: 'de' }]
+  return locales.map((lang) => ({ lang }))
+}
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  themeColor: '#366DA1',
 }
 
 export async function generateMetadata({
@@ -301,13 +316,50 @@ export default async function LangLayout({
   const { lang } = await params
   if (!hasLocale(lang)) notFound()
 
+  // Preview shares production's GA4 property, so every pull request's
+  // Playwright run would otherwise send it real events. VERCEL_ENV is unset
+  // locally, so 'production' here means the actual deployment, not
+  // NODE_ENV=production on a laptop.
+  const gaId = process.env.VERCEL_ENV === 'production' ? process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID : undefined
+
   return (
-    <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
-      {children}
-    </>
+    <html lang={lang} className={`${geist.variable} antialiased`}>
+      <body className="min-h-screen flex flex-col bg-background text-foreground">
+        {gaId && (
+          <>
+            {/* Consent Mode v2 — defaults denied, wait 500ms for banner response */}
+            <Script
+              id="ga4-consent-init"
+              strategy="beforeInteractive"
+              dangerouslySetInnerHTML={{
+                __html: `
+                  window.dataLayer=window.dataLayer||[];
+                  function gtag(){dataLayer.push(arguments);}
+                  gtag('consent','default',{
+                    analytics_storage:'denied',
+                    ad_storage:'denied',
+                    ad_user_data:'denied',
+                    ad_personalization:'denied',
+                    wait_for_update:500
+                  });
+                  gtag('js',new Date());
+                  gtag('config','${gaId}');
+                `,
+              }}
+            />
+            <Script
+              src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`}
+              strategy="afterInteractive"
+            />
+          </>
+        )}
+        <CookieConsentInit locale={lang} />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+        {children}
+      </body>
+    </html>
   )
 }

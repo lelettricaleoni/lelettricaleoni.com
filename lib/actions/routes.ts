@@ -1,5 +1,5 @@
 'use server'
-import { revalidatePath } from 'next/cache'
+import { updateTag } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { z } from 'zod'
 import { eq, and, desc } from 'drizzle-orm'
@@ -131,7 +131,8 @@ export async function createRouteAction(
     )
   }
 
-  revalidatePath('/[lang]/routes', 'page')
+  updateTag('routes-list')
+  updateTag(`route-${shortRouteId(newRoute.id)}`)
   redirect('/manage/routes')
 }
 
@@ -230,8 +231,8 @@ export async function updateRouteAction(
       .where(and(eq(routeTranslations.routeId, id), eq(routeTranslations.locale, 'it')))
   }
 
-  revalidatePath('/[lang]/routes', 'page')
-  revalidatePath(`/[lang]/routes/${shortRouteId(id)}`, 'page')
+  updateTag('routes-list')
+  updateTag(`route-${shortRouteId(id)}`)
   redirect('/manage/routes')
 }
 
@@ -251,7 +252,7 @@ export async function deleteRouteAction(id: string) {
 
   await db.delete(routes).where(eq(routes.id, id))
 
-  revalidatePath('/[lang]/routes', 'page')
+  updateTag('routes-list')
 }
 
 export async function togglePublishAction(id: string, isPublished: boolean) {
@@ -262,8 +263,8 @@ export async function togglePublishAction(id: string, isPublished: boolean) {
     .where(eq(routes.id, id))
     .returning()
 
-  revalidatePath('/[lang]/routes', 'page')
-  if (route) revalidatePath(`/[lang]/routes/${shortRouteId(route.id)}`, 'page')
+  updateTag('routes-list')
+  if (route) updateTag(`route-${shortRouteId(route.id)}`)
 }
 
 export async function getPresignedUploadUrlAction(
@@ -305,5 +306,5 @@ export async function savePhotosAction(
     )
   }
   const [route] = await db.select().from(routes).where(eq(routes.id, routeId))
-  if (route) revalidatePath(`/[lang]/routes/${shortRouteId(route.id)}`, 'page')
+  if (route) updateTag(`route-${shortRouteId(route.id)}`)
 }

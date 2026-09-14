@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation'
+import { connection } from 'next/server'
 import Link from 'next/link'
 import type { Metadata } from 'next'
-import { eq, and, sql } from 'drizzle-orm'
 import { ArrowLeft, Ruler, TrendingUp, Clock } from 'lucide-react'
 import { getDictionary, hasLocale } from '../../dictionaries'
 import { Navbar } from '@/components/navbar'
@@ -15,43 +15,46 @@ import { RouteGpxModal } from '@/components/route-gpx-modal'
 import { RouteShareModal } from '@/components/route-share-modal'
 import { RouteExternalLinks } from '@/components/route-external-links'
 import { RouteViewTracker } from '@/components/route-view-tracker'
-import { db, routes, routeTranslations, routePhotos } from '@/lib/db'
 import { r2PublicUrl } from '@/lib/r2'
-import { resolveHlsUrl } from '@/lib/media'
-import { loadGpxPoints } from '@/lib/route-gpx'
 import { getFlags } from '@/lib/flags'
+import { getRouteDetailData } from '@/lib/routes-data'
 
-// No `revalidate` and no `generateStaticParams`: the root layout reads
-// headers(), so this page can only render per request. With both exports, a
-// build whose database lookup failed returned no params, and Next then served
-// every route as ISR, where headers() throws: a 500 on each page. It happened
-// in production on 2026-09-11, on 16.2.4, when a build ran while the database
-// pool was exhausted.
+// TODO: Cache Components adoption. Refactor this route so this opt-out can be removed.
+// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
+//
+// getFlags() can't move into a "use cache" function (see lib/routes-data.ts),
+// so this route stays request-bound from Cache Components' point of view —
+// the caching win is entirely inside getRouteDetailData's "use cache" scope.
+// No `generateStaticParams` here either: route ids aren't enumerated at
+// build time, on purpose — see 2026-09-11's incident in docs/ai/STATE.md,
+// which this same headers()-removal fixes the root cause of, but adding
+// build-time enumeration back is a separate decision this plan doesn't make.
+export const instant = false;
 
 export async function generateMetadata({
   params,
 }: { params: Promise<{ lang: string; id: string }> }): Promise<Metadata> {
   const { lang, id } = await params
   if (!hasLocale(lang)) return {}
-  // Without this the 404 would still carry the route's title and canonical
-  if (!(await getFlags()).routes) return {}
+  // Without this the 404 would still carry the route's title and canonical.
+  // connection() first: see the page component below for why — without it,
+  // the flag's build-time value gets baked into the static shell forever.
+  await connection()
+  const flags = await getFlags()
+  if (!flags.routes) return {}
 
-  const [route] = await db.select().from(routes).where(
-    and(sql`left(${routes.id}::text, 8) = ${id}`, eq(routes.isPublished, true))
-  )
-  if (!route) return {}
-
-  const [translation] = await db.select().from(routeTranslations).where(
-    and(eq(routeTranslations.routeId, route.id), eq(routeTranslations.locale, lang as 'it' | 'en' | 'de'))
-  )
-  const [coverPhoto] = await db.select().from(routePhotos)
-    .where(and(eq(routePhotos.routeId, route.id), eq(routePhotos.mediaType, 'photo')))
-    .orderBy(routePhotos.displayOrder)
-    .limit(1)
+  const data = await getRouteDetailData(lang as 'it' | 'en' | 'de', id, {
+    routeVideos: flags.routeVideos,
+    routePhotos: flags.routePhotos,
+    routeFlyover: flags.routeFlyover,
+  })
+  if (!data) return {}
+  const { route, translation, allMedia } = data
 
   const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://www.lelettricaleoni.com').replace(/\/$/, '')
   const title = translation?.name ?? id
   const description = translation?.description?.slice(0, 155) ?? ''
+  const coverPhoto = allMedia.find((m) => m.mediaType === 'photo')
   const ogImage = coverPhoto ? r2PublicUrl(coverPhoto.storageKey) : `${siteUrl}/opengraph-image`
 
   return {
@@ -75,48 +78,30 @@ export default async function RouteDetailPage({
 }: { params: Promise<{ lang: string; id: string }> }) {
   const { lang, id } = await params
   if (!hasLocale(lang)) notFound()
+
+  // Without this, the build's own prerender pass has no real request, so
+  // headers() (read internally by the flags SDK) hangs and rejects, gets
+  // caught by getFlags()'s fail-open handling, and the resulting "on" value
+  // gets baked into the static shell forever — the kill switch would only
+  // ever take effect on the next deploy. connection() forces genuine
+  // per-request evaluation instead. Found live: toggling the routes flag
+  // off on a deployed preview did nothing until this was added.
+  await connection()
   const flags = await getFlags()
   if (!flags.routes) notFound()
 
   const dict = await getDictionary(lang)
   const d = dict.routes
 
-  const [route] = await db.select().from(routes).where(
-    and(sql`left(${routes.id}::text, 8) = ${id}`, eq(routes.isPublished, true))
-  ).catch((err: unknown) => { console.error('[RouteDetailPage] DB error:', err); throw err })
-  if (!route) notFound()
-
-  const [translation] = await db.select().from(routeTranslations).where(
-    and(eq(routeTranslations.routeId, route.id), eq(routeTranslations.locale, lang as 'it' | 'en' | 'de'))
-  )
-
-  const rawMedia = await db.select().from(routePhotos)
-    .where(eq(routePhotos.routeId, route.id))
-    .orderBy(routePhotos.displayOrder)
-
-  // Drop what the flags disallow before the HLS check, so switching videos off
-  // also skips the MinIO round-trips they would have cost
-  const permittedMedia = rawMedia.filter((m) =>
-    m.mediaType === 'video' ? flags.routeVideos : flags.routePhotos
-  )
-
-  // Exclude videos the worker hasn't finished, and carry the resolved manifest
-  // URL down so the client doesn't have to guess which one exists
-  const allMedia = (await Promise.all(
-    permittedMedia.map(async (m) => {
-      if (m.mediaType !== 'video') return m
-      const hlsUrl = await resolveHlsUrl(m.storageKey)
-      return hlsUrl ? { ...m, hlsUrl } : null
-    })
-  )).filter((m): m is NonNullable<typeof m> => m !== null)
+  const data = await getRouteDetailData(lang as 'it' | 'en' | 'de', id, {
+    routeVideos: flags.routeVideos,
+    routePhotos: flags.routePhotos,
+    routeFlyover: flags.routeFlyover,
+  })
+  if (!data) notFound()
+  const { route, translation, allMedia, gpxPoints } = data
 
   const coverPhoto = allMedia.find((m) => m.mediaType === 'photo')
-
-  // Only the flyover consumes the track, so skip the fetch when it is off
-  const gpxPoints =
-    flags.routeFlyover && route.gpxKey
-      ? await loadGpxPoints(route.gpxKey, route.updatedAt)
-      : []
 
   const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://www.lelettricaleoni.com').replace(/\/$/, '')
 

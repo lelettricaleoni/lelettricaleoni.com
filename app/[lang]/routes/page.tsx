@@ -1,6 +1,6 @@
 import { Suspense } from 'react'
 import { notFound } from 'next/navigation'
-import { eq, and } from 'drizzle-orm'
+import { connection } from 'next/server'
 import type { Metadata } from 'next'
 import { getDictionary, hasLocale } from '../dictionaries'
 import { Navbar } from '@/components/navbar'
@@ -9,19 +9,30 @@ import { RouteFilters } from '@/components/route-filters'
 import { RouteCardMediaAsync } from '@/components/route-card-media-async'
 import { SectionViewTracker } from '@/components/section-view-tracker'
 import { Skeleton } from '@/components/ui/skeleton'
-import { db, routes, routeTranslations } from '@/lib/db'
 import { shortRouteId } from '@/lib/utils'
 import { getFlags } from '@/lib/flags'
+import { getRoutesListData } from '@/lib/routes-data'
 
-export const revalidate = 3600
+// TODO: Cache Components adoption. Refactor this route so this opt-out can be removed.
+// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
+//
+// getFlags() can't move into a "use cache" function (see lib/routes-data.ts),
+// so this route stays request-bound from Cache Components' point of view —
+// the caching win is entirely inside getRoutesListData's "use cache" scope,
+// not from this page becoming a prerendered shell.
+export const instant = false;
 
 export async function generateMetadata({
   params,
 }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const { lang } = await params
   if (!hasLocale(lang)) return {}
-  // Without this the 404 would still carry the section's title and canonical
-  if (!(await getFlags()).routes) return {}
+  // Without this the 404 would still carry the section's title and canonical.
+  // connection() first: see the page component below for why — without it,
+  // the flag's build-time value gets baked into the static shell forever.
+  await connection()
+  const flags = await getFlags()
+  if (!flags.routes) return {}
   const dict = await getDictionary(lang)
   const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://www.lelettricaleoni.com').replace(/\/$/, '')
   return {
@@ -44,42 +55,36 @@ export default async function RoutesPage({
 }: { params: Promise<{ lang: string }> }) {
   const { lang } = await params
   if (!hasLocale(lang)) notFound()
-  // Switched off the section behaves as if it were never built, not as an error
-  if (!(await getFlags()).routes) notFound()
 
+  // Without this, the build's own prerender pass has no real request, so
+  // headers() (read internally by the flags SDK) hangs and rejects, gets
+  // caught by getFlags()'s fail-open handling, and the resulting "on" value
+  // gets baked into the static shell forever — the kill switch would only
+  // ever take effect on the next deploy. connection() forces genuine
+  // per-request evaluation instead. Found live: toggling the routes flag
+  // off on a deployed preview did nothing until this was added.
+  await connection()
+
+  // Switched off the section behaves as if it were never built, not as an error
+  const flags = await getFlags()
+  if (!flags.routes) notFound()
+
+  const routesWithTranslations = await getRoutesListData(lang)
   const dict = await getDictionary(lang)
 
-  const publishedRoutes = await db
-    .select()
-    .from(routes)
-    .where(eq(routes.isPublished, true))
-
-  // Only the fast DB-backed bits (text, stats, filters) block the page. Each card's media —
-  // cover photo/video and GPX map preview — depends on MinIO/R2 lookups that can be slow or
-  // unreachable, so it's resolved in its own Suspense boundary instead of blocking everything else.
-  const routesWithData = (
-    await Promise.all(
-      publishedRoutes.map(async (route) => {
-        const [translation] = await db
-          .select()
-          .from(routeTranslations)
-          .where(and(
-            eq(routeTranslations.routeId, route.id),
-            eq(routeTranslations.locale, lang as 'it' | 'en' | 'de')
-          ))
-
-        if (!translation) return null
-
-        const media = (
-          <Suspense fallback={<Skeleton className="h-48 w-full rounded-none" />}>
-            <RouteCardMediaAsync route={route} routeName={translation.name} />
-          </Suspense>
-        )
-
-        return { route, translation, media }
-      })
-    )
-  ).filter((i) => i !== null)
+  // Only the fast, cached DB-backed bits (text, stats, filters) come from
+  // getRoutesListData. Each card's media — cover photo/video and GPX map
+  // preview — depends on R2 lookups that can be slow or unreachable, so it
+  // stays in its own Suspense boundary, outside the cache, exactly as before.
+  const routesWithData = routesWithTranslations.map(({ route, translation }) => ({
+    route,
+    translation,
+    media: (
+      <Suspense fallback={<Skeleton className="h-48 w-full rounded-none" />}>
+        <RouteCardMediaAsync route={route} routeName={translation.name} />
+      </Suspense>
+    ),
+  }))
 
   const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://www.lelettricaleoni.com').replace(/\/$/, '')
 
@@ -100,7 +105,7 @@ export default async function RoutesPage({
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-      <Navbar lang={lang} dict={dict} showRoutes={(await getFlags()).routes} />
+      <Navbar lang={lang} dict={dict} showRoutes={flags.routes} />
       <main className="w-full pt-24 pb-16">
         <div className="max-w-6xl mx-auto px-12 sm:px-20 space-y-8">
           <div>

@@ -1,4 +1,5 @@
 'use client'
+import { Suspense } from 'react'
 import Image from 'next/image'
 import { useParams, useSearchParams } from 'next/navigation'
 import { updatePasswordAction } from '@/lib/actions/auth'
@@ -20,6 +21,17 @@ const NAV_DICT = {
 }
 
 export default function UpdatePasswordPage() {
+  return (
+    <Suspense fallback={null}>
+      <UpdatePasswordForm />
+    </Suspense>
+  )
+}
+
+// useSearchParams needs its own Suspense boundary — search params are only
+// known at request time, and without this Cache Components can't build a
+// shell for the route at all.
+function UpdatePasswordForm() {
   const { lang } = useParams<{ lang: string }>()
   const searchParams = useSearchParams()
   const error = searchParams.get('error')
