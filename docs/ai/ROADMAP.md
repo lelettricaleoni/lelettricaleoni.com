@@ -20,12 +20,6 @@ _(niente in lavorazione)_
   quella che mi ha lasciato pushare due volte dritto su `main`. Il 2026-09-11 `browser` ha
   preso un guasto della produzione prima di chiunque: è il candidato più forte.
 
-- **Preview sul database di sviluppo** — oggi le preview leggono e scrivono il database di
-  produzione, e i test browser di più PR insieme sono carico su di esso: il 2026-09-11
-  hanno esaurito il pooler e fatto cadere la lista percorsi in produzione. Serve che il
-  database di sviluppo abbia percorsi pubblicati, altrimenti i test di contenuto non hanno
-  cosa guardare.
-
 - **Lockfile delle PR npm di Dependabot** — escono tutte rotte (`npm ci` rifiuta l'`esbuild`
   opzionale di vite, tolto dal suo npm 11). Strade: CI su Node 24/npm 11, o un passo che
   rigeneri il lockfile sul branch di Dependabot. Finché non si risolve, ogni suo
@@ -68,6 +62,8 @@ _(niente in lavorazione)_
 
 ## Un giorno
 
+- **`CARTO_API_KEY` manca su Preview** (mai stata impostata). Fallisce aperto — il proxy
+  chiama CARTO senza chiave — quindi non blocca nulla, ma vale la pena aggiungerla.
 - **Rendere reale la cache delle pagine percorsi.** Oggi `revalidate = 3600` non ha effetto
   perché il layout radice legge `headers()`. Recuperarla significa ripensare come arriva la
   lingua, ed è la voce con il maggior guadagno su prestazioni e costi. Un tentativo è sul

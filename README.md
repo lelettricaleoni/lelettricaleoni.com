@@ -165,26 +165,9 @@ TypeScript viene verificato automaticamente durante la build.
 
 ## Variabili d'ambiente
 
-Copia `.env.local.example` in `.env.local` e compila:
-
-| Variabile | Descrizione |
-|---|---|
-| `NEXT_PUBLIC_SUPABASE_URL` | URL progetto Supabase |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Chiave anon (legacy JWT) |
-| `SUPABASE_SERVICE_ROLE_KEY` | Chiave service role — Dashboard → Project Settings → API |
-| `DATABASE_URL` | Pooler Supabase porta 6543 (runtime) |
-| `DATABASE_DIRECT_URL` | Connessione diretta porta 5432 (migrazioni) |
-| `R2_ACCOUNT_ID` | ID account Cloudflare |
-| `R2_ACCESS_KEY_ID` | Access key R2 |
-| `R2_SECRET_ACCESS_KEY` | Secret key R2 |
-| `R2_BUCKET_NAME` | Nome bucket (default: `lelettrica-media`) |
-| `NEXT_PUBLIC_R2_PUBLIC_URL` | URL pubblico bucket R2 |
-| `AZURE_TRANSLATOR_KEY` | Chiave Azure Cognitive Services |
-| `AZURE_TRANSLATOR_REGION` | Regione Azure (es. `westeurope`) |
-| `AZURE_TRANSLATOR_ENDPOINT` | `https://api.cognitive.microsofttranslator.com` |
-| `NEXT_PUBLIC_SITE_URL` | URL produzione (es. `https://www.lelettricaleoni.com`) |
-| `NEXT_PUBLIC_GA_MEASUREMENT_ID` | ID Google Analytics 4 |
-| `NEXT_PUBLIC_MAPS_EMBED_URL` | URL embed Google Maps |
+Copia `.env.local.example` in `.env.local` e compila con le chiavi dell'ambiente di sviluppo.
+Elenco completo, cosa fa ciascuna variabile, dove procurarsela e come ruotarla, e quali ambienti
+esistono (produzione / preview / sviluppo) e a cosa puntano: **[`docs/environment-variables.md`](docs/environment-variables.md)**.
 
 ---
 
