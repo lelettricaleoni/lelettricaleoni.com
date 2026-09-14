@@ -28,17 +28,6 @@ _(niente in lavorazione)_
 - **Togliere `maplibre-gl`** — nessun file lo importa più dal passaggio a Cesium, e la
   versione 5 aveva una vulnerabilità critica: una dipendenza morta porta rischi veri.
 
-- **Rifare la barra dei filtri della lista percorsi** — oggi è una fila di pillole per
-  difficoltà e una per tipo di bici, che cresce male: con cinque tipi di bici la seconda
-  riga è già lunga, e non c'è modo di combinare i filtri in modo leggibile né di vedere a
-  colpo d'occhio quanti percorsi restano. Da ripensare come sezione, non da ritoccare.
-
-- **Interruttore foto ↔ mappa sulle card** — come quello di Google Maps che passa fra
-  mappa e satellite. Oggi la card mostra la foto *oppure*, se non ce n'è, la traccia GPX
-  disegnata: chi vuole vedere dove passa un percorso con le foto deve aprirlo. Il disegno
-  della mappa semplificata esiste già (`gpxPointsToMercatorPath` in `lib/gpx-svg.ts`), va
-  reso alternabile invece che di ripiego.
-
 - **Far partire i player dal gradino più basso** — il worker produce ora anche un 360p
   (~550k), con segmenti da 4 s allineati fra le rendition. Resta il lato player: `startLevel:
   -1` in `route-card-media.tsx` e `route-gallery.tsx` lascia stimare la banda a hls.js, che
@@ -62,8 +51,6 @@ _(niente in lavorazione)_
 
 ## Un giorno
 
-- **`CARTO_API_KEY` manca su Preview** (mai stata impostata). Fallisce aperto — il proxy
-  chiama CARTO senza chiave — quindi non blocca nulla, ma vale la pena aggiungerla.
 - **Rendere reale la cache delle pagine percorsi.** Oggi `revalidate = 3600` non ha effetto
   perché il layout radice legge `headers()`. Recuperarla significa ripensare come arriva la
   lingua, ed è la voce con il maggior guadagno su prestazioni e costi. Un tentativo è sul
