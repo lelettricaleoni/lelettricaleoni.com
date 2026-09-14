@@ -38,7 +38,9 @@ pannello di amministrazione privato.
 
 Postgres su **Supabase** via Drizzle (`routes`, `route_translations`, `route_photos`),
 **sempre dal pooler in transaction mode** (porta 6543): `lib/db/pooler.ts` corregge la porta
-anche se la variabile su Vercel dice 5432. Vedi le trappole.
+anche se la variabile su Vercel dice 5432. Vedi le trappole. `npx drizzle-kit generate` e
+`migrate` funzionano davvero dal 2026-09-14 (`lib/db/migrations/`): prima nessuno dei due
+database aveva la tabella di tracking, storia in `_archive-2026-09-14/README.md`.
 Autenticazione admin con Supabase Auth: `getAdminUser()` richiede `app_metadata.role =
 'admin'` — **non** `user_metadata`, che è modificabile dall'utente stesso.
 Foto, GPX, video e flussi HLS su **Cloudflare R2**.
@@ -134,8 +136,6 @@ variabili su Vercel sono *Secret*: escono come `[SENSITIVE]`, non si rileggono. 
   il codice usa `/routes`; non cita Cesium, MapLibre né HLS.
 - **`revalidate = 3600` sulla lista è codice morto** (vedi sopra). Rendere reale la cache è
   la voce con l'impatto maggiore su prestazioni e costi: WIP su `feat/routes-caching`.
-- **`maplibre-gl` è una dipendenza inutilizzata**: la mappa è passata a Cesium, nessun file
-  la importa più. Da togliere.
 - **Le PR npm di Dependabot hanno il lockfile rotto**: il suo npm 11 toglie l'`esbuild`
   opzionale di vite, che `npm ci` con npm 10 (Node 22, in CI) poi rifiuta.
 - Tre avvisi `react-hooks/set-state-in-effect`: il pattern `mounted` in `mobile-menu.tsx` e

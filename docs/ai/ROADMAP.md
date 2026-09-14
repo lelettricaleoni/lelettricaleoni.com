@@ -25,9 +25,6 @@ _(niente in lavorazione)_
   rigeneri il lockfile sul branch di Dependabot. Finché non si risolve, ogni suo
   aggiornamento npm va rifatto a mano come in #63.
 
-- **Togliere `maplibre-gl`** — nessun file lo importa più dal passaggio a Cesium, e la
-  versione 5 aveva una vulnerabilità critica: una dipendenza morta porta rischi veri.
-
 - **Far partire i player dal gradino più basso** — il worker produce ora anche un 360p
   (~550k), con segmenti da 4 s allineati fra le rendition. Resta il lato player: `startLevel:
   -1` in `route-card-media.tsx` e `route-gallery.tsx` lascia stimare la banda a hls.js, che
