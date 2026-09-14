@@ -25,6 +25,15 @@ interface RoutesTeaserSectionProps {
  * the waypoints a fixed device-pixel size no matter how the viewBox ends up
  * scaled to fill the section — without it, stretching a small viewBox this
  * wide blows a dash pattern up into fat blobs.
+ *
+ * `preserveAspectRatio="none"` rather than the usual `xMidYMid slice`:
+ * "slice" covers the box by scaling past it on one axis and relying on the
+ * svg element's own viewport to crop the excess — invisible on screen, but
+ * `getBoundingClientRect()` on the path reports its full, uncropped
+ * geometry, so `tests/browser/geometry.spec.ts` read the intentional
+ * overflow as a real one. "none" maps the viewBox onto the box exactly, so
+ * no coordinate ever needs to land outside it; a symmetric wavy line
+ * doesn't care that the two axes end up scaled unevenly.
  */
 export function RoutesTeaserSection({ lang, dict }: RoutesTeaserSectionProps) {
   const d = dict.routes_teaser
@@ -35,12 +44,12 @@ export function RoutesTeaserSection({ lang, dict }: RoutesTeaserSectionProps) {
 
       <svg
         viewBox="0 0 1200 340"
-        preserveAspectRatio="xMidYMid slice"
+        preserveAspectRatio="none"
         className="absolute inset-0 w-full h-full text-primary/30"
         aria-hidden
       >
         <path
-          d="M-40 300 Q 120 260 200 270 Q 320 285 360 220 Q 400 155 480 165"
+          d="M0 300 Q 120 260 200 270 Q 320 285 360 220 Q 400 155 480 165"
           fill="none"
           stroke="currentColor"
           strokeWidth="3"
@@ -49,7 +58,7 @@ export function RoutesTeaserSection({ lang, dict }: RoutesTeaserSectionProps) {
           vectorEffect="non-scaling-stroke"
         />
         <path
-          d="M480 165 Q 560 175 610 120 Q 660 65 760 75 Q 860 85 900 40 Q 950 -10 1080 20"
+          d="M480 165 Q 560 175 610 120 Q 660 65 760 75 Q 860 85 900 40 Q 950 10 1080 20"
           fill="none"
           stroke="currentColor"
           strokeWidth="3"
