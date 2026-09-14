@@ -8,10 +8,13 @@ function mercatorPixel(lat: number, lon: number, zoom: number) {
   return { x, y }
 }
 
-// Card map area is a fixed 192px-tall box (route-card.tsx `h-48`); keep the target well inside
-// that so the whole route stays clear of the card edges at any card width.
-const CARD_MAP_TARGET_W = 220
-const CARD_MAP_TARGET_H = 140
+// Card map area is a fixed 192px-tall box (route-card.tsx `h-48`), ~290-356px wide across
+// breakpoints. The target stays well inside that so the whole route clears the card edges
+// at any width — verified on 2026-09-14 against a real 64 km track (its long axis is the
+// binding one): these numbers land one whole zoom level in from the previous 220×140,
+// which is as close to "a little" as integer tile zooms allow.
+const CARD_MAP_TARGET_W = 260
+const CARD_MAP_TARGET_H = 165
 
 export function gpxBboxCenter(points: [number, number, number][]): { lat: number; lon: number; zoom: number } | undefined {
   if (points.length < 2) return undefined
