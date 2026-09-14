@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation'
+import { connection } from 'next/server'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import { ArrowLeft, Ruler, TrendingUp, Clock } from 'lucide-react'
@@ -35,7 +36,10 @@ export async function generateMetadata({
 }: { params: Promise<{ lang: string; id: string }> }): Promise<Metadata> {
   const { lang, id } = await params
   if (!hasLocale(lang)) return {}
-  // Without this the 404 would still carry the route's title and canonical
+  // Without this the 404 would still carry the route's title and canonical.
+  // connection() first: see the page component below for why — without it,
+  // the flag's build-time value gets baked into the static shell forever.
+  await connection()
   const flags = await getFlags()
   if (!flags.routes) return {}
 
@@ -74,6 +78,15 @@ export default async function RouteDetailPage({
 }: { params: Promise<{ lang: string; id: string }> }) {
   const { lang, id } = await params
   if (!hasLocale(lang)) notFound()
+
+  // Without this, the build's own prerender pass has no real request, so
+  // headers() (read internally by the flags SDK) hangs and rejects, gets
+  // caught by getFlags()'s fail-open handling, and the resulting "on" value
+  // gets baked into the static shell forever — the kill switch would only
+  // ever take effect on the next deploy. connection() forces genuine
+  // per-request evaluation instead. Found live: toggling the routes flag
+  // off on a deployed preview did nothing until this was added.
+  await connection()
   const flags = await getFlags()
   if (!flags.routes) notFound()
 

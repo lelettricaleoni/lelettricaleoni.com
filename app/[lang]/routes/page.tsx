@@ -1,5 +1,6 @@
 import { Suspense } from 'react'
 import { notFound } from 'next/navigation'
+import { connection } from 'next/server'
 import type { Metadata } from 'next'
 import { getDictionary, hasLocale } from '../dictionaries'
 import { Navbar } from '@/components/navbar'
@@ -26,7 +27,10 @@ export async function generateMetadata({
 }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const { lang } = await params
   if (!hasLocale(lang)) return {}
-  // Without this the 404 would still carry the section's title and canonical
+  // Without this the 404 would still carry the section's title and canonical.
+  // connection() first: see the page component below for why — without it,
+  // the flag's build-time value gets baked into the static shell forever.
+  await connection()
   const flags = await getFlags()
   if (!flags.routes) return {}
   const dict = await getDictionary(lang)
@@ -51,6 +55,15 @@ export default async function RoutesPage({
 }: { params: Promise<{ lang: string }> }) {
   const { lang } = await params
   if (!hasLocale(lang)) notFound()
+
+  // Without this, the build's own prerender pass has no real request, so
+  // headers() (read internally by the flags SDK) hangs and rejects, gets
+  // caught by getFlags()'s fail-open handling, and the resulting "on" value
+  // gets baked into the static shell forever — the kill switch would only
+  // ever take effect on the next deploy. connection() forces genuine
+  // per-request evaluation instead. Found live: toggling the routes flag
+  // off on a deployed preview did nothing until this was added.
+  await connection()
 
   // Switched off the section behaves as if it were never built, not as an error
   const flags = await getFlags()

@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation'
+import { connection } from 'next/server'
 import { getDictionary, hasLocale } from './dictionaries'
 import { Navbar } from '@/components/navbar'
 import { HeroSection } from '@/components/hero-section'
@@ -28,6 +29,14 @@ export default async function HomePage({
   const { lang } = await params
   if (!hasLocale(lang)) notFound()
 
+  // Without this, the build's own prerender pass has no real request, so
+  // headers() (read internally by the flags SDK) hangs and rejects, gets
+  // caught by getFlags()'s fail-open handling, and the resulting "on" value
+  // gets baked into the static shell forever — the kill switch would only
+  // ever take effect on the next deploy. connection() forces genuine
+  // per-request evaluation instead. Found live: toggling the routes flag
+  // off on a deployed preview did nothing until this was added.
+  await connection()
   const dict = await getDictionary(lang)
   const flags = await getFlags()
 
