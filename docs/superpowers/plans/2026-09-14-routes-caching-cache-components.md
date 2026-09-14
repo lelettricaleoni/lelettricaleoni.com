@@ -340,7 +340,7 @@ Committed as `8893c55`.
   `<html lang={lang}>`, GA4, cookie consent, Geist font, the `LocalBusiness` JSON-LD (all of
   it moved verbatim from `app/layout.tsx`, nothing rewritten).
 
-- [ ] **Step 1: Merge `app/layout.tsx`'s content into `app/[lang]/layout.tsx`**
+- [x] **Step 1: Merge `app/layout.tsx`'s content into `app/[lang]/layout.tsx`**
 
 Replace the whole file. This keeps every existing export (`generateStaticParams`,
 `generateMetadata` — SEO titles/descriptions/keywords/JSON-LD business schema, unchanged)
@@ -451,18 +451,21 @@ and the default export) change. Note `generateStaticParams` now returns `[{lang:
 via `locales.map` instead of an empty-array-shaped omission — Cache Components errors on an
 empty array, and this one was never empty to begin with, so this is a no-op in practice.
 
-- [ ] **Step 2: Remove `instant = false` from this file**
+- [x] **Step 2: Remove `instant = false` from this file**
 
-The codemod in Task 1 added `export const instant = false` here — delete that line now
-that the file is being converted.
+- [x] **Step 3: Delete the old root layout**
 
-- [ ] **Step 3: Delete the old root layout**
+- [x] **Step 3b (discovered during execution, not in the original plan): `app/page.tsx`
+  needed a root layout too, and turned out to be equally dead.** Once `app/layout.tsx`
+  was gone, the build failed with "page.tsx doesn't have a root layout" — not for
+  `/manage` (Task 5 handles that) but for the top-level `app/page.tsx`, a
+  `redirect('/it')` stub outside both `[lang]` and `/manage`. Checked the same way as
+  Task 2's `app/login/*`: `curl -sI http://localhost:3000/` returns `301` →
+  `/it` from `proxy.ts` before Next's router ever resolves this file. Deleted it in the
+  same commit as this task rather than opening a separate task for it, since it's the
+  same class of fix as Task 2 and was required to get this task's build green.
 
-```bash
-git rm app/layout.tsx
-```
-
-- [ ] **Step 4: Build**
+- [x] **Step 4: Build**
 
 ```bash
 npm run build
@@ -472,12 +475,9 @@ Expected: fails or succeeds with insights pointing at `app/manage/**` — that's
 If it fails on something inside `app/[lang]/**` other than `/manage`, re-check Step 1 was
 copied correctly before proceeding.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
-```bash
-git add app/[lang]/layout.tsx
-git commit -m "Move the root layout under app/[lang], off headers()"
-```
+Committed as `98bb79c` (also folds in the `app/page.tsx` deletion from Step 3b).
 
 ---
 
@@ -491,7 +491,7 @@ git commit -m "Move the root layout under app/[lang], off headers()"
 - Produces: nothing other tasks depend on — `/manage` stays out of scope, this only
   restores the `<html>/<body>` it used to inherit from the now-deleted `app/layout.tsx`.
 
-- [ ] **Step 1: Add `<html>/<body>` to the admin root layout**
+- [x] **Step 1: Add `<html>/<body>` to the admin root layout**
 
 Same font/background treatment as the public site, so nothing about the admin panel's look
 changes — no GA, no cookie consent, no JSON-LD (it's not public, `metadata.robots` already
@@ -526,22 +526,31 @@ export default function ManageRootLayout({ children }: { children: React.ReactNo
 Leave `export const instant = false` on this file — `/manage` is out of scope, it stays
 opted out.
 
-- [ ] **Step 2: Build and manually check the admin panel still renders correctly**
+- [x] **Step 1b (discovered during execution, not in the original plan): both
+  `update-password` pages needed a `<Suspense>` boundary around `useSearchParams()`.**
+  Found while getting this task's build green — `app/[lang]/update-password/page.tsx` and
+  `app/manage/update-password/page.tsx` are Client Components calling `useSearchParams()`
+  at the top level, unwrapped. Cache Components can't build a shell for a route like that
+  ("search params are only known at request time"). Previously masked because the whole
+  app was dynamic via `app/layout.tsx`'s `headers()` call; with that gone, Next actually
+  attempts a shell here and surfaced it. Fixed both with the standard pattern: split into
+  an outer component (no hooks) wrapping an inner one (the hooks + all the existing JSX,
+  otherwise unchanged) in `<Suspense fallback={null}>`. Unrelated to routes caching, but
+  blocking either way — see plan-wide note in Task 4 if this file is read out of order.
 
-```bash
-npm run build && npm run start
-```
+- [x] **Step 2: Build and manually check the admin panel still renders correctly**
 
-Visit `http://localhost:3000/manage` in a browser (or `curl -s .../manage | grep -o "font-geist"`
-to confirm the font variable class is present on `<html>`). Confirm the page isn't
-double-wrapped in two `<html>` tags and looks unchanged from `main`. Stop the server.
+Verified via `curl -s -L http://localhost:3000/manage` (follows the auth redirect through
+to `/it/login`): exactly one `<html lang="it" class="__variable_... antialiased">`, no
+double-wrapping. Also verified `/it/routes` renders its real content (one `<h1>`, "Percorsi
+consigliati") — a second, misleading "Pagina non trovata" match in the raw response turned
+out to be the not-found boundary's *serialized RSC payload* embedded alongside the real
+content (normal Next machinery for client-side fallback rendering), not a second rendered
+element — confirmed by grepping for actual `<h1>` tags, not just the string.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
-```bash
-git add app/manage/layout.tsx
-git commit -m "Give /manage its own root layout now that app/layout.tsx is gone"
-```
+Committed as `de3c74b` (layout) and `bf997ad` (the Suspense fix, Step 1b).
 
 ---
 
