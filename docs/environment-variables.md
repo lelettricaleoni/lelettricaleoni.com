@@ -18,14 +18,24 @@ database, autenticazione né bucket.
 cache è per chiave di storage, non per ambiente — leggere una chiave che l'altro ambiente non
 ha scritto fallisce aperto), la chiave Azure Translator, il token Cesium e la chiave CARTO (nessuno
 di questi tiene dati specifici di un ambiente, solo credenziali verso un servizio a pagamento
-misurato a consumo). **L'eccezione da correggere quando capita tempo**: `NEXT_PUBLIC_GA_MEASUREMENT_ID`
-è a sua volta condiviso, e fino al 2026-09-14 Google Analytics veniva caricato in ogni ambiente —
-quindi ogni esecuzione dei test contro una preview mandava eventi reali alla proprietà GA4 di
+misurato a consumo). **L'eccezione trovata il 2026-09-14**: `NEXT_PUBLIC_GA_MEASUREMENT_ID` è a
+sua volta condiviso, e fino ad allora Google Analytics veniva caricato in ogni ambiente — quindi
+ogni esecuzione dei test contro una preview mandava eventi reali alla proprietà GA4 di
 produzione. Il layout ora carica GA solo quando `VERCEL_ENV === 'production'`.
 
 **`CARTO_API_KEY` non è mai stata impostata su Preview**: il proxy dei tile fallisce aperto
 (chiama CARTO senza chiave, funziona ma senza il piano a pagamento), quindi non blocca nulla,
 ma va aggiunta quando c'è occasione.
+
+**Il CORS del bucket R2 va impostato per ambiente, e non segue le variabili**: si configura sul
+bucket via API Cloudflare (`PUT /accounts/{account}/r2/buckets/{bucket}/cors`), non nel codice
+né tramite Vercel. `dev-lelettrica-trails` permetteva solo `http://localhost:3000` — nessuno lo
+aveva mai esposto a un'origine di preview prima del 2026-09-14 — quindi ogni upload diretto dal
+browser (foto, GPX, video: tutti passano da un URL presigned) falliva in silenzio non appena
+Preview ha iniziato a scrivere lì. Aggiunta la regola `https://lelettricaleoni-*-lelettrica.vercel.app`
+(R2 supporta un carattere jolly nell'origine, verificato con una vera richiesta): copre ogni
+deploy del progetto/team, non un `*.vercel.app` generico che accetterebbe l'origine di
+qualunque altro progetto ospitato su Vercel.
 
 L'ambiente "Development" dentro Vercel (`vercel env ls` lo elenca come terzo bersaglio insieme
 a Preview e Production) non è usato: lo sviluppo locale legge `.env.local`, non quelle variabili.
