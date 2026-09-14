@@ -37,7 +37,7 @@ git pull
 git checkout -b feat/routes-caching-cache-components
 ```
 
-- [ ] **Step 2: Add the flags and the custom cache profile to `next.config.ts`**
+- [x] **Step 2: Add the flags and the custom cache profile to `next.config.ts`**
 
 Add to the `nextConfig` object (keep every existing key — `webpack`, `images`, `redirects`):
 
@@ -62,7 +62,7 @@ const nextConfig: NextConfig = {
 }
 ```
 
-- [ ] **Step 3: Try the build — expect it to fail**
+- [x] **Step 3: Try the build — expect it to fail**
 
 ```bash
 npm run build
@@ -72,40 +72,63 @@ Expected: fails. `app/[lang]/routes/page.tsx`'s `export const revalidate = 3600`
 invalid route segment config under Cache Components, and `headers()` in `app/layout.tsx`
 is read outside any `<Suspense>`.
 
-- [ ] **Step 4: Opt every route out of validation**
+Confirmed exactly as expected — the build failed on `revalidate` first (webpack stops at
+the first compile error, so the `headers()` issue didn't show yet).
+
+- [x] **Step 3b (discovered during execution, not in the original plan): `lib/flags.ts`
+  calls `Date.now()` on every cache check.** After the codemod (Step 4) and removing
+  `revalidate` (Step 5), the build still failed — not on `headers()` as expected, but on
+  `Date.now()` inside `getFlags()`'s staleness check
+  (`if (Date.now() - cache.at > CACHE_TTL_MS ...)`). Next 16 treats a raw `Date.now()`/
+  `new Date()` read during prerendering as an unstable value and fails the build
+  **regardless of `instant = false`** — that opt-out only covers uncached IO and runtime
+  APIs, not synchronous non-determinism, which "can't be deferred"
+  (`node_modules/next/dist/docs/.../migrating-to-cache-components.md`, "Adopting
+  incrementally", step 3). It broke every route that both calls `getFlags()` and doesn't
+  already have some other reason to be fully dynamic — home, privacy, routes list (found
+  via `npm run build -- --debug-prerender`, which names the exact line and every failing
+  route). `/manage/**` and `/[lang]/login`, `/[lang]/update-password` were unaffected:
+  they're already fully dynamic for other reasons (session cookies, `searchParams`), so
+  Next never attempts a static shell for them and never reaches this line.
+
+  Fixed at the source, once, for every caller: swapped `Date.now()` for `performance.now()`
+  in `lib/flags.ts` (both where `cache.at` is set — was line 210 — and where it's compared
+  — was line 239). It's only ever used for an elapsed-time delta against `CACHE_TTL_MS`,
+  never a wall-clock value, so the monotonic clock is equivalent and isn't flagged as
+  unstable. No behavior change, no type change (`cache.at` was already a bare `number`).
+
+- [x] **Step 4: Opt every route out of validation**
 
 ```bash
 npx @next/codemod@canary cache-components-instant-false ./app
 ```
 
-Check the file count it reports is non-zero (a wrong path silently reports `0 ok` instead
-of failing).
+Ran successfully: 20 files modified, 17 unmodified, 0 errors. (Required a clean git tree
+first — committed the `next.config.ts` change from Step 2 on its own before running this,
+since the codemod refuses to run over uncommitted changes.)
 
-- [ ] **Step 5: Remove `export const revalidate = 3600` from the routes list**
+- [x] **Step 5: Remove `export const revalidate = 3600` from the routes list**
 
-File: `app/[lang]/routes/page.tsx` — delete the line (it's now a hard error regardless of
-`instant = false`, since route segment configs are rejected outright under Cache
-Components, not just validated):
+File: `app/[lang]/routes/page.tsx` — deleted.
 
-```ts
-export const revalidate = 3600
-```
-
-- [ ] **Step 6: Build again — expect success**
+- [x] **Step 6: Build again — expect success**
 
 ```bash
 npm run build
 ```
 
-Expected: succeeds. Every route is now dynamic-with-opt-out, i.e. behaves exactly like it
-does on `main` today — this step only proves the flag is on and nothing is broken yet.
+Succeeded once Step 3b's fix was in place. Build output confirms the intended baseline:
+every route still shows `ƒ` (fully dynamic) except `/[lang]/routes/[id]` and
+`/manage/routes/[id]`, which already show `◐` (partial prerender) — worth a look when
+Task 8 converts the detail page, but not investigated now; out of scope for this task.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
-```bash
-git add next.config.ts app/
-git commit -m "Enable Cache Components, opt every route out for now"
-```
+Committed in two pieces rather than one, since Step 4's codemod required the config change
+to be committed first:
+1. `next.config.ts` — "Enable Cache Components and a routesFlags cache-life profile"
+2. `lib/flags.ts`, the codemod's `instant = false` additions across `app/`, and the
+   `revalidate` removal — pending, see below.
 
 ---
 

@@ -207,7 +207,7 @@ function refresh(): Promise<Flags> {
   if (refreshing) return refreshing
   refreshing = evaluateAll()
     .then((flags) => {
-      cache = { flags, at: Date.now() }
+      cache = { flags, at: performance.now() }
       return flags
     })
     .finally(() => {
@@ -235,8 +235,11 @@ export async function getFlags(): Promise<Flags> {
       : readDevOverrides(process.env as Record<string, string | undefined>)
 
   if (cache) {
-    // Stale: serve what we have and refresh behind the request
-    if (Date.now() - cache.at > CACHE_TTL_MS && !refreshing) void refresh()
+    // Stale: serve what we have and refresh behind the request. performance.now()
+    // rather than Date.now(): under Cache Components, a raw wall-clock read during
+    // prerendering is an unstable value that fails the build — this only ever
+    // computes an elapsed delta, so the monotonic clock works just as well.
+    if (performance.now() - cache.at > CACHE_TTL_MS && !refreshing) void refresh()
     return applyCascade({ ...cache.flags, ...overrides })
   }
 

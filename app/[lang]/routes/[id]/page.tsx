@@ -21,6 +21,10 @@ import { resolveHlsUrl } from '@/lib/media'
 import { loadGpxPoints } from '@/lib/route-gpx'
 import { getFlags } from '@/lib/flags'
 
+// TODO: Cache Components adoption. Refactor this route so this opt-out can be removed.
+// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
+export const instant = false;
+
 // No `revalidate` and no `generateStaticParams`: the root layout reads
 // headers(), so this page can only render per request. With both exports, a
 // build whose database lookup failed returned no params, and Next then served
