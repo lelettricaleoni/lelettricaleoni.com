@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation'
 import { getDictionary, hasLocale } from './dictionaries'
 import { Navbar } from '@/components/navbar'
 import { HeroSection } from '@/components/hero-section'
+import { RoutesTeaserSection } from '@/components/routes-teaser-section'
 import { ServicesSection } from '@/components/services-section'
 import { PricingSection } from '@/components/pricing-section'
 import { MapSection } from '@/components/map-section'
@@ -17,12 +18,14 @@ export default async function HomePage({
   if (!hasLocale(lang)) notFound()
 
   const dict = await getDictionary(lang)
+  const flags = await getFlags()
 
   return (
     <>
-      <Navbar lang={lang} dict={dict} showRoutes={(await getFlags()).routes} />
+      <Navbar lang={lang} dict={dict} showRoutes={flags.routes} />
       <main>
         <HeroSection lang={lang} dict={dict} />
+        {flags.routes && <RoutesTeaserSection lang={lang} dict={dict} />}
         <ServicesSection dict={dict} />
         <PricingSection dict={dict} />
         <MapSection dict={dict} />

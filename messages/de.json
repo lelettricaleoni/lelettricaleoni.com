@@ -60,6 +60,11 @@
     "hours_value": "Täglich 09:00 – 13:00 / 14:00 – 19:00",
     "directions": "Wegbeschreibung"
   },
+  "routes_teaser": {
+    "title": "Eine Landschaft für zwei Räder",
+    "copy": "Trails und Schotterwege rund um den Gardasee, mit geprüften GPX-Tracks und den Daten, um die richtige Strecke zu wählen.",
+    "cta": "Empfohlene Strecken ansehen"
+  },
   "map": {
     "title": "Finden Sie uns auf Google Maps",
     "load_prompt": "Klicken Sie, um die Karte zu laden",

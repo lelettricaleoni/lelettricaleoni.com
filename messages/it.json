@@ -60,6 +60,11 @@
     "hours_value": "Tutti i giorni 09:00 – 13:00 / 14:00 – 19:00",
     "directions": "Ottieni indicazioni"
   },
+  "routes_teaser": {
+    "title": "Un territorio da scoprire in bici",
+    "copy": "Sentieri e strade bianche attorno al Garda, con tracce GPX verificate e le statistiche per scegliere il percorso giusto.",
+    "cta": "Vedi i percorsi consigliati"
+  },
   "map": {
     "title": "Trovaci su Google Maps",
     "load_prompt": "Clicca per caricare la mappa",
