@@ -28,16 +28,19 @@ _(niente in lavorazione)_
 - **Togliere `maplibre-gl`** — nessun file lo importa più dal passaggio a Cesium, e la
   versione 5 aveva una vulnerabilità critica: una dipendenza morta porta rischi veri.
 
-- **Rifare la barra dei filtri della lista percorsi** — oggi è una fila di pillole per
-  difficoltà e una per tipo di bici, che cresce male: con cinque tipi di bici la seconda
-  riga è già lunga, e non c'è modo di combinare i filtri in modo leggibile né di vedere a
-  colpo d'occhio quanti percorsi restano. Da ripensare come sezione, non da ritoccare.
-
-- **Interruttore foto ↔ mappa sulle card** — come quello di Google Maps che passa fra
-  mappa e satellite. Oggi la card mostra la foto *oppure*, se non ce n'è, la traccia GPX
-  disegnata: chi vuole vedere dove passa un percorso con le foto deve aprirlo. Il disegno
-  della mappa semplificata esiste già (`gpxPointsToMercatorPath` in `lib/gpx-svg.ts`), va
-  reso alternabile invece che di ripiego.
+- **Rifare la barra dei filtri della lista percorsi**, e dentro quella sezione un
+  interruttore foto/video ↔ mappa. Oggi la barra è una fila di pillole per difficoltà e
+  una per tipo di bici, che cresce male: con cinque tipi di bici la seconda riga è già
+  lunga, e non c'è modo di combinare i filtri in modo leggibile né di vedere a colpo
+  d'occhio quanti percorsi restano. Kevin la trova caotica — da ripensare come sezione,
+  non da ritoccare.
+  Nella stessa sezione va **un solo interruttore globale**, stile Mappa/Satellite di
+  Google Maps, che decide per l'intera lista se le card mostrano la foto o il video di
+  copertina oppure la traccia GPX disegnata — non un controllo per singola card. Oggi la
+  card mostra il media *oppure*, se manca, la traccia GPX come ripiego: chi vuole vedere
+  dove passano i percorsi con un media deve aprirli uno a uno. Il disegno della mappa
+  semplificata esiste già (`gpxPointsToMercatorPath` in `lib/gpx-svg.ts`), va reso
+  alternabile invece che di ripiego.
 
 - **Far partire i player dal gradino più basso** — il worker produce ora anche un 360p
   (~550k), con segmenti da 4 s allineati fra le rendition. Resta il lato player: `startLevel:
