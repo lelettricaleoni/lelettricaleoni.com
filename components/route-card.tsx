@@ -32,7 +32,6 @@ export function RouteCard({ route, translation, media, lang, dict }: RouteCardPr
     route.distanceKm ? { value: `${route.distanceKm}`, label: d.stat_distance } : null,
     route.elevationM != null ? { value: `${route.elevationM}`, label: `↑ ${d.stat_elevation}` } : null,
     route.durationMin ? { value: `${Math.floor(route.durationMin / 60)}h${route.durationMin % 60 > 0 ? `${route.durationMin % 60}m` : ''}`, label: d.stat_duration } : null,
-    { value: d[`surface_${route.surface}` as keyof typeof d] ?? route.surface, label: d.stat_surface },
   ].filter(Boolean) as { value: string; label: string }[]
 
   return (

@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import { eq, and, sql } from 'drizzle-orm'
-import { ArrowLeft, Ruler, TrendingUp, Clock, Layers } from 'lucide-react'
+import { ArrowLeft, Ruler, TrendingUp, Clock } from 'lucide-react'
 import { getDictionary, hasLocale } from '../../dictionaries'
 import { Navbar } from '@/components/navbar'
 import { Footer } from '@/components/footer'
@@ -169,7 +169,7 @@ export default async function RouteDetailPage({
         {gpxPoints.length > 1 && <RouteFlyoverLoader points={gpxPoints} difficulty={route.difficulty} />}
 
         {/* Stats */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           {route.distanceKm && (
             <div className="flex flex-col items-center gap-2 rounded-2xl border bg-white p-4 shadow-sm">
               <Ruler size={20} className="text-[#366DA1]" />
@@ -197,13 +197,6 @@ export default async function RouteDetailPage({
               <p className="text-xs text-muted-foreground uppercase tracking-wide text-center">{d.stat_duration}</p>
             </div>
           )}
-          <div className="flex flex-col items-center gap-2 rounded-2xl border bg-white p-4 shadow-sm">
-            <Layers size={20} className="text-[#366DA1]" />
-            <p className="text-2xl font-bold text-[#1e3a5f] leading-none capitalize">
-              {d[`surface_${route.surface}` as keyof typeof d] ?? route.surface}
-            </p>
-            <p className="text-xs text-muted-foreground uppercase tracking-wide text-center">{d.stat_surface}</p>
-          </div>
         </div>
 
         {/* Description */}
