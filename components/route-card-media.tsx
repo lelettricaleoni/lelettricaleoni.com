@@ -5,7 +5,7 @@ import Hls from 'hls.js'
 import { Mountain, Loader2 } from 'lucide-react'
 import { r2PublicUrl } from '@/lib/r2'
 import { hlsUrl, type MediaWithHls } from '@/lib/media-client'
-import type { RoutePhoto } from '@/lib/db'
+import { usePreviewMode } from './route-preview-mode'
 
 interface MapCenter { lat: number; lon: number; zoom: number }
 
@@ -41,6 +41,14 @@ export function RouteCardMedia({ media, gpxPath, mapCenter, difficulty, routeNam
   // Tiles are client-only to avoid SSR/hydration mismatch
   const [mounted, setMounted] = useState(false)
 
+  // The list-wide toggle's preferred type wins when this route has it; a
+  // route missing what the toggle asks for falls back to the other type
+  // instead of going blank, and only shows the mountain icon when it has
+  // neither. Mirrors the choice for cards that have never had a photo: never
+  // punish a route for missing the thing nobody is asking to see right now.
+  const preferMap = usePreviewMode() === 'map'
+  const showMap = Boolean(gpxPath) && (preferMap || !media)
+
   useEffect(() => { setMounted(true) }, [])
 
   useEffect(() => {
@@ -52,7 +60,14 @@ export function RouteCardMedia({ media, gpxPath, mapCenter, difficulty, routeNam
   }, [])
 
   useEffect(() => {
-    if (!media || media.mediaType !== 'video' || !videoRef.current || !isVisible) return
+    // showMap is in the dependency array on purpose, even though the guard
+    // below doesn't read it: switching to the map view unmounts <video> without
+    // this effect's cleanup ever running, since neither `media` nor `isVisible`
+    // changes when only the toggle does. The next switch back then attaches to
+    // a stale, already-destroyed hls.js instance — a black video that never
+    // starts. Listing showMap here makes React tear down and rebuild on every
+    // crossing, not just on the two dependencies that used to be the whole story.
+    if (!media || media.mediaType !== 'video' || !videoRef.current || !isVisible || showMap) return
     const src = media.hlsUrl ?? hlsUrl(media.storageKey)
     let hls: Hls | null = null
     setVideoError(false)
@@ -72,78 +87,78 @@ export function RouteCardMedia({ media, gpxPath, mapCenter, difficulty, routeNam
     }
 
     return () => hls?.destroy()
-  }, [media, isVisible])
+  }, [media, isVisible, showMap])
 
-  if (!media) {
-    if (gpxPath) {
-      if (mapCenter && mounted) {
-        const { lat, lon, zoom } = mapCenter
-        const { x: tx, y: ty, fracX, fracY } = latLonToTileXY(lat, lon, zoom)
-        // Shift so the route center aligns with the card center
-        const shiftX = Math.round(256 + fracX * 256)
-        const shiftY = Math.round(256 + fracY * 256)
-        const tiles: string[] = []
-        for (let dy = -1; dy <= 1; dy++) {
-          for (let dx = -1; dx <= 1; dx++) {
-            tiles.push(`/api/map-tile/${zoom}/${tx + dx}/${ty + dy}`)
-          }
+  if (showMap && gpxPath) {
+    if (mapCenter && mounted) {
+      const { lat, lon, zoom } = mapCenter
+      const { x: tx, y: ty, fracX, fracY } = latLonToTileXY(lat, lon, zoom)
+      // Shift so the route center aligns with the card center
+      const shiftX = Math.round(256 + fracX * 256)
+      const shiftY = Math.round(256 + fracY * 256)
+      const tiles: string[] = []
+      for (let dy = -1; dy <= 1; dy++) {
+        for (let dx = -1; dx <= 1; dx++) {
+          tiles.push(`/api/map-tile/${zoom}/${tx + dx}/${ty + dy}`)
         }
-        return (
-          <div ref={containerRef} className="relative w-full h-full overflow-hidden">
-            {/* Map tile grid — 3×3 tiles centered on route bbox center. The GPX path lives inside
-                this same transformed box, in the tiles' own Web Mercator pixel space, so it lines
-                up with the terrain instead of a separately-scaled schematic overlay. */}
-            <div
-              className="absolute"
-              style={{
-                left: '50%',
-                top: '50%',
-                transform: `translate(-${shiftX}px, -${shiftY}px)`,
-                width: '768px',
-                height: '768px',
-              }}
-            >
-              <div
-                className="absolute inset-0"
-                style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 256px)' }}
-              >
-                {tiles.map((url, i) => (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img key={i} src={url} alt="" width={256} height={256} style={{ display: 'block' }} />
-                ))}
-              </div>
-              <svg viewBox="0 0 768 768" className="absolute inset-0 w-full h-full">
-                <path
-                  d={gpxPath}
-                  fill="none"
-                  stroke={DIFFICULTY_COLORS[difficulty ?? ''] ?? '#795F91'}
-                  strokeWidth="4"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  transform={`translate(${shiftX}, ${shiftY})`}
-                />
-              </svg>
-            </div>
-          </div>
-        )
       }
-
       return (
-        <div ref={containerRef} className="w-full h-full flex items-center justify-center bg-[#e8f0f7]">
-          <svg viewBox="0 0 200 200" className="w-full h-full" style={{ padding: '20px' }}>
-            <path
-              d={gpxPath}
-              fill="none"
-              stroke="#366DA1"
-              strokeWidth="4"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
+        <div ref={containerRef} className="relative w-full h-full overflow-hidden">
+          {/* Map tile grid — 3×3 tiles centered on route bbox center. The GPX path lives inside
+              this same transformed box, in the tiles' own Web Mercator pixel space, so it lines
+              up with the terrain instead of a separately-scaled schematic overlay. */}
+          <div
+            className="absolute"
+            style={{
+              left: '50%',
+              top: '50%',
+              transform: `translate(-${shiftX}px, -${shiftY}px)`,
+              width: '768px',
+              height: '768px',
+            }}
+          >
+            <div
+              className="absolute inset-0"
+              style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 256px)' }}
+            >
+              {tiles.map((url, i) => (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img key={i} src={url} alt="" width={256} height={256} style={{ display: 'block' }} />
+              ))}
+            </div>
+            <svg viewBox="0 0 768 768" className="absolute inset-0 w-full h-full">
+              <path
+                d={gpxPath}
+                fill="none"
+                stroke={DIFFICULTY_COLORS[difficulty ?? ''] ?? '#795F91'}
+                strokeWidth="4"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                transform={`translate(${shiftX}, ${shiftY})`}
+              />
+            </svg>
+          </div>
         </div>
       )
     }
 
+    return (
+      <div ref={containerRef} className="w-full h-full flex items-center justify-center bg-[#e8f0f7]">
+        <svg viewBox="0 0 200 200" className="w-full h-full" style={{ padding: '20px' }}>
+          <path
+            d={gpxPath}
+            fill="none"
+            stroke="#366DA1"
+            strokeWidth="4"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </div>
+    )
+  }
+
+  if (!media) {
     return (
       <div ref={containerRef} className="w-full h-full flex flex-col items-center justify-center bg-[#c8dae8]">
         <Mountain size={32} className="text-[#366DA1]/50" />

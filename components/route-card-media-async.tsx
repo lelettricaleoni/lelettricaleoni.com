@@ -30,9 +30,14 @@ export async function RouteCardMediaAsync({ route, routeName }: RouteCardMediaAs
   )
   const coverMedia = readyMedia.find(Boolean) ?? undefined
 
+  // Computed whether or not there's a photo/video: the list-wide media↔map
+  // toggle needs every card able to show its track, not only the ones that
+  // had nothing else to show. loadGpxPoints is cached for a week per route
+  // version, so a route with a cover photo now pays one Redis read it
+  // previously skipped entirely — not a second R2 download.
   let gpxPath: string | undefined
   let mapCenter: { lat: number; lon: number; zoom: number } | undefined
-  if (!coverMedia && route.gpxKey) {
+  if (route.gpxKey) {
     const pts = await loadGpxPoints(route.gpxKey, route.updatedAt)
     if (pts.length > 0) {
       mapCenter = gpxBboxCenter(pts)
