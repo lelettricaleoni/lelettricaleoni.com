@@ -130,6 +130,7 @@ export async function getR2Stats(): Promise<R2Stats | null> {
           filter: { bucketName: "${bucketName}", date_geq: "${iso(weekAgo)}", date_leq: "${iso(today)}" }
           orderBy: [date_DESC]
         ) {
+          dimensions { date }
           max { payloadSize objectCount }
         }
       }
