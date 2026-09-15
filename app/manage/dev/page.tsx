@@ -1,12 +1,25 @@
 import { redirect } from 'next/navigation'
 import { getAdminUser } from '@/lib/supabase/server'
 import { hasDevAccess } from '@/lib/admin-users'
-import { readWorkerHeartbeat, type ActiveJob } from '@/lib/worker-heartbeat'
+import { readWorkerHeartbeat, type ActiveJob, type WorkerHeartbeat } from '@/lib/worker-heartbeat'
 import { getRedisStats, getPostgresStats, getR2Stats } from '@/lib/dev-stats'
 
 // TODO: Cache Components adoption. Refactor this route so this opt-out can be removed.
 // See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
 export const instant = false;
+
+/**
+ * The worker reports a load average, not a live percentage — Linux has
+ * nothing cheaper that means "current", since instantaneous CPU use swings
+ * too fast per-sample to be a useful number. Dividing by core count turns it
+ * into the 0-100% shape people actually read at a glance; it is a 1-minute
+ * average, not the instant this page loaded, which the hint under it says.
+ */
+function cpuUsagePercent(h: WorkerHeartbeat): number | null {
+  const load1m = h.load['1m']
+  if (load1m === undefined || !h.cpuCount) return null
+  return Math.min(100, Math.round((load1m / h.cpuCount) * 100))
+}
 
 function formatAgo(epochMs: number): string {
   const seconds = Math.max(0, Math.round((Date.now() - epochMs) / 1000))
@@ -82,10 +95,10 @@ export default async function DevToolsPage() {
             <p className="text-xs text-muted-foreground">Aggiornato {formatAgo(heartbeat.updatedAt)}</p>
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <StatCard label="CPU" value={heartbeat.cpuCount ? `${heartbeat.cpuCount} core` : '—'} />
               <StatCard
-                label="Carico (1 min)"
-                value={heartbeat.load['1m'] !== undefined ? heartbeat.load['1m'].toFixed(2) : '—'}
+                label="CPU"
+                value={cpuUsagePercent(heartbeat) !== null ? `${cpuUsagePercent(heartbeat)}%` : '—'}
+                hint={heartbeat.cpuCount ? `${heartbeat.cpuCount} core, media 1 min` : undefined}
               />
               <StatCard
                 label="Memoria"
