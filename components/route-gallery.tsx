@@ -8,7 +8,7 @@ import Hls from 'hls.js'
 import { VideoOff, Loader2 } from 'lucide-react'
 import { VideoPlayer } from '@/components/video-player'
 import { r2PublicUrl } from '@/lib/r2'
-import { hlsUrl, type MediaWithHls } from '@/lib/media-client'
+import { hlsUrl, lowestBitrateLevel, type MediaWithHls } from '@/lib/media-client'
 import type { Slide } from 'yet-another-react-lightbox'
 import type { RoutePhoto } from '@/lib/db'
 
@@ -49,7 +49,14 @@ function VideoThumbAutoplay({ hlsUrl }: { hlsUrl: string }) {
     setError(false)
     setReady(false)
     if (Hls.isSupported()) {
-      hls = new Hls({ startLevel: -1 })
+      hls = new Hls()
+      // Same reasoning as route-card-media.tsx: never worth 1080p for a
+      // silent, looping thumbnail.
+      hls.on(Hls.Events.MANIFEST_PARSED, (_, data) => {
+        const lowest = lowestBitrateLevel(data.levels)
+        hls!.startLevel = lowest
+        hls!.loadLevel = lowest
+      })
       hls.loadSource(hlsUrl)
       hls.attachMedia(videoRef.current)
       hls.on(Hls.Events.ERROR, (_, data) => { if (data.fatal) setError(true) })

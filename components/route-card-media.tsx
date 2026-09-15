@@ -4,7 +4,7 @@ import Image from 'next/image'
 import Hls from 'hls.js'
 import { Mountain, Loader2 } from 'lucide-react'
 import { r2PublicUrl } from '@/lib/r2'
-import { hlsUrl, type MediaWithHls } from '@/lib/media-client'
+import { hlsUrl, lowestBitrateLevel, type MediaWithHls } from '@/lib/media-client'
 import { usePreviewMode } from './route-preview-mode'
 
 interface MapCenter { lat: number; lon: number; zoom: number }
@@ -88,7 +88,15 @@ export function RouteCardMedia({ media, gpxPath, mapCenter, difficulty, routeNam
     setVideoReady(false)
 
     if (Hls.isSupported()) {
-      hls = new Hls({ startLevel: -1 })
+      hls = new Hls()
+      // Small, muted, looping preview: never worth waiting on hls.js's
+      // bandwidth guess, which starts optimistic and shows the loading
+      // spinner longer than it needs to while it steps down.
+      hls.on(Hls.Events.MANIFEST_PARSED, (_event, data) => {
+        const lowest = lowestBitrateLevel(data.levels)
+        hls!.startLevel = lowest
+        hls!.loadLevel = lowest
+      })
       hls.loadSource(src)
       hls.attachMedia(videoRef.current)
       hls.on(Hls.Events.ERROR, (_event, data) => {
