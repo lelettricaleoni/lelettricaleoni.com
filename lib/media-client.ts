@@ -48,3 +48,16 @@ export function hlsUrl(privateKey: string, manifest: string = HLS_MANIFESTS[1]):
  * from guessing — and from silently showing nothing when it guesses wrong.
  */
 export type MediaWithHls = RoutePhoto & { hlsUrl?: string }
+
+/**
+ * Index of the lowest-bitrate rendition in an hls.js `levels` array.
+ *
+ * Not index 0: the worker's manifest lists renditions highest-bitrate
+ * first (confirmed by reading a real master.m3u8, not assumed), so the
+ * lowest rung is whichever entry actually has the smallest `bitrate` —
+ * picking by position would start these silent, looping previews at
+ * 1080p, the opposite of the point.
+ */
+export function lowestBitrateLevel(levels: { bitrate: number }[]): number {
+  return levels.reduce((min, level, i, all) => (level.bitrate < all[min].bitrate ? i : min), 0)
+}

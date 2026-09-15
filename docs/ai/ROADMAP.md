@@ -25,12 +25,6 @@ _(niente in lavorazione)_
   rigeneri il lockfile sul branch di Dependabot. Finché non si risolve, ogni suo
   aggiornamento npm va rifatto a mano come in #63.
 
-- **Far partire i player dal gradino più basso** — il worker produce ora anche un 360p
-  (~550k), con segmenti da 4 s allineati fra le rendition. Resta il lato player: `startLevel:
-  -1` in `route-card-media.tsx` e `route-gallery.tsx` lascia stimare la banda a hls.js, che
-  parte ottimista e fa vedere la rotella prima di scendere. Vale solo per i video
-  ritrascodificati: quelli vecchi non hanno il 360p.
-
 - **La modale della galleria non mostra il fallback quando il player fallisce.**
   `HlsVideoSlide` (`route-gallery.tsx`) aspetta l'`onError` del componente `VideoPlayer`
   (`@videojs/react` 10.0.0-rc.2) per mostrare il messaggio corretto, ma quell'`onError` è
