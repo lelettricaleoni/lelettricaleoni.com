@@ -2,28 +2,12 @@
 import { useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
 import Hls from 'hls.js'
-import { Mountain } from 'lucide-react'
 import { r2PublicUrl } from '@/lib/r2'
 import { hlsUrl, lowestBitrateLevel, type MediaWithHls } from '@/lib/media-client'
+import { MediaPlaceholder } from '@/components/media-placeholder'
 import { usePreviewMode } from './route-preview-mode'
 
 interface MapCenter { lat: number; lon: number; zoom: number }
-
-/**
- * One "nothing to show yet" treatment for the whole card, instead of a
- * different one per case: the same icon means "a route with no media/GPX
- * at all" and "a photo or video that hasn't arrived yet" read as the same
- * kind of moment, not two unrelated states (an icon here, a spinner there).
- * `pulse` is the only thing that tells them apart — genuinely empty stays
- * still, still-arriving breathes.
- */
-function MediaPlaceholder({ pulse }: { pulse?: boolean }) {
-  return (
-    <div className={`absolute inset-0 flex items-center justify-center bg-[#c8dae8] ${pulse ? 'animate-pulse' : ''}`}>
-      <Mountain size={32} className="text-[#366DA1]/50" />
-    </div>
-  )
-}
 
 const DIFFICULTY_COLORS: Record<string, string> = {
   easy:   '#22c55e',
