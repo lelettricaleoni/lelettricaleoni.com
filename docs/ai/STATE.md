@@ -63,15 +63,24 @@ sorgente vive solo i minuti che il worker impiega a cancellarlo.
 
 **Il worker** (`lelettricaleoni/videoStream-bucketWorker`) sta in `~/docker/worker` sulla VM
 `clustrenode1` (Oracle Cloud, ARM64, 2 CPU), con un Redis append-only per la coda BullMQ,
-nessuna porta aperta. Immagine pinnata per digest in `docker-compose.yml`: dopo una build va
-aggiornato a mano. Quattro rendition HLS (1080/720/480/360p), segmenti da 4 s allineati.
+nessuna porta aperta. Quattro rendition HLS (1080/720/480/360p), segmenti da 4 s allineati.
 
 | | |
 |---|---|
 | Trova il lavoro | elencando R2: un sorgente senza manifesto **è** il lavoro da fare |
 | Coda | BullMQ, job id = l'oggetto, tre tentativi con backoff |
-| Stato | su Upstash, `videojob:v1:*`, letto da `lib/video-jobs.ts` |
+| Stato per job | su Upstash, `videojob:v1:<storage-key>`, letto da `lib/video-jobs.ts` |
+| Stato del worker | battito ogni 15 s su `videojob:v1:__worker__` (`heartbeat.py`), letto da `lib/worker-heartbeat.ts` per `/manage/dev` |
 | Altri lavori | registro in `jobs/__init__.py`: un modulo, una riga in `HANDLERS`, per i cron una in `SCHEDULES` |
+
+**Deploy automatico dal 2026-09-15**: ogni push a `main` con modifiche a `.py`,
+`requirements.txt` o `Dockerfile` costruisce l'immagine, la fissa per digest esatto e la
+distribuisce da sola sulla VM (`deploy.sh`, via una chiave SSH dedicata con comando forzato
+in `authorized_keys` — non può eseguire nient'altro). Prima di sostituire il container in
+esecuzione, `deploy.sh` prova l'immagine a freddo (importa tutti i moduli con l'`.env` vero)
+e torna indietro da sola se il container non parte sano. Verificato dal vivo: un comando
+arbitrario passato attraverso quella chiave non viene eseguito, resta testo inerte per
+`deploy.sh`.
 
 La coda è **ricostruibile, non durevole**: non può esserlo più dei dati che serve, e la
 verità sta nello storage.
