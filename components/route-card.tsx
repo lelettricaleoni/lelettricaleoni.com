@@ -28,11 +28,21 @@ interface RouteCardProps {
 export function RouteCard({ route, translation, media, lang, dict }: RouteCardProps) {
   const d = dict.routes
 
+  // Always three slots, even without a GPX: a route missing one stat (or
+  // all of them) still needs the same band height and column count as its
+  // neighbours in the grid-rows-subgrid row — an empty stats box collapses
+  // and breaks that alignment, so a missing value shows "-" instead of
+  // disappearing.
   const stats = [
-    route.distanceKm ? { value: `${route.distanceKm}`, label: d.stat_distance } : null,
-    route.elevationM != null ? { value: `${route.elevationM}`, label: `↑ ${d.stat_elevation}` } : null,
-    route.durationMin ? { value: `${Math.floor(route.durationMin / 60)}h${route.durationMin % 60 > 0 ? `${route.durationMin % 60}m` : ''}`, label: d.stat_duration } : null,
-  ].filter(Boolean) as { value: string; label: string }[]
+    { value: route.distanceKm ? `${route.distanceKm}` : '-', label: d.stat_distance },
+    { value: route.elevationM != null ? `${route.elevationM}` : '-', label: `↑ ${d.stat_elevation}` },
+    {
+      value: route.durationMin
+        ? `${Math.floor(route.durationMin / 60)}h${route.durationMin % 60 > 0 ? `${route.durationMin % 60}m` : ''}`
+        : '-',
+      label: d.stat_duration,
+    },
+  ]
 
   return (
     <Link
