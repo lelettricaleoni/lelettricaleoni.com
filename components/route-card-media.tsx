@@ -2,12 +2,28 @@
 import { useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
 import Hls from 'hls.js'
-import { Mountain, Loader2 } from 'lucide-react'
+import { Mountain } from 'lucide-react'
 import { r2PublicUrl } from '@/lib/r2'
 import { hlsUrl, lowestBitrateLevel, type MediaWithHls } from '@/lib/media-client'
 import { usePreviewMode } from './route-preview-mode'
 
 interface MapCenter { lat: number; lon: number; zoom: number }
+
+/**
+ * One "nothing to show yet" treatment for the whole card, instead of a
+ * different one per case: the same icon means "a route with no media/GPX
+ * at all" and "a photo or video that hasn't arrived yet" read as the same
+ * kind of moment, not two unrelated states (an icon here, a spinner there).
+ * `pulse` is the only thing that tells them apart — genuinely empty stays
+ * still, still-arriving breathes.
+ */
+function MediaPlaceholder({ pulse }: { pulse?: boolean }) {
+  return (
+    <div className={`absolute inset-0 flex items-center justify-center bg-[#c8dae8] ${pulse ? 'animate-pulse' : ''}`}>
+      <Mountain size={32} className="text-[#366DA1]/50" />
+    </div>
+  )
+}
 
 const DIFFICULTY_COLORS: Record<string, string> = {
   easy:   '#22c55e',
@@ -43,6 +59,9 @@ export function RouteCardMedia({ media, gpxPath, mapCenter, difficulty, routeNam
   // on top of the video, not behind it, and disappear once playback truly
   // starts rather than once the element merely mounts.
   const [videoReady, setVideoReady] = useState(false)
+  // Same idea for a photo: Next/Image has nothing to paint until it decodes,
+  // so the placeholder covers that gap too instead of leaving a blank box.
+  const [photoReady, setPhotoReady] = useState(false)
   // Tiles are client-only to avoid SSR/hydration mismatch
   const [mounted, setMounted] = useState(false)
 
@@ -183,8 +202,8 @@ export function RouteCardMedia({ media, gpxPath, mapCenter, difficulty, routeNam
 
   if (!media || mediaFailed) {
     return (
-      <div ref={containerRef} className="w-full h-full flex flex-col items-center justify-center bg-[#c8dae8]">
-        <Mountain size={32} className="text-[#366DA1]/50" />
+      <div ref={containerRef} className="relative w-full h-full">
+        <MediaPlaceholder />
       </div>
     )
   }
@@ -192,11 +211,7 @@ export function RouteCardMedia({ media, gpxPath, mapCenter, difficulty, routeNam
   if (media.mediaType === 'video') {
     return (
       <div ref={containerRef} className="relative w-full h-full bg-zinc-900">
-        {!videoReady && (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <Loader2 size={22} className="text-white/40 animate-spin" />
-          </div>
-        )}
+        {!videoReady && <MediaPlaceholder pulse />}
         <video
           ref={videoRef}
           autoPlay
@@ -212,11 +227,13 @@ export function RouteCardMedia({ media, gpxPath, mapCenter, difficulty, routeNam
 
   return (
     <div ref={containerRef} className="relative w-full h-full">
+      {!photoReady && <MediaPlaceholder pulse />}
       <Image
         src={r2PublicUrl(media.storageKey)}
         alt={media.altText ?? routeName}
         fill
         loading="lazy"
+        onLoad={() => setPhotoReady(true)}
         className="object-cover group-hover:scale-105 transition-transform duration-300"
         // Misurato sulla produzione il 2026-09-10: la card è larga 292px a
         // 390 di viewport, 290 a 768, 356 a 900, e **313 da 1200 in su** —
