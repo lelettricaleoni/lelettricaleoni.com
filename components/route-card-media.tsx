@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
 import Hls from 'hls.js'
-import { Mountain, Loader2 } from 'lucide-react'
+import { Mountain } from 'lucide-react'
 import { r2PublicUrl } from '@/lib/r2'
 import { hlsUrl, type MediaWithHls } from '@/lib/media-client'
 import { usePreviewMode } from './route-preview-mode'
@@ -41,13 +41,22 @@ export function RouteCardMedia({ media, gpxPath, mapCenter, difficulty, routeNam
   // Tiles are client-only to avoid SSR/hydration mismatch
   const [mounted, setMounted] = useState(false)
 
+  // A video that reaches this component already passed the server's check
+  // that its manifest exists (lib/media.ts resolveHlsUrl, cached 7 days since
+  // a manifest never moves once written) — so a playback failure here is
+  // never "still processing", it's storage being unreachable right now, or a
+  // genuinely broken stream. Treated exactly like having no media at all,
+  // same as the fallback below: falls back to the map/mountain icon instead
+  // of getting stuck on a spinner that falsely promises it's coming.
+  const mediaFailed = media?.mediaType === 'video' && videoError
+
   // The list-wide toggle's preferred type wins when this route has it; a
   // route missing what the toggle asks for falls back to the other type
   // instead of going blank, and only shows the mountain icon when it has
   // neither. Mirrors the choice for cards that have never had a photo: never
   // punish a route for missing the thing nobody is asking to see right now.
   const preferMap = usePreviewMode() === 'map'
-  const showMap = Boolean(gpxPath) && (preferMap || !media)
+  const showMap = Boolean(gpxPath) && (preferMap || !media || mediaFailed)
 
   useEffect(() => { setMounted(true) }, [])
 
@@ -158,7 +167,7 @@ export function RouteCardMedia({ media, gpxPath, mapCenter, difficulty, routeNam
     )
   }
 
-  if (!media) {
+  if (!media || mediaFailed) {
     return (
       <div ref={containerRef} className="w-full h-full flex flex-col items-center justify-center bg-[#c8dae8]">
         <Mountain size={32} className="text-[#366DA1]/50" />
@@ -167,14 +176,6 @@ export function RouteCardMedia({ media, gpxPath, mapCenter, difficulty, routeNam
   }
 
   if (media.mediaType === 'video') {
-    if (videoError) {
-      return (
-        <div ref={containerRef} className="w-full h-full flex flex-col items-center justify-center gap-1.5 bg-zinc-900">
-          <Loader2 size={22} className="text-white/40 animate-spin" />
-          <span className="text-[11px] text-white/30">Video in elaborazione</span>
-        </div>
-      )
-    }
     return (
       <div ref={containerRef} className="w-full h-full bg-zinc-900">
         <video

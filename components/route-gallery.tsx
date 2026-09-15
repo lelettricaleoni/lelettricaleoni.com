@@ -5,7 +5,7 @@ import Lightbox from 'yet-another-react-lightbox'
 import 'yet-another-react-lightbox/styles.css'
 import Zoom from 'yet-another-react-lightbox/plugins/zoom'
 import Hls from 'hls.js'
-import { Loader2 } from 'lucide-react'
+import { VideoOff } from 'lucide-react'
 import { VideoPlayer } from '@/components/video-player'
 import { r2PublicUrl } from '@/lib/r2'
 import { hlsUrl, type MediaWithHls } from '@/lib/media-client'
@@ -57,9 +57,13 @@ function VideoThumbAutoplay({ hlsUrl }: { hlsUrl: string }) {
   }, [hlsUrl, visible])
 
   if (error) {
+    // A thumbnail whose manifest the server already confirmed exists, but
+    // fails to play — never "still processing" (see route-card-media.tsx),
+    // so this is a flat, non-spinning icon rather than a loader that
+    // falsely promises it's about to come through.
     return (
       <div ref={containerRef} className="absolute inset-0 flex items-center justify-center bg-zinc-900">
-        <Loader2 size={20} className="text-white/40 animate-spin" />
+        <VideoOff size={20} className="text-white/30" />
       </div>
     )
   }
@@ -84,10 +88,13 @@ function HlsVideoSlide({ hlsUrl, active }: { hlsUrl: string; active: boolean }) 
   const [error, setError] = useState(false)
 
   if (error) {
+    // Same reasoning as VideoThumbAutoplay above: this is a genuine playback
+    // failure, not a still-processing video, so the message says so instead
+    // of implying the visitor should wait.
     return (
       <div className="flex flex-col items-center justify-center gap-3 w-full h-full">
-        <Loader2 size={32} className="text-white/40 animate-spin" />
-        <span className="text-sm text-white/40">Video in elaborazione</span>
+        <VideoOff size={32} className="text-white/30" />
+        <span className="text-sm text-white/40">Video non disponibile al momento</span>
       </div>
     )
   }
