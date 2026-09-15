@@ -80,12 +80,19 @@ dalla VM, non raggiunge le cache HLS e GPX che stanno lì accanto.
 
 ## Decisioni vincolanti, e perché
 
-**Tutto è renderizzato su richiesta.** Il layout radice legge `x-locale` con `await
-headers()`, e questo rende dinamico l'intero albero: ogni visita interroga Supabase e
-scarica il GPX da R2. `revalidate` sulle pagine percorsi **non ha mai avuto effetto** — ed
-era peggio che inutile: se il database non rispondeva durante la build, `generateStaticParams`
-tornava vuoto, Next trattava il dettaglio come ISR e `headers()` lanciava, **500 su ogni
-percorso** (produzione, 2026-09-11). Tolti dal dettaglio; resta `revalidate` sulla lista.
+**Il locale viene dall'URL, non da un header.** `app/[lang]/layout.tsx` è il root layout
+(`<html>/<body>`, GA4, consenso cookie) e legge `params.lang`, noto a build time —
+`app/layout.tsx` non esiste più. Prima leggeva `x-locale` via `headers()`, il che rendeva
+dinamico l'intero albero sotto.
+
+**Cache Components (Next 16) è acceso**: lista e dettaglio percorsi cache-ano il lavoro
+DB/R2 (`lib/routes-data.ts`, `"use cache"`, ~30s, tag `routes-list` / `route-${id}`,
+invalidati da `updateTag` nelle azioni admin). `getFlags()` resta fuori dalla cache —
+`@flags-sdk/vercel` legge `headers()` internamente, vietato anche indirettamente in uno
+scope `"use cache"` — e va preceduto da `await connection()` nella pagina: senza, durante
+la build `headers()` va in timeout, `lib/flags.ts` lo intercetta (fail-open, per design) e
+quel valore resta congelato nello shell statico finché non c'è un nuovo deploy — il
+kill-switch smette di funzionare in silenzio, senza che la build lo segnali.
 
 **La traccia GPX si ancora al terreno, non alla propria quota.** Le quote GPX sono
 ortometriche, quelle di Cesium ellissoidiche: misurato su un percorso reale, scarto mediano
@@ -134,8 +141,6 @@ variabili su Vercel sono *Secret*: escono come `[SENSITIVE]`, non si rileggono. 
 
 - **`README.md` è disallineato**: descrive `/percorsi` e `/api/percorsi/[slug]/gpx`, mentre
   il codice usa `/routes`; non cita Cesium né HLS.
-- **`revalidate = 3600` sulla lista è codice morto** (vedi sopra). Rendere reale la cache è
-  la voce con l'impatto maggiore su prestazioni e costi: WIP su `feat/routes-caching`.
 - **Le PR npm di Dependabot hanno il lockfile rotto**: il suo npm 11 toglie l'`esbuild`
   opzionale di vite, che `npm ci` con npm 10 (Node 22, in CI) poi rifiuta. Non superano
   nemmeno davvero il check `browser`: senza i secret il workflow si salta da solo e
@@ -145,6 +150,8 @@ variabili su Vercel sono *Secret*: escono come `[SENSITIVE]`, non si rileggono. 
 
 ## Decisioni passate ancora rilevanti
 
+- `docs/superpowers/specs/2026-09-14-routes-caching-cache-components-design.md` — cache
+  reale su lista/dettaglio percorsi
 - `docs/superpowers/specs/2026-09-09-ai-docs-system-design.md` — questo sistema
 - `docs/superpowers/specs/2026-09-10-tests-against-preview-design.md` — test browser contro
   il preview: geometria, contenuto, budget di prestazione
