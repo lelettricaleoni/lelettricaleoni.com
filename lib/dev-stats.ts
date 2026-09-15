@@ -51,7 +51,10 @@ export async function getRedisStats(): Promise<RedisStats | null> {
     Promise.all([redis.dbsize(), redis.keys('videojob:v1:*')]),
     TIMEOUT_MS
   )
-  if (!result) return null
+  if (!result) {
+    console.error('[dev-stats] getRedisStats: query timed out or failed')
+    return null
+  }
 
   const [totalKeys, jobKeys] = result
   return {
@@ -69,29 +72,45 @@ export interface PostgresStats {
 }
 
 export async function getPostgresStats(): Promise<PostgresStats | null> {
-  const result = await settle(
-    Promise.all([
-      db.execute<{ size_mb: number }>(
-        sql`select round(pg_database_size(current_database()) / 1024.0 / 1024.0) as size_mb`
-      ),
-      db.execute<{ count: number }>(
-        sql`select count(*)::int as count from pg_stat_activity where datname = current_database()`
-      ),
-      db.select({ count: sql<number>`count(*)::int` }).from(routes),
-      db.select({ count: sql<number>`count(*)::int` }).from(routePhotos),
-      db.select({ count: sql<number>`count(*)::int` }).from(routeTranslations),
-    ]),
+  // One round trip, one connection acquisition — five separate queries here
+  // used to mean five, all competing with the site's own traffic for the
+  // three connections max: 3 allows (lib/db/index.ts), which is exactly the
+  // kind of pool contention that hung /routes for five minutes on
+  // 2026-09-15 (see STATE.md). This page must not add to that risk.
+  //
+  // `::int` on every value, not `round()` left as numeric: postgres.js
+  // returns NUMERIC/DECIMAL columns as strings to avoid float precision
+  // loss, which would have made databaseSizeMb a string silently accepted
+  // by the ?? 0 fallback instead of a number.
+  const rows = await settle(
+    db.execute<{
+      size_mb: number
+      connections: number
+      route_count: number
+      photo_count: number
+      translation_count: number
+    }>(sql`
+      select
+        round(pg_database_size(current_database()) / 1024.0 / 1024.0)::int as size_mb,
+        (select count(*)::int from pg_stat_activity where datname = current_database()) as connections,
+        (select count(*)::int from ${routes}) as route_count,
+        (select count(*)::int from ${routePhotos}) as photo_count,
+        (select count(*)::int from ${routeTranslations}) as translation_count
+    `),
     TIMEOUT_MS
   )
-  if (!result) return null
+  const row = rows?.[0]
+  if (!row) {
+    console.error('[dev-stats] getPostgresStats: query timed out or failed')
+    return null
+  }
 
-  const [[sizeRow], [connRow], [routeRow], [photoRow], [translationRow]] = result
   return {
-    databaseSizeMb: sizeRow?.size_mb ?? 0,
-    connections: connRow?.count ?? 0,
-    routeCount: routeRow?.count ?? 0,
-    photoCount: photoRow?.count ?? 0,
-    translationCount: translationRow?.count ?? 0,
+    databaseSizeMb: row.size_mb,
+    connections: row.connections,
+    routeCount: row.route_count,
+    photoCount: row.photo_count,
+    translationCount: row.translation_count,
   }
 }
 
@@ -145,14 +164,20 @@ export async function getR2Stats(): Promise<R2Stats | null> {
     }).then((r) => r.json()),
     TIMEOUT_MS
   )
-  if (!isRecord(response)) return null
+  if (!isRecord(response)) {
+    console.error('[dev-stats] getR2Stats: query timed out or failed')
+    return null
+  }
 
   // Cloudflare's response, treated as foreign input rather than trusted shape.
   const groups = (response as {
     data?: { viewer?: { accounts?: { r2StorageAdaptiveGroups?: unknown[] }[] } }
   }).data?.viewer?.accounts?.[0]?.r2StorageAdaptiveGroups
   const latest = Array.isArray(groups) ? groups[0] : undefined
-  if (!isRecord(latest) || !isRecord(latest.max)) return null
+  if (!isRecord(latest) || !isRecord(latest.max)) {
+    console.error('[dev-stats] getR2Stats: unexpected response shape', JSON.stringify(response).slice(0, 500))
+    return null
+  }
 
   const { payloadSize, objectCount } = latest.max
   if (typeof payloadSize !== 'number' || typeof objectCount !== 'number') return null
