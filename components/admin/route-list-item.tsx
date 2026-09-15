@@ -1,7 +1,7 @@
 'use client'
 import { useTransition } from 'react'
 import Link from 'next/link'
-import { Pencil, Trash2, Eye, EyeOff } from 'lucide-react'
+import { Pencil, Trash2, Eye, EyeOff, List, ListX } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -10,7 +10,7 @@ import {
   AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
   AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
-import { deleteRouteAction, togglePublishAction } from '@/lib/actions/routes'
+import { deleteRouteAction, togglePublishAction, toggleUnlistedAction } from '@/lib/actions/routes'
 import { DifficultyBadge } from '@/components/difficulty-badge'
 import type { Route } from '@/lib/db'
 
@@ -35,6 +35,13 @@ export function RouteListItem({ route, name }: { route: Route; name: string }) {
     })
   }
 
+  function handleToggleUnlisted() {
+    startTransition(async () => {
+      await toggleUnlistedAction(route.id, !route.unlisted)
+      toast.success(route.unlisted ? 'Route back in the list' : 'Route removed from the list, link still works')
+    })
+  }
+
   return (
     <div className="flex items-center justify-between p-4 bg-card border rounded-lg">
       <div className="space-y-1 min-w-0">
@@ -45,6 +52,7 @@ export function RouteListItem({ route, name }: { route: Route; name: string }) {
           <Badge variant={route.isPublished ? 'default' : 'secondary'}>
             {route.isPublished ? 'Published' : 'Draft'}
           </Badge>
+          {route.isPublished && route.unlisted && <Badge variant="outline">Unlisted</Badge>}
         </div>
       </div>
 
@@ -57,6 +65,17 @@ export function RouteListItem({ route, name }: { route: Route; name: string }) {
         >
           {route.isPublished ? <EyeOff size={16} /> : <Eye size={16} />}
         </Button>
+
+        {route.isPublished && (
+          <Button
+            variant="ghost" size="icon"
+            onClick={handleToggleUnlisted}
+            disabled={isPending}
+            title={route.unlisted ? 'Show in list' : 'Remove from list (link keeps working)'}
+          >
+            {route.unlisted ? <List size={16} /> : <ListX size={16} />}
+          </Button>
+        )}
 
         <Button variant="ghost" size="icon" asChild>
           <Link href={`/manage/routes/${route.id}`}><Pencil size={16} /></Link>

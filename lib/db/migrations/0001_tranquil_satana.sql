@@ -1,0 +1,1 @@
+ALTER TABLE "routes" ADD COLUMN "unlisted" boolean DEFAULT false NOT NULL;

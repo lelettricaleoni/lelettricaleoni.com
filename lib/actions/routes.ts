@@ -267,6 +267,24 @@ export async function togglePublishAction(id: string, isPublished: boolean) {
   if (route) updateTag(`route-${shortRouteId(route.id)}`)
 }
 
+/**
+ * Off the routes list, not off the site: the detail page keeps working at
+ * its own URL. Independent of isPublished — an unpublished route already
+ * disappears everywhere, this is only for a published one you don't want
+ * offered up but still want reachable by link.
+ */
+export async function toggleUnlistedAction(id: string, unlisted: boolean) {
+  await requireAdmin()
+  const [route] = await db
+    .update(routes)
+    .set({ unlisted, updatedAt: new Date() })
+    .where(eq(routes.id, id))
+    .returning()
+
+  updateTag('routes-list')
+  if (route) updateTag(`route-${shortRouteId(route.id)}`)
+}
+
 export async function getPresignedUploadUrlAction(
   routeId: string,
   fileName: string,
