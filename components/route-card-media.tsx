@@ -38,8 +38,22 @@ export function RouteCardMedia({ media, gpxPath, mapCenter, difficulty, routeNam
   const videoRef = useRef<HTMLVideoElement>(null)
   const [isVisible, setIsVisible] = useState(false)
   const [videoError, setVideoError] = useState(false)
+  // A <video> element paints black until its first frame decodes, no matter
+  // what the container behind it is styled with — so the loader has to sit
+  // on top of the video, not behind it, and disappear once playback truly
+  // starts rather than once the element merely mounts.
+  const [videoReady, setVideoReady] = useState(false)
   // Tiles are client-only to avoid SSR/hydration mismatch
   const [mounted, setMounted] = useState(false)
+
+  // A video that reaches this component already passed the server's check
+  // that its manifest exists (lib/media.ts resolveHlsUrl, cached 7 days since
+  // a manifest never moves once written) — so a playback failure here is
+  // never "still processing", it's storage being unreachable right now, or a
+  // genuinely broken stream. Treated exactly like having no media at all,
+  // same as the fallback below: falls back to the map/mountain icon instead
+  // of getting stuck on a spinner that falsely promises it's coming.
+  const mediaFailed = media?.mediaType === 'video' && videoError
 
   // The list-wide toggle's preferred type wins when this route has it; a
   // route missing what the toggle asks for falls back to the other type
@@ -47,7 +61,7 @@ export function RouteCardMedia({ media, gpxPath, mapCenter, difficulty, routeNam
   // neither. Mirrors the choice for cards that have never had a photo: never
   // punish a route for missing the thing nobody is asking to see right now.
   const preferMap = usePreviewMode() === 'map'
-  const showMap = Boolean(gpxPath) && (preferMap || !media)
+  const showMap = Boolean(gpxPath) && (preferMap || !media || mediaFailed)
 
   useEffect(() => { setMounted(true) }, [])
 
@@ -71,6 +85,7 @@ export function RouteCardMedia({ media, gpxPath, mapCenter, difficulty, routeNam
     const src = media.hlsUrl ?? hlsUrl(media.storageKey)
     let hls: Hls | null = null
     setVideoError(false)
+    setVideoReady(false)
 
     if (Hls.isSupported()) {
       hls = new Hls({ startLevel: -1 })
@@ -158,7 +173,7 @@ export function RouteCardMedia({ media, gpxPath, mapCenter, difficulty, routeNam
     )
   }
 
-  if (!media) {
+  if (!media || mediaFailed) {
     return (
       <div ref={containerRef} className="w-full h-full flex flex-col items-center justify-center bg-[#c8dae8]">
         <Mountain size={32} className="text-[#366DA1]/50" />
@@ -167,22 +182,20 @@ export function RouteCardMedia({ media, gpxPath, mapCenter, difficulty, routeNam
   }
 
   if (media.mediaType === 'video') {
-    if (videoError) {
-      return (
-        <div ref={containerRef} className="w-full h-full flex flex-col items-center justify-center gap-1.5 bg-zinc-900">
-          <Loader2 size={22} className="text-white/40 animate-spin" />
-          <span className="text-[11px] text-white/30">Video in elaborazione</span>
-        </div>
-      )
-    }
     return (
-      <div ref={containerRef} className="w-full h-full bg-zinc-900">
+      <div ref={containerRef} className="relative w-full h-full bg-zinc-900">
+        {!videoReady && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <Loader2 size={22} className="text-white/40 animate-spin" />
+          </div>
+        )}
         <video
           ref={videoRef}
           autoPlay
           muted
           loop
           playsInline
+          onPlaying={() => setVideoReady(true)}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
         />
       </div>

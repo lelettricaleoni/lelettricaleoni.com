@@ -31,11 +31,16 @@ _(niente in lavorazione)_
   parte ottimista e fa vedere la rotella prima di scendere. Vale solo per i video
   ritrascodificati: quelli vecchi non hanno il 360p.
 
-- **Video fantasma a storage irraggiungibile** — con lo storage giù il video compare lo
-  stesso con la scritta "Video in elaborazione", invece di sparire. Sospetto che la cache
-  del manifesto (7 giorni) lo faccia risultare pronto anche quando lo storage non risponde.
-  Ora il dato per distinguere i due casi esiste: il worker pubblica lo stato reale su
-  Upstash, e la pagina pubblica può leggerlo invece di dedurlo.
+- **La modale della galleria non mostra il fallback quando il player fallisce.**
+  `HlsVideoSlide` (`route-gallery.tsx`) aspetta l'`onError` del componente `VideoPlayer`
+  (`@videojs/react` 10.0.0-rc.2) per mostrare il messaggio corretto, ma quell'`onError` è
+  l'evento nativo `<video>` — non si attiva su un manifesto che risponde 404: la libreria
+  gestisce l'errore internamente (mostra una propria modale "Something went wrong",
+  dismissibile, dopo la quale il player resta muto e a 0:00) senza mai propagarlo.
+  Confermato simulando un manifesto irraggiungibile in un browser reale, non dedotto: anche
+  `video.error` sull'elemento nativo resta `null`. Serve capire come questa libreria RC
+  espone davvero un errore dell'adapter HLS — il suo `HlsJsAdapter.error` (un getter
+  separato) è il candidato, ma non è un evento a cui reagire, va compreso come.
 
 - **Primi lavori non-video sul worker** — promemoria prenotazioni ed estratti conto, che
   Kevin ha in programma. L'impalcatura c'è: `jobs/__init__.py` è il registro, un modulo più
