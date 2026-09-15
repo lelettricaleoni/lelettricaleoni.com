@@ -1,0 +1,181 @@
+import { redirect } from 'next/navigation'
+import { getAdminUser } from '@/lib/supabase/server'
+import { hasDevAccess } from '@/lib/admin-users'
+import { readWorkerHeartbeat, type ActiveJob } from '@/lib/worker-heartbeat'
+import { getRedisStats, getPostgresStats } from '@/lib/dev-stats'
+
+// TODO: Cache Components adoption. Refactor this route so this opt-out can be removed.
+// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
+export const instant = false;
+
+function formatAgo(epochMs: number): string {
+  const seconds = Math.max(0, Math.round((Date.now() - epochMs) / 1000))
+  if (seconds < 60) return `${seconds}s fa`
+  const minutes = Math.round(seconds / 60)
+  if (minutes < 60) return `${minutes}min fa`
+  return `${Math.round(minutes / 60)}h fa`
+}
+
+function formatDuration(epochMs: number): string {
+  const seconds = Math.max(0, Math.round((Date.now() - epochMs) / 1000))
+  const minutes = Math.floor(seconds / 60)
+  const rest = seconds % 60
+  return minutes > 0 ? `${minutes}min ${rest}s` : `${rest}s`
+}
+
+function jobLabel(job: ActiveJob): string {
+  const data = job.data
+  if (data && typeof data === 'object' && 'key' in data && typeof (data as { key: unknown }).key === 'string') {
+    return (data as { key: string }).key
+  }
+  return job.id
+}
+
+function StatCard({ label, value, hint }: { label: string; value: string; hint?: string }) {
+  return (
+    <div className="rounded-lg border bg-card p-4">
+      <p className="text-xs text-muted-foreground">{label}</p>
+      <p className="text-xl font-bold text-[#1e3a5f] mt-1">{value}</p>
+      {hint && <p className="text-xs text-muted-foreground mt-0.5">{hint}</p>}
+    </div>
+  )
+}
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <section className="space-y-3">
+      <h2 className="text-sm font-semibold text-[#1e3a5f]">{title}</h2>
+      {children}
+    </section>
+  )
+}
+
+export default async function DevToolsPage() {
+  const user = await getAdminUser()
+  if (!user) redirect('/manage/login')
+  if (!hasDevAccess(user)) redirect('/manage')
+
+  const [heartbeat, redisStats, pgStats] = await Promise.all([
+    readWorkerHeartbeat(),
+    getRedisStats(),
+    getPostgresStats(),
+  ])
+
+  return (
+    <div className="space-y-10 max-w-3xl">
+      <div>
+        <h1 className="text-2xl font-bold text-[#1e3a5f]">Sviluppo</h1>
+        <p className="text-sm text-muted-foreground mt-1">
+          Stato dei servizi dietro al sito. Solo lettura, si aggiorna a ogni visita.
+        </p>
+      </div>
+
+      <Section title="Worker video">
+        {!heartbeat ? (
+          <p className="text-sm text-muted-foreground rounded-lg border bg-muted/30 p-4">
+            Nessun dato dal worker. Non ha ancora pubblicato un battito, oppure è fermo da
+            più di un minuto.
+          </p>
+        ) : (
+          <div className="space-y-4">
+            <p className="text-xs text-muted-foreground">Aggiornato {formatAgo(heartbeat.updatedAt)}</p>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <StatCard label="CPU" value={heartbeat.cpuCount ? `${heartbeat.cpuCount} core` : '—'} />
+              <StatCard
+                label="Carico (1 min)"
+                value={heartbeat.load['1m'] !== undefined ? heartbeat.load['1m'].toFixed(2) : '—'}
+              />
+              <StatCard
+                label="Memoria"
+                value={heartbeat.memory ? `${heartbeat.memory.usedMb} MB` : '—'}
+                hint={heartbeat.memory ? `di ${heartbeat.memory.totalMb} MB` : undefined}
+              />
+              <StatCard
+                label="Code attive"
+                value={`${Object.keys(heartbeat.queues).length}`}
+              />
+            </div>
+
+            {Object.entries(heartbeat.queues).map(([name, queue]) => (
+              <div key={name} className="rounded-lg border bg-card p-4 space-y-3">
+                <p className="text-sm font-medium text-[#1e3a5f]">{name}</p>
+                <div className="flex flex-wrap gap-4 text-sm">
+                  <span><span className="font-semibold">{queue.counts.waiting ?? 0}</span> in attesa</span>
+                  <span><span className="font-semibold">{queue.counts.active ?? 0}</span> in corso</span>
+                  <span><span className="font-semibold">{queue.counts.completed ?? 0}</span> completati</span>
+                  <span><span className="font-semibold">{queue.counts.failed ?? 0}</span> falliti</span>
+                  <span><span className="font-semibold">{queue.counts.delayed ?? 0}</span> in ritardo</span>
+                </div>
+                {queue.active.length > 0 && (
+                  <ul className="text-sm text-muted-foreground space-y-1">
+                    {queue.active.map((job) => (
+                      <li key={job.id} className="truncate">
+                        {jobLabel(job)}
+                        {job.startedAt && ` — in corso da ${formatDuration(job.startedAt)}`}
+                        {job.attempt > 1 && ` (tentativo ${job.attempt})`}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </Section>
+
+      <Section title="Cron">
+        {!heartbeat || heartbeat.schedules.length === 0 ? (
+          <p className="text-sm text-muted-foreground rounded-lg border bg-muted/30 p-4">
+            Nessun lavoro pianificato per ora.
+          </p>
+        ) : (
+          <div className="rounded-lg border bg-card divide-y">
+            {heartbeat.schedules.map((s) => (
+              <div key={s.id} className="p-3 text-sm flex items-center justify-between gap-4">
+                <span className="font-medium text-[#1e3a5f]">{s.id}</span>
+                <span className="text-muted-foreground font-mono text-xs">{s.pattern}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </Section>
+
+      <Section title="Redis">
+        {!redisStats ? (
+          <p className="text-sm text-muted-foreground rounded-lg border bg-muted/30 p-4">
+            Non configurato o non raggiungibile.
+          </p>
+        ) : (
+          <div className="grid grid-cols-2 gap-3">
+            <StatCard label="Chiavi totali" value={`${redisStats.totalKeys}`} />
+            <StatCard label="Job video tracciati" value={`${redisStats.trackedJobs}`} />
+          </div>
+        )}
+      </Section>
+
+      <Section title="Database">
+        {!pgStats ? (
+          <p className="text-sm text-muted-foreground rounded-lg border bg-muted/30 p-4">
+            Non raggiungibile in questo momento.
+          </p>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            <StatCard label="Dimensione" value={`${pgStats.databaseSizeMb} MB`} />
+            <StatCard label="Connessioni" value={`${pgStats.connections}`} />
+            <StatCard label="Percorsi" value={`${pgStats.routeCount}`} />
+            <StatCard label="Foto/video" value={`${pgStats.photoCount}`} />
+            <StatCard label="Traduzioni" value={`${pgStats.translationCount}`} />
+          </div>
+        )}
+      </Section>
+
+      <Section title="Storage (R2)">
+        <p className="text-sm text-muted-foreground rounded-lg border bg-muted/30 p-4">
+          Non ancora disponibile — serve un token Cloudflare con permesso di sola lettura
+          sulle analytics del bucket.
+        </p>
+      </Section>
+    </div>
+  )
+}
