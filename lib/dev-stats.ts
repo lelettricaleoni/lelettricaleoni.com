@@ -8,7 +8,32 @@ import { HEARTBEAT_KEY } from '@/lib/worker-heartbeat'
  * Every function here fails to `null` rather than throwing: one service
  * being unreachable must not blank the whole page, and this is a diagnostic
  * screen, not a request path anything else depends on.
+ *
+ * Every external call is bounded by `settle()` — the same lesson lib/cache.ts
+ * was built from: an unbounded external call on a request path once made the
+ * home page 40x slower. This page found out again the hard way, hanging on a
+ * Redis call with no timeout at all until the visitor gave up.
  */
+
+/** Resolve with null instead of hanging forever. */
+async function settle<T>(work: Promise<T>, ms: number): Promise<T | null> {
+  let timer: ReturnType<typeof setTimeout> | undefined
+  try {
+    return await Promise.race([
+      work,
+      new Promise<null>((resolve) => { timer = setTimeout(() => resolve(null), ms) }),
+    ])
+  } catch {
+    return null
+  } finally {
+    clearTimeout(timer)
+  }
+}
+
+/** Generous compared to lib/cache.ts's 250ms: this page is visited on
+ *  purpose, not on every request, so it can afford to wait a little longer
+ *  for a real answer — but it must still always resolve. */
+const TIMEOUT_MS = 5000
 
 export interface RedisStats {
   totalKeys: number
@@ -21,18 +46,17 @@ export async function getRedisStats(): Promise<RedisStats | null> {
   const token = process.env.UPSTASH_REDIS_REST_TOKEN
   if (!url || !token) return null
 
-  try {
-    const redis = new Redis({ url, token })
-    const [totalKeys, jobKeys] = await Promise.all([
-      redis.dbsize(),
-      redis.keys('videojob:v1:*'),
-    ])
-    return {
-      totalKeys,
-      trackedJobs: jobKeys.filter((k) => k !== HEARTBEAT_KEY).length,
-    }
-  } catch {
-    return null
+  const redis = new Redis({ url, token })
+  const result = await settle(
+    Promise.all([redis.dbsize(), redis.keys('videojob:v1:*')]),
+    TIMEOUT_MS
+  )
+  if (!result) return null
+
+  const [totalKeys, jobKeys] = result
+  return {
+    totalKeys,
+    trackedJobs: jobKeys.filter((k) => k !== HEARTBEAT_KEY).length,
   }
 }
 
@@ -45,8 +69,8 @@ export interface PostgresStats {
 }
 
 export async function getPostgresStats(): Promise<PostgresStats | null> {
-  try {
-    const [[sizeRow], [connRow], [routeRow], [photoRow], [translationRow]] = await Promise.all([
+  const result = await settle(
+    Promise.all([
       db.execute<{ size_mb: number }>(
         sql`select round(pg_database_size(current_database()) / 1024.0 / 1024.0) as size_mb`
       ),
@@ -56,15 +80,17 @@ export async function getPostgresStats(): Promise<PostgresStats | null> {
       db.select({ count: sql<number>`count(*)::int` }).from(routes),
       db.select({ count: sql<number>`count(*)::int` }).from(routePhotos),
       db.select({ count: sql<number>`count(*)::int` }).from(routeTranslations),
-    ])
-    return {
-      databaseSizeMb: sizeRow?.size_mb ?? 0,
-      connections: connRow?.count ?? 0,
-      routeCount: routeRow?.count ?? 0,
-      photoCount: photoRow?.count ?? 0,
-      translationCount: translationRow?.count ?? 0,
-    }
-  } catch {
-    return null
+    ]),
+    TIMEOUT_MS
+  )
+  if (!result) return null
+
+  const [[sizeRow], [connRow], [routeRow], [photoRow], [translationRow]] = result
+  return {
+    databaseSizeMb: sizeRow?.size_mb ?? 0,
+    connections: connRow?.count ?? 0,
+    routeCount: routeRow?.count ?? 0,
+    photoCount: photoRow?.count ?? 0,
+    translationCount: translationRow?.count ?? 0,
   }
 }
