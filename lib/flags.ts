@@ -168,11 +168,14 @@ const CACHE_TTL_MS = 30_000
  * the flags service before falling back to the defaults. The refresh keeps
  * running and fills the cache for the next request.
  *
- * Measured evaluation cost against the live service is around 6 s, which is
- * absurd for a flag lookup and is probably down to the flags not existing in
- * the dashboard yet. Whatever the reason, no visitor should ever wait on it.
+ * Re-measured 2026-09-15 with a real OIDC token against the live service:
+ * two cold evaluateAll() calls, ~350ms and ~383ms — the flags exist now and
+ * evaluation is genuinely fast, nothing like the ~6s this constant was
+ * originally set from (back when the flags didn't exist in the dashboard
+ * yet). 500ms leaves headroom above what was measured from a home network;
+ * production, inside Vercel's own infrastructure, should never be slower.
  */
-const COLD_TIMEOUT_MS = 1_500
+const COLD_TIMEOUT_MS = 500
 
 let cache: { flags: Flags; at: number } | null = null
 /** Refresh in progress, shared so concurrent requests don't stampede. */
