@@ -8,6 +8,7 @@ import { ServicesSection } from '@/components/services-section'
 import { PricingSection } from '@/components/pricing-section'
 import { MapSection } from '@/components/map-section'
 import { Footer } from '@/components/footer'
+import { FlagsExplorer } from '@/components/flags-explorer'
 import { getFlags } from '@/lib/flags'
 
 // TODO: Cache Components adoption. Refactor this route so this opt-out can be removed.
@@ -42,6 +43,7 @@ export default async function HomePage({
 
   return (
     <>
+      <FlagsExplorer flags={flags} />
       <Navbar lang={lang} dict={dict} showRoutes={flags.routes} />
       <main>
         <HeroSection lang={lang} dict={dict} />

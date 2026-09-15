@@ -15,6 +15,7 @@ import { RouteGpxModal } from '@/components/route-gpx-modal'
 import { RouteShareModal } from '@/components/route-share-modal'
 import { RouteExternalLinks } from '@/components/route-external-links'
 import { RouteViewTracker } from '@/components/route-view-tracker'
+import { FlagsExplorer } from '@/components/flags-explorer'
 import { r2PublicUrl } from '@/lib/r2'
 import { getFlags } from '@/lib/flags'
 import { getRouteDetailData } from '@/lib/routes-data'
@@ -119,6 +120,7 @@ export default async function RouteDetailPage({
 
   return (
     <>
+      <FlagsExplorer flags={flags} />
       <RouteViewTracker routeId={id} difficulty={route.difficulty} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <Navbar lang={lang} dict={dict} showRoutes={flags.routes} />
