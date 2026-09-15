@@ -132,6 +132,20 @@ due volte. Dal 2026-09-14 Preview ha il proprio progetto Supabase e il proprio b
 dettagli in `docs/environment-variables.md`. Se un blocco simile ricapitasse (stessa causa,
 ambiente diverso): `pg_terminate_backend` sulle sessioni `Supavisor` inattive le libera subito.
 
+**`max: 1` sul client Postgres non basta a evitare un blocco di cinque minuti.** Il
+2026-09-15 `/routes` e `/manage/routes` sono rimasti bloccati sullo scheletro di
+caricamento per 300 secondi — il timeout della funzione Vercel, non del database: la
+produzione applica già `statement_timeout = 2min` a livello di database, e nessuna query
+reale supera i pochi millisecondi (verificato in `pg_stat_statements`). Il tempo veniva
+speso in coda nel client `postgres.js`, in attesa dell'unica connessione che `max: 1`
+concedeva — Fluid Compute riusa la stessa istanza fra richieste concorrenti, e le
+revalidation in sottofondo di Cache Components possono partire in gruppo dalla stessa
+istanza. Quella coda lato client non ha un proprio timeout. Alzato a `max: 3` in
+`lib/db/index.ts`. **`statement_timeout` per connessione non funziona con questo pooler**:
+Supavisor in transaction mode può assegnare a uno statement successivo un backend diverso
+da quello che ha ricevuto il parametro di avvio — verificato con `show statement_timeout`
+subito dopo la connessione, tornava vuoto.
+
 **`vercel env pull .env.local` distrugge le chiavi locali**, che puntano al database di
 sviluppo mentre Vercel punta alla produzione. Scaricare fuori dal progetto. Quasi tutte le
 variabili su Vercel sono *Secret*: escono come `[SENSITIVE]`, non si rileggono. E sempre
