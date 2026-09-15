@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import Image from 'next/image'
 import Hls from 'hls.js'
 import { r2PublicUrl } from '@/lib/r2'
@@ -8,6 +8,10 @@ import { MediaPlaceholder } from '@/components/media-placeholder'
 import { usePreviewMode } from './route-preview-mode'
 
 interface MapCenter { lat: number; lon: number; zoom: number }
+
+// No subscription needed: this never changes after the first client render,
+// it only ever tells React "server snapshot" vs "client snapshot" once.
+const noopSubscribe = () => () => {}
 
 const DIFFICULTY_COLORS: Record<string, string> = {
   easy:   '#22c55e',
@@ -46,8 +50,11 @@ export function RouteCardMedia({ media, gpxPath, mapCenter, difficulty, routeNam
   // Same idea for a photo: Next/Image has nothing to paint until it decodes,
   // so the placeholder covers that gap too instead of leaving a blank box.
   const [photoReady, setPhotoReady] = useState(false)
-  // Tiles are client-only to avoid SSR/hydration mismatch
-  const [mounted, setMounted] = useState(false)
+  // Tiles are client-only to avoid SSR/hydration mismatch. useSyncExternalStore
+  // reports false for the server-rendered/hydration pass and true right after,
+  // through React's own hydration mechanism — no setState-in-effect render
+  // cascade the way a useState+useEffect mount flag causes.
+  const mounted = useSyncExternalStore(noopSubscribe, () => true, () => false)
 
   // A video that reaches this component already passed the server's check
   // that its manifest exists (lib/media.ts resolveHlsUrl, cached 7 days since
@@ -65,8 +72,6 @@ export function RouteCardMedia({ media, gpxPath, mapCenter, difficulty, routeNam
   // punish a route for missing the thing nobody is asking to see right now.
   const preferMap = usePreviewMode() === 'map'
   const showMap = Boolean(gpxPath) && (preferMap || !media || mediaFailed)
-
-  useEffect(() => { setMounted(true) }, [])
 
   useEffect(() => {
     const el = containerRef.current

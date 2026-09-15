@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useSyncExternalStore } from 'react'
 import { createPortal } from 'react-dom'
 import Link from 'next/link'
 import { Menu, X } from 'lucide-react'
@@ -9,13 +9,28 @@ interface MobileMenuProps {
   links: { href: string; label: string }[]
 }
 
+// No subscription needed: this never changes after the first client render,
+// it only ever tells React "server snapshot" vs "client snapshot" once.
+const noopSubscribe = () => () => {}
+
 export function MobileMenu({ links }: MobileMenuProps) {
   const [open, setOpen] = useState(false)
-  const [mounted, setMounted] = useState(false)
+  // Portal target (document.body) doesn't exist during SSR. useSyncExternalStore
+  // reports false for the server-rendered/hydration pass and true right after,
+  // through React's own hydration mechanism — no setState-in-effect render
+  // cascade the way a useState+useEffect mount flag causes.
+  const mounted = useSyncExternalStore(noopSubscribe, () => true, () => false)
   const pathname = usePathname()
 
-  useEffect(() => { setMounted(true) }, [])
-  useEffect(() => { setOpen(false) }, [pathname])
+  // Closing the drawer when the route changes is a same-render adjustment to
+  // a prop change, not a side effect: comparing against the last pathname
+  // seen and calling setState during render (React's own documented pattern)
+  // avoids the extra render a useEffect would add after every navigation.
+  const [prevPathname, setPrevPathname] = useState(pathname)
+  if (pathname !== prevPathname) {
+    setPrevPathname(pathname)
+    setOpen(false)
+  }
 
   useEffect(() => {
     document.body.style.overflow = open ? 'hidden' : ''
