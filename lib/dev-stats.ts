@@ -94,3 +94,67 @@ export async function getPostgresStats(): Promise<PostgresStats | null> {
     translationCount: translationRow?.count ?? 0,
   }
 }
+
+export interface R2Stats {
+  bucketName: string
+  objectCount: number
+  sizeMb: number
+}
+
+function isRecord(v: unknown): v is Record<string, unknown> {
+  return typeof v === 'object' && v !== null
+}
+
+/**
+ * R2 has no live "how big is this bucket" endpoint — object storage never
+ * does, the count is too expensive to keep current on every write. This
+ * reads yesterday's number off Cloudflare's GraphQL analytics instead, the
+ * same data the dashboard graphs come from, which is current within a day
+ * rather than to the second.
+ */
+export async function getR2Stats(): Promise<R2Stats | null> {
+  const token = process.env.CLOUDFLARE_API_TOKEN
+  const accountId = process.env.R2_ACCOUNT_ID
+  const bucketName = process.env.R2_BUCKET_NAME
+  if (!token || !accountId || !bucketName) return null
+
+  const today = new Date()
+  const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000)
+  const iso = (d: Date) => d.toISOString().slice(0, 10)
+
+  const query = `query {
+    viewer {
+      accounts(filter: { accountTag: "${accountId}" }) {
+        r2StorageAdaptiveGroups(
+          limit: 1
+          filter: { bucketName: "${bucketName}", date_geq: "${iso(weekAgo)}", date_leq: "${iso(today)}" }
+          orderBy: [date_DESC]
+        ) {
+          max { payloadSize objectCount }
+        }
+      }
+    }
+  }`
+
+  const response = await settle(
+    fetch('https://api.cloudflare.com/client/v4/graphql', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query }),
+    }).then((r) => r.json()),
+    TIMEOUT_MS
+  )
+  if (!isRecord(response)) return null
+
+  // Cloudflare's response, treated as foreign input rather than trusted shape.
+  const groups = (response as {
+    data?: { viewer?: { accounts?: { r2StorageAdaptiveGroups?: unknown[] }[] } }
+  }).data?.viewer?.accounts?.[0]?.r2StorageAdaptiveGroups
+  const latest = Array.isArray(groups) ? groups[0] : undefined
+  if (!isRecord(latest) || !isRecord(latest.max)) return null
+
+  const { payloadSize, objectCount } = latest.max
+  if (typeof payloadSize !== 'number' || typeof objectCount !== 'number') return null
+
+  return { bucketName, objectCount, sizeMb: Math.round(payloadSize / 1024 / 1024) }
+}

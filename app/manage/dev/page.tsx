@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation'
 import { getAdminUser } from '@/lib/supabase/server'
 import { hasDevAccess } from '@/lib/admin-users'
 import { readWorkerHeartbeat, type ActiveJob } from '@/lib/worker-heartbeat'
-import { getRedisStats, getPostgresStats } from '@/lib/dev-stats'
+import { getRedisStats, getPostgresStats, getR2Stats } from '@/lib/dev-stats'
 
 // TODO: Cache Components adoption. Refactor this route so this opt-out can be removed.
 // See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
@@ -55,10 +55,11 @@ export default async function DevToolsPage() {
   if (!user) redirect('/manage/login')
   if (!hasDevAccess(user)) redirect('/manage')
 
-  const [heartbeat, redisStats, pgStats] = await Promise.all([
+  const [heartbeat, redisStats, pgStats, r2Stats] = await Promise.all([
     readWorkerHeartbeat(),
     getRedisStats(),
     getPostgresStats(),
+    getR2Stats(),
   ])
 
   return (
@@ -171,10 +172,16 @@ export default async function DevToolsPage() {
       </Section>
 
       <Section title="Storage (R2)">
-        <p className="text-sm text-muted-foreground rounded-lg border bg-muted/30 p-4">
-          Non ancora disponibile — serve un token Cloudflare con permesso di sola lettura
-          sulle analytics del bucket.
-        </p>
+        {!r2Stats ? (
+          <p className="text-sm text-muted-foreground rounded-lg border bg-muted/30 p-4">
+            Non configurato o non raggiungibile.
+          </p>
+        ) : (
+          <div className="grid grid-cols-2 gap-3">
+            <StatCard label="Oggetti" value={`${r2Stats.objectCount}`} hint={r2Stats.bucketName} />
+            <StatCard label="Dimensione" value={`${r2Stats.sizeMb} MB`} hint="dato di ieri, non in tempo reale" />
+          </div>
+        )}
       </Section>
     </div>
   )
