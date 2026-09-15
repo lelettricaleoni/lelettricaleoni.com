@@ -5,7 +5,7 @@ import Lightbox from 'yet-another-react-lightbox'
 import 'yet-another-react-lightbox/styles.css'
 import Zoom from 'yet-another-react-lightbox/plugins/zoom'
 import Hls from 'hls.js'
-import { VideoOff } from 'lucide-react'
+import { VideoOff, Loader2 } from 'lucide-react'
 import { VideoPlayer } from '@/components/video-player'
 import { r2PublicUrl } from '@/lib/r2'
 import { hlsUrl, type MediaWithHls } from '@/lib/media-client'
@@ -30,6 +30,10 @@ function VideoThumbAutoplay({ hlsUrl }: { hlsUrl: string }) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const [visible, setVisible] = useState(false)
   const [error, setError] = useState(false)
+  // Same reasoning as route-card-media.tsx: <video> paints black until its
+  // first frame decodes, so the loader sits on top and clears on real
+  // playback, not on mount.
+  const [ready, setReady] = useState(false)
 
   useEffect(() => {
     const el = containerRef.current
@@ -42,6 +46,8 @@ function VideoThumbAutoplay({ hlsUrl }: { hlsUrl: string }) {
   useEffect(() => {
     if (!visible || !videoRef.current) return
     let hls: Hls | null = null
+    setError(false)
+    setReady(false)
     if (Hls.isSupported()) {
       hls = new Hls({ startLevel: -1 })
       hls.loadSource(hlsUrl)
@@ -70,12 +76,18 @@ function VideoThumbAutoplay({ hlsUrl }: { hlsUrl: string }) {
 
   return (
     <div ref={containerRef} className="absolute inset-0 bg-zinc-900">
+      {!ready && (
+        <div className="absolute inset-0 flex items-center justify-center">
+          <Loader2 size={20} className="text-white/30 animate-spin" />
+        </div>
+      )}
       <video
         ref={videoRef}
         autoPlay
         muted
         loop
         playsInline
+        onPlaying={() => setReady(true)}
         className="w-full h-full object-cover"
       />
     </div>

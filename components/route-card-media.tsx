@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
 import Hls from 'hls.js'
-import { Mountain } from 'lucide-react'
+import { Mountain, Loader2 } from 'lucide-react'
 import { r2PublicUrl } from '@/lib/r2'
 import { hlsUrl, type MediaWithHls } from '@/lib/media-client'
 import { usePreviewMode } from './route-preview-mode'
@@ -38,6 +38,11 @@ export function RouteCardMedia({ media, gpxPath, mapCenter, difficulty, routeNam
   const videoRef = useRef<HTMLVideoElement>(null)
   const [isVisible, setIsVisible] = useState(false)
   const [videoError, setVideoError] = useState(false)
+  // A <video> element paints black until its first frame decodes, no matter
+  // what the container behind it is styled with — so the loader has to sit
+  // on top of the video, not behind it, and disappear once playback truly
+  // starts rather than once the element merely mounts.
+  const [videoReady, setVideoReady] = useState(false)
   // Tiles are client-only to avoid SSR/hydration mismatch
   const [mounted, setMounted] = useState(false)
 
@@ -80,6 +85,7 @@ export function RouteCardMedia({ media, gpxPath, mapCenter, difficulty, routeNam
     const src = media.hlsUrl ?? hlsUrl(media.storageKey)
     let hls: Hls | null = null
     setVideoError(false)
+    setVideoReady(false)
 
     if (Hls.isSupported()) {
       hls = new Hls({ startLevel: -1 })
@@ -177,13 +183,19 @@ export function RouteCardMedia({ media, gpxPath, mapCenter, difficulty, routeNam
 
   if (media.mediaType === 'video') {
     return (
-      <div ref={containerRef} className="w-full h-full bg-zinc-900">
+      <div ref={containerRef} className="relative w-full h-full bg-zinc-900">
+        {!videoReady && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <Loader2 size={22} className="text-white/40 animate-spin" />
+          </div>
+        )}
         <video
           ref={videoRef}
           autoPlay
           muted
           loop
           playsInline
+          onPlaying={() => setVideoReady(true)}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
         />
       </div>
