@@ -13,17 +13,11 @@ _(niente in lavorazione)_
 
 ## Prossimo
 
-- **Pagina di sviluppo nel pannello (`/manage/dev` o simile)** — una schermata con
-  informazioni per sviluppatori: stato del worker video (CPU/VM, elementi in coda, da
-  quanto sta elaborando quello corrente, log), i cron job, lo storage R2, Redis/Upstash,
-  Supabase/Postgres. Deve essere visibile solo a chi ha un permesso specifico, distinto dal
-  semplice ruolo `admin` — oggi il modello in `lib/admin-users.ts` è un unico ruolo piatto,
-  quindi va deciso come rappresentare un secondo livello (un flag separato in
-  `app_metadata`? un ruolo `developer` a sé?). Il punto più delicato è come raggiungere le
-  metriche della VM (`clustrenode1`, Oracle Cloud) da una funzione serverless su Vercel: non
-  ha porte aperte e oggi vi si accede solo via SSH da locale. Kevin: "se causa troppo
-  disagio lasciamo stare" — non è un impegno fermo, va valutato con lui prima di investire
-  nella parte VM.
+- **Controllare se altre pagine hanno lo stesso N+1 che ha bloccato `/routes` due volte il
+  2026-09-15** — `getRoutesListData` faceva una query di traduzione per percorso dentro un
+  `Promise.all`, invece di un join; sette percorsi pubblicati bastavano a saturare le tre
+  connessioni del pool a ogni rigenerazione della cache. Risolto lì (vedi STATE.md), ma non
+  è stato fatto un giro sistematico sul resto del codice per lo stesso pattern.
 
 - **Rendere obbligatori i controlli nuovi su `main`** — oggi la protezione richiede solo
   `verify`. Vanno aggiunti `browser` e `codeql`, altrimenti restano suggerimenti. Da fare
