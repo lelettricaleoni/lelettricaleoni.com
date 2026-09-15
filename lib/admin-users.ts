@@ -17,6 +17,15 @@
 export const ADMIN_ROLE = 'admin'
 
 /**
+ * A second, narrower gate than `role: 'admin'`: everyone with it can already
+ * enter the panel, but the reverse doesn't hold. It stays a plain boolean in
+ * `app_metadata` rather than a second role, because there is nothing between
+ * "admin" and "admin who can also see the dev-tools page" today — a real
+ * hierarchy of roles is a problem for when there is more than one of them.
+ */
+export const DEV_TOOLS_FLAG = 'canViewDevTools'
+
+/**
  * The fields read off an account, and nothing else.
  *
  * The auth client hands back a much larger object; naming only what is used
@@ -38,6 +47,7 @@ export interface AdminUserSummary {
   id: string
   email: string
   isAdmin: boolean
+  hasDevAccess: boolean
   /** True while the invitation has been sent but never accepted. */
   isPending: boolean
   createdAt: string | null
@@ -48,11 +58,16 @@ export function hasAdminRole(user: RawAuthUser): boolean {
   return user.app_metadata?.role === ADMIN_ROLE
 }
 
+export function hasDevAccess(user: RawAuthUser): boolean {
+  return hasAdminRole(user) && user.app_metadata?.[DEV_TOOLS_FLAG] === true
+}
+
 export function toUserSummary(user: RawAuthUser): AdminUserSummary {
   return {
     id: user.id,
     email: user.email ?? '',
     isAdmin: hasAdminRole(user),
+    hasDevAccess: hasDevAccess(user),
     isPending: Boolean(user.invited_at) && !user.last_sign_in_at,
     createdAt: user.created_at ?? null,
     lastSignInAt: user.last_sign_in_at ?? null,

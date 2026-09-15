@@ -1,5 +1,5 @@
 import type { MetadataRoute } from 'next'
-import { eq } from 'drizzle-orm'
+import { eq, and } from 'drizzle-orm'
 import { db, routes } from '@/lib/db'
 import { shortRouteId } from '@/lib/utils'
 import { getFlags } from '@/lib/flags'
@@ -39,7 +39,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       ? await db
           .select({ id: routes.id, updatedAt: routes.updatedAt })
           .from(routes)
-          .where(eq(routes.isPublished, true))
+          .where(and(eq(routes.isPublished, true), eq(routes.unlisted, false)))
       : []
 
     dynamicEntries = publishedRoutes.flatMap((route) => {

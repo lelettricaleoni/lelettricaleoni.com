@@ -1,11 +1,13 @@
 import { describe, it, expect } from 'vitest'
 import {
   ADMIN_ROLE,
+  DEV_TOOLS_FLAG,
   checkGrantAdmin,
   checkRevokeAdmin,
   countAdmins,
   findByEmail,
   hasAdminRole,
+  hasDevAccess,
   normaliseEmail,
   sortUsers,
   toUserSummary,
@@ -16,6 +18,7 @@ function summary(over: Partial<AdminUserSummary> & { id: string }): AdminUserSum
   return {
     email: `${over.id}@example.com`,
     isAdmin: false,
+    hasDevAccess: false,
     isPending: false,
     createdAt: null,
     lastSignInAt: null,
@@ -44,6 +47,22 @@ describe('hasAdminRole', () => {
     expect(hasAdminRole({ id: '1' })).toBe(false)
     expect(hasAdminRole({ id: '1', app_metadata: null })).toBe(false)
     expect(hasAdminRole({ id: '1', app_metadata: {} })).toBe(false)
+  })
+})
+
+describe('hasDevAccess', () => {
+  it('requires the flag and the admin role together', () => {
+    expect(hasDevAccess({ id: '1', app_metadata: { role: ADMIN_ROLE, [DEV_TOOLS_FLAG]: true } })).toBe(true)
+  })
+
+  it('refuses the flag alone, without the admin role', () => {
+    // Revoking admin must not leave a stray flag granting anything by
+    // itself — the flag only ever narrows what an admin can already reach.
+    expect(hasDevAccess({ id: '1', app_metadata: { [DEV_TOOLS_FLAG]: true } })).toBe(false)
+  })
+
+  it('refuses the admin role alone, without the flag', () => {
+    expect(hasDevAccess({ id: '1', app_metadata: { role: ADMIN_ROLE } })).toBe(false)
   })
 })
 

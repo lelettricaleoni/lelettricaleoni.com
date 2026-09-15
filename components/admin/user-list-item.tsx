@@ -1,6 +1,6 @@
 'use client'
 import { useTransition } from 'react'
-import { ShieldCheck, ShieldOff } from 'lucide-react'
+import { ShieldCheck, ShieldOff, Code2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -9,7 +9,10 @@ import {
   AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
   AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
-import { grantAdminAction, revokeAdminAction } from '@/lib/actions/users'
+import {
+  grantAdminAction, revokeAdminAction,
+  grantDevAccessAction, revokeDevAccessAction,
+} from '@/lib/actions/users'
 import type { AdminUserSummary } from '@/lib/admin-users'
 
 function formatDate(iso: string | null): string | null {
@@ -56,12 +59,30 @@ export function UserListItem({
           <Badge variant={user.isAdmin ? 'default' : 'secondary'}>
             {user.isAdmin ? 'Amministratore' : 'Nessun accesso'}
           </Badge>
+          {user.isAdmin && user.hasDevAccess && (
+            <Badge variant="outline">Pannello sviluppo</Badge>
+          )}
           {user.isPending && <Badge variant="outline">Invito in attesa</Badge>}
           {lastSignIn && <span>Ultimo accesso {lastSignIn}</span>}
         </div>
       </div>
 
-      <div className="shrink-0">
+      <div className="shrink-0 flex items-center gap-1">
+        {user.isAdmin && (
+          <Button
+            variant="ghost"
+            size="sm"
+            disabled={isPending}
+            onClick={() => run(() =>
+              user.hasDevAccess ? revokeDevAccessAction(user.id) : grantDevAccessAction(user.id)
+            )}
+            title={user.hasDevAccess ? 'Togli accesso al pannello sviluppo' : 'Dai accesso al pannello sviluppo'}
+            className={user.hasDevAccess ? 'text-muted-foreground' : ''}
+          >
+            <Code2 size={16} className="mr-1" />
+            {user.hasDevAccess ? 'Sviluppo: sì' : 'Sviluppo: no'}
+          </Button>
+        )}
         {user.isAdmin ? (
           <AlertDialog>
             <AlertDialogTrigger asChild>

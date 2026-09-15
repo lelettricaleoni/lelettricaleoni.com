@@ -1,9 +1,10 @@
 'use client'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Home, Map, Users, LogOut } from 'lucide-react'
+import { Home, Map, Users, Code2, LogOut } from 'lucide-react'
 import { logoutAction } from '@/lib/actions/auth'
 import { cn } from '@/lib/utils'
+import type { AdminUserSummary } from '@/lib/admin-users'
 
 const navItems = [
   { href: '/manage', label: 'Home', icon: Home, exact: true },
@@ -11,15 +12,18 @@ const navItems = [
   { href: '/manage/users', label: 'Access', icon: Users },
 ]
 
-export function AdminSidebar() {
+export function AdminSidebar({ hasDevAccess }: { hasDevAccess?: AdminUserSummary['hasDevAccess'] }) {
   const pathname = usePathname()
+  const items = hasDevAccess
+    ? [...navItems, { href: '/manage/dev', label: 'Dev', icon: Code2, exact: false }]
+    : navItems
 
   return (
     <aside className="w-56 min-h-screen bg-[#1e3a5f] flex flex-col py-6 px-3 shrink-0">
       <div className="text-white font-bold text-sm px-3 mb-8">Manage</div>
 
       <nav className="flex-1 space-y-1">
-        {navItems.map(({ href, label, icon: Icon, exact }) => (
+        {items.map(({ href, label, icon: Icon, exact }) => (
           <Link
             key={href}
             href={href}

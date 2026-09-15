@@ -20,7 +20,7 @@ export async function getRoutesListData(lang: Locale) {
   const publishedRoutes = await db
     .select()
     .from(routes)
-    .where(eq(routes.isPublished, true))
+    .where(and(eq(routes.isPublished, true), eq(routes.unlisted, false)))
 
   const routesWithTranslations = (
     await Promise.all(

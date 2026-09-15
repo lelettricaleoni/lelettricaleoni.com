@@ -5,6 +5,7 @@ import { getAdminUser } from '@/lib/supabase/server'
 import { createSupabaseAdminClient } from '@/lib/supabase/admin'
 import {
   ADMIN_ROLE,
+  DEV_TOOLS_FLAG,
   checkGrantAdmin,
   checkRevokeAdmin,
   findByEmail,
@@ -168,4 +169,36 @@ export async function revokeAdminAction(userId: string): Promise<UserActionResul
 
   revalidatePath('/manage/users')
   return { ok: true, message: 'Accesso revocato.' }
+}
+
+/**
+ * A narrower grant than admin: worth its own actions rather than a third
+ * value on the admin ones, because it can be given or taken without the
+ * last-admin lockout question — losing it never locks anyone out of the
+ * panel itself.
+ */
+export async function grantDevAccessAction(userId: string): Promise<UserActionResult> {
+  await requireAdmin()
+
+  const supabase = createSupabaseAdminClient()
+  const { error } = await supabase.auth.admin.updateUserById(userId, {
+    app_metadata: { [DEV_TOOLS_FLAG]: true },
+  })
+  if (error) return { ok: false, message: 'Accesso al pannello sviluppo non assegnato. Riprova.' }
+
+  revalidatePath('/manage/users')
+  return { ok: true, message: 'Accesso al pannello sviluppo assegnato.' }
+}
+
+export async function revokeDevAccessAction(userId: string): Promise<UserActionResult> {
+  await requireAdmin()
+
+  const supabase = createSupabaseAdminClient()
+  const { error } = await supabase.auth.admin.updateUserById(userId, {
+    app_metadata: { [DEV_TOOLS_FLAG]: null },
+  })
+  if (error) return { ok: false, message: 'Accesso al pannello sviluppo non revocato. Riprova.' }
+
+  revalidatePath('/manage/users')
+  return { ok: true, message: 'Accesso al pannello sviluppo revocato.' }
 }

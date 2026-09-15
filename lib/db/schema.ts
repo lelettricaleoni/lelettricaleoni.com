@@ -20,6 +20,11 @@ export const routes = pgTable('routes', {
   gpxKey:      text('gpx_key'),
   videoKey:    text('video_key'),
   isPublished: boolean('is_published').notNull().default(false),
+  // Reachable at its own URL, just never offered up: absent from the routes
+  // list and the sitemap, same as an unlisted video. Independent of
+  // isPublished — an unpublished route is unlisted by consequence (it 404s
+  // everywhere), this is for a published one you only want found by link.
+  unlisted:    boolean('unlisted').notNull().default(false),
   createdAt:   timestamp('created_at').notNull().defaultNow(),
   updatedAt:   timestamp('updated_at').notNull().defaultNow(),
 }, (t) => [index('routes_slug_idx').on(t.slug), index('routes_published_idx').on(t.isPublished)])
