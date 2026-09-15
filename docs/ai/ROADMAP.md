@@ -48,11 +48,6 @@ _(niente in lavorazione)_
 
 ## Un giorno
 
-- **Rendere reale la cache delle pagine percorsi.** Oggi `revalidate = 3600` non ha effetto
-  perché il layout radice legge `headers()`. Recuperarla significa ripensare come arriva la
-  lingua, ed è la voce con il maggior guadagno su prestazioni e costi. Un tentativo è sul
-  branch `feat/routes-caching` (lingua dall'URL invece che da `headers()`): fermo a metà,
-  **senza misure** — prima di riprenderlo, misurare.
 - **Riscrivere `README.md`**, che descrive rotte e stack non più esistenti. È il documento
   per lettori umani e va trattato come tale, non fuso con `STATE.md`.
 - **Sistemare i tre `set-state-in-effect`** in `mobile-menu.tsx` e `route-card-media.tsx`,
@@ -64,6 +59,11 @@ _(niente in lavorazione)_
 
 ## Scartato
 
+- **`getFlags()` dentro una funzione `"use cache"`** — pensato per cache-are DB e flag
+  insieme sulle pagine percorsi (2026-09-14). `@flags-sdk/vercel` legge `headers()`
+  internamente, vietato in uno scope `"use cache"` anche indirettamente: la build fallisce
+  con un errore esplicito. I flag restano fuori dalla cache, letti dinamicamente e preceduti
+  da `connection()`; solo il lavoro DB/R2 è cache-ato.
 - **Precomputation dei feature flag** — pensata per pagine statiche servite dalla CDN. Qui
   non serve: tutte le rotte sono già dinamiche, quindi porterebbe fino a 32 varianti di
   pagina senza alcun guadagno.
