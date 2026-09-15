@@ -146,6 +146,16 @@ Supavisor in transaction mode può assegnare a uno statement successivo un backe
 da quello che ha ricevuto il parametro di avvio — verificato con `show statement_timeout`
 subito dopo la connessione, tornava vuoto.
 
+Quel `max: 3` non è bastato: `/routes` si è bloccato altre due volte lo stesso giorno,
+tracciato stavolta in diretta con `pg_stat_activity` — backend fermi in `ClientRead` per
+minuti, cioè Postgres aveva già finito e il client non leggeva il risultato. Causa reale:
+`getRoutesListData` interrogava le traduzioni **una query per percorso** dentro un
+`Promise.all` — sette percorsi pubblicati, sette query concorrenti contro tre sole
+connessioni, a ogni rigenerazione di quella cache. Risolto con una singola query a join
+(`routes` × `route_translations` su `locale`). Mitigato dal vivo con
+`pg_terminate_backend`, ma quella è la toppa, non la cura: un N+1 dentro `Promise.all` va
+cercato per primo, prima di alzare `max`.
+
 **`vercel env pull .env.local` distrugge le chiavi locali**, che puntano al database di
 sviluppo mentre Vercel punta alla produzione. Scaricare fuori dal progetto. Quasi tutte le
 variabili su Vercel sono *Secret*: escono come `[SENSITIVE]`, non si rileggono. E sempre
