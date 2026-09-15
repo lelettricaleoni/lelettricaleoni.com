@@ -17,28 +17,24 @@ export async function getRoutesListData(lang: Locale) {
   cacheLife('routesFlags')
   cacheTag('routes-list')
 
-  const publishedRoutes = await db
-    .select()
+  // One query, not one-plus-N: this used to fetch routes, then fire a
+  // separate translation lookup per route through Promise.all — seven
+  // published routes meant seven concurrent queries against a pool of three
+  // connections (lib/db/index.ts), every time this cache entry regenerated.
+  // That contention is what actually hung /routes in production on
+  // 2026-09-15, repeatedly, traced live via pg_stat_activity (stuck
+  // backends in ClientRead) — not the single slow query the earlier fix
+  // that day (raising max: 1 to 3) was aimed at. The inner join on locale
+  // does the same filtering the old "if (!translation) return null" did:
+  // a route with no translation for this language drops out.
+  return db
+    .select({ route: routes, translation: routeTranslations })
     .from(routes)
-    .where(and(eq(routes.isPublished, true), eq(routes.unlisted, false)))
-
-  const routesWithTranslations = (
-    await Promise.all(
-      publishedRoutes.map(async (route) => {
-        const [translation] = await db
-          .select()
-          .from(routeTranslations)
-          .where(and(
-            eq(routeTranslations.routeId, route.id),
-            eq(routeTranslations.locale, lang)
-          ))
-        if (!translation) return null
-        return { route, translation }
-      })
+    .innerJoin(
+      routeTranslations,
+      and(eq(routeTranslations.routeId, routes.id), eq(routeTranslations.locale, lang))
     )
-  ).filter((i): i is NonNullable<typeof i> => i !== null)
-
-  return routesWithTranslations
+    .where(and(eq(routes.isPublished, true), eq(routes.unlisted, false)))
 }
 
 // Same reasoning as getRoutesListData: flags themselves stay out of the cache
