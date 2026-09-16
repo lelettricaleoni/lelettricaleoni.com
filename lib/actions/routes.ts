@@ -132,6 +132,7 @@ export async function createRouteAction(
   }
 
   updateTag('routes-list')
+  updateTag('sitemap')
   updateTag(`route-${shortRouteId(newRoute.id)}`)
   redirect('/manage/routes')
 }
@@ -232,6 +233,7 @@ export async function updateRouteAction(
   }
 
   updateTag('routes-list')
+  updateTag('sitemap')
   updateTag(`route-${shortRouteId(id)}`)
   redirect('/manage/routes')
 }
@@ -253,6 +255,7 @@ export async function deleteRouteAction(id: string) {
   await db.delete(routes).where(eq(routes.id, id))
 
   updateTag('routes-list')
+  updateTag('sitemap')
 }
 
 export async function togglePublishAction(id: string, isPublished: boolean) {
@@ -264,6 +267,7 @@ export async function togglePublishAction(id: string, isPublished: boolean) {
     .returning()
 
   updateTag('routes-list')
+  updateTag('sitemap')
   if (route) updateTag(`route-${shortRouteId(route.id)}`)
 }
 
@@ -282,6 +286,7 @@ export async function toggleUnlistedAction(id: string, unlisted: boolean) {
     .returning()
 
   updateTag('routes-list')
+  updateTag('sitemap')
   if (route) updateTag(`route-${shortRouteId(route.id)}`)
 }
 

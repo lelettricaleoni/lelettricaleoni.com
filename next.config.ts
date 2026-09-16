@@ -13,6 +13,17 @@ const nextConfig: NextConfig = {
       revalidate: 30,
       expire: 120,
     },
+    // No flag decides what's in the sitemap — search engines already learn
+    // a switched-off route is off from the noindex meta tag it serves
+    // directly. Every actual change (publish, unpublish, unlist, delete)
+    // calls updateTag('sitemap'), so this long TTL is only a safety net for
+    // a mutation path that somehow misses that call, not the freshness
+    // mechanism itself.
+    sitemap: {
+      stale: 3600,
+      revalidate: 3600,
+      expire: 86400,
+    },
   },
   webpack: (config) => {
     // Cesium is loaded via script tag (UMD global) to avoid SWC parsing GLSL shaders
