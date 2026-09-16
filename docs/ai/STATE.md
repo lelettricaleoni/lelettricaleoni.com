@@ -4,7 +4,7 @@
 > componenti si ricava con `ls`; il motivo per cui i tile CARTO passano dal server no.
 > Se questo file supera le ~150 righe, qualcosa è entrato che non doveva.
 >
-> Ultimo allineamento: 2026-09-14.
+> Ultimo allineamento: 2026-09-16.
 
 ## Prodotto
 
@@ -172,14 +172,10 @@ variabili su Vercel sono *Secret*: escono come `[SENSITIVE]`, non si rileggono. 
 
 ## Debito noto
 
-- **`README.md` è disallineato**: descrive `/percorsi` e `/api/percorsi/[slug]/gpx`, mentre
-  il codice usa `/routes`; non cita Cesium né HLS.
 - **Le PR npm di Dependabot hanno il lockfile rotto**: il suo npm 11 toglie l'`esbuild`
   opzionale di vite, che `npm ci` con npm 10 (Node 22, in CI) poi rifiuta. Non superano
   nemmeno davvero il check `browser`: senza i secret il workflow si salta da solo e
   riporta successo, quindi un verde lì non prova che i test abbiano girato.
-- Tre avvisi `react-hooks/set-state-in-effect`: il pattern `mounted` in `mobile-menu.tsx` e
-  `route-card-media.tsx`, e la chiusura del menù al cambio pagina.
 
 ## Decisioni passate ancora rilevanti
 

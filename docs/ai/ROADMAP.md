@@ -53,14 +53,7 @@ _(niente in lavorazione)_
 
 ## Un giorno
 
-- **Riscrivere `README.md`**, che descrive rotte e stack non più esistenti. È il documento
-  per lettori umani e va trattato come tale, non fuso con `STATE.md`.
-- **Sistemare i tre `set-state-in-effect`** in `mobile-menu.tsx` e `route-card-media.tsx`,
-  oggi declassati ad avviso in `eslint.config.mjs`.
-- **Flags Explorer nella Vercel Toolbar** — permette di sovrascrivere un flag solo per sé
-  dal browser, senza toccare ciò che vedono i visitatori.
-- **Ridurre il tetto di attesa a freddo dei flag** da 1,5 s a poche centinaia di
-  millisecondi, ora che i flag esistono e la valutazione è rapida.
+_(niente in lista)_
 
 ## Scartato
 
