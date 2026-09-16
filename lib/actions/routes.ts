@@ -43,11 +43,21 @@ async function requireAdmin() {
   if (!user) throw new Error('Unauthorized')
 }
 
+// One query, not one-plus-N: this used to fetch every route, then fire a
+// separate translation lookup per route through Promise.all — the same
+// pattern that hung /routes in production on 2026-09-15 (see STATE.md),
+// just on the admin list instead of the public one. Left join, not inner:
+// unlike the public list this must never drop a route for lacking a
+// translation — the caller already falls back to the slug when name is null.
 export async function getRoutesForAdmin() {
   await requireAdmin()
   return db
-    .select()
+    .select({ route: routes, name: routeTranslations.name })
     .from(routes)
+    .leftJoin(
+      routeTranslations,
+      and(eq(routeTranslations.routeId, routes.id), eq(routeTranslations.locale, 'it'))
+    )
     .orderBy(desc(routes.createdAt))
 }
 

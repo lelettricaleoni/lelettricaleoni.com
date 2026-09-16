@@ -3,8 +3,6 @@ import { Button } from '@/components/ui/button'
 import { Plus } from 'lucide-react'
 import { getRoutesForAdmin } from '@/lib/actions/routes'
 import { getAdminUser } from '@/lib/supabase/server'
-import { db, routeTranslations } from '@/lib/db'
-import { eq, and } from 'drizzle-orm'
 import { RouteListItem } from '@/components/admin/route-list-item'
 import { redirect } from 'next/navigation'
 
@@ -17,17 +15,6 @@ export default async function AdminRoutesPage() {
   if (!user) redirect('/manage/login')
 
   const routesList = await getRoutesForAdmin()
-
-  const namesMap = new Map<string, string>()
-  await Promise.all(
-    routesList.map(async (r) => {
-      const [tr] = await db
-        .select({ name: routeTranslations.name })
-        .from(routeTranslations)
-        .where(and(eq(routeTranslations.routeId, r.id), eq(routeTranslations.locale, 'it')))
-      namesMap.set(r.id, tr?.name ?? r.slug)
-    })
-  )
 
   return (
     <div className="space-y-6 max-w-3xl">
@@ -42,8 +29,8 @@ export default async function AdminRoutesPage() {
         <p className="text-muted-foreground text-sm">No routes yet. Create the first one!</p>
       ) : (
         <div className="space-y-3">
-          {routesList.map((route) => (
-            <RouteListItem key={route.id} route={route} name={namesMap.get(route.id) ?? route.slug} />
+          {routesList.map(({ route, name }) => (
+            <RouteListItem key={route.id} route={route} name={name ?? route.slug} />
           ))}
         </div>
       )}

@@ -13,12 +13,6 @@ _(niente in lavorazione)_
 
 ## Prossimo
 
-- **Controllare se altre pagine hanno lo stesso N+1 che ha bloccato `/routes` due volte il
-  2026-09-15** — `getRoutesListData` faceva una query di traduzione per percorso dentro un
-  `Promise.all`, invece di un join; sette percorsi pubblicati bastavano a saturare le tre
-  connessioni del pool a ogni rigenerazione della cache. Risolto lì (vedi STATE.md), ma non
-  è stato fatto un giro sistematico sul resto del codice per lo stesso pattern.
-
 - **Rendere obbligatori i controlli nuovi su `main`** — oggi la protezione richiede solo
   `verify`. Vanno aggiunti `browser` e `codeql`, altrimenti restano suggerimenti. Da fare
   dopo qualche giro, quando si sa che non danno falsi allarmi. Va deciso anche se
