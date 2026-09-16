@@ -19,18 +19,15 @@ _(niente in lavorazione)_
   versione di npm in CI, non il lockfile stesso. Ancora da confermare su una vera PR di
   Dependabot (nessuna aperta oggi) prima di considerarlo chiuso per davvero.
 
-- **Primi lavori non-video sul worker** — promemoria prenotazioni ed estratti conto, che
-  Kevin ha in programma. L'impalcatura c'è: `jobs/__init__.py` è il registro, un modulo più
-  una riga in `HANDLERS`, e per i cron una riga in `SCHEDULES` con lo scheduler di BullMQ.
-  Nota: **il piano Vercel è hobby**, quindi i cron di Vercel (due per progetto, uno al
-  giorno) non sono un'alternativa per lavori più frequenti.
-- **Regole di dominio come skill di progetto** — previste dalla spec del sistema di
-  documentazione, non ancora scritte: `nextjs-16`, `i18n`, `db-migrations`,
-  `media-storage`, `maps`.
-
 ## Un giorno
 
-_(niente in lista)_
+- **Primi lavori non-video sul worker** — promemoria prenotazioni ed estratti conto. Non
+  utile finché non si aggiungono molte altre funzionalità di cui Kevin parlerà in futuro:
+  spostato qui da "Prossimo" il 2026-09-16, non è più imminente. L'impalcatura c'è già:
+  `jobs/__init__.py` è il registro, un modulo più una riga in `HANDLERS`, e per i cron una
+  riga in `SCHEDULES` con lo scheduler di BullMQ. Nota: **il piano Vercel è hobby**, quindi i
+  cron di Vercel (due per progetto, uno al giorno) non sono un'alternativa per lavori più
+  frequenti.
 
 ## Scartato
 

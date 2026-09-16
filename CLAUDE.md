@@ -70,18 +70,12 @@ importato qui sopra. Non duplicarli in questo file.
 - **Short ID dei percorsi**: `shortRouteId(uuid) = uuid.slice(0, 8)`, lookup con
   ``sql`left(${routes.id}::text, 8) = ${shortId}` ``.
 
-## Next.js 16 — gotchas critici
-- `middleware.ts` deprecato → usa `proxy.ts` con `export function proxy()`
-- Root `app/layout.tsx` DEVE avere `<html>` e `<body>` — `return children` causa runtime error
-- `params` / `searchParams` sono Promise → sempre `await params`
-- `viewport` è export separato: `export const viewport: Viewport = { ... }`
-
-## i18n — architettura adottata
-- `proxy.ts` rileva locale, fa redirect, inietta header `x-locale` via `NextResponse.next({ request: { headers } })`
-- `app/layout.tsx` legge `x-locale` con `await headers()` e imposta `<html lang>`
-- `app/[lang]/layout.tsx` gestisce solo `generateMetadata` + `generateStaticParams`, restituisce `<>{children}</>`
-- Dizionari in `messages/` caricati via `getDictionary(locale)` in `app/[lang]/dictionaries.ts` (con `server-only`)
-- Dipendenze i18n: `negotiator`, `@formatjs/intl-localematcher`, `server-only`
+## Regole di dominio come skill
+Next.js 16 (routing, Cache Components, trappole verificate) e i18n (architettura, come
+aggiungere stringhe) sono skill di progetto — `.claude/skills/nextjs-16/`,
+`.claude/skills/i18n/`, `.claude/skills/db-migrations/`, `.claude/skills/media-storage/`,
+`.claude/skills/maps/` — caricate su richiesta invece che sempre, così non pesano quando il
+task non le tocca.
 
 ## shadcn/ui
 - `npx shadcn@latest init` è interattivo — preferire: crea `components.json` manualmente + `npx shadcn@latest add <componenti>`
