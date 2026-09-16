@@ -1,0 +1,61 @@
+---
+name: media-storage
+description: "Use when working with photos, videos, HLS streaming, GPX files, or Cloudflare R2 in this project. Triggers: uploading or deleting media, resolving a video's playback URL, reading or writing a GPX file, touching presigned URLs, or debugging why a video shows as not-ready or a manifest can't be found."
+---
+
+# Media e storage in questo progetto
+
+Foto, GPX e video (sorgenti e flussi HLS) vivono tutti su **Cloudflare R2**, un bucket per
+ambiente. **MinIO non esiste più** — tutto è migrato il 2026-09-10; se lo trovi citato in un
+documento vecchio, è storia, non stato attuale.
+
+## Due moduli, due responsabilità
+
+- **`lib/r2.ts` / `lib/media.ts`** — lato server, credenziali incluse. `resolveHlsUrl` (in
+  `media.ts`) è l'unico modo corretto per sapere se un video è pronto: controlla su R2 quale
+  manifesto esiste davvero, invece di assumerlo dal nome del file.
+- **`lib/media-client.ts`** — solo trasformazioni di stringhe sull'URL pubblico, senza SDK né
+  credenziali: importabile da componenti client. Non spostare logica che tocca R2 qui dentro,
+  o finisce nel bundle del browser.
+
+## Prefissi del bucket — non è vera privacy
+
+Sorgenti video in `private/route-videos/`, flussi HLS in `public/route-videos/`. Quel
+`private/` **non protegge nulla**: il dominio pubblico del bucket espone tutto. Il sorgente
+vive solo per i minuti che il worker impiega a cancellarlo dopo la transcodifica — non
+trattarlo come se fosse davvero riservato.
+
+## Manifesti HLS — due nomi possibili
+
+Il worker di transcodifica (`lelettricaleoni/videoStream-bucketWorker`, repo separato) ha
+cambiato formato in corsa: prima un solo `playlist.m3u8` nella radice del prefisso, dal
+commit `55cc594` (2026-06-10) adaptive bitrate con `master.m3u8` più
+`1080p|720p|480p/playlist.m3u8` sotto. **Controlla entrambi i nomi** (`HLS_MANIFESTS` in
+`media-client.ts`) — un video vecchio ha solo il flat playlist, e ignorarlo lo farebbe
+apparire "ancora in elaborazione" per sempre, senza errore visibile.
+
+Le renditions in un `master.m3u8` sono ordinate dalla più alta bitrate alla più bassa
+(verificato leggendo un manifesto reale, non assunto) — per un'anteprima silenziosa e in loop,
+`lowestBitrateLevel` cerca la bitrate minima, non usa l'indice 0.
+
+## Cache — quando è sicuro tenerla a lungo
+
+`lib/cache.ts` (`readThrough`, su Upstash Redis) tiene per **7 giorni** sia l'URL HLS
+risolto sia i punti GPX parsati: entrambi non cambiano più una volta scritti, e il
+versionamento della chiave (`hls:v2:...`, `gpx:v1:<key>:<updatedAt>`) fa scadere naturalmente
+una voce quando il file sottostante cambia — non serve invalidazione esplicita. **Un valore
+`null`/vuoto non viene mai cache-ato**: un fallimento temporaneo (worker non ancora finito,
+R2 irraggiungibile) non deve restare "non disponibile" per una settimana. Senza credenziali
+Upstash configurate la cache è un no-op che fallisce aperto entro 250ms — sviluppo e CI non
+hanno bisogno di Redis per funzionare.
+
+## GPX — watermark e proiezione
+
+Il file GPX originale su R2 resta intatto; `watermarkGpx` (`lib/gpx.ts`) inietta i dati di
+Lelettrica al volo, solo al momento del download (`app/api/routes/[id]/gpx`). Per
+l'anteprima sulla card, `lib/gpx-svg.ts` proietta i punti `[lon, lat, ele]` in un path SVG —
+`gpxPointsToMercatorPath` quando c'è un centro mappa noto (si allinea ai tile di sfondo),
+`gpxPointsToSvgPath` altrimenti (schema autonomo, senza mappa).
+
+Per come la traccia GPX si aggancia al terreno 3D (non alla propria quota), vedi la skill
+`maps`.
