@@ -13,13 +13,6 @@ _(niente in lavorazione)_
 
 ## Prossimo
 
-- **Rendere obbligatori i controlli nuovi su `main`** — oggi la protezione richiede solo
-  `verify`. Vanno aggiunti `browser` e `codeql`, altrimenti restano suggerimenti. Da fare
-  dopo qualche giro, quando si sa che non danno falsi allarmi. Va deciso anche se
-  richiedere una revisione prima del merge, e se togliere l'esenzione amministratore: è
-  quella che mi ha lasciato pushare due volte dritto su `main`. Il 2026-09-11 `browser` ha
-  preso un guasto della produzione prima di chiunque: è il candidato più forte.
-
 - **Lockfile delle PR npm di Dependabot** — escono tutte rotte (`npm ci` rifiuta l'`esbuild`
   opzionale di vite, tolto dal suo npm 11). Strade: CI su Node 24/npm 11, o un passo che
   rigeneri il lockfile sul branch di Dependabot. Finché non si risolve, ogni suo
