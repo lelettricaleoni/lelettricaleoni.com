@@ -19,17 +19,6 @@ _(niente in lavorazione)_
   versione di npm in CI, non il lockfile stesso. Ancora da confermare su una vera PR di
   Dependabot (nessuna aperta oggi) prima di considerarlo chiuso per davvero.
 
-- **La modale della galleria non mostra il fallback quando il player fallisce.**
-  `HlsVideoSlide` (`route-gallery.tsx`) aspetta l'`onError` del componente `VideoPlayer`
-  (`@videojs/react` 10.0.0-rc.2) per mostrare il messaggio corretto, ma quell'`onError` è
-  l'evento nativo `<video>` — non si attiva su un manifesto che risponde 404: la libreria
-  gestisce l'errore internamente (mostra una propria modale "Something went wrong",
-  dismissibile, dopo la quale il player resta muto e a 0:00) senza mai propagarlo.
-  Confermato simulando un manifesto irraggiungibile in un browser reale, non dedotto: anche
-  `video.error` sull'elemento nativo resta `null`. Serve capire come questa libreria RC
-  espone davvero un errore dell'adapter HLS — il suo `HlsJsAdapter.error` (un getter
-  separato) è il candidato, ma non è un evento a cui reagire, va compreso come.
-
 - **Primi lavori non-video sul worker** — promemoria prenotazioni ed estratti conto, che
   Kevin ha in programma. L'impalcatura c'è: `jobs/__init__.py` è il registro, un modulo più
   una riga in `HANDLERS`, e per i cron una riga in `SCHEDULES` con lo scheduler di BullMQ.
