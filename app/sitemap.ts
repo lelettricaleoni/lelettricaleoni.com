@@ -3,12 +3,25 @@ import { eq, and } from 'drizzle-orm'
 import { db, routes } from '@/lib/db'
 import { shortRouteId } from '@/lib/utils'
 import { getFlags } from '@/lib/flags'
+import { readThrough } from '@/lib/cache'
 
 const BASE_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://www.lelettricaleoni.com').replace(/\/$/, '')
 const locales = ['it', 'en', 'de']
 const LAST_MODIFIED = new Date('2026-04-20')
 
+/**
+ * Crawlers fetch this rarely enough that it almost never lands on a warm
+ * instance — every hit was re-evaluating all 5 flags cold (network round
+ * trips to Vercel's flags service) plus a DB query, measured as the single
+ * most expensive route in Active CPU despite being hit twice a day. Cached
+ * here instead of in-memory because that cache is per-instance and gone by
+ * the next cold start, which is the normal case for a rarely-hit route.
+ */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  return readThrough('sitemap:v1', buildSitemap, 300)
+}
+
+async function buildSitemap(): Promise<MetadataRoute.Sitemap> {
   // A section that is switched off must stop being advertised to search engines
   const flags = await getFlags()
 
