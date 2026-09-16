@@ -2,7 +2,32 @@
 import { useEffect, useRef } from 'react'
 import { VideoPlayer as VjsPlayer, VideoSkin } from '@videojs/react/video'
 import { HlsJsVideo } from '@videojs/react/media/hlsjs-video'
+import { usePlayer } from '@videojs/react'
+import { selectError } from '@videojs/core/dom'
 import '@videojs/react/video/skin.css'
+
+/**
+ * Bridges the player's error state to `onError`.
+ *
+ * The `onError` prop on `HlsJsVideo` looks like it should work but doesn't:
+ * `useSyncProps` (inside the library) only routes props that are NOT one of
+ * `HlsJsAdapter.defaultProps` onto the raw <video> element as a native React
+ * prop — so it listens for the browser's own `error` event on that element.
+ * But a fatal hls.js error (checked live: a 404'd manifest) is dispatched by
+ * the adapter itself (`@videojs/hlsjs-video`'s errors.js calls
+ * `this.dispatchEvent(new ErrorEvent('error', ...))` on the adapter, not the
+ * DOM node), so the native listener never sees it. The library's own docs
+ * confirm the intended path is this store selector, not a video element
+ * event: it's how their own ErrorDialog component reads the same state.
+ * Must render inside <VjsPlayer> — usePlayer reads that context.
+ */
+function PlaybackErrorWatcher({ onError }: { onError?: () => void }) {
+  const state = usePlayer(selectError)
+  useEffect(() => {
+    if (state?.error) onError?.()
+  }, [state?.error, onError])
+  return null
+}
 
 /**
  * Video.js v10 player for the route videos.
@@ -60,6 +85,7 @@ export function VideoPlayer({
         [&_.media-cast-button]:hidden"
     >
       <VjsPlayer>
+        <PlaybackErrorWatcher onError={onError} />
         <VideoSkin>
           <HlsJsVideo
             ref={videoRef}
@@ -70,7 +96,6 @@ export function VideoPlayer({
             // several HLS engines pulling segments at once, competing with the
             // autoplaying thumbnails behind the lightbox.
             preload={active ? 'auto' : 'metadata'}
-            onError={onError}
           />
         </VideoSkin>
       </VjsPlayer>
