@@ -1,221 +1,197 @@
 # Lelettrica — lelettricaleoni.com
 
-Sito web per **Lelettrica di Leoni Gabriele**, noleggio e-bike Flyer e riparazioni bici a Dro (TN), sul Lago di Garda.
+Sito web per **Lelettrica di Leoni Gabriele**, noleggio e-bike Flyer e riparazioni bici a Dro
+(TN), sul Lago di Garda. Oltre alle pagine vetrina ospita una sezione di percorsi consigliati
+con GPX, foto, video e mappa 3D, alimentata da un pannello di amministrazione privato.
+
+> Per lo stato del progetto, le decisioni vincolanti e le trappole già pagate, vedi
+> [`docs/ai/STATE.md`](docs/ai/STATE.md) — quel documento è la fonte di verità operativa,
+> pensato per chi (umano o assistente) lavora sul codice ogni giorno. Questo file resta un
+> punto di partenza per chi arriva la prima volta.
 
 ## Stack
 
-| Tecnologia | Versione |
+| Tecnologia | Note |
 |---|---|
-| Next.js App Router | 16.2.4 |
+| Next.js App Router | 16, con Cache Components (`"use cache"`, Partial Prerendering) |
 | React | 19 |
 | TypeScript | — |
 | Tailwind CSS | v4 |
 | shadcn/ui | — |
-| Drizzle ORM | — |
-| Supabase (Auth + Postgres) | — |
-| Cloudflare R2 | — |
-| Azure Translator | — |
+| Drizzle ORM | Postgres su Supabase, via il pooler in transaction mode |
+| Supabase | Auth + Postgres — progetti separati per sviluppo/preview e produzione |
+| Cloudflare R2 | Foto, GPX, sorgenti e flussi video (HLS) |
+| hls.js | Player video adattivo lato client |
+| Cesium | Terreno 3D per il flyover dei percorsi, self-hosted in `public/cesium/` |
+| Vercel Flags | Feature flag per sezione, letti da `lib/flags.ts` |
+| Upstash Redis | Cache di lettura + stato del worker video |
+| Azure Translator | Traduzione automatica IT→EN/DE dei percorsi |
+
+Il worker di transcodifica video (`lelettricaleoni/videoStream-bucketWorker`) è un repository
+separato: gira su una VM Oracle Cloud, si distribuisce da solo a ogni push, e non ha porte
+aperte — parla solo verso R2, Upstash e GHCR.
 
 ## Funzionalità
 
-- **i18n nativo** — IT / EN / DE tramite `proxy.ts` + `app/[lang]/` + dizionari JSON
-- **SEO avanzato** — JSON-LD `LocalBusiness` + `BikeShop`, hreflang, OG, sitemap, robots
-- **GDPR compliant** — cookie consent via vanilla-cookieconsent v3; GA4 caricato solo dopo consenso
-- **GA4 custom events** — `trackEvent` utility consent-aware
-- **Mappa lazy** — Google Maps iframe caricato solo al click
-- **Pagina percorsi** — lista e dettaglio percorsi e-bike consigliati con filtri, galleria, GPX
-- **Pannello admin** — CRUD percorsi su URL nascosto, protetto da Supabase Auth
+- **i18n nativo** — IT / EN / DE, locale ricavato dall'URL (`app/[lang]/`), dizionari in `messages/`
+- **SEO** — JSON-LD, hreflang, sitemap dinamica, `robots.txt`
+- **GDPR** — cookie consent via `vanilla-cookieconsent`; GA4 caricato solo dopo consenso
+- **Sezione percorsi** — lista e dettaglio, filtri, galleria foto/video, mappa 2D e flyover 3D,
+  download GPX con watermark iniettato al volo
+- **Video** — upload, transcodifica adattiva in quattro rendition HLS (1080/720/480/360p),
+  player che parte sempre dalla qualità più bassa disponibile
+- **Feature flag** — ogni sezione dei percorsi si può spegnere dalla dashboard di Vercel senza
+  un nuovo deploy
+- **Pannello admin** (`/manage`) — CRUD percorsi, gestione utenti, e una pagina diagnostica
+  (`/manage/dev`, dietro un permesso dedicato) con lo stato del worker, di Redis e del database
 
----
+## Percorsi consigliati (`/[lang]/routes`)
 
-## Pagina percorsi (`/[lang]/percorsi`)
-
-La pagina mostra i percorsi in e-bike consigliati ai clienti.
-
-- **Lista** — griglia 2 colonne con filtri pill (difficoltà + tipo bici), client-side senza round-trip
-- **Dettaglio** — statistiche km/dislivello/durata, galleria foto lightbox, link Strava/Komoot, download GPX watermarkato
-- **ISR** — cache 3600s, invalidata automaticamente alla pubblicazione/modifica di un percorso
-- **SEO** — `generateMetadata` per lingua + JSON-LD `ItemList` (lista) e `ExercisePlan` (dettaglio)
-- **GPX watermark** — il file originale in R2 è intatto; il watermark con i dati di Lelettrica viene iniettato on-the-fly al download via `/api/percorsi/[slug]/gpx`
-
----
+- **Lista** (`/[lang]/routes`) — card con foto o video in autoplay, statistiche, filtri;
+  un percorso può restare raggiungibile via link diretto senza comparire qui ("nascosto dalla
+  lista", distinto da "non pubblicato", che lo toglie ovunque)
+- **Dettaglio** (`/[lang]/routes/[id]`) — l'`id` nell'URL è uno **short id di 8 caratteri
+  esadecimali** derivato dall'UUID, non lo slug: `/it/routes/aa7da601`. Statistiche, galleria
+  con lightbox, link Strava/Komoot, download GPX, flyover 3D su terreno reale
+- **Cache** — il lavoro su database e R2 è cache-ato con Cache Components
+  (`lib/routes-data.ts`); i feature flag restano fuori dalla cache e si leggono a ogni
+  richiesta
+- **GPX watermark** — il file originale su R2 resta intatto; il watermark con i dati di
+  Lelettrica viene iniettato al volo al download, via `/api/routes/[id]/gpx`
 
 ## Pannello admin (`/manage`)
 
-URL oscuro, non indicizzato, non linkato pubblicamente.
+URL non indicizzato, protetto in `proxy.ts`.
 
 ### Accesso
 
-Vai su `/manage` — se non sei autenticato vieni reindirizzato a `/manage/login`.
+Vai su `/manage` — se non sei autenticato vieni reindirizzato a `/manage/login`. Le
+credenziali sono quelle di un account Supabase Auth con **`app_metadata.role = 'admin'`**
+— non `user_metadata`, che è modificabile dall'account stesso e quindi non fidato. Il primo
+amministratore va impostato dalla dashboard di Supabase (Authentication → Users → modifica
+`raw_app_meta_data`); da lì in poi si gestisce da `/manage/users` nel pannello stesso.
 
-Inserisci le credenziali del tuo account Supabase (email + password). Per funzionare, l'account deve avere `user_metadata.role = 'admin'`. Per impostarlo:
+### Gestione percorsi
 
-1. Dashboard Supabase → Authentication → Users → seleziona l'utente
-2. Modifica `raw_user_meta_data` aggiungendo `"role": "admin"`
+Dalla sidebar, **Routes**:
 
-### manage percorsi
+- **Nuovo percorso** — nome e descrizione in italiano; le traduzioni EN/DE vengono generate
+  automaticamente da Azure Translator
+- **Modifica** — aggiorna qualsiasi campo; le traduzioni si rigenerano quando il testo
+  italiano cambia
+- **Pubblica / Nascondi** — toglie il percorso ovunque, link diretto incluso
+- **Nascondi dalla lista** — resta raggiungibile via link diretto, ma esce dalla lista
+  pubblica e dalla sitemap
+- **Elimina** — rimuove il percorso, le foto, il video e il GPX da R2
 
-Dalla sidebar clicca **Percorsi** per vedere la lista. Da lì puoi:
+Foto e GPX si caricano tramite presigned URL, direttamente verso R2 senza passare dal
+server. Il video innesca la transcodifica sul worker; lo stato di avanzamento si legge in
+tempo reale dal pannello.
 
-- **Nuovo percorso** — compila nome e descrizione in italiano, le traduzioni EN/DE vengono generate automaticamente da Azure Translator
-- **Modifica** — aggiorna qualsiasi campo; spunta "Rigenera traduzioni" per ricalcolare EN/DE con Azure
-- **Pubblica/Nascondi** — l'icona occhio toglie/ripristina la visibilità pubblica istantaneamente
-- **Elimina** — rimuove il percorso, tutte le foto e il file GPX da R2
+### Pagina sviluppo (`/manage/dev`)
 
-### Upload GPX
-
-Trascina un file `.gpx` nel campo apposito. Il sistema estrae automaticamente km e dislivello dal file e compila i campi statistiche. Il file originale viene salvato su R2; al download pubblico riceve il watermark Lelettrica on-the-fly.
-
-### Galleria foto
-
-Carica più foto insieme. Trascina per riordinare — la prima foto diventa la copertina. Le immagini vengono salvate direttamente su Cloudflare R2 tramite presigned URL (nessun passaggio per il server Next.js).
-
----
+Visibile solo a chi ha il permesso `canViewDevTools` (indipendente dal ruolo admin,
+assegnabile da `/manage/users`). Mostra lo stato del worker video (coda, job in corso, carico
+della macchina), i cron job registrati, e statistiche di Redis, Postgres e dello storage R2.
 
 ## Struttura
 
 ```
 app/
-  layout.tsx
   [lang]/
-    layout.tsx            # Metadata locale + JSON-LD LocalBusiness
-    page.tsx              # Homepage
-    privacy/page.tsx
-    percorsi/
-      page.tsx            # Lista percorsi pubblica (ISR)
-      [slug]/page.tsx     # Dettaglio percorso (ISR)
-  manage/               # Area admin (non indicizzata)
-    login/page.tsx
-    page.tsx              # Redirect → /manage/percorsi
-    percorsi/
-      page.tsx            # Lista percorsi admin
-      nuovo/page.tsx      # Form nuovo percorso
-      [id]/page.tsx       # Form modifica percorso
+    layout.tsx              # <html>/<body>, GA4, cookie consent, JSON-LD
+    page.tsx                # Home
+    privacy/, login/, update-password/
+    routes/
+      page.tsx               # Lista percorsi pubblica
+      [id]/page.tsx           # Dettaglio percorso
+  manage/                   # Pannello admin, non indicizzato
+    (home)/page.tsx
+    login/, update-password/
+    routes/                  # CRUD percorsi
+    users/                   # Gestione accessi e permessi
+    dev/                     # Diagnostica (worker, Redis, Postgres, R2)
   api/
-    percorsi/[slug]/gpx/route.ts  # Download GPX con watermark
+    routes/[id]/gpx/         # GPX con watermark iniettato al volo
+    map-tile/[z]/[x]/[y]/    # Proxy dei tile della mappa
+    upload/
+  .well-known/vercel/flags/  # Discovery endpoint dei feature flag
   sitemap.ts / robots.ts
 
 components/
-  navbar.tsx              # + link Percorsi condizionale
-  route-card.tsx          # Card percorso pubblica
-  route-filters.tsx       # Filtri pill client-side
-  route-gallery.tsx       # Galleria lightbox (yet-another-react-lightbox)
-  route-share-button.tsx  # Copia link + GA4 event
-  admin/
-    admin-sidebar.tsx
-    route-list-item.tsx
-    route-form.tsx
-    gpx-upload.tsx
-    photo-upload.tsx
+  route-card.tsx, route-card-media.tsx, route-gallery.tsx, route-flyover.tsx
+  media-placeholder.tsx      # Segnaposto unificato: media assenti o in caricamento
+  video-player.tsx
+  admin/                    # Componenti del pannello (form, upload, liste, sidebar)
 
 lib/
   db/
-    schema.ts             # Tabelle Drizzle: routes, route_translations, route_photos
-    index.ts              # Client Drizzle singleton
-    migrations/           # SQL generato da drizzle-kit
-  supabase/
-    server.ts             # createSupabaseServerClient + getAdminUser
-    client.ts             # createSupabaseBrowserClient
-  actions/
-    routes.ts             # Server Actions CRUD percorsi
-    auth.ts               # loginAction + logoutAction
-    translate.ts          # Azure Translator IT→EN/DE
-  r2.ts                   # Client S3 R2 + presigned URL
-  gpx.ts                  # parseGpxStats + watermarkGpx
-  analytics.ts
-  utils.ts
+    schema.ts                # routes, route_translations, route_photos
+    index.ts                 # Client Drizzle (pooler transaction mode)
+    migrations/
+  supabase/                 # Client server/browser, getAdminUser()
+  actions/                  # Server Actions: routes, auth, users, translate
+  routes-data.ts             # Query cache-ate (Cache Components) per lista/dettaglio
+  media.ts, media-client.ts  # Risoluzione manifesti HLS, presigned URL
+  video-jobs.ts               # Stato per-job del worker (da Upstash)
+  worker-heartbeat.ts          # Stato aggregato del worker (da Upstash)
+  dev-stats.ts                # Statistiche Redis/Postgres/R2 per /manage/dev
+  flags.ts                    # Feature flag, cache e fallback
+  cache.ts                    # Cache di lettura su Upstash
+  terrain.ts, route-gpx.ts, gpx.ts
+  r2.ts
 
 messages/
-  it.json / en.json / de.json   # Include sezione "percorsi"
+  it.json / en.json / de.json
 
-proxy.ts                  # i18n redirect + protezione /manage/*
+proxy.ts                    # i18n + protezione /manage/*
 drizzle.config.ts
-types/gtag.d.ts
 ```
-
----
 
 ## Sviluppo locale
 
 ```bash
 npm install
 cp .env.local.example .env.local
-# compila .env.local con le credenziali reali
+# compila .env.local con le credenziali dell'ambiente di sviluppo — mai quelle di produzione
 npm run dev
 ```
 
-Apri [http://localhost:3000](http://localhost:3000).
+Apri [http://localhost:3000](http://localhost:3000). Elenco completo delle variabili, dove
+procurarsele e come ruotarle: [`docs/environment-variables.md`](docs/environment-variables.md).
 
-## Test
-
-```bash
-npm test          # vitest — 4 test GPX (parseGpxStats + watermarkGpx)
-npm run test:watch
-```
-
-## Build
+## Test e build
 
 ```bash
-npm run build
+npm run typecheck   # tipi
+npm run lint         # eslint
+npm test              # vitest, unit
+npm run test:browser   # playwright, contro un preview
+npm run build          # verifica i tipi e produce la build di produzione
 ```
 
-TypeScript viene verificato automaticamente durante la build.
-
----
-
-## Variabili d'ambiente
-
-Copia `.env.local.example` in `.env.local` e compila con le chiavi dell'ambiente di sviluppo.
-Elenco completo, cosa fa ciascuna variabile, dove procurarsela e come ruotarla, e quali ambienti
-esistono (produzione / preview / sviluppo) e a cosa puntano: **[`docs/environment-variables.md`](docs/environment-variables.md)**.
-
----
+`npm run build` e `npm run dev` girano sempre con `--webpack`, mai Turbopack — necessario per
+Cesium.
 
 ## i18n
 
-Il rilevamento della lingua avviene in `proxy.ts` tramite l'header `Accept-Language`. L'utente viene reindirizzato automaticamente a `/it`, `/en` o `/de`.
-
-Per aggiungere stringhe: modifica i tre file in `messages/` mantenendo le stesse chiavi in tutti e tre.
-
-Le traduzioni dei percorsi (nome, descrizione) vengono gestite automaticamente da Azure Translator — l'admin inserisce solo l'italiano.
-
----
+Il locale si ricava dall'URL (`app/[lang]/`), non da un header: `proxy.ts` rileva la lingua al
+primo accesso e reindirizza a `/it`, `/en` o `/de`. Per aggiungere stringhe, modifica i tre
+file in `messages/` mantenendo le stesse chiavi. Le traduzioni dei percorsi (nome,
+descrizione) sono generate automaticamente da Azure Translator — l'admin scrive solo
+l'italiano.
 
 ## Database
 
-Schema gestito con Drizzle ORM. Per generare una nuova migrazione dopo modifiche allo schema:
+Schema gestito con Drizzle ORM, sempre attraverso il pooler in transaction mode. Dopo una
+modifica allo schema:
 
 ```bash
 npx drizzle-kit generate   # genera SQL in lib/db/migrations/
-npx drizzle-kit migrate    # applica al DB (richiede DATABASE_DIRECT_URL)
+npx drizzle-kit migrate    # applica al database (richiede DATABASE_DIRECT_URL)
 ```
-
----
-
-## GA4 Events
-
-Tutti condizionati al consenso cookie analytics.
-
-| Evento | Parametri | Trigger |
-|---|---|---|
-| `phone_call` | `{ source }` | Click telefono |
-| `email_click` | `{ source }` | Click email |
-| `cta_click` | `{ cta_name }` | CTA hero |
-| `get_directions` | — | Click indicazioni |
-| `map_load` | — | Caricamento mappa |
-| `file_download` | `{ file_name, file_extension }` | Download PDF |
-| `outbound_click` | `{ link_domain }` | Click Instagram |
-| `language_switch` | `{ language }` | Cambio lingua |
-| `section_view` | `{ section_name }` | Scroll sezione |
-| `view_route` | `{ slug }` | Apertura dettaglio percorso |
-| `filter_routes` | `{ filter_type, filter_value }` | Cambio filtro lista |
-| `share_route` | `{ method, url }` | Click condividi |
-| `download_gpx` | `{ route }` | Download GPX |
-| `open_strava` | `{ route }` | Click link Strava |
-| `open_komoot` | `{ route }` | Click link Komoot |
-
----
 
 ## Licenza
 
-Codice proprietario — tutti i diritti riservati. I percorsi e i file GPX sono proprietà esclusiva di Lelettrica di Leoni Gabriele.
+Codice proprietario — tutti i diritti riservati. I percorsi e i file GPX sono proprietà
+esclusiva di Lelettrica di Leoni Gabriele.
