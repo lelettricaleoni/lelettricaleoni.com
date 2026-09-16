@@ -19,8 +19,8 @@ pannello di amministrazione privato.
 |---|---|
 | Produzione | `main` → https://www.lelettricaleoni.com, deploy automatico Vercel |
 | Progetto Vercel | `lelettricaleoni`, team `lelettrica` |
-| Branch `staging` | esiste sul remoto, protetto come `main` |
-| Merge | solo via PR: il controllo `verify` deve passare (amministratori esenti) |
+| Branch `staging` | esiste sul remoto, non usato; protezione non allineata a `main` (solo `verify`) |
+| Merge | solo via PR: `verify`, `browser` e `CodeQL` devono passare, **nessuna esenzione admin** dal 2026-09-16 — chiude la falla che aveva permesso due push diretti su `main` |
 | CI | `verify` (lint, tipi, unit), `browser` (Playwright contro il preview), CodeQL in default setup, suite `extended` |
 
 ## Superfici
