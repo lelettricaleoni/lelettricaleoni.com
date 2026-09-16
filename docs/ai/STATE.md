@@ -163,7 +163,9 @@ minuti, cioè Postgres aveva già finito e il client non leggeva il risultato. C
 connessioni, a ogni rigenerazione di quella cache. Risolto con una singola query a join
 (`routes` × `route_translations` su `locale`). Mitigato dal vivo con
 `pg_terminate_backend`, ma quella è la toppa, non la cura: un N+1 dentro `Promise.all` va
-cercato per primo, prima di alzare `max`.
+cercato per primo, prima di alzare `max`. Il giro sistematico sul resto del codice
+(2026-09-16) ha trovato lo stesso pattern in `getRoutesForAdmin` — non ancora esploso solo
+perché la lista admin ha meno visite di quella pubblica — corretto allo stesso modo.
 
 **`vercel env pull .env.local` distrugge le chiavi locali**, che puntano al database di
 sviluppo mentre Vercel punta alla produzione. Scaricare fuori dal progetto. Quasi tutte le
