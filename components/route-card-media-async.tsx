@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm'
-import { db, routePhotos } from '@/lib/db'
+import { db, media } from '@/lib/db'
 import type { Route } from '@/lib/db'
 import { resolveHlsUrl } from '@/lib/media'
 import { loadGpxPoints } from '@/lib/route-gpx'
@@ -17,9 +17,9 @@ interface RouteCardMediaAsyncProps {
 export async function RouteCardMediaAsync({ route, routeName }: RouteCardMediaAsyncProps) {
   const mediaItems = await db
     .select()
-    .from(routePhotos)
-    .where(eq(routePhotos.routeId, route.id))
-    .orderBy(routePhotos.displayOrder)
+    .from(media)
+    .where(eq(media.routeId, route.id))
+    .orderBy(media.displayOrder)
 
   const readyMedia = await Promise.all(
     mediaItems.map(async (m) => {

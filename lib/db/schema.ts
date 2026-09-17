@@ -39,22 +39,10 @@ export const routeTranslations = pgTable('route_translations', {
   isAutoTranslated:  boolean('is_auto_translated').notNull().default(false),
 }, (t) => [index('route_translations_route_locale_idx').on(t.routeId, t.locale)])
 
-export const routePhotos = pgTable('route_photos', {
-  id:           uuid('id').primaryKey().defaultRandom(),
-  routeId:      uuid('route_id').notNull().references(() => routes.id, { onDelete: 'cascade' }),
-  storageKey:   text('storage_key').notNull(),
-  mediaType:    mediaTypeEnum('media_type').notNull().default('photo'),
-  displayOrder: integer('display_order').notNull().default(0),
-  altText:      text('alt_text'),
-  createdAt:    timestamp('created_at').notNull().defaultNow(),
-}, (t) => [index('route_photos_route_idx').on(t.routeId)])
-
 export type Route = typeof routes.$inferSelect
 export type RouteTranslation = typeof routeTranslations.$inferSelect
-export type RoutePhoto = typeof routePhotos.$inferSelect
 export type NewRoute = typeof routes.$inferInsert
 export type NewRouteTranslation = typeof routeTranslations.$inferInsert
-export type NewRoutePhoto = typeof routePhotos.$inferInsert
 
 export const bikeSizes = pgTable('bike_sizes', {
   id:           uuid('id').primaryKey().defaultRandom(),
@@ -135,3 +123,25 @@ export type BikeModel = typeof bikeModels.$inferSelect
 export type BikeModelTranslation = typeof bikeModelTranslations.$inferSelect
 export type NewBikeModel = typeof bikeModels.$inferInsert
 export type NewBikeModelTranslation = typeof bikeModelTranslations.$inferInsert
+
+// Generalized from route_photos on 2026-09-17 to also hold bike model
+// media. Exactly one of routeId/bikeModelId is set, enforced by a CHECK
+// constraint added in the migration for this table (Drizzle's pg-core has
+// no first-class `check()` table builder in this version, so the
+// constraint is added directly in the generated SQL).
+export const media = pgTable('media', {
+  id:           uuid('id').primaryKey().defaultRandom(),
+  routeId:      uuid('route_id').references(() => routes.id, { onDelete: 'cascade' }),
+  bikeModelId:  uuid('bike_model_id').references(() => bikeModels.id, { onDelete: 'cascade' }),
+  storageKey:   text('storage_key').notNull(),
+  mediaType:    mediaTypeEnum('media_type').notNull().default('photo'),
+  displayOrder: integer('display_order').notNull().default(0),
+  altText:      text('alt_text'),
+  createdAt:    timestamp('created_at').notNull().defaultNow(),
+}, (t) => [
+  index('media_route_idx').on(t.routeId),
+  index('media_bike_model_idx').on(t.bikeModelId),
+])
+
+export type Media = typeof media.$inferSelect
+export type NewMedia = typeof media.$inferInsert
