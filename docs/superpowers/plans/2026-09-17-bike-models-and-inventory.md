@@ -479,19 +479,26 @@ Run: `npm test` (unit suite — confirms `lib/flags.test.ts` and anything else t
 passes).
 
 Then run the full verification this project always runs before merging a change that
-touches a live data path: `npm run lint`, `npm run build`. Then start the dev server
-(`npm run dev -- --webpack`) and manually check, or drive with Playwright:
+touches a live data path: `npm run lint`, `npm run build`.
 
-1. `/it/routes` — the list still shows cards with their existing cover photos/videos.
-2. `/it/routes/<a route with photos>` — the gallery still shows all photos in the right
-   order, lightbox still opens them.
-3. `/it/routes/<a route with video>` — the video still plays, thumbnail still autoplays.
-4. `/manage/routes/<id>` — the edit form still shows existing media, and uploading a new
+This task is the one place in this whole plan where the **existing** Playwright suite
+(`tests/browser/`) actually covers what's being changed — `content.spec.ts` and
+`geometry.spec.ts` both exercise the routes list and detail pages, which read from the
+renamed `media` table. Open the PR for this task and let the `browser` CI check run against
+its preview deployment (same as every other PR in this project) — do not merge on `verify`
+alone for this specific task, wait for `browser` too, and treat a real (non-flaky) failure
+there as this task's regression signal, not just a formality.
+
+That check only reads, though — no CI job in this project uploads a photo through the admin
+form. So also do this manually against the same preview or a local dev server
+(`npm run dev -- --webpack`), which no automated check will ever catch for us:
+
+1. `/manage/routes/<id>` — the edit form still shows existing media, and uploading a new
    photo still works (confirms `createRouteAction`/`updateRouteAction`/`savePhotosAction`
    write to `media` correctly, not just that reads still work).
 
-Do not consider this task done until step 4 (an actual write through the admin form) has
-been checked live, not just read paths — a read-only check would miss a broken insert.
+Do not consider this task done until that manual write-path check has been done live — a
+read-only check, automated or not, would miss a broken insert.
 
 - [ ] **Step 8: Commit**
 
