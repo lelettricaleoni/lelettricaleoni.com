@@ -172,6 +172,17 @@ sviluppo mentre Vercel punta alla produzione. Scaricare fuori dal progetto. Quas
 variabili su Vercel sono *Secret*: escono come `[SENSITIVE]`, non si rileggono. E sempre
 `npx vercel@latest`: la CLI locale è vecchia, senza `flags`, e cade in silenzio su `deploy`.
 
+**`npx drizzle-kit migrate` fallisce in silenzio (uscita 1, nessun errore leggibile) da
+quando esiste almeno una migrazione applicata tramite lo strumento MCP `apply_migration`
+invece che dalla sua stessa CLI** (2026-09-17): la 0001 (`unlisted`) era stata applicata
+via MCP il 2026-09-15, quindi la tabella `drizzle.__drizzle_migrations` non la conosce, e
+`migrate` prova a rieseguirla — va in conflitto su una colonna già esistente, ma lo
+spinner della CLI inghiotte l'errore reale. Finché non si scrive una migrazione dedicata
+che risincronizzi `__drizzle_migrations` (come già fatto una volta il 2026-09-14, vedi
+`_archive-2026-09-14/README.md`), **applicare l'SQL generato da `drizzle-kit generate` con
+`apply_migration` (MCP), non con `drizzle-kit migrate`** — su dev e produzione separatamente,
+verificando ogni volta con una query diretta che le tabelle esistano davvero.
+
 ## Debito noto
 
 - **Le PR npm di Dependabot hanno il lockfile rotto**: il suo npm 11 toglie l'`esbuild`

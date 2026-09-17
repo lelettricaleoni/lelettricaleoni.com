@@ -6,6 +6,7 @@ import {
 export const difficultyEnum = pgEnum('difficulty', ['easy', 'medium', 'hard', 'expert'])
 export const localeEnum = pgEnum('locale', ['it', 'en', 'de'])
 export const mediaTypeEnum = pgEnum('media_type', ['photo', 'video'])
+export const bikePricingModeEnum = pgEnum('bike_pricing_mode', ['table', 'linear'])
 
 export const routes = pgTable('routes', {
   id:          uuid('id').primaryKey().defaultRandom(),
@@ -54,3 +55,43 @@ export type RoutePhoto = typeof routePhotos.$inferSelect
 export type NewRoute = typeof routes.$inferInsert
 export type NewRouteTranslation = typeof routeTranslations.$inferInsert
 export type NewRoutePhoto = typeof routePhotos.$inferInsert
+
+export const bikeSizes = pgTable('bike_sizes', {
+  id:           uuid('id').primaryKey().defaultRandom(),
+  name:         text('name').notNull(),
+  displayOrder: integer('display_order').notNull().default(0),
+})
+
+export const bikeVersions = pgTable('bike_versions', {
+  id:           uuid('id').primaryKey().defaultRandom(),
+  name:         text('name').notNull(),
+  displayOrder: integer('display_order').notNull().default(0),
+})
+
+// Prices: numeric() maps to Postgres NUMERIC, which postgres.js returns as a
+// string, not a number — cast with `::int`/`::numeric` in raw SQL, or
+// Number(...) after a Drizzle read, exactly like the rest of this codebase
+// already does (see lib/dev-stats.ts).
+export const bikeCategories = pgTable('bike_categories', {
+  id:               uuid('id').primaryKey().defaultRandom(),
+  name:             text('name').notNull(),
+  displayOrder:     integer('display_order').notNull().default(0),
+  maxRentalDays:    integer('max_rental_days').notNull(),
+  pricingMode:      bikePricingModeEnum('pricing_mode').notNull().default('table'),
+  day1Price:        numeric('day1_price').notNull(),
+  day2Price:        numeric('day2_price'),
+  day3Price:        numeric('day3_price'),
+  day4Price:        numeric('day4_price'),
+  day5Price:        numeric('day5_price'),
+  day6Price:        numeric('day6_price'),
+  day7Price:        numeric('day7_price'),
+  perDayAfterPrice: numeric('per_day_after_price'),
+  afternoonPrice:   numeric('afternoon_price'),
+})
+
+export type BikeSize = typeof bikeSizes.$inferSelect
+export type BikeVersion = typeof bikeVersions.$inferSelect
+export type BikeCategory = typeof bikeCategories.$inferSelect
+export type NewBikeSize = typeof bikeSizes.$inferInsert
+export type NewBikeVersion = typeof bikeVersions.$inferInsert
+export type NewBikeCategory = typeof bikeCategories.$inferInsert

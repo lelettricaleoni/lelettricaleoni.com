@@ -15,6 +15,13 @@
       "when": 1789479433382,
       "tag": "0001_tranquil_satana",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1789628951689,
+      "tag": "0002_overjoyed_prowler",
+      "breakpoints": true
     }
   ]
 }
