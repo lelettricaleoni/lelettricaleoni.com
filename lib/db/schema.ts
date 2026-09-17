@@ -1,6 +1,6 @@
 import {
   pgTable, text, integer, numeric, boolean,
-  timestamp, uuid, pgEnum, index
+  timestamp, uuid, pgEnum, index, unique
 } from 'drizzle-orm/pg-core'
 
 export const difficultyEnum = pgEnum('difficulty', ['easy', 'medium', 'hard', 'expert'])
@@ -95,3 +95,43 @@ export type BikeCategory = typeof bikeCategories.$inferSelect
 export type NewBikeSize = typeof bikeSizes.$inferInsert
 export type NewBikeVersion = typeof bikeVersions.$inferInsert
 export type NewBikeCategory = typeof bikeCategories.$inferInsert
+
+export const bikeModels = pgTable('bike_models', {
+  id:             uuid('id').primaryKey().defaultRandom(),
+  categoryId:     uuid('category_id').notNull().references(() => bikeCategories.id),
+  priceSurcharge: numeric('price_surcharge'),
+  batteryRange:   text('battery_range'),
+  motor:          text('motor'),
+  gearCount:      text('gear_count'),
+  isPublished:    boolean('is_published').notNull().default(false),
+  createdAt:      timestamp('created_at').notNull().defaultNow(),
+  updatedAt:      timestamp('updated_at').notNull().defaultNow(),
+})
+
+export const bikeModelTranslations = pgTable('bike_model_translations', {
+  id:               uuid('id').primaryKey().defaultRandom(),
+  bikeModelId:      uuid('bike_model_id').notNull().references(() => bikeModels.id, { onDelete: 'cascade' }),
+  locale:           localeEnum('locale').notNull(),
+  name:             text('name').notNull(),
+  description:      text('description').notNull(),
+  isAutoTranslated: boolean('is_auto_translated').notNull().default(false),
+}, (t) => [index('bike_model_translations_model_locale_idx').on(t.bikeModelId, t.locale)])
+
+// No onDelete on bikeSizeId/bikeVersionId: deleting a global size or version
+// that a model still allows must fail loudly, not silently orphan rows.
+export const bikeModelSizes = pgTable('bike_model_sizes', {
+  id:           uuid('id').primaryKey().defaultRandom(),
+  bikeModelId:  uuid('bike_model_id').notNull().references(() => bikeModels.id, { onDelete: 'cascade' }),
+  bikeSizeId:   uuid('bike_size_id').notNull().references(() => bikeSizes.id),
+}, (t) => [unique('bike_model_sizes_model_size_unique').on(t.bikeModelId, t.bikeSizeId)])
+
+export const bikeModelVersions = pgTable('bike_model_versions', {
+  id:            uuid('id').primaryKey().defaultRandom(),
+  bikeModelId:   uuid('bike_model_id').notNull().references(() => bikeModels.id, { onDelete: 'cascade' }),
+  bikeVersionId: uuid('bike_version_id').notNull().references(() => bikeVersions.id),
+}, (t) => [unique('bike_model_versions_model_version_unique').on(t.bikeModelId, t.bikeVersionId)])
+
+export type BikeModel = typeof bikeModels.$inferSelect
+export type BikeModelTranslation = typeof bikeModelTranslations.$inferSelect
+export type NewBikeModel = typeof bikeModels.$inferInsert
+export type NewBikeModelTranslation = typeof bikeModelTranslations.$inferInsert
