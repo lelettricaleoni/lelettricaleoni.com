@@ -124,6 +124,20 @@ export type BikeModelTranslation = typeof bikeModelTranslations.$inferSelect
 export type NewBikeModel = typeof bikeModels.$inferInsert
 export type NewBikeModelTranslation = typeof bikeModelTranslations.$inferInsert
 
+// No onDelete cascade on any of the three references: a model, size, or
+// version still used by an existing physical bike must not be deletable
+// out from under it.
+export const bikeUnits = pgTable('bike_units', {
+  id:            uuid('id').primaryKey().defaultRandom(),
+  bikeModelId:   uuid('bike_model_id').notNull().references(() => bikeModels.id),
+  bikeSizeId:    uuid('bike_size_id').notNull().references(() => bikeSizes.id),
+  bikeVersionId: uuid('bike_version_id').notNull().references(() => bikeVersions.id),
+  createdAt:     timestamp('created_at').notNull().defaultNow(),
+})
+
+export type BikeUnit = typeof bikeUnits.$inferSelect
+export type NewBikeUnit = typeof bikeUnits.$inferInsert
+
 // Generalized from route_photos on 2026-09-17 to also hold bike model
 // media. Exactly one of routeId/bikeModelId is set, enforced by a CHECK
 // constraint added in the migration for this table (Drizzle's pg-core has
