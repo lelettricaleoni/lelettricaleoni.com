@@ -3,7 +3,7 @@ import { updateTag } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { z } from 'zod'
 import { eq, and, desc } from 'drizzle-orm'
-import { db, routes, routeTranslations, routePhotos } from '@/lib/db'
+import { db, routes, routeTranslations, media } from '@/lib/db'
 import { getAdminUser } from '@/lib/supabase/server'
 import { translateFromItalian } from './translate'
 import { deleteR2Object, getPresignedUploadUrl } from '@/lib/r2'
@@ -73,9 +73,9 @@ export async function getRouteWithDetails(id: string) {
 
   const photos = await db
     .select()
-    .from(routePhotos)
-    .where(eq(routePhotos.routeId, id))
-    .orderBy(routePhotos.displayOrder)
+    .from(media)
+    .where(eq(media.routeId, id))
+    .orderBy(media.displayOrder)
 
   return { route, translations, photos }
 }
@@ -134,7 +134,7 @@ export async function createRouteAction(
   ])
 
   if (mediaItems.length > 0) {
-    await db.insert(routePhotos).values(
+    await db.insert(media).values(
       mediaItems.map(({ key, type }, displayOrder) => ({
         routeId: newRoute.id, storageKey: key, mediaType: type, displayOrder,
       }))
@@ -191,7 +191,7 @@ export async function updateRouteAction(
     updatedAt: new Date(),
   }).where(eq(routes.id, id))
 
-  const oldMedia = await db.select().from(routePhotos).where(eq(routePhotos.routeId, id))
+  const oldMedia = await db.select().from(media).where(eq(media.routeId, id))
   const newKeys = new Set(mediaItems.map((i) => i.key))
   const removed = oldMedia.filter((m) => !newKeys.has(m.storageKey))
   await Promise.all(removed.map((m) =>
@@ -200,9 +200,9 @@ export async function updateRouteAction(
       : deleteR2Object(m.storageKey)
   ))
 
-  await db.delete(routePhotos).where(eq(routePhotos.routeId, id))
+  await db.delete(media).where(eq(media.routeId, id))
   if (mediaItems.length > 0) {
-    await db.insert(routePhotos).values(
+    await db.insert(media).values(
       mediaItems.map(({ key, type }, displayOrder) => ({
         routeId: id, storageKey: key, mediaType: type, displayOrder,
       }))
@@ -254,8 +254,8 @@ export async function deleteRouteAction(id: string) {
   const [route] = await db.select().from(routes).where(eq(routes.id, id))
   if (!route) return
 
-  const media = await db.select().from(routePhotos).where(eq(routePhotos.routeId, id))
-  await Promise.all(media.map((m) =>
+  const existingMedia = await db.select().from(media).where(eq(media.routeId, id))
+  await Promise.all(existingMedia.map((m) =>
     m.mediaType === 'video'
       ? Promise.all([deleteR2Object(m.storageKey), deleteR2Prefix(deriveHlsPrefix(m.storageKey))])
       : deleteR2Object(m.storageKey)
@@ -332,9 +332,9 @@ export async function savePhotosAction(
   photos: { storageKey: string; displayOrder: number; altText?: string }[]
 ) {
   await requireAdmin()
-  await db.delete(routePhotos).where(eq(routePhotos.routeId, routeId))
+  await db.delete(media).where(eq(media.routeId, routeId))
   if (photos.length > 0) {
-    await db.insert(routePhotos).values(
+    await db.insert(media).values(
       photos.map((p) => ({ routeId, ...p }))
     )
   }

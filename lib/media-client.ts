@@ -1,4 +1,4 @@
-import type { RoutePhoto } from './db'
+import type { Media } from './db'
 
 /**
  * Media URL helpers safe to import from client components.
@@ -47,7 +47,7 @@ export function hlsUrl(privateKey: string, manifest: string = HLS_MANIFESTS[1]):
  * only the server can check. Resolving it once server-side keeps the client
  * from guessing — and from silently showing nothing when it guesses wrong.
  */
-export type MediaWithHls = RoutePhoto & { hlsUrl?: string }
+export type MediaWithHls = Media & { hlsUrl?: string }
 
 /**
  * Index of the lowest-bitrate rendition in an hls.js `levels` array.

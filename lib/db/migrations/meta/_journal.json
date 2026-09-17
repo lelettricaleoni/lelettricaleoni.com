@@ -29,6 +29,13 @@
       "when": 1789630010274,
       "tag": "0003_strange_whiplash",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1789632432942,
+      "tag": "0004_generalize_media_table",
+      "breakpoints": true
     }
   ]
 }

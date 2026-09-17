@@ -10,7 +10,7 @@ import { Switch } from '@/components/ui/switch'
 import { GpxUpload } from './gpx-upload'
 import { MediaUpload } from './media-upload'
 import type { RouteFormState } from '@/lib/actions/routes'
-import type { Route, RouteTranslation, RoutePhoto } from '@/lib/db'
+import type { Route, RouteTranslation, Media } from '@/lib/db'
 
 const BIKE_TYPES = ['eMTB', 'MTB', 'Road Bike', 'E-Road Bike', 'Gravel', 'E-Gravel', 'City Bike', 'E-City Bike']
 
@@ -18,7 +18,7 @@ interface RouteFormProps {
   action: (prev: RouteFormState, formData: FormData) => Promise<RouteFormState>
   route?: Route
   translations?: RouteTranslation[]
-  photos?: RoutePhoto[]
+  photos?: Media[]
 }
 
 export function RouteForm({ action, route, translations, photos }: RouteFormProps) {

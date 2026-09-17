@@ -1,6 +1,6 @@
 import { Redis } from '@upstash/redis'
 import { sql } from 'drizzle-orm'
-import { db, routes, routePhotos, routeTranslations } from '@/lib/db'
+import { db, routes, media, routeTranslations } from '@/lib/db'
 import { HEARTBEAT_KEY } from '@/lib/worker-heartbeat'
 
 /**
@@ -94,7 +94,7 @@ export async function getPostgresStats(): Promise<PostgresStats | null> {
         round(pg_database_size(current_database()) / 1024.0 / 1024.0)::int as size_mb,
         (select count(*)::int from pg_stat_activity where datname = current_database()) as connections,
         (select count(*)::int from ${routes}) as route_count,
-        (select count(*)::int from ${routePhotos}) as photo_count,
+        (select count(*)::int from ${media} where ${media.routeId} is not null) as photo_count,
         (select count(*)::int from ${routeTranslations}) as translation_count
     `),
     TIMEOUT_MS

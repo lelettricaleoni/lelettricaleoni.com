@@ -1,6 +1,6 @@
 import { eq, and, sql } from 'drizzle-orm'
 import { cacheLife, cacheTag } from 'next/cache'
-import { db, routes, routeTranslations, routePhotos } from '@/lib/db'
+import { db, routes, routeTranslations, media } from '@/lib/db'
 import { resolveHlsUrl } from '@/lib/media'
 import { loadGpxPoints } from '@/lib/route-gpx'
 
@@ -59,9 +59,9 @@ export async function getRouteDetailData(
     and(eq(routeTranslations.routeId, route.id), eq(routeTranslations.locale, lang))
   )
 
-  const rawMedia = await db.select().from(routePhotos)
-    .where(eq(routePhotos.routeId, route.id))
-    .orderBy(routePhotos.displayOrder)
+  const rawMedia = await db.select().from(media)
+    .where(eq(media.routeId, route.id))
+    .orderBy(media.displayOrder)
 
   // Drop what the flags disallow before the HLS check, so switching videos
   // off also skips the R2 round-trips they would have cost

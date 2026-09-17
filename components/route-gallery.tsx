@@ -11,7 +11,6 @@ import { MediaPlaceholder } from '@/components/media-placeholder'
 import { r2PublicUrl } from '@/lib/r2'
 import { hlsUrl, lowestBitrateLevel, type MediaWithHls } from '@/lib/media-client'
 import type { Slide } from 'yet-another-react-lightbox'
-import type { RoutePhoto } from '@/lib/db'
 
 interface HlsSlide {
   type: 'hls'
