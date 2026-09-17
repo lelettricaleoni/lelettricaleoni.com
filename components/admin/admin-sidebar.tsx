@@ -1,7 +1,7 @@
 'use client'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Home, Map, Users, Code2, LogOut } from 'lucide-react'
+import { Home, Map, Users, Code2, LogOut, Bike, SlidersHorizontal } from 'lucide-react'
 import { logoutAction } from '@/lib/actions/auth'
 import { cn } from '@/lib/utils'
 import type { AdminUserSummary } from '@/lib/admin-users'
@@ -9,6 +9,8 @@ import type { AdminUserSummary } from '@/lib/admin-users'
 const navItems = [
   { href: '/manage', label: 'Home', icon: Home, exact: true },
   { href: '/manage/routes', label: 'Routes', icon: Map },
+  { href: '/manage/bikes', label: 'Bikes', icon: Bike },
+  { href: '/manage/bike-options', label: 'Bike options', icon: SlidersHorizontal },
   { href: '/manage/users', label: 'Access', icon: Users },
 ]
 
