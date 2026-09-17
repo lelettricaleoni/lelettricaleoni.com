@@ -830,9 +830,19 @@ git commit -m "Add server actions for bike sizes/versions/categories"
 - Create: `components/admin/bike-category-list.tsx`
 - Create: `components/admin/bike-category-form.tsx`
 - Create: `app/manage/bike-options/page.tsx`
+- Create: `app/manage/bike-options/layout.tsx`
 
 **Interfaces:**
 - Consumes: everything from `lib/actions/bike-options.ts` (Task 6).
+
+Every `/manage/<section>` directory carries its **own** `layout.tsx` wrapping
+`<AdminShell>` — there is no single shared layout further up the tree that does this
+(confirmed by reading `app/manage/routes/layout.tsx` and `app/manage/dev/layout.tsx`, both
+four lines, identical shape). Skipping this file is not a build error and not a lint
+error — the page renders, just with no sidebar, no logout, nothing that says it's part of
+the admin panel. Caught live in Task 7's own manual verification the first time this plan
+was executed; every later admin-page task in this plan (10, 13) already includes it in
+their file list so it isn't missed twice.
 
 - [ ] **Step 1: `components/admin/bike-size-list.tsx`** (versions list is identical in
 shape — see Step 2)
@@ -1198,6 +1208,23 @@ export default async function BikeOptionsPage() {
 Before this step, confirm `components/ui/tabs.tsx` exists (`npx shadcn@latest add tabs` if
 not — check first, this project has most shadcn primitives already installed).
 
+- [ ] **Step 5b: `app/manage/bike-options/layout.tsx`**
+
+```tsx
+import { AdminShell } from '@/components/admin/admin-shell'
+
+// TODO: Cache Components adoption. Refactor this route so this opt-out can be removed.
+// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
+export const instant = false;
+
+export default function BikeOptionsLayout({ children }: { children: React.ReactNode }) {
+  return <AdminShell>{children}</AdminShell>
+}
+```
+
+Without this file the page renders with no sidebar and no way back to the rest of the
+panel — not a typecheck or lint failure, only visible by actually looking at the page.
+
 - [ ] **Step 6: Typecheck, lint, build**
 
 Run: `npm run typecheck && npm run lint && npm run build`
@@ -1216,7 +1243,7 @@ confirm the error toast appears instead of a crash.
 ```bash
 git add components/admin/bike-size-list.tsx components/admin/bike-version-list.tsx \
   components/admin/bike-category-list.tsx components/admin/bike-category-form.tsx \
-  app/manage/bike-options/page.tsx
+  app/manage/bike-options/page.tsx app/manage/bike-options/layout.tsx
 git commit -m "Add /manage/bike-options admin page"
 ```
 
@@ -1682,6 +1709,10 @@ git commit -m "Add server actions for bike model catalog CRUD"
 **Files:**
 - Create: `components/admin/bike-model-list-item.tsx`
 - Create: `app/manage/bikes/page.tsx`
+- Create: `app/manage/bikes/layout.tsx` — same four-line `<AdminShell>` wrapper as
+  `app/manage/bike-options/layout.tsx` (Task 7). Every `/manage/<section>` directory needs
+  its own copy; there is no shared layout further up that provides it, and its absence is
+  invisible to typecheck/lint/build — only a look at the rendered page catches it.
 
 **Interfaces:**
 - Consumes: `getBikeModelsForAdmin`, `deleteBikeModelAction`, `togglePublishBikeModelAction`
@@ -1816,6 +1847,20 @@ export default async function AdminBikeModelsPage() {
 }
 ```
 
+- [ ] **Step 2b: `app/manage/bikes/layout.tsx`**
+
+```tsx
+import { AdminShell } from '@/components/admin/admin-shell'
+
+// TODO: Cache Components adoption. Refactor this route so this opt-out can be removed.
+// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
+export const instant = false;
+
+export default function BikeModelsLayout({ children }: { children: React.ReactNode }) {
+  return <AdminShell>{children}</AdminShell>
+}
+```
+
 - [ ] **Step 3: Typecheck, lint, build**
 
 Run: `npm run typecheck && npm run lint && npm run build`
@@ -1824,7 +1869,7 @@ Expected: no errors, no new warnings.
 - [ ] **Step 4: Commit**
 
 ```bash
-git add components/admin/bike-model-list-item.tsx app/manage/bikes/page.tsx
+git add components/admin/bike-model-list-item.tsx app/manage/bikes/page.tsx app/manage/bikes/layout.tsx
 git commit -m "Add /manage/bikes list page"
 ```
 
@@ -2244,6 +2289,11 @@ git commit -m "Add server actions for shop inventory (bike units)"
 - Create: `components/admin/bike-unit-form.tsx`
 - Create: `components/admin/bike-unit-list.tsx`
 - Create: `app/manage/bikes/shop/page.tsx`
+
+No `layout.tsx` needed here, unlike Tasks 7 and 10: `/manage/bikes/shop` is nested *under*
+`/manage/bikes`, so it inherits `app/manage/bikes/layout.tsx` (Task 10) automatically — Next
+composes layouts down the route tree. Only a top-level `/manage/<section>` directory needs
+its own. Adding a second one here would just double-wrap the page in two `<AdminShell>`s.
 
 **Interfaces:**
 - Consumes: `getBikeUnitsForAdmin`, `getPublishedModelsWithAllowedOptions`,
