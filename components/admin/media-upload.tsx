@@ -13,7 +13,6 @@ import { CSS } from '@dnd-kit/utilities'
 import { GripVertical, X, Upload, Video } from 'lucide-react'
 import { toast } from 'sonner'
 import { r2PublicUrl } from '@/lib/r2'
-import { getPresignedUploadUrlAction, getVideoPresignedUploadUrlAction } from '@/lib/actions/routes'
 import { getVideoJobStatuses } from '@/lib/actions/video-jobs'
 import type { VideoJobStatus } from '@/lib/video-jobs'
 import { mediaProgress, type UploadState } from '@/lib/media-progress'
@@ -122,11 +121,15 @@ function SortableItem({
 }
 
 export function MediaUpload({
-  routeId,
+  ownerId,
   defaultItems = [],
+  getPresignedUploadUrl,
+  getVideoPresignedUploadUrl,
 }: {
-  routeId: string
+  ownerId: string
   defaultItems?: { storageKey: string; mediaType: 'photo' | 'video' }[]
+  getPresignedUploadUrl: (ownerId: string, fileName: string, contentType: string, type: 'photo') => Promise<{ url: string; key: string }>
+  getVideoPresignedUploadUrl: (ownerId: string, fileName: string, contentType: string) => Promise<{ url: string; key: string }>
 }) {
   const [items, setItems] = useState<MediaItem[]>(
     defaultItems.map((m) => ({
@@ -191,8 +194,8 @@ export function MediaUpload({
     }
   }, [videoKeys, freshKeys])
 
-  const effectiveRouteId = useRef(
-    routeId !== 'new' ? routeId : (() => {
+  const effectiveOwnerId = useRef(
+    ownerId !== 'new' ? ownerId : (() => {
       if (typeof window === 'undefined') return 'new'
       const k = '__media_tmp_id'
       if (!sessionStorage.getItem(k)) sessionStorage.setItem(k, crypto.randomUUID())
@@ -216,8 +219,8 @@ export function MediaUpload({
     let url: string | null = null
     try {
       const result = isVideo
-        ? await getVideoPresignedUploadUrlAction(effectiveRouteId, file.name, file.type)
-        : await getPresignedUploadUrlAction(effectiveRouteId, file.name, file.type, 'photo')
+        ? await getVideoPresignedUploadUrl(effectiveOwnerId, file.name, file.type)
+        : await getPresignedUploadUrl(effectiveOwnerId, file.name, file.type, 'photo')
       key = result.key
       url = result.url
     } catch (err) {
@@ -273,7 +276,7 @@ export function MediaUpload({
       toast.error(`Caricamento fallito: ${file.name}`)
       patch({ progress: 0, failed: true })
     }
-  }, [effectiveRouteId])
+  }, [effectiveOwnerId, getPresignedUploadUrl, getVideoPresignedUploadUrl])
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
     for (const file of acceptedFiles) uploadFile(file)

@@ -9,7 +9,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Switch } from '@/components/ui/switch'
 import { GpxUpload } from './gpx-upload'
 import { MediaUpload } from './media-upload'
-import type { RouteFormState } from '@/lib/actions/routes'
+import { getPresignedUploadUrlAction, getVideoPresignedUploadUrlAction, type RouteFormState } from '@/lib/actions/routes'
 import type { Route, RouteTranslation, Media } from '@/lib/db'
 
 const BIKE_TYPES = ['eMTB', 'MTB', 'Road Bike', 'E-Road Bike', 'Gravel', 'E-Gravel', 'City Bike', 'E-City Bike']
@@ -185,8 +185,10 @@ export function RouteForm({ action, route, translations, photos }: RouteFormProp
           Il primo elemento è la copertina. Trascina per riordinare.
         </p>
         <MediaUpload
-          routeId={route?.id ?? 'new'}
+          ownerId={route?.id ?? 'new'}
           defaultItems={photos?.map((p) => ({ storageKey: p.storageKey, mediaType: p.mediaType })) ?? []}
+          getPresignedUploadUrl={getPresignedUploadUrlAction}
+          getVideoPresignedUploadUrl={getVideoPresignedUploadUrlAction}
         />
       </section>
 
