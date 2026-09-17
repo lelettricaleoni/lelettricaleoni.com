@@ -49,12 +49,12 @@ export function BikeCategoryForm({
   }
 
   const tableDayFields = [
-    { label: 'Day 2', value: day2Price, set: setDay2Price },
-    { label: 'Day 3', value: day3Price, set: setDay3Price },
-    { label: 'Day 4', value: day4Price, set: setDay4Price },
-    { label: 'Day 5', value: day5Price, set: setDay5Price },
-    { label: 'Day 6', value: day6Price, set: setDay6Price },
-    { label: 'Day 7', value: day7Price, set: setDay7Price },
+    { id: 'cat-day2', label: 'Day 2', value: day2Price, set: setDay2Price },
+    { id: 'cat-day3', label: 'Day 3', value: day3Price, set: setDay3Price },
+    { id: 'cat-day4', label: 'Day 4', value: day4Price, set: setDay4Price },
+    { id: 'cat-day5', label: 'Day 5', value: day5Price, set: setDay5Price },
+    { id: 'cat-day6', label: 'Day 6', value: day6Price, set: setDay6Price },
+    { id: 'cat-day7', label: 'Day 7', value: day7Price, set: setDay7Price },
   ]
 
   return (
@@ -91,10 +91,10 @@ export function BikeCategoryForm({
 
       {pricingMode === 'table' ? (
         <div className="grid grid-cols-2 gap-3">
-          {tableDayFields.map(({ label, value, set }) => (
-            <div key={label} className="space-y-1">
-              <Label>{label}</Label>
-              <Input type="number" step="0.01" value={value ?? ''} onChange={(e) => set(e.target.value)} placeholder="not offered" />
+          {tableDayFields.map(({ id, label, value, set }) => (
+            <div key={id} className="space-y-1">
+              <Label htmlFor={id}>{label}</Label>
+              <Input id={id} type="number" step="0.01" value={value ?? ''} onChange={(e) => set(e.target.value)} placeholder="not offered" />
             </div>
           ))}
         </div>
