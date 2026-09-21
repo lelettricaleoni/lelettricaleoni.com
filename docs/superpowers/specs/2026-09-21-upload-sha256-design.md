@@ -15,11 +15,17 @@ storage), **deduplicazione** (accorgersi se lo stesso contenuto viene caricato d
 anche su percorsi/modelli diversi), **audit** (un riferimento verificabile e permanente di
 cosa è stato caricato).
 
+Lo scopo concreto che ha portato a questa spec è semplificare il caricamento di un GPX
+nel form del percorso: avvisare subito se quel tracciato è già stato caricato altrove, e
+mostrare un'anteprima del percorso appena il caricamento va a buon fine — così l'admin
+vede subito cosa ha caricato, senza aspettare di salvare il form.
+
 ### Dentro questa fase
 
 - SHA-256 calcolato e salvato per ogni nuova foto, video e GPX caricato, sia per i percorsi
   sia per i modelli di bici
 - Controllo duplicati con avviso bloccante e possibilità esplicita di procedere comunque
+- Anteprima immediata del tracciato nel form, subito dopo un caricamento GPX riuscito
 - Backfill dello SHA per foto e GPX già esistenti su R2
 - Estensione del contratto worker↔sito per far arrivare lo SHA dei video dal worker
 
@@ -73,6 +79,16 @@ motiva: la stessa foto di un modello di bici finita per errore su un modello div
 stesso percorso caricato due volte per sbaglio — situazioni che l'admin deve poter valutare
 caso per caso, non un vincolo che gli impedisce di lavorare.
 
+**L'anteprima riusa la stessa funzione già usata nella lista percorsi, non ne inventa
+una nuova.** `lib/gpx-svg.ts` ha già `gpxPointsToSvgPath`: una funzione pura che disegna il
+profilo del tracciato come path SVG, senza tile di mappa — esattamente la versione "molto
+semplice" già visibile nella lista percorsi quando una card non ha né foto né coordinate
+per centrare la mappa. È pura (nessuna dipendenza da server, DB o R2), quindi funziona
+anche lato client. `GpxUpload` già estrae il testo del file e lo passa a `parseGpxStats`
+nel browser per calcolare distanza/dislivello — la stessa estrazione ora restituisce anche
+i punti grezzi, riusati per disegnare l'anteprima con la stessa funzione, senza duplicare
+la logica di parsing.
+
 **Il backfill si ferma dove i dati non esistono più.** Foto e GPX restano su R2 per
 sempre (nessun meccanismo li cancella), quindi un backfill completo è possibile: uno
 script li riscarica e calcola lo SHA di ognuno. I video già trascodificati non hanno più il
@@ -114,6 +130,19 @@ già nella tabella `media` generalizzata.
    fino al salvataggio finale della riga (`mediaItems`/`gpxKey` si estendono per portare
    anche lo SHA fino all'azione che scrive su `media`/`routes`)
 
+## Anteprima GPX dopo upload
+
+1. `GpxUpload` oggi chiama `parseGpxStats(text)` nel browser subito dopo il caricamento,
+   per calcolare distanza/dislivello/durata. `parseGpxStats` guadagna un valore di ritorno
+   in più: i punti grezzi `[lon, lat, ele][]` già estratti internamente, oggi scartati
+2. Con quei punti, `GpxUpload` chiama `gpxPointsToSvgPath` (già in `lib/gpx-svg.ts`, non
+   serve scriverla) e renderizza il path risultante in un piccolo `<svg>` inline, subito
+   sotto la dropzone — stesso stile visivo della versione semplice già usata nella lista
+   percorsi
+3. L'anteprima compare solo dopo un caricamento riuscito (nessun duplicato bloccante, o
+   confermato con `force: true`) — un GPX rifiutato per duplicato non mostra nulla, resta
+   solo l'avviso
+
 ## Flusso video
 
 1. Il worker (`jobs/transcode.py`, funzione `handle`), dopo aver scaricato il sorgente per
@@ -151,7 +180,8 @@ produzione dopo il deploy di questa feature.
 
 - Unit test sulla funzione di calcolo/confronto SHA (pura, isolabile dal resto)
 - Verifica dal vivo: caricare la stessa foto due volte, confermare il blocco e il bottone
-  "carica comunque"; stesso test su un GPX
+  "carica comunque"; stesso test su un GPX, confermando anche che l'anteprima compare dopo
+  un caricamento riuscito e resta assente su uno bloccato
 - Verifica dal vivo: caricare un video, attendere `done`, confermare che lo SHA compare
   sulla riga `media` — non è possibile testare il rilevamento duplicati end-to-end senza
   aspettare una transcodifica reale del worker sulla VM, quindi quella parte si verifica
