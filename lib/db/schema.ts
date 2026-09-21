@@ -27,6 +27,10 @@ export const routes = pgTable('routes', {
   // isPublished — an unpublished route is unlisted by consequence (it 404s
   // everywhere), this is for a published one you only want found by link.
   unlisted:    boolean('unlisted').notNull().default(false),
+  // Admin-assigned order, both in the admin list and on the public /routes
+  // page. Nothing derives it automatically — it only ever changes through
+  // reorderRoutesAction, one drag in the admin list at a time.
+  displayOrder: integer('display_order').notNull().default(0),
   createdAt:   timestamp('created_at').notNull().defaultNow(),
   updatedAt:   timestamp('updated_at').notNull().defaultNow(),
 }, (t) => [

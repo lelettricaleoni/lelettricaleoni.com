@@ -1,4 +1,4 @@
-import { eq, and, sql } from 'drizzle-orm'
+import { eq, and, asc, sql } from 'drizzle-orm'
 import { cacheLife, cacheTag } from 'next/cache'
 import { db, routes, routeTranslations, media } from '@/lib/db'
 import { resolveHlsUrl } from '@/lib/media'
@@ -35,6 +35,7 @@ export async function getRoutesListData(lang: Locale) {
       and(eq(routeTranslations.routeId, routes.id), eq(routeTranslations.locale, lang))
     )
     .where(and(eq(routes.isPublished, true), eq(routes.unlisted, false)))
+    .orderBy(asc(routes.displayOrder))
 }
 
 // Same reasoning as getRoutesListData: flags themselves stay out of the cache

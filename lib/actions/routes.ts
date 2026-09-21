@@ -2,7 +2,7 @@
 import { updateTag } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { z } from 'zod'
-import { eq, and, desc } from 'drizzle-orm'
+import { eq, and, asc } from 'drizzle-orm'
 import { db, routes, routeTranslations, media } from '@/lib/db'
 import { getAdminUser } from '@/lib/supabase/server'
 import { translateFromItalian } from './translate'
@@ -59,7 +59,23 @@ export async function getRoutesForAdmin() {
       routeTranslations,
       and(eq(routeTranslations.routeId, routes.id), eq(routeTranslations.locale, 'it'))
     )
-    .orderBy(desc(routes.createdAt))
+    .orderBy(asc(routes.displayOrder))
+}
+
+/**
+ * Persists a full new order for the routes list, one drag in the admin
+ * panel at a time. Sequential, not Promise.all: concurrent writes against
+ * the 3-connection pool is exactly the shape that hung /routes in
+ * production before (see STATE.md) — this list is small and reordering is
+ * a rare, deliberate action, so a few sequential round-trips cost nothing
+ * that matters.
+ */
+export async function reorderRoutesAction(orderedIds: string[]) {
+  await requireAdmin()
+  for (let displayOrder = 0; displayOrder < orderedIds.length; displayOrder++) {
+    await db.update(routes).set({ displayOrder }).where(eq(routes.id, orderedIds[displayOrder]))
+  }
+  updateTag('routes-list')
 }
 
 export async function getRouteWithDetails(id: string) {

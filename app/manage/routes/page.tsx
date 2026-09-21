@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button'
 import { Plus } from 'lucide-react'
 import { getRoutesForAdmin } from '@/lib/actions/routes'
 import { getAdminUser } from '@/lib/supabase/server'
-import { RouteListItem } from '@/components/admin/route-list-item'
+import { RouteList } from '@/components/admin/route-list'
 import { redirect } from 'next/navigation'
 
 // TODO: Cache Components adoption. Refactor this route so this opt-out can be removed.
@@ -28,11 +28,12 @@ export default async function AdminRoutesPage() {
       {routesList.length === 0 ? (
         <p className="text-muted-foreground text-sm">No routes yet. Create the first one!</p>
       ) : (
-        <div className="space-y-3">
-          {routesList.map(({ route, name }) => (
-            <RouteListItem key={route.id} route={route} name={name ?? route.slug} />
-          ))}
-        </div>
+        <>
+          <p className="text-sm text-muted-foreground">
+            Drag to reorder. The order here is the order shown on the public routes page.
+          </p>
+          <RouteList initialRoutes={routesList.map(({ route, name }) => ({ route, name: name ?? route.slug }))} />
+        </>
       )}
     </div>
   )
