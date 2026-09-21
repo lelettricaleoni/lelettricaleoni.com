@@ -192,6 +192,10 @@ verificando ogni volta con una query diretta che le tabelle esistano davvero.
 
 ## Decisioni passate ancora rilevanti
 
+- `docs/superpowers/specs/2026-09-17-bike-models-and-inventory-design.md` e il piano
+  gemello in `docs/superpowers/plans/` — catalogo modelli di bici e inventario "Il mio
+  negozio" (`/manage/bikes`, `/manage/bike-options`, `/manage/bikes/shop`), solo admin per
+  ora: niente pagina pubblica, niente collegamento con i percorsi, niente prenotazioni
 - `docs/superpowers/specs/2026-09-14-routes-caching-cache-components-design.md` — cache
   reale su lista/dettaglio percorsi
 - `docs/superpowers/specs/2026-09-09-ai-docs-system-design.md` — questo sistema
