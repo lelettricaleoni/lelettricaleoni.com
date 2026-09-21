@@ -26,6 +26,9 @@ export interface VideoJobStatus {
   error?: string
   /** Epoch milliseconds, so a stale entry can be recognised as stale. */
   updatedAt: number
+  /** Set once, alongside `phase: 'done'` — the source file's SHA-256, computed
+   *  by the worker while it still had the file locally, before deleting it. */
+  sha256?: string
 }
 
 /**
@@ -64,6 +67,7 @@ export function parseStatus(value: unknown): VideoJobStatus | null {
     attempt: typeof v.attempt === 'number' ? v.attempt : undefined,
     error: typeof v.error === 'string' ? v.error.slice(0, 500) : undefined,
     updatedAt: typeof v.updatedAt === 'number' ? v.updatedAt : Date.now(),
+    sha256: typeof v.sha256 === 'string' && /^[0-9a-f]{64}$/.test(v.sha256) ? v.sha256 : undefined,
   }
 }
 

@@ -34,12 +34,12 @@ export interface MediaProgress {
 }
 
 const PHASE_LABELS: Record<VideoJobStatus['phase'], string> = {
-  queued: 'In coda',
-  downloading: 'Scaricamento',
-  transcoding: 'Elaborazione',
-  uploading: 'Salvataggio',
-  done: 'Pronto',
-  failed: 'Non riuscito',
+  queued: 'Queued',
+  downloading: 'Downloading',
+  transcoding: 'Processing',
+  uploading: 'Saving',
+  done: 'Ready',
+  failed: 'Failed',
 }
 
 /** A photo is done when it has been uploaded; a video has only got halfway. */
@@ -51,14 +51,14 @@ export function mediaProgress(
   job?: VideoJobStatus
 ): MediaProgress | null {
   if (upload?.failed) {
-    return { percent: 100, label: 'Caricamento non riuscito', tone: 'error', active: false }
+    return { percent: 100, label: 'Upload failed', tone: 'error', active: false }
   }
 
   if (upload) {
     const share = mediaType === 'video' ? UPLOAD_SHARE / 100 : 1
     return {
       percent: Math.round(upload.progress * share),
-      label: `Caricamento ${upload.progress}%`,
+      label: `Uploading ${upload.progress}%`,
       tone: 'working',
       active: true,
     }
@@ -73,7 +73,7 @@ export function mediaProgress(
     // look stalled.
     return {
       percent: UPLOAD_SHARE,
-      label: 'In attesa dell’elaborazione',
+      label: 'Waiting to be processed',
       tone: 'working',
       active: true,
     }
@@ -109,7 +109,7 @@ export function mediaProgress(
     percent: UPLOAD_SHARE + Math.round((within * (100 - UPLOAD_SHARE)) / 100),
     label,
     tone: 'working',
-    detail: job.attempt && job.attempt > 1 ? `tentativo ${job.attempt}` : undefined,
+    detail: job.attempt && job.attempt > 1 ? `attempt ${job.attempt}` : undefined,
     active: true,
   }
 }

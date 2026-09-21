@@ -19,6 +19,7 @@ export const routes = pgTable('routes', {
   stravaUrl:   text('strava_url'),
   komootUrl:   text('komoot_url'),
   gpxKey:      text('gpx_key'),
+  gpxSha256:   text('gpx_sha256'),
   videoKey:    text('video_key'),
   isPublished: boolean('is_published').notNull().default(false),
   // Reachable at its own URL, just never offered up: absent from the routes
@@ -28,7 +29,11 @@ export const routes = pgTable('routes', {
   unlisted:    boolean('unlisted').notNull().default(false),
   createdAt:   timestamp('created_at').notNull().defaultNow(),
   updatedAt:   timestamp('updated_at').notNull().defaultNow(),
-}, (t) => [index('routes_slug_idx').on(t.slug), index('routes_published_idx').on(t.isPublished)])
+}, (t) => [
+  index('routes_slug_idx').on(t.slug),
+  index('routes_published_idx').on(t.isPublished),
+  index('routes_gpx_sha256_idx').on(t.gpxSha256),
+])
 
 export const routeTranslations = pgTable('route_translations', {
   id:                uuid('id').primaryKey().defaultRandom(),
@@ -151,10 +156,14 @@ export const media = pgTable('media', {
   mediaType:    mediaTypeEnum('media_type').notNull().default('photo'),
   displayOrder: integer('display_order').notNull().default(0),
   altText:      text('alt_text'),
+  // Nullable: null only means "not computed yet", it never blocks anything.
+  // Arrives later for a video, from the worker (see lib/actions/media-hash.ts).
+  sha256:       text('sha256'),
   createdAt:    timestamp('created_at').notNull().defaultNow(),
 }, (t) => [
   index('media_route_idx').on(t.routeId),
   index('media_bike_model_idx').on(t.bikeModelId),
+  index('media_sha256_idx').on(t.sha256),
 ])
 
 export type Media = typeof media.$inferSelect

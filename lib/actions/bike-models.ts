@@ -81,7 +81,7 @@ function parseBikeModelForm(formData: FormData) {
 
 async function syncMediaItems(bikeModelId: string, formData: FormData) {
   const mediaItemsRaw = formData.get('mediaItems') as string | null
-  const mediaItems: { key: string; type: 'photo' | 'video' }[] = mediaItemsRaw ? JSON.parse(mediaItemsRaw) : []
+  const mediaItems: { key: string; type: 'photo' | 'video'; sha256?: string }[] = mediaItemsRaw ? JSON.parse(mediaItemsRaw) : []
 
   const existing = await db.select().from(media).where(eq(media.bikeModelId, bikeModelId))
   const newKeys = new Set(mediaItems.map((i) => i.key))
@@ -95,8 +95,8 @@ async function syncMediaItems(bikeModelId: string, formData: FormData) {
   await db.delete(media).where(eq(media.bikeModelId, bikeModelId))
   if (mediaItems.length > 0) {
     await db.insert(media).values(
-      mediaItems.map(({ key, type }, displayOrder) => ({
-        bikeModelId, storageKey: key, mediaType: type, displayOrder,
+      mediaItems.map(({ key, type, sha256 }, displayOrder) => ({
+        bikeModelId, storageKey: key, mediaType: type, displayOrder, sha256: sha256 ?? null,
       }))
     )
   }

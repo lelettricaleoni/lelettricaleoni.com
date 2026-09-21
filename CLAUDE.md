@@ -46,7 +46,9 @@ importato qui sopra. Non duplicarli in questo file.
   tecnologia: "Foto su R2, video su MinIO" non aiuta nessuno a caricare un video, e invecchia
   male — quella riga è rimasta a nominare MinIO per un giorno dopo che era stato spento.
   Vale per il pannello quanto per le pagine pubbliche.
-- **Codice in inglese**: path URL, identificatori, funzioni, commenti. Solo i contenuti di
+- **Codice in inglese**: path URL, identificatori, funzioni, commenti. Vale anche per i
+  testi dell'interfaccia del pannello admin (etichette, bottoni, titoli) — il pannello non
+  è mai tradotto, a differenza del sito pubblico. Solo i contenuti di
   `messages/{it,en,de}.json` sono in lingua.
 - **Nessun CDN esterno**: tutto self-hosted, niente unpkg/cdnjs/jsdelivr. Eccezioni note e
   volute: tile delle mappe e analytics. Cesium è self-hosted in `public/cesium/`.

@@ -61,6 +61,17 @@ describe('parseStatus', () => {
     const before = Date.now()
     expect(parseStatus({ phase: 'queued' })!.updatedAt).toBeGreaterThanOrEqual(before)
   })
+
+  it('keeps a valid sha256 alongside a done status', () => {
+    const s = parseStatus({ phase: 'done', progress: 100, updatedAt: 1, sha256: 'a'.repeat(64) })
+    expect(s?.sha256).toBe('a'.repeat(64))
+  })
+
+  it('rejects a sha256 that is not 64 lowercase hex characters', () => {
+    expect(parseStatus({ phase: 'done', sha256: 'not-a-hash' })?.sha256).toBeUndefined()
+    expect(parseStatus({ phase: 'done', sha256: 'A'.repeat(64) })?.sha256).toBeUndefined()
+    expect(parseStatus({ phase: 'done', sha256: 123 })?.sha256).toBeUndefined()
+  })
 })
 
 describe('readJobStatus', () => {
