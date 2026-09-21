@@ -109,20 +109,19 @@ export function GpxUpload({ routeId, defaultGpxKey, onUploaded }: GpxUploadProps
       <AlertDialog open={pendingDuplicate !== null} onOpenChange={(open) => !open && setPendingDuplicate(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>GPX già caricato</AlertDialogTitle>
+            <AlertDialogTitle>GPX already uploaded</AlertDialogTitle>
             <AlertDialogDescription>
-              Questo tracciato risulta identico a uno già presente su un altro percorso.
-              Caricarlo comunque?
+              This track is identical to one already on another route. Upload it anyway?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setPendingDuplicate(null)}>Annulla</AlertDialogCancel>
+            <AlertDialogCancel onClick={() => setPendingDuplicate(null)}>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={() => {
               const file = pendingDuplicate
               setPendingDuplicate(null)
               if (file) doUpload(file, true)
             }}>
-              Carica comunque
+              Upload anyway
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

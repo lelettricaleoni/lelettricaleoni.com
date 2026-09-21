@@ -156,8 +156,8 @@ export const media = pgTable('media', {
   mediaType:    mediaTypeEnum('media_type').notNull().default('photo'),
   displayOrder: integer('display_order').notNull().default(0),
   altText:      text('alt_text'),
-  // Nullable: null significa solo "non ancora calcolato", non blocca nulla.
-  // Per i video arriva più tardi, dal worker (vedi lib/actions/media-hash.ts).
+  // Nullable: null only means "not computed yet", it never blocks anything.
+  // Arrives later for a video, from the worker (see lib/actions/media-hash.ts).
   sha256:       text('sha256'),
   createdAt:    timestamp('created_at').notNull().defaultNow(),
 }, (t) => [

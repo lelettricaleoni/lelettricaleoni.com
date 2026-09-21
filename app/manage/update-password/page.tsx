@@ -30,13 +30,13 @@ function UpdatePasswordForm() {
         <div className="absolute -bottom-32 -left-16 w-80 h-80 rounded-full bg-white/5" />
         <div className="absolute top-1/2 right-8 w-48 h-48 rounded-full bg-[#366DA1]/40" />
         <div className="relative z-10 space-y-4">
-          <h2 className="text-3xl font-bold text-white leading-tight">Imposta una nuova<br />password sicura</h2>
+          <h2 className="text-3xl font-bold text-white leading-tight">Set a new<br />secure password</h2>
           <p className="text-[#a8c4e0] text-base leading-relaxed max-w-xs">
-            Scegli una password robusta per proteggere il pannello di amministrazione.
+            Choose a strong password to protect the admin panel.
           </p>
         </div>
         <div className="relative z-10">
-          <p className="text-[#a8c4e0] text-sm">Accesso riservato. Dati trattati nel rispetto del GDPR.</p>
+          <p className="text-[#a8c4e0] text-sm">Restricted access. Data handled in compliance with GDPR.</p>
         </div>
       </div>
 
@@ -48,8 +48,8 @@ function UpdatePasswordForm() {
           </div>
 
           <div>
-            <h1 className="text-2xl font-bold text-[#1e3a5f]">Nuova password</h1>
-            <p className="text-sm text-muted-foreground mt-1">Scegli una password di almeno 8 caratteri</p>
+            <h1 className="text-2xl font-bold text-[#1e3a5f]">New password</h1>
+            <p className="text-sm text-muted-foreground mt-1">Choose a password with at least 8 characters</p>
           </div>
 
           {error && (
@@ -58,11 +58,11 @@ function UpdatePasswordForm() {
 
           <form action={updatePasswordAction} className="space-y-4">
             <div className="space-y-1.5">
-              <Label htmlFor="password">Nuova password</Label>
+              <Label htmlFor="password">New password</Label>
               <Input id="password" name="password" type="password" required minLength={8} autoComplete="new-password" placeholder="••••••••" />
             </div>
             <Button type="submit" className="w-full bg-[#1e3a5f] hover:bg-[#152c4a]">
-              Salva password
+              Save password
             </Button>
           </form>
         </div>
