@@ -22,6 +22,7 @@ const RouteSchema = z.object({
   stravaUrl:       z.string().url().optional().or(z.literal('')),
   komootUrl:       z.string().url().optional().or(z.literal('')),
   gpxKey:          z.string().optional(),
+  gpxSha256:       z.string().optional(),
 })
 
 export type RouteFormState = {
@@ -88,7 +89,7 @@ export async function createRouteAction(
 
   const bikeTypes = formData.getAll('bikeTypes') as string[]
   const mediaItemsRaw = formData.get('mediaItems') as string | null
-  const mediaItems: { key: string; type: 'photo' | 'video' }[] = mediaItemsRaw ? JSON.parse(mediaItemsRaw) : []
+  const mediaItems: { key: string; type: 'photo' | 'video'; sha256?: string }[] = mediaItemsRaw ? JSON.parse(mediaItemsRaw) : []
   const raw = {
     nameIt:          formData.get('nameIt'),
     descriptionIt:   formData.get('descriptionIt'),
@@ -100,6 +101,7 @@ export async function createRouteAction(
     stravaUrl:       formData.get('stravaUrl') || undefined,
     komootUrl:       formData.get('komootUrl') || undefined,
     gpxKey:          formData.get('gpxKey') || undefined,
+    gpxSha256:       formData.get('gpxSha256') || undefined,
   }
 
   const parsed = RouteSchema.safeParse(raw)
@@ -120,6 +122,7 @@ export async function createRouteAction(
     stravaUrl: routeData.stravaUrl || null,
     komootUrl: routeData.komootUrl || null,
     gpxKey: routeData.gpxKey || null,
+    gpxSha256: routeData.gpxSha256 || null,
   }).returning()
 
   const [nameTranslations, descTranslations] = await Promise.all([
@@ -135,8 +138,8 @@ export async function createRouteAction(
 
   if (mediaItems.length > 0) {
     await db.insert(media).values(
-      mediaItems.map(({ key, type }, displayOrder) => ({
-        routeId: newRoute.id, storageKey: key, mediaType: type, displayOrder,
+      mediaItems.map(({ key, type, sha256 }, displayOrder) => ({
+        routeId: newRoute.id, storageKey: key, mediaType: type, displayOrder, sha256: sha256 ?? null,
       }))
     )
   }
@@ -156,7 +159,7 @@ export async function updateRouteAction(
 
   const bikeTypes = formData.getAll('bikeTypes') as string[]
   const mediaItemsRaw = formData.get('mediaItems') as string | null
-  const mediaItems: { key: string; type: 'photo' | 'video' }[] = mediaItemsRaw ? JSON.parse(mediaItemsRaw) : []
+  const mediaItems: { key: string; type: 'photo' | 'video'; sha256?: string }[] = mediaItemsRaw ? JSON.parse(mediaItemsRaw) : []
   const raw = {
     nameIt:          formData.get('nameIt'),
     descriptionIt:   formData.get('descriptionIt'),
@@ -168,6 +171,7 @@ export async function updateRouteAction(
     stravaUrl:       formData.get('stravaUrl') || undefined,
     komootUrl:       formData.get('komootUrl') || undefined,
     gpxKey:          formData.get('gpxKey') || undefined,
+    gpxSha256:       formData.get('gpxSha256') || undefined,
   }
 
   const parsed = RouteSchema.safeParse(raw)
@@ -188,6 +192,7 @@ export async function updateRouteAction(
     stravaUrl: routeData.stravaUrl || null,
     komootUrl: routeData.komootUrl || null,
     gpxKey: routeData.gpxKey || null,
+    gpxSha256: routeData.gpxSha256 || null,
     updatedAt: new Date(),
   }).where(eq(routes.id, id))
 
@@ -203,8 +208,8 @@ export async function updateRouteAction(
   await db.delete(media).where(eq(media.routeId, id))
   if (mediaItems.length > 0) {
     await db.insert(media).values(
-      mediaItems.map(({ key, type }, displayOrder) => ({
-        routeId: id, storageKey: key, mediaType: type, displayOrder,
+      mediaItems.map(({ key, type, sha256 }, displayOrder) => ({
+        routeId: id, storageKey: key, mediaType: type, displayOrder, sha256: sha256 ?? null,
       }))
     )
   }
