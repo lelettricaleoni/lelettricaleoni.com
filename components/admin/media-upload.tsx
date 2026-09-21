@@ -14,6 +14,7 @@ import { GripVertical, X, Upload, Video } from 'lucide-react'
 import { toast } from 'sonner'
 import { r2PublicUrl } from '@/lib/r2'
 import { getVideoJobStatuses } from '@/lib/actions/video-jobs'
+import { recordVideoHashAction } from '@/lib/actions/media-hash'
 import type { VideoJobStatus } from '@/lib/video-jobs'
 import { mediaProgress, type UploadState } from '@/lib/media-progress'
 import {
@@ -206,6 +207,26 @@ export function MediaUpload({
       clearTimeout(timer)
     }
   }, [videoKeys, freshKeys])
+
+  // Once a video's job reports done with a sha256, record it — the only
+  // moment it's known, since the source is gone right after. Idempotent
+  // (recordVideoHashAction just re-writes the same value), so a rare double
+  // call from two renders in flight at once costs nothing.
+  useEffect(() => {
+    for (const item of items) {
+      if (item.mediaType !== 'video' || item.sha256 || item.upload) continue
+      const job = jobs[item.storageKey]
+      if (job?.phase !== 'done' || !job.sha256) continue
+      const sha256 = job.sha256
+      const storageKey = item.storageKey
+      recordVideoHashAction(storageKey, sha256)
+        .then(({ duplicate }) => {
+          setItems((prev) => prev.map((i) => (i.storageKey === storageKey ? { ...i, sha256 } : i)))
+          if (duplicate) toast.warning('Questo video sembra identico a uno già caricato altrove.')
+        })
+        .catch(() => { /* riprovato al prossimo render se lo stato del job resta */ })
+    }
+  }, [items, jobs])
 
   const effectiveOwnerId = useRef(
     ownerId !== 'new' ? ownerId : (() => {
