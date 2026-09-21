@@ -19,7 +19,7 @@ function formatDate(iso: string | null): string | null {
   if (!iso) return null
   const date = new Date(iso)
   if (Number.isNaN(date.getTime())) return null
-  return date.toLocaleDateString('it-IT', { day: 'numeric', month: 'short', year: 'numeric' })
+  return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
 export function UserListItem({
@@ -53,17 +53,17 @@ export function UserListItem({
       <div className="space-y-1 min-w-0">
         <p className="font-medium text-[#1e3a5f] truncate">
           {user.email || '—'}
-          {isSelf && <span className="text-muted-foreground font-normal"> (tu)</span>}
+          {isSelf && <span className="text-muted-foreground font-normal"> (you)</span>}
         </p>
         <div className="flex items-center gap-2 text-sm text-muted-foreground flex-wrap">
           <Badge variant={user.isAdmin ? 'default' : 'secondary'}>
-            {user.isAdmin ? 'Amministratore' : 'Nessun accesso'}
+            {user.isAdmin ? 'Admin' : 'No access'}
           </Badge>
           {user.isAdmin && user.hasDevAccess && (
-            <Badge variant="outline">Pannello sviluppo</Badge>
+            <Badge variant="outline">Dev panel</Badge>
           )}
-          {user.isPending && <Badge variant="outline">Invito in attesa</Badge>}
-          {lastSignIn && <span>Ultimo accesso {lastSignIn}</span>}
+          {user.isPending && <Badge variant="outline">Invite pending</Badge>}
+          {lastSignIn && <span>Last sign-in {lastSignIn}</span>}
         </div>
       </div>
 
@@ -76,11 +76,11 @@ export function UserListItem({
             onClick={() => run(() =>
               user.hasDevAccess ? revokeDevAccessAction(user.id) : grantDevAccessAction(user.id)
             )}
-            title={user.hasDevAccess ? 'Togli accesso al pannello sviluppo' : 'Dai accesso al pannello sviluppo'}
+            title={user.hasDevAccess ? 'Remove dev panel access' : 'Grant dev panel access'}
             className={user.hasDevAccess ? 'text-muted-foreground' : ''}
           >
             <Code2 size={16} className="mr-1" />
-            {user.hasDevAccess ? 'Sviluppo: sì' : 'Sviluppo: no'}
+            {user.hasDevAccess ? 'Dev: yes' : 'Dev: no'}
           </Button>
         )}
         {user.isAdmin ? (
@@ -92,30 +92,30 @@ export function UserListItem({
                 disabled={isPending || blockedAsLastAdmin}
                 title={
                   blockedAsLastAdmin
-                    ? "È l'unico account con accesso: assegnalo prima a qualcun altro"
-                    : 'Revoca accesso'
+                    ? 'This is the only account with access: assign it to someone else first'
+                    : 'Revoke access'
                 }
                 className="text-destructive hover:text-destructive"
               >
-                <ShieldOff size={16} className="mr-1" /> Revoca
+                <ShieldOff size={16} className="mr-1" /> Revoke
               </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>Revocare l&apos;accesso?</AlertDialogTitle>
+                <AlertDialogTitle>Revoke access?</AlertDialogTitle>
                 <AlertDialogDescription>
                   {isSelf
-                    ? 'Perderai subito l’accesso a questo pannello. L’account resta, ma dovrà essere un altro amministratore a riassegnartelo.'
-                    : `${user.email} non potrà più entrare nel pannello. L’account resta e l’accesso può essere riassegnato in qualsiasi momento.`}
+                    ? 'You’ll lose access to this panel immediately. The account stays, but another admin will need to reassign it to you.'
+                    : `${user.email} will no longer be able to log into the panel. The account stays and access can be reassigned at any time.`}
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel>Annulla</AlertDialogCancel>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
                 <AlertDialogAction
                   onClick={() => run(() => revokeAdminAction(user.id))}
                   className="bg-destructive hover:bg-destructive/90"
                 >
-                  Revoca
+                  Revoke
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
@@ -126,9 +126,9 @@ export function UserListItem({
             size="sm"
             disabled={isPending}
             onClick={() => run(() => grantAdminAction(user.id))}
-            title="Assegna accesso"
+            title="Grant access"
           >
-            <ShieldCheck size={16} className="mr-1" /> Assegna accesso
+            <ShieldCheck size={16} className="mr-1" /> Grant access
           </Button>
         )}
       </div>

@@ -23,7 +23,7 @@ export default async function AdminUsersPage() {
       <div>
         <h1 className="text-2xl font-bold text-[#1e3a5f]">Access</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Chi può entrare in questo pannello e gestire i percorsi.
+          Who can access this panel and manage the site.
         </p>
       </div>
 
@@ -34,7 +34,7 @@ export default async function AdminUsersPage() {
           Account ({users.length})
         </h2>
         {users.length === 0 ? (
-          <p className="text-muted-foreground text-sm">Nessun account.</p>
+          <p className="text-muted-foreground text-sm">No accounts.</p>
         ) : (
           <div className="space-y-3">
             {users.map((user) => (

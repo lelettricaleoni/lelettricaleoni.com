@@ -13,7 +13,7 @@ function SubmitButton() {
   return (
     <Button type="submit" disabled={pending} className="bg-[#1e3a5f] hover:bg-[#152c4a]">
       <Mail size={16} className="mr-1" />
-      {pending ? 'Invio…' : 'Invita'}
+      {pending ? 'Sending…' : 'Invite'}
     </Button>
   )
 }
@@ -42,10 +42,10 @@ export function InviteUserForm() {
       className="p-4 bg-card border rounded-lg space-y-3"
     >
       <div className="space-y-1.5">
-        <Label htmlFor="invite-email">Invita una persona</Label>
+        <Label htmlFor="invite-email">Invite someone</Label>
         <p className="text-sm text-muted-foreground">
-          Riceverà un&apos;email con un link per scegliere la password. Da quel momento potrà
-          entrare nel pannello.
+          They&apos;ll receive an email with a link to set a password. From then on they can
+          log into the panel.
         </p>
       </div>
       <div className="flex gap-2">
@@ -55,7 +55,7 @@ export function InviteUserForm() {
           type="email"
           required
           autoComplete="off"
-          placeholder="nome@esempio.it"
+          placeholder="name@example.com"
         />
         <SubmitButton />
       </div>
