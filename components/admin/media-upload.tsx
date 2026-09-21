@@ -16,6 +16,17 @@ import { r2PublicUrl } from '@/lib/r2'
 import { getVideoJobStatuses } from '@/lib/actions/video-jobs'
 import type { VideoJobStatus } from '@/lib/video-jobs'
 import { mediaProgress, type UploadState } from '@/lib/media-progress'
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel,
+  AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
+  AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
+
+class DuplicateUploadError extends Error {
+  constructor(public sha256: string) {
+    super('duplicate')
+  }
+}
 
 export interface MediaItem {
   id: string
@@ -26,6 +37,8 @@ export interface MediaItem {
   fileName?: string
   /** Present only until the file has finished leaving the browser. */
   upload?: UploadState
+  /** Known immediately for a photo; arrives later, via polling, for a video. */
+  sha256?: string
 }
 
 function ProgressBar({
@@ -208,25 +221,32 @@ export function MediaUpload({
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   )
 
-  const uploadFile = useCallback(async (file: File) => {
+  const [pendingDuplicate, setPendingDuplicate] = useState<{ file: File; key: string } | null>(null)
+
+  const uploadFile = useCallback(async (file: File, opts?: { forceKey?: string }) => {
     const isVideo = file.type.startsWith('video/')
 
     // The key is known before a single byte moves, so the item can join the
     // list now and keep its identity all the way to "pronto". It used to live
     // in a second list and be replaced on completion, which is what put a gap
-    // in the middle of the journey.
+    // in the middle of the journey. A forced retry after a duplicate warning
+    // reuses the same key instead of reserving a new one.
     let key: string
     let url: string | null = null
-    try {
-      const result = isVideo
-        ? await getVideoPresignedUploadUrl(effectiveOwnerId, file.name, file.type)
-        : await getPresignedUploadUrl(effectiveOwnerId, file.name, file.type, 'photo')
-      key = result.key
-      url = result.url
-    } catch (err) {
-      console.error(err)
-      toast.error(`Caricamento fallito: ${file.name}`)
-      return
+    if (opts?.forceKey) {
+      key = opts.forceKey
+    } else {
+      try {
+        const result = isVideo
+          ? await getVideoPresignedUploadUrl(effectiveOwnerId, file.name, file.type)
+          : await getPresignedUploadUrl(effectiveOwnerId, file.name, file.type, 'photo')
+        key = result.key
+        url = result.url
+      } catch (err) {
+        console.error(err)
+        toast.error(`Caricamento fallito: ${file.name}`)
+        return
+      }
     }
 
     const preview = isVideo ? '' : URL.createObjectURL(file)
@@ -239,11 +259,11 @@ export function MediaUpload({
       upload: { progress: 0 },
     }])
 
-    const patch = (upload: UploadState | undefined) =>
-      setItems((prev) => prev.map((i) => (i.storageKey === key ? { ...i, upload } : i)))
+    const patch = (fields: Partial<MediaItem>) =>
+      setItems((prev) => prev.map((i) => (i.storageKey === key ? { ...i, ...fields } : i)))
 
     try {
-      await new Promise<void>((resolve, reject) => {
+      const responseText = await new Promise<string>((resolve, reject) => {
         const xhr = new XMLHttpRequest()
         if (isVideo && url) {
           xhr.open('PUT', url)
@@ -253,10 +273,20 @@ export function MediaUpload({
         }
         xhr.upload.onprogress = (e) => {
           if (e.lengthComputable) {
-            patch({ progress: Math.round((e.loaded / e.total) * 100) })
+            patch({ upload: { progress: Math.round((e.loaded / e.total) * 100) } })
           }
         }
-        xhr.onload = () => xhr.status >= 200 && xhr.status < 300 ? resolve() : reject(new Error(`${xhr.status}`))
+        xhr.onload = () => {
+          if (xhr.status === 409) {
+            let sha256 = ''
+            try { sha256 = JSON.parse(xhr.responseText).sha256 } catch { /* ignore */ }
+            reject(new DuplicateUploadError(sha256))
+          } else if (xhr.status >= 200 && xhr.status < 300) {
+            resolve(xhr.responseText)
+          } else {
+            reject(new Error(`${xhr.status}`))
+          }
+        }
         xhr.onerror = () => reject(new Error('Network error'))
 
         if (isVideo && url) {
@@ -265,16 +295,30 @@ export function MediaUpload({
           const fd = new FormData()
           fd.append('file', file)
           fd.append('key', key)
+          fd.append('kind', 'photo')
+          if (opts?.forceKey) fd.append('force', 'true')
           xhr.send(fd)
         }
       })
 
-      // Dropping `upload` hands the bar over to the worker's status.
-      patch(undefined)
+      // A video hands its bar over to the worker's status; a photo already
+      // knows its sha256 from the response body.
+      if (isVideo) {
+        patch({ upload: undefined })
+      } else {
+        let sha256: string | undefined
+        try { sha256 = JSON.parse(responseText).sha256 } catch { /* ignore */ }
+        patch({ upload: undefined, sha256 })
+      }
     } catch (err) {
+      if (err instanceof DuplicateUploadError) {
+        setItems((prev) => prev.filter((i) => i.storageKey !== key))
+        setPendingDuplicate({ file, key })
+        return
+      }
       console.error(err)
       toast.error(`Caricamento fallito: ${file.name}`)
-      patch({ progress: 0, failed: true })
+      patch({ upload: { progress: 0, failed: true } })
     }
   }, [effectiveOwnerId, getPresignedUploadUrl, getVideoPresignedUploadUrl])
 
@@ -306,7 +350,7 @@ export function MediaUpload({
   const mediaItemsJson = JSON.stringify(
     items
       .filter((i) => !i.upload)
-      .map((i) => ({ key: i.storageKey, type: i.mediaType }))
+      .map((i) => ({ key: i.storageKey, type: i.mediaType, sha256: i.sha256 }))
   )
 
   return (
@@ -339,6 +383,29 @@ export function MediaUpload({
       </div>
 
       <input type="hidden" name="mediaItems" value={mediaItemsJson} />
+
+      <AlertDialog open={pendingDuplicate !== null} onOpenChange={(open) => !open && setPendingDuplicate(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>File già caricato</AlertDialogTitle>
+            <AlertDialogDescription>
+              Questa foto risulta identica a una già presente altrove sul sito. Caricarla
+              comunque?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setPendingDuplicate(null)}>Annulla</AlertDialogCancel>
+            <AlertDialogAction onClick={() => {
+              if (!pendingDuplicate) return
+              const { file, key } = pendingDuplicate
+              setPendingDuplicate(null)
+              uploadFile(file, { forceKey: key })
+            }}>
+              Carica comunque
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
