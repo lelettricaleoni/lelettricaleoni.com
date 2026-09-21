@@ -50,6 +50,13 @@
       "when": 1789978775043,
       "tag": "0006_absent_obadiah_stane",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1789995792063,
+      "tag": "0007_wandering_hercules",
+      "breakpoints": true
     }
   ]
 }
