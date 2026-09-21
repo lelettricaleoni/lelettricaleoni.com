@@ -39,11 +39,11 @@ export type UserActionResult = { ok: true; message: string } | { ok: false; mess
 
 /** Messages the panel shows. They say what happened, never where it happened. */
 const REFUSAL_MESSAGES: Record<RoleChangeRefusal, string> = {
-  'not-found': 'Questo account non esiste più.',
-  'not-admin': 'Questo account non ha accesso al pannello.',
-  'already-admin': 'Questo account ha già accesso al pannello.',
+  'not-found': 'This account no longer exists.',
+  'not-admin': 'This account has no access to the panel.',
+  'already-admin': 'This account already has access to the panel.',
   'last-admin':
-    "Non puoi togliere l'accesso all'ultimo amministratore rimasto: nessuno potrebbe più entrare nel pannello. Assegna prima l'accesso a un altro account.",
+    "You can't remove access from the last remaining admin: no one would be able to log into the panel anymore. Grant access to another account first.",
 }
 
 async function requireAdmin() {
@@ -88,7 +88,7 @@ export async function inviteAdminAction(
 
   const parsed = InviteSchema.safeParse({ email: formData.get('email') })
   if (!parsed.success) {
-    return { ok: false, message: 'Inserisci un indirizzo email valido.' }
+    return { ok: false, message: 'Enter a valid email address.' }
   }
   const email = normaliseEmail(parsed.data.email)
 
@@ -98,8 +98,8 @@ export async function inviteAdminAction(
     return {
       ok: false,
       message: existing.isAdmin
-        ? 'Questo indirizzo ha già accesso al pannello.'
-        : "Questo indirizzo ha già un account: assegnagli l'accesso dalla lista qui sotto.",
+        ? 'This address already has access to the panel.'
+        : 'This address already has an account: grant it access from the list below.',
     }
   }
 
@@ -108,7 +108,7 @@ export async function inviteAdminAction(
     redirectTo: INVITE_LANDING,
   })
   if (error || !data.user) {
-    return { ok: false, message: "Invito non inviato. Controlla l'indirizzo e riprova." }
+    return { ok: false, message: 'Invite not sent. Check the address and try again.' }
   }
 
   // The invitation goes out before the role can be attached: creating the
@@ -123,13 +123,12 @@ export async function inviteAdminAction(
     revalidatePath('/manage/users')
     return {
       ok: false,
-      message:
-        "Invito inviato, ma l'accesso non è stato assegnato. Assegnalo dalla lista qui sotto.",
+      message: "Invite sent, but access wasn't granted. Grant it from the list below.",
     }
   }
 
   revalidatePath('/manage/users')
-  return { ok: true, message: `Invito inviato a ${email}.` }
+  return { ok: true, message: `Invite sent to ${email}.` }
 }
 
 export async function grantAdminAction(userId: string): Promise<UserActionResult> {
@@ -143,10 +142,10 @@ export async function grantAdminAction(userId: string): Promise<UserActionResult
   const { error } = await supabase.auth.admin.updateUserById(userId, {
     app_metadata: { role: ADMIN_ROLE },
   })
-  if (error) return { ok: false, message: 'Accesso non assegnato. Riprova.' }
+  if (error) return { ok: false, message: 'Access not granted. Try again.' }
 
   revalidatePath('/manage/users')
-  return { ok: true, message: 'Accesso assegnato.' }
+  return { ok: true, message: 'Access granted.' }
 }
 
 export async function revokeAdminAction(userId: string): Promise<UserActionResult> {
@@ -165,10 +164,10 @@ export async function revokeAdminAction(userId: string): Promise<UserActionResul
   const { error } = await supabase.auth.admin.updateUserById(userId, {
     app_metadata: { role: null },
   })
-  if (error) return { ok: false, message: 'Accesso non revocato. Riprova.' }
+  if (error) return { ok: false, message: 'Access not revoked. Try again.' }
 
   revalidatePath('/manage/users')
-  return { ok: true, message: 'Accesso revocato.' }
+  return { ok: true, message: 'Access revoked.' }
 }
 
 /**
@@ -184,10 +183,10 @@ export async function grantDevAccessAction(userId: string): Promise<UserActionRe
   const { error } = await supabase.auth.admin.updateUserById(userId, {
     app_metadata: { [DEV_TOOLS_FLAG]: true },
   })
-  if (error) return { ok: false, message: 'Accesso al pannello sviluppo non assegnato. Riprova.' }
+  if (error) return { ok: false, message: 'Dev panel access not granted. Try again.' }
 
   revalidatePath('/manage/users')
-  return { ok: true, message: 'Accesso al pannello sviluppo assegnato.' }
+  return { ok: true, message: 'Dev panel access granted.' }
 }
 
 export async function revokeDevAccessAction(userId: string): Promise<UserActionResult> {
@@ -197,8 +196,8 @@ export async function revokeDevAccessAction(userId: string): Promise<UserActionR
   const { error } = await supabase.auth.admin.updateUserById(userId, {
     app_metadata: { [DEV_TOOLS_FLAG]: null },
   })
-  if (error) return { ok: false, message: 'Accesso al pannello sviluppo non revocato. Riprova.' }
+  if (error) return { ok: false, message: 'Dev panel access not revoked. Try again.' }
 
   revalidatePath('/manage/users')
-  return { ok: true, message: 'Accesso al pannello sviluppo revocato.' }
+  return { ok: true, message: 'Dev panel access revoked.' }
 }

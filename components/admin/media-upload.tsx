@@ -119,7 +119,7 @@ function SortableItem({
         </span>
         <div className="flex items-center gap-2">
           <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${item.mediaType === 'video' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'}`}>
-            {item.mediaType === 'video' ? 'Video' : 'Foto'}
+            {item.mediaType === 'video' ? 'Video' : 'Photo'}
           </span>
         </div>
         <ProgressBar item={item} job={job} />
@@ -222,7 +222,7 @@ export function MediaUpload({
       recordVideoHashAction(storageKey, sha256)
         .then(({ duplicate }) => {
           setItems((prev) => prev.map((i) => (i.storageKey === storageKey ? { ...i, sha256 } : i)))
-          if (duplicate) toast.warning('Questo video sembra identico a uno già caricato altrove.')
+          if (duplicate) toast.warning('This video looks identical to one already uploaded elsewhere.')
         })
         .catch(() => { /* riprovato al prossimo render se lo stato del job resta */ })
     }
@@ -265,7 +265,7 @@ export function MediaUpload({
         url = result.url
       } catch (err) {
         console.error(err)
-        toast.error(`Caricamento fallito: ${file.name}`)
+        toast.error(`Upload failed: ${file.name}`)
         return
       }
     }
@@ -338,7 +338,7 @@ export function MediaUpload({
         return
       }
       console.error(err)
-      toast.error(`Caricamento fallito: ${file.name}`)
+      toast.error(`Upload failed: ${file.name}`)
       patch({ upload: { progress: 0, failed: true } })
     }
   }, [effectiveOwnerId, getPresignedUploadUrl, getVideoPresignedUploadUrl])
@@ -398,9 +398,9 @@ export function MediaUpload({
         <input {...getInputProps()} />
         <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
           <Upload size={16} />
-          <span>Aggiungi foto o video (trascina o clicca)</span>
+          <span>Add a photo or video (drag or click)</span>
         </div>
-        <p className="text-xs text-muted-foreground mt-1">Dopo il caricamento i video vengono preparati per la riproduzione: può volerci qualche minuto</p>
+        <p className="text-xs text-muted-foreground mt-1">After uploading, videos are prepared for playback: this can take a few minutes</p>
       </div>
 
       <input type="hidden" name="mediaItems" value={mediaItemsJson} />
@@ -408,21 +408,20 @@ export function MediaUpload({
       <AlertDialog open={pendingDuplicate !== null} onOpenChange={(open) => !open && setPendingDuplicate(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>File già caricato</AlertDialogTitle>
+            <AlertDialogTitle>File already uploaded</AlertDialogTitle>
             <AlertDialogDescription>
-              Questa foto risulta identica a una già presente altrove sul sito. Caricarla
-              comunque?
+              This photo is identical to one already elsewhere on the site. Upload it anyway?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setPendingDuplicate(null)}>Annulla</AlertDialogCancel>
+            <AlertDialogCancel onClick={() => setPendingDuplicate(null)}>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={() => {
               if (!pendingDuplicate) return
               const { file, key } = pendingDuplicate
               setPendingDuplicate(null)
               uploadFile(file, { forceKey: key })
             }}>
-              Carica comunque
+              Upload anyway
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

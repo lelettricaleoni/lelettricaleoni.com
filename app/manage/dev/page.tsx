@@ -23,10 +23,10 @@ function cpuUsagePercent(h: WorkerHeartbeat): number | null {
 
 function formatAgo(epochMs: number): string {
   const seconds = Math.max(0, Math.round((Date.now() - epochMs) / 1000))
-  if (seconds < 60) return `${seconds}s fa`
+  if (seconds < 60) return `${seconds}s ago`
   const minutes = Math.round(seconds / 60)
-  if (minutes < 60) return `${minutes}min fa`
-  return `${Math.round(minutes / 60)}h fa`
+  if (minutes < 60) return `${minutes}min ago`
+  return `${Math.round(minutes / 60)}h ago`
 }
 
 function formatDuration(epochMs: number): string {
@@ -78,35 +78,35 @@ export default async function DevToolsPage() {
   return (
     <div className="space-y-10 max-w-3xl">
       <div>
-        <h1 className="text-2xl font-bold text-[#1e3a5f]">Sviluppo</h1>
+        <h1 className="text-2xl font-bold text-[#1e3a5f]">Dev</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Stato dei servizi dietro al sito. Solo lettura, si aggiorna a ogni visita.
+          Status of the services behind the site. Read-only, refreshes on every visit.
         </p>
       </div>
 
-      <Section title="Worker video">
+      <Section title="Video worker">
         {!heartbeat ? (
           <p className="text-sm text-muted-foreground rounded-lg border bg-muted/30 p-4">
-            Nessun dato dal worker. Non ha ancora pubblicato un battito, oppure è fermo da
-            più di un minuto.
+            No data from the worker. It hasn&apos;t published a heartbeat yet, or it&apos;s
+            been down for more than a minute.
           </p>
         ) : (
           <div className="space-y-4">
-            <p className="text-xs text-muted-foreground">Aggiornato {formatAgo(heartbeat.updatedAt)}</p>
+            <p className="text-xs text-muted-foreground">Updated {formatAgo(heartbeat.updatedAt)}</p>
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <StatCard
                 label="CPU"
                 value={cpuUsagePercent(heartbeat) !== null ? `${cpuUsagePercent(heartbeat)}%` : '—'}
-                hint={heartbeat.cpuCount ? `${heartbeat.cpuCount} core, media 1 min` : undefined}
+                hint={heartbeat.cpuCount ? `${heartbeat.cpuCount} cores, 1min avg` : undefined}
               />
               <StatCard
-                label="Memoria"
+                label="Memory"
                 value={heartbeat.memory ? `${heartbeat.memory.usedMb} MB` : '—'}
-                hint={heartbeat.memory ? `di ${heartbeat.memory.totalMb} MB` : undefined}
+                hint={heartbeat.memory ? `of ${heartbeat.memory.totalMb} MB` : undefined}
               />
               <StatCard
-                label="Code attive"
+                label="Active queues"
                 value={`${Object.keys(heartbeat.queues).length}`}
               />
             </div>
@@ -115,19 +115,19 @@ export default async function DevToolsPage() {
               <div key={name} className="rounded-lg border bg-card p-4 space-y-3">
                 <p className="text-sm font-medium text-[#1e3a5f]">{name}</p>
                 <div className="flex flex-wrap gap-4 text-sm">
-                  <span><span className="font-semibold">{queue.counts.waiting ?? 0}</span> in attesa</span>
-                  <span><span className="font-semibold">{queue.counts.active ?? 0}</span> in corso</span>
-                  <span><span className="font-semibold">{queue.counts.completed ?? 0}</span> completati</span>
-                  <span><span className="font-semibold">{queue.counts.failed ?? 0}</span> falliti</span>
-                  <span><span className="font-semibold">{queue.counts.delayed ?? 0}</span> in ritardo</span>
+                  <span><span className="font-semibold">{queue.counts.waiting ?? 0}</span> waiting</span>
+                  <span><span className="font-semibold">{queue.counts.active ?? 0}</span> active</span>
+                  <span><span className="font-semibold">{queue.counts.completed ?? 0}</span> completed</span>
+                  <span><span className="font-semibold">{queue.counts.failed ?? 0}</span> failed</span>
+                  <span><span className="font-semibold">{queue.counts.delayed ?? 0}</span> delayed</span>
                 </div>
                 {queue.active.length > 0 && (
                   <ul className="text-sm text-muted-foreground space-y-1">
                     {queue.active.map((job) => (
                       <li key={job.id} className="truncate">
                         {jobLabel(job)}
-                        {job.startedAt && ` — in corso da ${formatDuration(job.startedAt)}`}
-                        {job.attempt > 1 && ` (tentativo ${job.attempt})`}
+                        {job.startedAt && ` — running for ${formatDuration(job.startedAt)}`}
+                        {job.attempt > 1 && ` (attempt ${job.attempt})`}
                       </li>
                     ))}
                   </ul>
@@ -141,7 +141,7 @@ export default async function DevToolsPage() {
       <Section title="Cron">
         {!heartbeat || heartbeat.schedules.length === 0 ? (
           <p className="text-sm text-muted-foreground rounded-lg border bg-muted/30 p-4">
-            Nessun lavoro pianificato per ora.
+            No scheduled jobs right now.
           </p>
         ) : (
           <div className="rounded-lg border bg-card divide-y">
@@ -158,12 +158,12 @@ export default async function DevToolsPage() {
       <Section title="Redis">
         {!redisStats ? (
           <p className="text-sm text-muted-foreground rounded-lg border bg-muted/30 p-4">
-            Non configurato o non raggiungibile.
+            Not configured or unreachable.
           </p>
         ) : (
           <div className="grid grid-cols-2 gap-3">
-            <StatCard label="Chiavi totali" value={`${redisStats.totalKeys}`} />
-            <StatCard label="Job video tracciati" value={`${redisStats.trackedJobs}`} />
+            <StatCard label="Total keys" value={`${redisStats.totalKeys}`} />
+            <StatCard label="Tracked video jobs" value={`${redisStats.trackedJobs}`} />
           </div>
         )}
       </Section>
@@ -171,15 +171,15 @@ export default async function DevToolsPage() {
       <Section title="Database">
         {!pgStats ? (
           <p className="text-sm text-muted-foreground rounded-lg border bg-muted/30 p-4">
-            Non raggiungibile in questo momento.
+            Unreachable right now.
           </p>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            <StatCard label="Dimensione" value={`${pgStats.databaseSizeMb} MB`} />
-            <StatCard label="Connessioni" value={`${pgStats.connections}`} />
-            <StatCard label="Percorsi" value={`${pgStats.routeCount}`} />
-            <StatCard label="Foto/video" value={`${pgStats.photoCount}`} />
-            <StatCard label="Traduzioni" value={`${pgStats.translationCount}`} />
+            <StatCard label="Size" value={`${pgStats.databaseSizeMb} MB`} />
+            <StatCard label="Connections" value={`${pgStats.connections}`} />
+            <StatCard label="Routes" value={`${pgStats.routeCount}`} />
+            <StatCard label="Photos/videos" value={`${pgStats.photoCount}`} />
+            <StatCard label="Translations" value={`${pgStats.translationCount}`} />
           </div>
         )}
       </Section>
@@ -187,12 +187,12 @@ export default async function DevToolsPage() {
       <Section title="Storage (R2)">
         {!r2Stats ? (
           <p className="text-sm text-muted-foreground rounded-lg border bg-muted/30 p-4">
-            Non configurato o non raggiungibile.
+            Not configured or unreachable.
           </p>
         ) : (
           <div className="grid grid-cols-2 gap-3">
-            <StatCard label="Oggetti" value={`${r2Stats.objectCount}`} hint={r2Stats.bucketName} />
-            <StatCard label="Dimensione" value={`${r2Stats.sizeMb} MB`} hint="dato di ieri, non in tempo reale" />
+            <StatCard label="Objects" value={`${r2Stats.objectCount}`} hint={r2Stats.bucketName} />
+            <StatCard label="Size" value={`${r2Stats.sizeMb} MB`} hint="yesterday's figure, not real-time" />
           </div>
         )}
       </Section>

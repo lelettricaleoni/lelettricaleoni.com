@@ -180,9 +180,9 @@ export function RouteForm({ action, route, translations, photos }: RouteFormProp
 
       {/* Media */}
       <section className="space-y-3">
-        <h2 className="text-lg font-semibold text-[#1e3a5f]">Foto e video</h2>
+        <h2 className="text-lg font-semibold text-[#1e3a5f]">Photos and video</h2>
         <p className="text-sm text-muted-foreground">
-          Il primo elemento è la copertina. Trascina per riordinare.
+          The first item is the cover. Drag to reorder.
         </p>
         <MediaUpload
           ownerId={route?.id ?? 'new'}
