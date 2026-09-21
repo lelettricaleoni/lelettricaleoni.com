@@ -43,6 +43,13 @@
       "when": 1789647078540,
       "tag": "0005_kind_microchip",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1789978775043,
+      "tag": "0006_absent_obadiah_stane",
+      "breakpoints": true
     }
   ]
 }
