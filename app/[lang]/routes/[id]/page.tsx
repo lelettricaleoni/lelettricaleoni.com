@@ -153,7 +153,17 @@ export default async function RouteDetailPage({
         </div>
 
         {/* Map / GPX flyover */}
-        {gpxPoints.length > 1 && <RouteFlyoverLoader points={gpxPoints} difficulty={route.difficulty} />}
+        {gpxPoints.length > 1 && (
+          <RouteFlyoverLoader
+            points={gpxPoints}
+            difficulty={route.difficulty}
+            labels={{
+              toggle: d.elevation_chart_toggle,
+              altitude: d.elevation_chart_altitude,
+              distance: d.elevation_chart_distance,
+            }}
+          />
+        )}
 
         {/* Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">

@@ -1,10 +1,20 @@
 'use client'
-import { useEffect, useRef, useState } from 'react'
-import { Play, Square } from 'lucide-react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import dynamic from 'next/dynamic'
+import { Play, Square, ChevronDown } from 'lucide-react'
 import { MapLoader } from '@/components/map-loader'
+import { Skeleton } from '@/components/ui/skeleton'
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
+import { cn } from '@/lib/utils'
 import { trackEvent } from '@/lib/analytics'
 import { pickSampleIndices, interpolateHeights } from '@/lib/terrain'
+import { cumulativeDistancesKm } from '@/lib/geo'
 import { DIFFICULTY_HEX } from './difficulty-badge'
+
+const ElevationChart = dynamic(
+  () => import('./route-elevation-chart').then((m) => m.RouteElevationChart),
+  { ssr: false, loading: () => <Skeleton className="h-40 w-full" /> }
+)
 
 type Coord = [number, number, number] // [lon, lat, ele]
 
@@ -53,11 +63,19 @@ function loadCesiumScript(): Promise<void> {
   })
 }
 
-export function RouteFlyover({ points, difficulty }: { points: Coord[]; difficulty?: string }) {
+interface FlyoverLabels {
+  toggle: string
+  altitude: string
+  distance: string
+}
+
+export function RouteFlyover({
+  points, difficulty, labels,
+}: { points: Coord[]; difficulty?: string; labels: FlyoverLabels }) {
   const containerRef = useRef<HTMLDivElement>(null)
   const viewerRef = useRef<CesiumType>(null)
   const cesiumRef = useRef<CesiumType>(null)
-  const entityRef = useRef<CesiumType>(null)
+  const cursorEntityRef = useRef<CesiumType>(null)
   const cameraHandlerRef = useRef<CesiumType>(null)
   // Height to draw each track point at: terrain height where terrain is
   // available, GPX elevation otherwise. See lib/terrain.ts for why.
@@ -65,6 +83,10 @@ export function RouteFlyover({ points, difficulty }: { points: Coord[]; difficul
   const [flying, setFlying] = useState(false)
   const [ready, setReady] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [chartOpen, setChartOpen] = useState(false)
+  const chartCursorUpdaterRef = useRef<((index: number) => void) | null>(null)
+  const infoLabelRef = useRef<HTMLSpanElement>(null)
+  const distances = useMemo(() => cumulativeDistancesKm(points), [points])
 
   useEffect(() => {
     if (!containerRef.current || points.length < 2) return
@@ -209,8 +231,69 @@ export function RouteFlyover({ points, difficulty }: { points: Coord[]; difficul
       viewerRef.current?.destroy()
       viewerRef.current = null
       cesiumRef.current = null
+      // L'entità viene distrutta insieme al viewer: il riferimento va
+      // invalidato qui, altrimenti un cambio di percorso (nuovo `points`)
+      // riuserebbe un'entità che non esiste più.
+      cursorEntityRef.current = null
     }
   }, [points])
+
+  // Un'unica entità per volo automatico e trascinamento manuale — creata al
+  // primo utilizzo, qualunque dei due arrivi per primo. Nascosta finché
+  // qualcosa non la posiziona davvero.
+  function ensureCursorEntity(): CesiumType {
+    const viewer = viewerRef.current
+    const Cesium = cesiumRef.current
+    if (!viewer || !Cesium) return null
+    if (cursorEntityRef.current) return cursorEntityRef.current
+    const entity = viewer.entities.add({
+      show: false,
+      point: {
+        pixelSize: 14,
+        color: Cesium.Color.fromCssColorString(DIFFICULTY_HEX[difficulty ?? ''] ?? '#795F91'),
+        outlineColor: Cesium.Color.WHITE,
+        outlineWidth: 2.5,
+        disableDepthTestDistance: Number.POSITIVE_INFINITY,
+      },
+    })
+    cursorEntityRef.current = entity
+    return entity
+  }
+
+  // Aggiorna solo il cursore del grafico e l'etichetta quota/distanza — mai
+  // l'entità Cesium: durante il volo la posizione dell'entità è già guidata
+  // da `pos` (SampledPositionProperty), impostarla di nuovo qui sarebbe
+  // ridondante. Chiamata sia dal loop del volo sia da updateCursorAt sotto.
+  function updateChartCursor(index: number) {
+    chartCursorUpdaterRef.current?.(index)
+    if (infoLabelRef.current) {
+      const alt = Math.round(heightsRef.current[index])
+      const dist = distances[index].toFixed(1)
+      infoLabelRef.current.textContent = `${labels.altitude}: ${alt} m · ${labels.distance}: ${dist} km`
+    }
+  }
+
+  // Solo trascinamento manuale: sposta anche l'entità Cesium a un punto
+  // statico (nessun volo in corso, quindi nessuna SampledPositionProperty a
+  // possederne la posizione).
+  function updateCursorAt(index: number) {
+    const Cesium = cesiumRef.current
+    const entity = ensureCursorEntity()
+    if (!Cesium || !entity) return
+    const [lon, lat] = points[index]
+    entity.availability = undefined
+    entity.position = Cesium.Cartesian3.fromDegrees(lon, lat, heightsRef.current[index] + MARKER_OFFSET_M)
+    entity.show = true
+    updateChartCursor(index)
+  }
+
+  function handleScrubStart() {
+    if (flying) stopFlyover()
+  }
+
+  // No-op deliberato: il cursore resta dov'è al rilascio, non torna
+  // all'inizio — vedi lo spec.
+  function handleScrubEnd() {}
 
   function startFlyover() {
     const viewer = viewerRef.current
@@ -240,19 +323,10 @@ export function RouteFlyover({ points, difficulty }: { points: Coord[]; difficul
       pos.addSample(t, Cesium.Cartesian3.fromDegrees(lon, lat, heights[i] + MARKER_OFFSET_M))
     })
 
-    if (entityRef.current) viewer.entities.remove(entityRef.current)
-    const entity = viewer.entities.add({
-      availability: new Cesium.TimeIntervalCollection([new Cesium.TimeInterval({ start, stop })]),
-      position: pos,
-      point: {
-        pixelSize: 14,
-        color: Cesium.Color.fromCssColorString(DIFFICULTY_HEX[difficulty ?? ''] ?? '#795F91'),
-        outlineColor: Cesium.Color.WHITE,
-        outlineWidth: 2.5,
-        disableDepthTestDistance: Number.POSITIVE_INFINITY,
-      },
-    })
-    entityRef.current = entity
+    const entity = ensureCursorEntity()
+    entity.availability = new Cesium.TimeIntervalCollection([new Cesium.TimeInterval({ start, stop })])
+    entity.position = pos
+    entity.show = true
 
     // Initialize heading from the first segment so the camera starts already oriented
     const toRad = Cesium.Math.toRadians
@@ -291,6 +365,10 @@ export function RouteFlyover({ points, difficulty }: { points: Coord[]; difficul
 
       offset.heading = smoothedHeading
       viewer.camera.lookAt(currentPos, offset)
+
+      const elapsedS = Cesium.JulianDate.secondsDifference(time, start)
+      const t = Math.min(Math.max(elapsedS / DURATION_S, 0), 1)
+      updateChartCursor(Math.round(t * (points.length - 1)))
     })
 
     viewer.clock.shouldAnimate = true
@@ -343,23 +421,50 @@ export function RouteFlyover({ points, difficulty }: { points: Coord[]; difficul
         />
       </div>
       {ready && (
-        <div className="flex justify-center">
-          <button
-            onClick={flying ? stopFlyover : startFlyover}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-[#366DA1] text-[#366DA1] bg-white text-sm font-semibold shadow-sm hover:bg-[#366DA1] hover:text-white transition-colors cursor-pointer"
-          >
-            {flying ? (
-              <>
-                <Square size={15} className="fill-current" />
-                Stop flyover
-              </>
-            ) : (
-              <>
-                <Play size={15} className="fill-current" />
-                Flyover 3D
-              </>
-            )}
-          </button>
+        <div className="space-y-3">
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            <button
+              onClick={flying ? stopFlyover : startFlyover}
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-[#366DA1] text-[#366DA1] bg-white text-sm font-semibold shadow-sm hover:bg-[#366DA1] hover:text-white transition-colors cursor-pointer"
+            >
+              {flying ? (
+                <>
+                  <Square size={15} className="fill-current" />
+                  Stop flyover
+                </>
+              ) : (
+                <>
+                  <Play size={15} className="fill-current" />
+                  Flyover 3D
+                </>
+              )}
+            </button>
+
+            <Collapsible open={chartOpen} onOpenChange={setChartOpen}>
+              <CollapsibleTrigger asChild>
+                <button className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-border bg-white text-sm font-semibold shadow-sm hover:bg-muted transition-colors cursor-pointer">
+                  <ChevronDown size={15} className={cn('transition-transform', chartOpen && 'rotate-180')} />
+                  {labels.toggle}
+                </button>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="w-full">
+                <div className="pt-3 space-y-2">
+                  <span ref={infoLabelRef} className="block text-center text-sm font-medium text-muted-foreground h-5" />
+                  {chartOpen && (
+                    <ElevationChart
+                      distances={distances}
+                      heights={heightsRef.current}
+                      difficulty={difficulty}
+                      onScrubStart={handleScrubStart}
+                      onScrubMove={updateCursorAt}
+                      onScrubEnd={handleScrubEnd}
+                      registerCursorUpdater={(fn: (index: number) => void) => { chartCursorUpdaterRef.current = fn }}
+                    />
+                  )}
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+          </div>
         </div>
       )}
     </div>
