@@ -117,6 +117,7 @@
     "stat_duration": "Dauer",
     "stat_distance_label": "Distanz",
     "stat_elevation_label": "Höhenmeter",
+    "description_title": "Die Strecke",
     "open_strava": "Auf Strava öffnen",
     "open_komoot": "Auf Komoot öffnen",
     "download_gpx": "GPX herunterladen",

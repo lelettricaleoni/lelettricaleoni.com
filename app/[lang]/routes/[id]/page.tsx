@@ -201,8 +201,9 @@ export default async function RouteDetailPage({
 
         {/* Description */}
         {translation?.description && (
-          <div className="prose prose-slate max-w-none">
-            <p className="text-base leading-relaxed">{translation.description}</p>
+          <div className="space-y-2">
+            <h2 className="text-lg font-bold text-[#1e3a5f]">{d.description_title}</h2>
+            <p className="text-base leading-relaxed text-muted-foreground max-w-3xl">{translation.description}</p>
           </div>
         )}
 
