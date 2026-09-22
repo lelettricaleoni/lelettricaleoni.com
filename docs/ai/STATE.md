@@ -192,6 +192,14 @@ verificando ogni volta con una query diretta che le tabelle esistano davvero.
 
 ## Decisioni passate ancora rilevanti
 
+- `docs/superpowers/specs/2026-09-22-flyover-elevation-chart-design.md` e il piano gemello
+  in `docs/superpowers/plans/` — profilo altimetrico nel flyover 3D, cursore condiviso tra
+  volo automatico e trascinamento manuale, caricato solo all'apertura del pannello. Bordi
+  del grafico misurati dal DOM (`.recharts-area-curve`, due `<ReferenceLine>` invisibili
+  come ancore verticali) invece di stimati a mano — verificato dal vivo confrontando la
+  posizione del cursore col `ReferenceDot` di Recharts, scarto di 0.02px. Deliberatamente
+  fuori scope: un limite all'area esplorabile della mappa 3D attorno al tracciato, e un
+  controllo di velocità per il flyover — vedi ROADMAP
 - `docs/superpowers/specs/2026-09-21-upload-sha256-design.md` e il piano gemello in
   `docs/superpowers/plans/` — SHA-256 su ogni file caricato (foto, video, GPX), avviso
   bloccante sui duplicati con override esplicito, anteprima del tracciato dopo un
