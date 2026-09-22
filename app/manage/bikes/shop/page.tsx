@@ -19,7 +19,7 @@ export default async function BikeShopPage() {
 
   return (
     <div className="space-y-6 max-w-3xl">
-      <h1 className="text-2xl font-bold text-[#1e3a5f]">Il mio negozio</h1>
+      <h1 className="text-2xl font-bold text-[#1e3a5f]">Shop</h1>
       <BikeUnitForm models={models} />
       <BikeUnitList units={units} />
     </div>
