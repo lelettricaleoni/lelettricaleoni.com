@@ -4,7 +4,7 @@ import type { Route } from '@/lib/db'
 import { resolveHlsUrl } from '@/lib/media'
 import { loadGpxPoints } from '@/lib/route-gpx'
 import { gpxPointsToSvgPath, gpxPointsToMercatorPath, gpxBboxCenter } from '@/lib/gpx-svg'
-import { RouteCardMedia } from './route-card-media'
+import { CardMedia } from './card-media'
 
 interface RouteCardMediaAsyncProps {
   route: Route
@@ -48,12 +48,12 @@ export async function RouteCardMediaAsync({ route, routeName }: RouteCardMediaAs
   }
 
   return (
-    <RouteCardMedia
+    <CardMedia
       media={coverMedia}
       gpxPath={gpxPath}
       mapCenter={mapCenter}
       difficulty={route.difficulty}
-      routeName={routeName}
+      title={routeName}
     />
   )
 }

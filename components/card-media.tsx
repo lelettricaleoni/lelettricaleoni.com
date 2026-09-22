@@ -20,12 +20,12 @@ const DIFFICULTY_COLORS: Record<string, string> = {
   expert: '#ef4444',
 }
 
-interface RouteCardMediaProps {
+interface CardMediaProps {
   media?: MediaWithHls
   gpxPath?: string
   mapCenter?: MapCenter
   difficulty?: string | null
-  routeName: string
+  title: string
 }
 
 function latLonToTileXY(lat: number, lon: number, zoom: number) {
@@ -37,7 +37,7 @@ function latLonToTileXY(lat: number, lon: number, zoom: number) {
   return { x: Math.floor(xFloat), y: Math.floor(yFloat), fracX: xFloat % 1, fracY: yFloat % 1 }
 }
 
-export function RouteCardMedia({ media, gpxPath, mapCenter, difficulty, routeName }: RouteCardMediaProps) {
+export function CardMedia({ media, gpxPath, mapCenter, difficulty, title }: CardMediaProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
   const [isVisible, setIsVisible] = useState(false)
@@ -219,7 +219,7 @@ export function RouteCardMedia({ media, gpxPath, mapCenter, difficulty, routeNam
       {!photoReady && <MediaPlaceholder pulse />}
       <Image
         src={r2PublicUrl(media.storageKey)}
-        alt={media.altText ?? routeName}
+        alt={media.altText ?? title}
         fill
         loading="lazy"
         onLoad={() => setPhotoReady(true)}
