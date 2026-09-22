@@ -77,7 +77,7 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: 'https',
-        hostname: 'dev-lelettrica-trails.lelettricaleoni.com',
+        hostname: 'dev-trails-bucket.lelettricaleoni.com',
       },
     ],
   },
