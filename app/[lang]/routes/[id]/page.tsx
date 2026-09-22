@@ -7,7 +7,7 @@ import { getDictionary, hasLocale } from '../../dictionaries'
 import { Navbar } from '@/components/navbar'
 import { Footer } from '@/components/footer'
 import { Badge } from '@/components/ui/badge'
-import { RouteGallery } from '@/components/route-gallery'
+import { MediaGallery } from '@/components/media-gallery'
 import { BikeTypeIcon, bikeTypeBadgeClass } from '@/components/bike-type-icon'
 import { DifficultyBadge } from '@/components/difficulty-badge'
 import { RouteFlyoverLoader } from '@/components/route-flyover-loader'
@@ -196,7 +196,7 @@ export default async function RouteDetailPage({
         {/* Gallery */}
         {allMedia.length > 0 && (
           <section className="space-y-3">
-            <RouteGallery media={allMedia} routeName={translation?.name ?? id} />
+            <MediaGallery media={allMedia} title={translation?.name ?? id} />
           </section>
         )}
 
