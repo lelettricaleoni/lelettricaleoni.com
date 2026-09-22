@@ -1,7 +1,7 @@
 import type { MetadataRoute } from 'next'
 import { cacheLife, cacheTag } from 'next/cache'
 import { eq, and } from 'drizzle-orm'
-import { db, routes } from '@/lib/db'
+import { db, routes, bikeModels, bikeUnits } from '@/lib/db'
 import { shortId } from '@/lib/utils'
 
 const BASE_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://www.lelettricaleoni.com').replace(/\/$/, '')
@@ -25,6 +25,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticRoutes: { path: string; priority: number; freq: MetadataRoute.Sitemap[number]['changeFrequency'] }[] = [
     { path: '',          priority: 1.0, freq: 'weekly'  },
     { path: '/routes',   priority: 0.9, freq: 'weekly'  },
+    { path: '/bikes',    priority: 0.9, freq: 'weekly'  },
     { path: '/privacy',  priority: 0.3, freq: 'monthly' },
   ]
 
@@ -65,6 +66,32 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         },
       }))
     })
+  } catch {}
+
+  try {
+    // selectDistinct per lo stesso motivo della lista pubblica bici: un
+    // modello con più unità in bike_units non deve ripetersi.
+    const publishedModelsWithUnits = await db
+      .selectDistinct({ id: bikeModels.id, updatedAt: bikeModels.updatedAt })
+      .from(bikeModels)
+      .innerJoin(bikeUnits, eq(bikeUnits.bikeModelId, bikeModels.id))
+      .where(eq(bikeModels.isPublished, true))
+
+    dynamicEntries.push(...publishedModelsWithUnits.flatMap((model) => {
+      const sid = shortId(model.id)
+      return locales.map((lang) => ({
+        url: `${BASE_URL}/${lang}/bikes/${sid}`,
+        lastModified: model.updatedAt,
+        changeFrequency: 'monthly' as const,
+        priority: 0.7,
+        alternates: {
+          languages: {
+            ...Object.fromEntries(locales.map((l) => [l, `${BASE_URL}/${l}/bikes/${sid}`])),
+            'x-default': `${BASE_URL}/it/bikes/${sid}`,
+          },
+        },
+      }))
+    }))
   } catch {}
 
   return [...staticEntries, ...dynamicEntries]

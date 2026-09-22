@@ -25,7 +25,7 @@ export default async function LoginPage({
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Navbar lang={lang} dict={dict} showRoutes={(await getFlags()).routes} />
+      <Navbar lang={lang} dict={dict} showRoutes={(await getFlags()).routes} showBikes={(await getFlags()).bikes} />
 
       <div className="flex flex-1 pt-16">
         {/* Left panel */}

@@ -123,7 +123,7 @@ export default async function RouteDetailPage({
       <FlagsExplorer flags={flags} />
       <RouteViewTracker routeId={id} difficulty={route.difficulty} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-      <Navbar lang={lang} dict={dict} showRoutes={flags.routes} />
+      <Navbar lang={lang} dict={dict} showRoutes={flags.routes} showBikes={flags.bikes} />
       <main className="w-full pt-24 pb-8">
       <div className="max-w-6xl mx-auto px-12 sm:px-20 space-y-8">
         {/* Back */}

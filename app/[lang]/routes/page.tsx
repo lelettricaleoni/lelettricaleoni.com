@@ -107,7 +107,7 @@ export default async function RoutesPage({
     <>
       <FlagsExplorer flags={flags} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-      <Navbar lang={lang} dict={dict} showRoutes={flags.routes} />
+      <Navbar lang={lang} dict={dict} showRoutes={flags.routes} showBikes={flags.bikes} />
       <main className="w-full pt-24 pb-16">
         <div className="max-w-6xl mx-auto px-12 sm:px-20 space-y-8">
           <div>

@@ -44,7 +44,7 @@ export default async function HomePage({
   return (
     <>
       <FlagsExplorer flags={flags} />
-      <Navbar lang={lang} dict={dict} showRoutes={flags.routes} />
+      <Navbar lang={lang} dict={dict} showRoutes={flags.routes} showBikes={flags.bikes} />
       <main>
         <HeroSection lang={lang} dict={dict} />
         {flags.routes && <RoutesTeaserSection lang={lang} dict={dict} />}
