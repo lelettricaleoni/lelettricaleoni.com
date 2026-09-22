@@ -4,6 +4,7 @@ import { Play, Square } from 'lucide-react'
 import { MapLoader } from '@/components/map-loader'
 import { trackEvent } from '@/lib/analytics'
 import { pickSampleIndices, interpolateHeights } from '@/lib/terrain'
+import { DIFFICULTY_HEX } from './difficulty-badge'
 
 type Coord = [number, number, number] // [lon, lat, ele]
 
@@ -50,13 +51,6 @@ function loadCesiumScript(): Promise<void> {
     }
     document.head.appendChild(script)
   })
-}
-
-const DIFFICULTY_COLORS: Record<string, string> = {
-  easy:   '#22c55e',
-  medium: '#eab308',
-  hard:   '#f97316',
-  expert: '#ef4444',
 }
 
 export function RouteFlyover({ points, difficulty }: { points: Coord[]; difficulty?: string }) {
@@ -170,7 +164,7 @@ export function RouteFlyover({ points, difficulty }: { points: Coord[]; difficul
         }
         const heights = heightsRef.current
 
-        const trackColor = DIFFICULTY_COLORS[difficulty ?? ''] ?? '#795F91'
+        const trackColor = DIFFICULTY_HEX[difficulty ?? ''] ?? '#795F91'
 
         viewer.entities.add({
           polyline: {
@@ -252,7 +246,7 @@ export function RouteFlyover({ points, difficulty }: { points: Coord[]; difficul
       position: pos,
       point: {
         pixelSize: 14,
-        color: Cesium.Color.fromCssColorString(DIFFICULTY_COLORS[difficulty ?? ''] ?? '#795F91'),
+        color: Cesium.Color.fromCssColorString(DIFFICULTY_HEX[difficulty ?? ''] ?? '#795F91'),
         outlineColor: Cesium.Color.WHITE,
         outlineWidth: 2.5,
         disableDepthTestDistance: Number.POSITIVE_INFINITY,
