@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button'
 import { Plus } from 'lucide-react'
 import { getBikeModelsForAdmin } from '@/lib/actions/bike-models'
 import { getAdminUser } from '@/lib/supabase/server'
-import { BikeModelListItem } from '@/components/admin/bike-model-list-item'
+import { BikeModelList } from '@/components/admin/bike-model-list'
 import { redirect } from 'next/navigation'
 
 // TODO: Cache Components adoption. Refactor this route so this opt-out can be removed.
@@ -28,11 +28,12 @@ export default async function AdminBikeModelsPage() {
       {models.length === 0 ? (
         <p className="text-muted-foreground text-sm">No models yet. Create the first one!</p>
       ) : (
-        <div className="space-y-3">
-          {models.map(({ model, name }) => (
-            <BikeModelListItem key={model.id} model={model} name={name ?? 'Untitled'} />
-          ))}
-        </div>
+        <>
+          <p className="text-sm text-muted-foreground">
+            Drag to reorder. The order here is the order shown on the public bikes page.
+          </p>
+          <BikeModelList initialModels={models.map(({ model, name }) => ({ model, name: name ?? 'Untitled' }))} />
+        </>
       )}
     </div>
   )
