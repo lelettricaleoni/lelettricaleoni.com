@@ -1,9 +1,20 @@
 'use client'
-import { useEffect, useRef, useState } from 'react'
-import { Play, Square } from 'lucide-react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import dynamic from 'next/dynamic'
+import { Play, Square, ChevronDown, TrendingUp, Ruler, Clock } from 'lucide-react'
 import { MapLoader } from '@/components/map-loader'
+import { Skeleton } from '@/components/ui/skeleton'
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
+import { cn } from '@/lib/utils'
 import { trackEvent } from '@/lib/analytics'
 import { pickSampleIndices, interpolateHeights } from '@/lib/terrain'
+import { cumulativeDistancesKm } from '@/lib/geo'
+import { DIFFICULTY_HEX } from './difficulty-badge'
+
+const ElevationChart = dynamic(
+  () => import('./route-elevation-chart').then((m) => m.RouteElevationChart),
+  { ssr: false, loading: () => <Skeleton className="h-40 w-full" /> }
+)
 
 type Coord = [number, number, number] // [lon, lat, ele]
 
@@ -52,18 +63,34 @@ function loadCesiumScript(): Promise<void> {
   })
 }
 
-const DIFFICULTY_COLORS: Record<string, string> = {
-  easy:   '#22c55e',
-  medium: '#eab308',
-  hard:   '#f97316',
-  expert: '#ef4444',
+interface FlyoverLabels {
+  toggle: string
+  altitude: string
+  distance: string
+  duration: string
 }
 
-export function RouteFlyover({ points, difficulty }: { points: Coord[]; difficulty?: string }) {
+export function RouteFlyover({
+  points, difficulty, labels, totalDistanceKm, totalDurationMin,
+}: {
+  points: Coord[]
+  difficulty?: string
+  labels: FlyoverLabels
+  /** Distanza reale del percorso (stessa mostrata nella card statistiche):
+   *  la distanza cumulata calcolata punto-per-punto qui viene riscalata su
+   *  questo valore, altrimenti i due numeri divergono leggermente — il GPX
+   *  decimato per il grafico non percorre esattamente lo stesso tracciato
+   *  usato per calcolare la card. */
+  totalDistanceKm?: number
+  /** Durata del percorso (stessa card): usata per stimare il tempo trascorso
+   *  al punto trascinato, proporzionalmente alla distanza — il GPX non ha
+   *  timestamp per punto. */
+  totalDurationMin?: number | null
+}) {
   const containerRef = useRef<HTMLDivElement>(null)
   const viewerRef = useRef<CesiumType>(null)
   const cesiumRef = useRef<CesiumType>(null)
-  const entityRef = useRef<CesiumType>(null)
+  const cursorEntityRef = useRef<CesiumType>(null)
   const cameraHandlerRef = useRef<CesiumType>(null)
   // Height to draw each track point at: terrain height where terrain is
   // available, GPX elevation otherwise. See lib/terrain.ts for why.
@@ -71,6 +98,22 @@ export function RouteFlyover({ points, difficulty }: { points: Coord[]; difficul
   const [flying, setFlying] = useState(false)
   const [ready, setReady] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [chartOpen, setChartOpen] = useState(false)
+  const chartCursorUpdaterRef = useRef<((index: number) => void) | null>(null)
+  const altitudeLabelRef = useRef<HTMLSpanElement>(null)
+  const distanceLabelRef = useRef<HTMLSpanElement>(null)
+  const durationLabelRef = useRef<HTMLSpanElement>(null)
+  // Quote GPX originali — le stesse che hanno prodotto il dislivello mostrato
+  // nella card statistiche. Le quote ancorate al terreno (heightsRef) restano
+  // solo per posizionare l'entità Cesium sulla mappa 3D, mai per il grafico.
+  const elevations = useMemo(() => points.map(([, , ele]) => ele), [points])
+  const distances = useMemo(() => {
+    const raw = cumulativeDistancesKm(points)
+    const rawTotal = raw[raw.length - 1] || 0
+    if (!totalDistanceKm || rawTotal === 0) return raw
+    const scale = totalDistanceKm / rawTotal
+    return raw.map((d) => d * scale)
+  }, [points, totalDistanceKm])
 
   useEffect(() => {
     if (!containerRef.current || points.length < 2) return
@@ -170,7 +213,7 @@ export function RouteFlyover({ points, difficulty }: { points: Coord[]; difficul
         }
         const heights = heightsRef.current
 
-        const trackColor = DIFFICULTY_COLORS[difficulty ?? ''] ?? '#795F91'
+        const trackColor = DIFFICULTY_HEX[difficulty ?? ''] ?? '#795F91'
 
         viewer.entities.add({
           polyline: {
@@ -215,8 +258,73 @@ export function RouteFlyover({ points, difficulty }: { points: Coord[]; difficul
       viewerRef.current?.destroy()
       viewerRef.current = null
       cesiumRef.current = null
+      // L'entità viene distrutta insieme al viewer: il riferimento va
+      // invalidato qui, altrimenti un cambio di percorso (nuovo `points`)
+      // riuserebbe un'entità che non esiste più.
+      cursorEntityRef.current = null
     }
   }, [points])
+
+  // Un'unica entità per volo automatico e trascinamento manuale — creata al
+  // primo utilizzo, qualunque dei due arrivi per primo. Nascosta finché
+  // qualcosa non la posiziona davvero.
+  function ensureCursorEntity(): CesiumType {
+    const viewer = viewerRef.current
+    const Cesium = cesiumRef.current
+    if (!viewer || !Cesium) return null
+    if (cursorEntityRef.current) return cursorEntityRef.current
+    const entity = viewer.entities.add({
+      show: false,
+      point: {
+        pixelSize: 14,
+        color: Cesium.Color.fromCssColorString(DIFFICULTY_HEX[difficulty ?? ''] ?? '#795F91'),
+        outlineColor: Cesium.Color.WHITE,
+        outlineWidth: 2.5,
+        disableDepthTestDistance: Number.POSITIVE_INFINITY,
+      },
+    })
+    cursorEntityRef.current = entity
+    return entity
+  }
+
+  // Aggiorna solo il cursore del grafico e l'etichetta quota/distanza — mai
+  // l'entità Cesium: durante il volo la posizione dell'entità è già guidata
+  // da `pos` (SampledPositionProperty), impostarla di nuovo qui sarebbe
+  // ridondante. Chiamata sia dal loop del volo sia da updateCursorAt sotto.
+  function updateChartCursor(index: number) {
+    chartCursorUpdaterRef.current?.(index)
+    if (altitudeLabelRef.current) altitudeLabelRef.current.textContent = `${Math.round(elevations[index])} m`
+    if (distanceLabelRef.current) distanceLabelRef.current.textContent = `${distances[index].toFixed(1)} km`
+    if (durationLabelRef.current && totalDurationMin) {
+      const totalDist = distances[distances.length - 1] || 1
+      const estMin = Math.round((distances[index] / totalDist) * totalDurationMin)
+      const h = Math.floor(estMin / 60)
+      const m = estMin % 60
+      durationLabelRef.current.textContent = `${h > 0 ? `${h}h` : ''}${m}m`
+    }
+  }
+
+  // Solo trascinamento manuale: sposta anche l'entità Cesium a un punto
+  // statico (nessun volo in corso, quindi nessuna SampledPositionProperty a
+  // possederne la posizione).
+  function updateCursorAt(index: number) {
+    const Cesium = cesiumRef.current
+    const entity = ensureCursorEntity()
+    if (!Cesium || !entity) return
+    const [lon, lat] = points[index]
+    entity.availability = undefined
+    entity.position = Cesium.Cartesian3.fromDegrees(lon, lat, heightsRef.current[index] + MARKER_OFFSET_M)
+    entity.show = true
+    updateChartCursor(index)
+  }
+
+  function handleScrubStart() {
+    if (flying) stopFlyover()
+  }
+
+  // No-op deliberato: il cursore resta dov'è al rilascio, non torna
+  // all'inizio — vedi lo spec.
+  function handleScrubEnd() {}
 
   function startFlyover() {
     const viewer = viewerRef.current
@@ -246,19 +354,10 @@ export function RouteFlyover({ points, difficulty }: { points: Coord[]; difficul
       pos.addSample(t, Cesium.Cartesian3.fromDegrees(lon, lat, heights[i] + MARKER_OFFSET_M))
     })
 
-    if (entityRef.current) viewer.entities.remove(entityRef.current)
-    const entity = viewer.entities.add({
-      availability: new Cesium.TimeIntervalCollection([new Cesium.TimeInterval({ start, stop })]),
-      position: pos,
-      point: {
-        pixelSize: 14,
-        color: Cesium.Color.fromCssColorString(DIFFICULTY_COLORS[difficulty ?? ''] ?? '#795F91'),
-        outlineColor: Cesium.Color.WHITE,
-        outlineWidth: 2.5,
-        disableDepthTestDistance: Number.POSITIVE_INFINITY,
-      },
-    })
-    entityRef.current = entity
+    const entity = ensureCursorEntity()
+    entity.availability = new Cesium.TimeIntervalCollection([new Cesium.TimeInterval({ start, stop })])
+    entity.position = pos
+    entity.show = true
 
     // Initialize heading from the first segment so the camera starts already oriented
     const toRad = Cesium.Math.toRadians
@@ -297,6 +396,10 @@ export function RouteFlyover({ points, difficulty }: { points: Coord[]; difficul
 
       offset.heading = smoothedHeading
       viewer.camera.lookAt(currentPos, offset)
+
+      const elapsedS = Cesium.JulianDate.secondsDifference(time, start)
+      const t = Math.min(Math.max(elapsedS / DURATION_S, 0), 1)
+      updateChartCursor(Math.round(t * (points.length - 1)))
     })
 
     viewer.clock.shouldAnimate = true
@@ -337,8 +440,8 @@ export function RouteFlyover({ points, difficulty }: { points: Coord[]; difficul
   }
 
   return (
-    <div className="space-y-3">
-      <div className="rounded-xl overflow-hidden border border-border relative">
+    <div className="rounded-xl overflow-hidden border border-border">
+      <div className="relative">
         {!ready && (
           <MapLoader className="absolute inset-0 z-10" />
         )}
@@ -349,24 +452,66 @@ export function RouteFlyover({ points, difficulty }: { points: Coord[]; difficul
         />
       </div>
       {ready && (
-        <div className="flex justify-center">
-          <button
-            onClick={flying ? stopFlyover : startFlyover}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-[#366DA1] text-[#366DA1] bg-white text-sm font-semibold shadow-sm hover:bg-[#366DA1] hover:text-white transition-colors cursor-pointer"
-          >
-            {flying ? (
-              <>
-                <Square size={15} className="fill-current" />
-                Stop flyover
-              </>
-            ) : (
-              <>
-                <Play size={15} className="fill-current" />
-                Flyover 3D
-              </>
-            )}
-          </button>
-        </div>
+        <Collapsible open={chartOpen} onOpenChange={setChartOpen}>
+          <div className="bg-[#eef4fa]">
+            <div className="flex items-center gap-1 px-2 py-2">
+              <button
+                onClick={flying ? stopFlyover : startFlyover}
+                className="group flex items-center gap-2.5 pl-1.5 pr-3.5 py-1 rounded-full hover:bg-white/70 transition-colors cursor-pointer"
+              >
+                <span className="flex items-center justify-center w-9 h-9 rounded-full bg-[#366DA1] text-white shadow-sm group-hover:bg-[#2d5c8e] transition-colors shrink-0">
+                  {flying ? (
+                    <Square size={13} className="fill-current" />
+                  ) : (
+                    <Play size={13} className="fill-current ml-0.5" />
+                  )}
+                </span>
+                <span className="text-sm font-semibold text-[#1e3a5f]">
+                  {flying ? 'Stop' : 'Flyover 3D'}
+                </span>
+              </button>
+
+              <div className="w-px h-6 bg-[#c9dbea] mx-0.5 shrink-0" />
+
+              <CollapsibleTrigger asChild>
+                <button className="flex items-center gap-1.5 px-3.5 py-2 rounded-full hover:bg-white/70 transition-colors cursor-pointer text-sm font-semibold text-[#1e3a5f]">
+                  <ChevronDown size={15} className={cn('transition-transform shrink-0', chartOpen && 'rotate-180')} />
+                  {labels.toggle}
+                </button>
+              </CollapsibleTrigger>
+            </div>
+
+            <CollapsibleContent>
+              <div className="px-4 pb-4 pt-1">
+                <div className="flex items-center gap-4 h-5 mb-1">
+                  <span className="inline-flex items-center gap-1.5 text-sm font-medium text-[#1e3a5f]" aria-label={labels.distance}>
+                    <Ruler size={14} className="text-muted-foreground" aria-hidden />
+                    <span ref={distanceLabelRef} />
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 text-sm font-medium text-[#1e3a5f]" aria-label={labels.altitude}>
+                    <TrendingUp size={14} className="text-muted-foreground" aria-hidden />
+                    <span ref={altitudeLabelRef} />
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 text-sm font-medium text-[#1e3a5f]" aria-label={labels.duration}>
+                    <Clock size={14} className="text-muted-foreground" aria-hidden />
+                    <span ref={durationLabelRef} />
+                  </span>
+                </div>
+                {chartOpen && (
+                  <ElevationChart
+                    distances={distances}
+                    elevations={elevations}
+                    difficulty={difficulty}
+                    onScrubStart={handleScrubStart}
+                    onScrubMove={updateCursorAt}
+                    onScrubEnd={handleScrubEnd}
+                    registerCursorUpdater={(fn: (index: number) => void) => { chartCursorUpdaterRef.current = fn }}
+                  />
+                )}
+              </div>
+            </CollapsibleContent>
+          </div>
+        </Collapsible>
       )}
     </div>
   )

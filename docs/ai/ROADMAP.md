@@ -21,6 +21,13 @@ _(niente in lavorazione)_
 
 ## Un giorno
 
+- **Limitare l'area esplorabile della mappa 3D del flyover** a una zona attorno al
+  tracciato GPX — oggi si può navigare su tutto il pianeta. Rimandato apposta il
+  2026-09-22 alla consegna del profilo altimetrico, per tenere le due feature separate.
+- **Controllo di velocità per il flyover 3D** (play/pausa/velocità come un player video) —
+  scartato per il profilo altimetrico stesso il 2026-09-22 ("lascialo per dopo"): oggi il
+  volo automatico ha una durata fissa (60s) e il grafico si trascina a mano solo a volo
+  fermo.
 - **Primi lavori non-video sul worker** — promemoria prenotazioni ed estratti conto. Non
   utile finché non si aggiungono molte altre funzionalità di cui Kevin parlerà in futuro:
   spostato qui da "Prossimo" il 2026-09-16, non è più imminente. L'impalcatura c'è già:

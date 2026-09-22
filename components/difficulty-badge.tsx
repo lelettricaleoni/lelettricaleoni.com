@@ -14,6 +14,18 @@ export const DIFFICULTY_ACTIVE_STYLES: Record<string, string> = {
   expert: 'bg-red-500    text-white border-red-500',
 }
 
+/**
+ * Stessi colori delle badge, in esadecimale: per i contesti che non possono
+ * usare classi Tailwind — il tracciato e il marker del flyover 3D (Cesium),
+ * il grafico altimetrico (Recharts).
+ */
+export const DIFFICULTY_HEX: Record<string, string> = {
+  easy:   '#22c55e',
+  medium: '#eab308',
+  hard:   '#f97316',
+  expert: '#ef4444',
+}
+
 interface Props {
   difficulty: string
   label: string

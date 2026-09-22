@@ -153,7 +153,20 @@ export default async function RouteDetailPage({
         </div>
 
         {/* Map / GPX flyover */}
-        {gpxPoints.length > 1 && <RouteFlyoverLoader points={gpxPoints} difficulty={route.difficulty} />}
+        {gpxPoints.length > 1 && (
+          <RouteFlyoverLoader
+            points={gpxPoints}
+            difficulty={route.difficulty}
+            labels={{
+              toggle: d.elevation_chart_toggle,
+              altitude: d.elevation_chart_altitude,
+              distance: d.elevation_chart_distance,
+              duration: d.elevation_chart_duration,
+            }}
+            totalDistanceKm={route.distanceKm ? Number(route.distanceKm) : undefined}
+            totalDurationMin={route.durationMin}
+          />
+        )}
 
         {/* Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -163,7 +176,7 @@ export default async function RouteDetailPage({
               <p className="text-2xl font-bold text-[#1e3a5f] leading-none">
                 {route.distanceKm}<span className="text-sm font-normal ml-0.5">km</span>
               </p>
-              <p className="text-xs text-muted-foreground uppercase tracking-wide text-center">{d.stat_distance}</p>
+              <p className="text-xs text-muted-foreground uppercase tracking-wide text-center">{d.stat_distance_label}</p>
             </div>
           )}
           {route.elevationM != null && (
@@ -172,7 +185,7 @@ export default async function RouteDetailPage({
               <p className="text-2xl font-bold text-[#1e3a5f] leading-none">
                 {route.elevationM}<span className="text-sm font-normal ml-0.5">m</span>
               </p>
-              <p className="text-xs text-muted-foreground uppercase tracking-wide text-center">{d.stat_elevation}</p>
+              <p className="text-xs text-muted-foreground uppercase tracking-wide text-center">{d.stat_elevation_label}</p>
             </div>
           )}
           {route.durationMin && (
@@ -188,8 +201,9 @@ export default async function RouteDetailPage({
 
         {/* Description */}
         {translation?.description && (
-          <div className="prose prose-slate max-w-none">
-            <p className="text-base leading-relaxed">{translation.description}</p>
+          <div className="space-y-2">
+            <h2 className="text-lg font-bold text-[#1e3a5f]">{d.description_title}</h2>
+            <p className="text-base leading-relaxed text-muted-foreground max-w-3xl">{translation.description}</p>
           </div>
         )}
 
