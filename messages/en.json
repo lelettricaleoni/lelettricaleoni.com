@@ -128,6 +128,7 @@
     "elevation_chart_toggle": "Elevation profile",
     "elevation_chart_altitude": "altitude",
     "elevation_chart_distance": "distance",
+    "elevation_chart_duration": "duration",
     "gpx_modal_title": "Download GPX track",
     "gpx_modal_subtitle": "Import this file into your favourite cycling apps",
     "gpx_modal_apps": "Compatible with",

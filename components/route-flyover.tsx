@@ -67,11 +67,26 @@ interface FlyoverLabels {
   toggle: string
   altitude: string
   distance: string
+  duration: string
 }
 
 export function RouteFlyover({
-  points, difficulty, labels,
-}: { points: Coord[]; difficulty?: string; labels: FlyoverLabels }) {
+  points, difficulty, labels, totalDistanceKm, totalDurationMin,
+}: {
+  points: Coord[]
+  difficulty?: string
+  labels: FlyoverLabels
+  /** Distanza reale del percorso (stessa mostrata nella card statistiche):
+   *  la distanza cumulata calcolata punto-per-punto qui viene riscalata su
+   *  questo valore, altrimenti i due numeri divergono leggermente — il GPX
+   *  decimato per il grafico non percorre esattamente lo stesso tracciato
+   *  usato per calcolare la card. */
+  totalDistanceKm?: number
+  /** Durata del percorso (stessa card): usata per stimare il tempo trascorso
+   *  al punto trascinato, proporzionalmente alla distanza — il GPX non ha
+   *  timestamp per punto. */
+  totalDurationMin?: number | null
+}) {
   const containerRef = useRef<HTMLDivElement>(null)
   const viewerRef = useRef<CesiumType>(null)
   const cesiumRef = useRef<CesiumType>(null)
@@ -86,7 +101,17 @@ export function RouteFlyover({
   const [chartOpen, setChartOpen] = useState(false)
   const chartCursorUpdaterRef = useRef<((index: number) => void) | null>(null)
   const infoLabelRef = useRef<HTMLSpanElement>(null)
-  const distances = useMemo(() => cumulativeDistancesKm(points), [points])
+  // Quote GPX originali — le stesse che hanno prodotto il dislivello mostrato
+  // nella card statistiche. Le quote ancorate al terreno (heightsRef) restano
+  // solo per posizionare l'entità Cesium sulla mappa 3D, mai per il grafico.
+  const elevations = useMemo(() => points.map(([, , ele]) => ele), [points])
+  const distances = useMemo(() => {
+    const raw = cumulativeDistancesKm(points)
+    const rawTotal = raw[raw.length - 1] || 0
+    if (!totalDistanceKm || rawTotal === 0) return raw
+    const scale = totalDistanceKm / rawTotal
+    return raw.map((d) => d * scale)
+  }, [points, totalDistanceKm])
 
   useEffect(() => {
     if (!containerRef.current || points.length < 2) return
@@ -267,9 +292,17 @@ export function RouteFlyover({
   function updateChartCursor(index: number) {
     chartCursorUpdaterRef.current?.(index)
     if (infoLabelRef.current) {
-      const alt = Math.round(heightsRef.current[index])
+      const alt = Math.round(elevations[index])
       const dist = distances[index].toFixed(1)
-      infoLabelRef.current.textContent = `${labels.altitude}: ${alt} m · ${labels.distance}: ${dist} km`
+      const parts = [`${labels.altitude}: ${alt} m`, `${labels.distance}: ${dist} km`]
+      if (totalDurationMin) {
+        const totalDist = distances[distances.length - 1] || 1
+        const estMin = Math.round((distances[index] / totalDist) * totalDurationMin)
+        const h = Math.floor(estMin / 60)
+        const m = estMin % 60
+        parts.push(`${labels.duration}: ${h > 0 ? `${h}h` : ''}${m}m`)
+      }
+      infoLabelRef.current.textContent = parts.join(' · ')
     }
   }
 
@@ -456,7 +489,7 @@ export function RouteFlyover({
                 {chartOpen && (
                   <ElevationChart
                     distances={distances}
-                    heights={heightsRef.current}
+                    elevations={elevations}
                     difficulty={difficulty}
                     onScrubStart={handleScrubStart}
                     onScrubMove={updateCursorAt}
