@@ -101,6 +101,11 @@ export const bikeModels = pgTable('bike_models', {
   motor:          text('motor'),
   gearCount:      text('gear_count'),
   isPublished:    boolean('is_published').notNull().default(false),
+  // Ordine assegnato dall'admin, sia nella lista di /manage/bikes sia nella
+  // pagina pubblica /bikes. Cambia solo tramite reorderBikeModelsAction, un
+  // drag alla volta nella lista admin — stesso meccanismo di
+  // routes.displayOrder.
+  displayOrder:   integer('display_order').notNull().default(0),
   createdAt:      timestamp('created_at').notNull().defaultNow(),
   updatedAt:      timestamp('updated_at').notNull().defaultNow(),
 })
