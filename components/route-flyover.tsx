@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import dynamic from 'next/dynamic'
-import { Play, Square, ChevronDown } from 'lucide-react'
+import { Play, Square, ChevronDown, TrendingUp, Ruler, Clock } from 'lucide-react'
 import { MapLoader } from '@/components/map-loader'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
@@ -100,7 +100,9 @@ export function RouteFlyover({
   const [error, setError] = useState<string | null>(null)
   const [chartOpen, setChartOpen] = useState(false)
   const chartCursorUpdaterRef = useRef<((index: number) => void) | null>(null)
-  const infoLabelRef = useRef<HTMLSpanElement>(null)
+  const altitudeLabelRef = useRef<HTMLSpanElement>(null)
+  const distanceLabelRef = useRef<HTMLSpanElement>(null)
+  const durationLabelRef = useRef<HTMLSpanElement>(null)
   // Quote GPX originali — le stesse che hanno prodotto il dislivello mostrato
   // nella card statistiche. Le quote ancorate al terreno (heightsRef) restano
   // solo per posizionare l'entità Cesium sulla mappa 3D, mai per il grafico.
@@ -291,18 +293,14 @@ export function RouteFlyover({
   // ridondante. Chiamata sia dal loop del volo sia da updateCursorAt sotto.
   function updateChartCursor(index: number) {
     chartCursorUpdaterRef.current?.(index)
-    if (infoLabelRef.current) {
-      const alt = Math.round(elevations[index])
-      const dist = distances[index].toFixed(1)
-      const parts = [`${labels.altitude}: ${alt} m`, `${labels.distance}: ${dist} km`]
-      if (totalDurationMin) {
-        const totalDist = distances[distances.length - 1] || 1
-        const estMin = Math.round((distances[index] / totalDist) * totalDurationMin)
-        const h = Math.floor(estMin / 60)
-        const m = estMin % 60
-        parts.push(`${labels.duration}: ${h > 0 ? `${h}h` : ''}${m}m`)
-      }
-      infoLabelRef.current.textContent = parts.join(' · ')
+    if (altitudeLabelRef.current) altitudeLabelRef.current.textContent = `${Math.round(elevations[index])} m`
+    if (distanceLabelRef.current) distanceLabelRef.current.textContent = `${distances[index].toFixed(1)} km`
+    if (durationLabelRef.current && totalDurationMin) {
+      const totalDist = distances[distances.length - 1] || 1
+      const estMin = Math.round((distances[index] / totalDist) * totalDurationMin)
+      const h = Math.floor(estMin / 60)
+      const m = estMin % 60
+      durationLabelRef.current.textContent = `${h > 0 ? `${h}h` : ''}${m}m`
     }
   }
 
@@ -485,7 +483,20 @@ export function RouteFlyover({
 
             <CollapsibleContent>
               <div className="px-4 pb-4 pt-1">
-                <span ref={infoLabelRef} className="block text-sm font-medium text-[#1e3a5f] h-5" />
+                <div className="flex items-center gap-4 h-5 mb-1">
+                  <span className="inline-flex items-center gap-1.5 text-sm font-medium text-[#1e3a5f]" aria-label={labels.distance}>
+                    <Ruler size={14} className="text-muted-foreground" aria-hidden />
+                    <span ref={distanceLabelRef} />
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 text-sm font-medium text-[#1e3a5f]" aria-label={labels.altitude}>
+                    <TrendingUp size={14} className="text-muted-foreground" aria-hidden />
+                    <span ref={altitudeLabelRef} />
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 text-sm font-medium text-[#1e3a5f]" aria-label={labels.duration}>
+                    <Clock size={14} className="text-muted-foreground" aria-hidden />
+                    <span ref={durationLabelRef} />
+                  </span>
+                </div>
                 {chartOpen && (
                   <ElevationChart
                     distances={distances}

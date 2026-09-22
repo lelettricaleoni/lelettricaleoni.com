@@ -1,7 +1,6 @@
 'use client'
 import { useEffect, useId, useMemo, useRef, type PointerEvent as ReactPointerEvent } from 'react'
-import { TrendingUp } from 'lucide-react'
-import { Area, AreaChart, ReferenceDot, XAxis, YAxis } from 'recharts'
+import { Area, AreaChart, ReferenceDot, ReferenceLine, XAxis, YAxis } from 'recharts'
 import { ChartContainer, type ChartConfig } from '@/components/ui/chart'
 import { cn } from '@/lib/utils'
 import { DIFFICULTY_HEX } from './difficulty-badge'
@@ -9,6 +8,15 @@ import { DIFFICULTY_HEX } from './difficulty-badge'
 const MARGIN_LEFT = 8
 const MARGIN_RIGHT = 8
 const AXIS_PADDING = 18
+
+interface PlotBounds {
+  left: number
+  width: number
+  /** Pixel Y del bordo inferiore del grafico (dove elevation = yDomain[0]) */
+  yMinPixel: number
+  /** Pixel Y del bordo superiore (dove elevation = yDomain[1]) */
+  yMaxPixel: number
+}
 
 interface RouteElevationChartProps {
   /** km cumulati, riscalati sulla distanza reale del percorso — vedi RouteFlyover */
@@ -31,10 +39,11 @@ export function RouteElevationChart({
   const cursorDotRef = useRef<HTMLDivElement>(null)
   const rafRef = useRef<number | null>(null)
   const draggingRef = useRef(false)
-  // Bordi reali della curva disegnata da Recharts, misurati dal DOM invece di
-  // stimati a mano: provare a replicare a memoria i margini/padding interni
-  // di Recharts è quello che causava il cursore fuori asse e oltre i bordi.
-  const plotBoundsRef = useRef<{ left: number; width: number } | null>(null)
+  // Bordi reali del grafico disegnato da Recharts, misurati dal DOM invece di
+  // stimati a mano: provare a replicare a memoria i margini interni di
+  // Recharts è quello che causava sia il cursore fuori asse in orizzontale
+  // sia il pallino disallineato dalla curva in verticale.
+  const plotBoundsRef = useRef<PlotBounds | null>(null)
   // Id univoco per il gradiente/filtro SVG: più grafici sulla stessa pagina
   // (in teoria, non nel caso d'uso di oggi) non devono condividere lo stesso <defs>.
   const gradientId = useId()
@@ -71,11 +80,18 @@ export function RouteElevationChart({
     const container = containerRef.current
     if (!container) return
     const curve = container.querySelector('.recharts-area-curve') as SVGPathElement | null
-    if (!curve) return
-    const curveRect = curve.getBoundingClientRect()
+    const minAnchor = container.querySelector('.y-anchor-min line') as SVGLineElement | null
+    const maxAnchor = container.querySelector('.y-anchor-max line') as SVGLineElement | null
+    if (!curve || !minAnchor || !maxAnchor) return
     const containerRect = container.getBoundingClientRect()
+    const curveRect = curve.getBoundingClientRect()
     if (curveRect.width === 0) return
-    plotBoundsRef.current = { left: curveRect.left - containerRect.left, width: curveRect.width }
+    plotBoundsRef.current = {
+      left: curveRect.left - containerRect.left,
+      width: curveRect.width,
+      yMinPixel: minAnchor.getBoundingClientRect().top - containerRect.top,
+      yMaxPixel: maxAnchor.getBoundingClientRect().top - containerRect.top,
+    }
   }
 
   // Rimisura ad ogni cambio di dati o di dimensione — un ridimensionamento
@@ -94,18 +110,16 @@ export function RouteElevationChart({
   // sia dal trascinamento (via onScrubMove più sotto) sia, tramite
   // registerCursorUpdater, dal loop del volo automatico dentro RouteFlyover.
   function moveCursorTo(index: number) {
-    const container = containerRef.current
     const cursor = cursorRef.current
     const dot = cursorDotRef.current
     const bounds = plotBoundsRef.current
-    if (!container || !cursor || !bounds) return
+    if (!cursor || !bounds) return
     const x = bounds.left + (distances[index] / totalDistance) * bounds.width
     cursor.style.display = 'block'
     cursor.style.transform = `translateX(${x}px)`
     if (dot) {
-      const plotHeight = container.clientHeight - 8
       const t = (elevations[index] - yDomain[0]) / (yDomain[1] - yDomain[0])
-      const y = 8 + (1 - t) * plotHeight
+      const y = bounds.yMinPixel + t * (bounds.yMaxPixel - bounds.yMinPixel)
       dot.style.display = 'block'
       dot.style.transform = `translate(${x}px, ${y}px)`
     }
@@ -172,15 +186,12 @@ export function RouteElevationChart({
   return (
     <div
       ref={containerRef}
-      className={cn('relative touch-none cursor-crosshair select-none')}
+      className={cn('relative touch-none cursor-ew-resize select-none')}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
       onPointerCancel={handlePointerUp}
     >
-      <div className="absolute top-1 left-1 z-10 flex items-center justify-center w-6 h-6 rounded-md bg-white/80 pointer-events-none">
-        <TrendingUp size={13} style={{ color }} />
-      </div>
       <div
         ref={cursorRef}
         className="absolute top-2 bottom-5 w-px pointer-events-none z-10"
@@ -216,6 +227,11 @@ export function RouteElevationChart({
             className="text-[11px] fill-muted-foreground"
           />
           <YAxis dataKey="elevation" domain={yDomain} hide />
+          {/* Invisibili: servono solo come riferimento misurabile dal DOM per
+              sapere esattamente a che pixel Recharts disegna i due estremi
+              del dominio verticale — vedi measurePlotBounds sopra. */}
+          <ReferenceLine y={yDomain[0]} stroke="transparent" className="y-anchor-min" />
+          <ReferenceLine y={yDomain[1]} stroke="transparent" className="y-anchor-max" />
           <Area
             dataKey="elevation"
             type="monotone"

@@ -115,6 +115,8 @@
     "stat_distance": "km",
     "stat_elevation": "m",
     "stat_duration": "duration",
+    "stat_distance_label": "Distance",
+    "stat_elevation_label": "Elevation gain",
     "open_strava": "Open on Strava",
     "open_komoot": "Open on Komoot",
     "download_gpx": "Download GPX",

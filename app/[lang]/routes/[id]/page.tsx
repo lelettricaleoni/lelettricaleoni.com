@@ -176,7 +176,7 @@ export default async function RouteDetailPage({
               <p className="text-2xl font-bold text-[#1e3a5f] leading-none">
                 {route.distanceKm}<span className="text-sm font-normal ml-0.5">km</span>
               </p>
-              <p className="text-xs text-muted-foreground uppercase tracking-wide text-center">{d.stat_distance}</p>
+              <p className="text-xs text-muted-foreground uppercase tracking-wide text-center">{d.stat_distance_label}</p>
             </div>
           )}
           {route.elevationM != null && (
@@ -185,7 +185,7 @@ export default async function RouteDetailPage({
               <p className="text-2xl font-bold text-[#1e3a5f] leading-none">
                 {route.elevationM}<span className="text-sm font-normal ml-0.5">m</span>
               </p>
-              <p className="text-xs text-muted-foreground uppercase tracking-wide text-center">{d.stat_elevation}</p>
+              <p className="text-xs text-muted-foreground uppercase tracking-wide text-center">{d.stat_elevation_label}</p>
             </div>
           )}
           {route.durationMin && (
