@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import Link from 'next/link'
+import { Ruler, TrendingUp, Clock } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { BikeTypeIcon, bikeTypeBadgeClass } from '@/components/bike-type-icon'
 import { DifficultyBadge } from '@/components/difficulty-badge'
@@ -34,9 +35,11 @@ export function RouteCard({ route, translation, media, lang, dict }: RouteCardPr
   // and breaks that alignment, so a missing value shows "-" instead of
   // disappearing.
   const stats = [
-    { value: route.distanceKm ? `${route.distanceKm}` : '-', label: d.stat_distance },
-    { value: route.elevationM != null ? `${route.elevationM}` : '-', label: `↑ ${d.stat_elevation}` },
+    { key: 'distance', icon: Ruler, value: route.distanceKm ? `${route.distanceKm} km` : '-', label: d.stat_distance_label },
+    { key: 'elevation', icon: TrendingUp, value: route.elevationM != null ? `${route.elevationM} m` : '-', label: d.stat_elevation_label },
     {
+      key: 'duration',
+      icon: Clock,
       value: route.durationMin
         ? `${Math.floor(route.durationMin / 60)}h${route.durationMin % 60 > 0 ? `${route.durationMin % 60}m` : ''}`
         : '-',
@@ -91,9 +94,13 @@ export function RouteCard({ route, translation, media, lang, dict }: RouteCardPr
       <div className="px-4 pb-4">
         <div className="flex rounded-lg border bg-muted/30 overflow-hidden divide-x divide-border">
           {stats.map((stat) => (
-            <div key={stat.label} className="flex-1 min-w-0 py-2 px-1 text-center">
+            <div
+              key={stat.key}
+              className="flex-1 min-w-0 py-2 px-1 flex items-center justify-center gap-1.5"
+              aria-label={stat.label}
+            >
+              <stat.icon size={14} className="text-[#366DA1] shrink-0" aria-hidden />
               <p className="text-sm font-bold text-[#1e3a5f] truncate leading-tight">{stat.value}</p>
-              <p className="text-[10px] text-muted-foreground truncate mt-0.5">{stat.label}</p>
             </div>
           ))}
         </div>
