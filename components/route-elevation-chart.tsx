@@ -91,6 +91,7 @@ export function RouteElevationChart({
   }
 
   function handlePointerDown(e: ReactPointerEvent<HTMLDivElement>) {
+    e.stopPropagation()
     e.currentTarget.setPointerCapture(e.pointerId)
     draggingRef.current = true
     onScrubStart()
@@ -99,11 +100,13 @@ export function RouteElevationChart({
 
   function handlePointerMove(e: ReactPointerEvent<HTMLDivElement>) {
     if (!draggingRef.current) return
+    e.stopPropagation()
     scheduleScrub(e.clientX)
   }
 
   function handlePointerUp(e: ReactPointerEvent<HTMLDivElement>) {
     if (!draggingRef.current) return
+    e.stopPropagation()
     draggingRef.current = false
     e.currentTarget.releasePointerCapture(e.pointerId)
     onScrubEnd()
