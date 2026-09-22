@@ -53,6 +53,8 @@ export const FLAG_DEFAULTS = {
   routeFlyover: true,
   /** The GPX download button and the endpoint that serves the file. */
   routeGpxDownload: true,
+  /** The whole bikes catalog section: pages, navbar link, sitemap entries. */
+  bikes: true,
 } as const
 
 export type FlagName = keyof typeof FLAG_DEFAULTS
@@ -105,6 +107,12 @@ export const definitions = {
     defaultValue: true,
     description: 'The GPX download button and the endpoint that serves the file.',
   }),
+  bikes: flag<boolean>({
+    key: 'bikes',
+    adapter: vercelAdapter(),
+    defaultValue: true,
+    description: 'The whole bikes catalog section: pages, navbar link, sitemap entries.',
+  }),
 } satisfies Record<FlagName, unknown>
 
 /**
@@ -128,6 +136,7 @@ const ENV_NAMES: Record<FlagName, string> = {
   routeVideos: 'FEATURE_ROUTE_VIDEOS',
   routeFlyover: 'FEATURE_ROUTE_FLYOVER',
   routeGpxDownload: 'FEATURE_ROUTE_GPX_DOWNLOAD',
+  bikes: 'FEATURE_BIKES',
 }
 
 /**
