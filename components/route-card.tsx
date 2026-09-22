@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
 import { BikeTypeIcon, bikeTypeBadgeClass } from '@/components/bike-type-icon'
 import { DifficultyBadge } from '@/components/difficulty-badge'
-import { shortRouteId } from '@/lib/utils'
+import { shortId } from '@/lib/utils'
 import type { Route, RouteTranslation } from '@/lib/db'
 
 interface RouteCardProps {
@@ -46,7 +46,7 @@ export function RouteCard({ route, translation, media, lang, dict }: RouteCardPr
 
   return (
     <Link
-      href={`/${lang}/routes/${shortRouteId(route.id)}`}
+      href={`/${lang}/routes/${shortId(route.id)}`}
       // min-w-0 sulla card e sui suoi figli. Senza il primo, la card come
       // elemento della griglia esterna prende min-width: auto: la sua
       // larghezza intrinseca diventa quella del contenuto più largo — la

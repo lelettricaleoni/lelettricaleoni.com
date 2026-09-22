@@ -2,7 +2,7 @@ import type { MetadataRoute } from 'next'
 import { cacheLife, cacheTag } from 'next/cache'
 import { eq, and } from 'drizzle-orm'
 import { db, routes } from '@/lib/db'
-import { shortRouteId } from '@/lib/utils'
+import { shortId } from '@/lib/utils'
 
 const BASE_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://www.lelettricaleoni.com').replace(/\/$/, '')
 const locales = ['it', 'en', 'de']
@@ -51,7 +51,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       .where(and(eq(routes.isPublished, true), eq(routes.unlisted, false)))
 
     dynamicEntries = publishedRoutes.flatMap((route) => {
-      const sid = shortRouteId(route.id)
+      const sid = shortId(route.id)
       return locales.map((lang) => ({
         url: `${BASE_URL}/${lang}/routes/${sid}`,
         lastModified: route.updatedAt,

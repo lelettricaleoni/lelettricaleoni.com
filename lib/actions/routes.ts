@@ -9,7 +9,7 @@ import { translateFromItalian } from './translate'
 import { deleteR2Object, getPresignedUploadUrl } from '@/lib/r2'
 import { getVideoPresignedUploadUrl, deleteR2Prefix, deriveHlsPrefix } from '@/lib/media'
 import { needsRetranslation } from '@/lib/translations'
-import { shortRouteId } from '@/lib/utils'
+import { shortId } from '@/lib/utils'
 
 const RouteSchema = z.object({
   nameIt:          z.string().min(2).max(200),
@@ -162,7 +162,7 @@ export async function createRouteAction(
 
   updateTag('routes-list')
   updateTag('sitemap')
-  updateTag(`route-${shortRouteId(newRoute.id)}`)
+  updateTag(`route-${shortId(newRoute.id)}`)
   redirect('/manage/routes')
 }
 
@@ -265,7 +265,7 @@ export async function updateRouteAction(
 
   updateTag('routes-list')
   updateTag('sitemap')
-  updateTag(`route-${shortRouteId(id)}`)
+  updateTag(`route-${shortId(id)}`)
   redirect('/manage/routes')
 }
 
@@ -299,7 +299,7 @@ export async function togglePublishAction(id: string, isPublished: boolean) {
 
   updateTag('routes-list')
   updateTag('sitemap')
-  if (route) updateTag(`route-${shortRouteId(route.id)}`)
+  if (route) updateTag(`route-${shortId(route.id)}`)
 }
 
 /**
@@ -318,7 +318,7 @@ export async function toggleUnlistedAction(id: string, unlisted: boolean) {
 
   updateTag('routes-list')
   updateTag('sitemap')
-  if (route) updateTag(`route-${shortRouteId(route.id)}`)
+  if (route) updateTag(`route-${shortId(route.id)}`)
 }
 
 export async function getPresignedUploadUrlAction(
@@ -360,5 +360,5 @@ export async function savePhotosAction(
     )
   }
   const [route] = await db.select().from(routes).where(eq(routes.id, routeId))
-  if (route) updateTag(`route-${shortRouteId(route.id)}`)
+  if (route) updateTag(`route-${shortId(route.id)}`)
 }

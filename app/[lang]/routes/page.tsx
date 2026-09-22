@@ -10,7 +10,7 @@ import { RouteCardMediaAsync } from '@/components/route-card-media-async'
 import { SectionViewTracker } from '@/components/section-view-tracker'
 import { Skeleton } from '@/components/ui/skeleton'
 import { FlagsExplorer } from '@/components/flags-explorer'
-import { shortRouteId } from '@/lib/utils'
+import { shortId } from '@/lib/utils'
 import { getFlags } from '@/lib/flags'
 import { getRoutesListData } from '@/lib/routes-data'
 
@@ -98,8 +98,8 @@ export default async function RoutesPage({
     itemListElement: routesWithData.map(({ route, translation: t }, i) => ({
       '@type': 'ListItem',
       position: i + 1,
-      url: `${siteUrl}/${lang}/routes/${shortRouteId(route.id)}`,
-      name: t?.name ?? shortRouteId(route.id),
+      url: `${siteUrl}/${lang}/routes/${shortId(route.id)}`,
+      name: t?.name ?? shortId(route.id),
     })),
   }
 
