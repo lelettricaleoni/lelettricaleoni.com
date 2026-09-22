@@ -10,7 +10,7 @@ import { test, expect, type Page } from '@playwright/test'
  * why the widths are projects in the config rather than a detail in here.
  */
 
-const PAGES = ['/it', '/it/routes', '/it/privacy'] as const
+const PAGES = ['/it', '/it/routes', '/it/bikes', '/it/privacy'] as const
 
 /**
  * Slack in CSS pixels.
