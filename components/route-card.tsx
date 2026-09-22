@@ -96,7 +96,7 @@ export function RouteCard({ route, translation, media, lang, dict }: RouteCardPr
           {stats.map((stat) => (
             <div
               key={stat.key}
-              className="flex-1 min-w-0 py-2 px-1 flex items-center justify-center gap-1.5"
+              className="flex-1 min-w-0 py-3 px-1 flex items-center justify-center gap-1.5"
               aria-label={stat.label}
             >
               <stat.icon size={14} className="text-[#366DA1] shrink-0" aria-hidden />
