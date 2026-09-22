@@ -26,6 +26,12 @@ describe('applyCascade', () => {
     applyCascade(input)
     expect(input.routePhotos).toBe(true)
   })
+
+  it('leaves bikes alone: it has no children of its own', () => {
+    const out = applyCascade({ ...allOn(), bikes: false })
+    expect(out.bikes).toBe(false)
+    expect(out.routes).toBe(true)
+  })
 })
 
 describe('readDevOverrides', () => {
@@ -59,5 +65,9 @@ describe('readDevOverrides', () => {
     expect(
       readDevOverrides({ FEATURE_ROUTE_PHOTOS: 'off', FEATURE_ROUTE_FLYOVER: 'off' })
     ).toEqual({ routePhotos: false, routeFlyover: false })
+  })
+
+  it('reads the bikes override from its own variable', () => {
+    expect(readDevOverrides({ FEATURE_BIKES: 'off' })).toEqual({ bikes: false })
   })
 })

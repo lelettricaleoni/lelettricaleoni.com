@@ -106,3 +106,26 @@ test('una pagina inesistente non finge di esistere', async ({ page }) => {
   // hydration rather than of the site's SEO.
   await expect(page.locator('meta[name="robots"][content*="noindex"]').first()).toBeAttached()
 })
+
+test('la lista bici mostra delle card complete', async ({ page }) => {
+  await visit(page, '/it/bikes')
+
+  const cards = page.locator('a[href*="/bikes/"]').filter({ has: page.locator('h3') })
+  const count = await cards.count()
+  expect(count, 'nessuna bici nella lista').toBeGreaterThan(0)
+
+  const first = cards.first()
+  await expect(first.locator('h3')).not.toBeEmpty()
+})
+
+test('il dettaglio di una bici mostra titolo e prezzo', async ({ page }) => {
+  await visit(page, '/it/bikes')
+
+  const href = await page.locator('a[href*="/bikes/"]').filter({ has: page.locator('h3') })
+    .first().getAttribute('href')
+  expect(href, 'nessuna bici da aprire').toBeTruthy()
+
+  await visit(page, href!)
+  await expect(page.locator('h1')).not.toBeEmpty()
+  await expect(page.getByText('€', { exact: false }).first()).toBeVisible()
+})

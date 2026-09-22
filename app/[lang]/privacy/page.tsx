@@ -41,7 +41,7 @@ export default async function PrivacyPage({
 
   return (
     <>
-      <Navbar lang={lang} dict={dict} showRoutes={(await getFlags()).routes} />
+      <Navbar lang={lang} dict={dict} showRoutes={(await getFlags()).routes} showBikes={(await getFlags()).bikes} />
       <div className="min-h-screen bg-white pt-16">
         <div className="max-w-2xl mx-auto px-4 sm:px-6 py-16">
           <Link

@@ -57,6 +57,13 @@
       "when": 1789995792063,
       "tag": "0007_wandering_hercules",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1790063623252,
+      "tag": "0008_true_amphibian",
+      "breakpoints": true
     }
   ]
 }

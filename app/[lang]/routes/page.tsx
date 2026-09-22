@@ -10,7 +10,7 @@ import { RouteCardMediaAsync } from '@/components/route-card-media-async'
 import { SectionViewTracker } from '@/components/section-view-tracker'
 import { Skeleton } from '@/components/ui/skeleton'
 import { FlagsExplorer } from '@/components/flags-explorer'
-import { shortRouteId } from '@/lib/utils'
+import { shortId } from '@/lib/utils'
 import { getFlags } from '@/lib/flags'
 import { getRoutesListData } from '@/lib/routes-data'
 
@@ -98,8 +98,8 @@ export default async function RoutesPage({
     itemListElement: routesWithData.map(({ route, translation: t }, i) => ({
       '@type': 'ListItem',
       position: i + 1,
-      url: `${siteUrl}/${lang}/routes/${shortRouteId(route.id)}`,
-      name: t?.name ?? shortRouteId(route.id),
+      url: `${siteUrl}/${lang}/routes/${shortId(route.id)}`,
+      name: t?.name ?? shortId(route.id),
     })),
   }
 
@@ -107,7 +107,7 @@ export default async function RoutesPage({
     <>
       <FlagsExplorer flags={flags} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-      <Navbar lang={lang} dict={dict} showRoutes={flags.routes} />
+      <Navbar lang={lang} dict={dict} showRoutes={flags.routes} showBikes={flags.bikes} />
       <main className="w-full pt-24 pb-16">
         <div className="max-w-6xl mx-auto px-12 sm:px-20 space-y-8">
           <div>

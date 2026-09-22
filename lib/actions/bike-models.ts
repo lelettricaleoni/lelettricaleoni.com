@@ -2,7 +2,7 @@
 import { updateTag } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { z } from 'zod'
-import { eq, and, desc } from 'drizzle-orm'
+import { eq, and, asc } from 'drizzle-orm'
 import {
   db, bikeModels, bikeModelTranslations, bikeModelSizes, bikeModelVersions, media,
 } from '@/lib/db'
@@ -43,7 +43,7 @@ export async function getBikeModelsForAdmin() {
       bikeModelTranslations,
       and(eq(bikeModelTranslations.bikeModelId, bikeModels.id), eq(bikeModelTranslations.locale, 'it'))
     )
-    .orderBy(desc(bikeModels.createdAt))
+    .orderBy(asc(bikeModels.displayOrder))
 }
 
 export async function getBikeModelWithDetails(id: string) {
@@ -252,4 +252,12 @@ export async function getBikeModelVideoPresignedUploadUrlAction(
   const key = `private/bike-model-videos/${bikeModelId}/${crypto.randomUUID()}.${ext}`
   const url = await getVideoPresignedUploadUrl(key, contentType)
   return { url, key }
+}
+
+export async function reorderBikeModelsAction(orderedIds: string[]) {
+  await requireAdmin()
+  for (let displayOrder = 0; displayOrder < orderedIds.length; displayOrder++) {
+    await db.update(bikeModels).set({ displayOrder }).where(eq(bikeModels.id, orderedIds[displayOrder]))
+  }
+  updateTag('bike-models')
 }

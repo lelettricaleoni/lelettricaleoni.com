@@ -126,7 +126,7 @@ function MediaThumb({
   item,
   index,
   autoplay,
-  routeName,
+  title,
   onOpen,
   className,
   priority,
@@ -136,7 +136,7 @@ function MediaThumb({
   item: MediaWithHls
   index: number
   autoplay: boolean
-  routeName: string
+  title: string
   onOpen: (i: number) => void
   className?: string
   priority?: boolean
@@ -157,7 +157,7 @@ function MediaThumb({
       ) : (
         <Image
           src={r2PublicUrl(item.storageKey)}
-          alt={item.altText ?? `${routeName} foto ${index + 1}`}
+          alt={item.altText ?? `${title} foto ${index + 1}`}
           fill
           priority={priority}
           className="object-cover"
@@ -173,7 +173,7 @@ function MediaThumb({
   )
 }
 
-export function RouteGallery({ media, routeName }: { media: MediaWithHls[]; routeName: string }) {
+export function MediaGallery({ media, title }: { media: MediaWithHls[]; title: string }) {
   const [lightboxIndex, setLightboxIndex] = useState(-1)
 
   if (media.length === 0) return null
@@ -181,7 +181,7 @@ export function RouteGallery({ media, routeName }: { media: MediaWithHls[]; rout
   const slides: Slide[] = media.map((m) =>
     m.mediaType === 'video'
       ? ({ type: 'hls' as const, hlsUrl: m.hlsUrl ?? hlsUrl(m.storageKey) } satisfies HlsSlide)
-      : { src: r2PublicUrl(m.storageKey), alt: m.altText ?? `${routeName}` }
+      : { src: r2PublicUrl(m.storageKey), alt: m.altText ?? `${title}` }
   )
 
   return (
@@ -191,7 +191,7 @@ export function RouteGallery({ media, routeName }: { media: MediaWithHls[]; rout
           item={media[0]}
           index={0}
           autoplay
-          routeName={routeName}
+          title={title}
           onOpen={setLightboxIndex}
           className="w-full aspect-video rounded-xl"
           priority
@@ -207,7 +207,7 @@ export function RouteGallery({ media, routeName }: { media: MediaWithHls[]; rout
               item={item}
               index={i}
               autoplay
-              routeName={routeName}
+              title={title}
               onOpen={setLightboxIndex}
               className={i === 0 ? 'rounded-l-xl' : 'rounded-r-xl'}
               priority={i === 0}
@@ -223,7 +223,7 @@ export function RouteGallery({ media, routeName }: { media: MediaWithHls[]; rout
             item={media[0]}
             index={0}
             autoplay
-            routeName={routeName}
+            title={title}
             onOpen={setLightboxIndex}
             className="col-span-2 row-span-2 rounded-l-xl"
             priority
@@ -233,7 +233,7 @@ export function RouteGallery({ media, routeName }: { media: MediaWithHls[]; rout
             item={media[1]}
             index={1}
             autoplay
-            routeName={routeName}
+            title={title}
             onOpen={setLightboxIndex}
             className="rounded-tr-xl"
             sizes="(max-width: 768px) 34vw, 25vw"
@@ -242,7 +242,7 @@ export function RouteGallery({ media, routeName }: { media: MediaWithHls[]; rout
             item={media[2]}
             index={2}
             autoplay
-            routeName={routeName}
+            title={title}
             onOpen={setLightboxIndex}
             className="rounded-br-xl"
             sizes="(max-width: 768px) 34vw, 25vw"

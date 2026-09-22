@@ -5,6 +5,6 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-export function shortRouteId(uuid: string): string {
+export function shortId(uuid: string): string {
   return uuid.slice(0, 8)
 }
