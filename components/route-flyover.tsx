@@ -409,8 +409,8 @@ export function RouteFlyover({
   }
 
   return (
-    <div className="space-y-3">
-      <div className="rounded-xl overflow-hidden border border-border relative">
+    <div className="rounded-xl overflow-hidden border border-border">
+      <div className="relative">
         {!ready && (
           <MapLoader className="absolute inset-0 z-10" />
         )}
@@ -421,51 +421,53 @@ export function RouteFlyover({
         />
       </div>
       {ready && (
-        <div className="space-y-3">
-          <div className="flex flex-wrap items-center justify-center gap-3">
-            <button
-              onClick={flying ? stopFlyover : startFlyover}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-[#366DA1] text-[#366DA1] bg-white text-sm font-semibold shadow-sm hover:bg-[#366DA1] hover:text-white transition-colors cursor-pointer"
-            >
-              {flying ? (
-                <>
-                  <Square size={15} className="fill-current" />
-                  Stop flyover
-                </>
-              ) : (
-                <>
-                  <Play size={15} className="fill-current" />
-                  Flyover 3D
-                </>
-              )}
-            </button>
+        <Collapsible open={chartOpen} onOpenChange={setChartOpen}>
+          <div className="bg-[#eef4fa]">
+            <div className="flex items-center gap-1 px-2 py-2">
+              <button
+                onClick={flying ? stopFlyover : startFlyover}
+                className="group flex items-center gap-2.5 pl-1.5 pr-3.5 py-1 rounded-full hover:bg-white/70 transition-colors cursor-pointer"
+              >
+                <span className="flex items-center justify-center w-9 h-9 rounded-full bg-[#366DA1] text-white shadow-sm group-hover:bg-[#2d5c8e] transition-colors shrink-0">
+                  {flying ? (
+                    <Square size={13} className="fill-current" />
+                  ) : (
+                    <Play size={13} className="fill-current ml-0.5" />
+                  )}
+                </span>
+                <span className="text-sm font-semibold text-[#1e3a5f]">
+                  {flying ? 'Stop' : 'Flyover 3D'}
+                </span>
+              </button>
 
-            <Collapsible open={chartOpen} onOpenChange={setChartOpen}>
+              <div className="w-px h-6 bg-[#c9dbea] mx-0.5 shrink-0" />
+
               <CollapsibleTrigger asChild>
-                <button className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-border bg-white text-sm font-semibold shadow-sm hover:bg-muted transition-colors cursor-pointer">
-                  <ChevronDown size={15} className={cn('transition-transform', chartOpen && 'rotate-180')} />
+                <button className="flex items-center gap-1.5 px-3.5 py-2 rounded-full hover:bg-white/70 transition-colors cursor-pointer text-sm font-semibold text-[#1e3a5f]">
+                  <ChevronDown size={15} className={cn('transition-transform shrink-0', chartOpen && 'rotate-180')} />
                   {labels.toggle}
                 </button>
               </CollapsibleTrigger>
-              <CollapsibleContent className="w-full">
-                <div className="pt-3 space-y-2">
-                  <span ref={infoLabelRef} className="block text-center text-sm font-medium text-muted-foreground h-5" />
-                  {chartOpen && (
-                    <ElevationChart
-                      distances={distances}
-                      heights={heightsRef.current}
-                      difficulty={difficulty}
-                      onScrubStart={handleScrubStart}
-                      onScrubMove={updateCursorAt}
-                      onScrubEnd={handleScrubEnd}
-                      registerCursorUpdater={(fn: (index: number) => void) => { chartCursorUpdaterRef.current = fn }}
-                    />
-                  )}
-                </div>
-              </CollapsibleContent>
-            </Collapsible>
+            </div>
+
+            <CollapsibleContent>
+              <div className="px-4 pb-4 pt-1">
+                <span ref={infoLabelRef} className="block text-sm font-medium text-[#1e3a5f] h-5" />
+                {chartOpen && (
+                  <ElevationChart
+                    distances={distances}
+                    heights={heightsRef.current}
+                    difficulty={difficulty}
+                    onScrubStart={handleScrubStart}
+                    onScrubMove={updateCursorAt}
+                    onScrubEnd={handleScrubEnd}
+                    registerCursorUpdater={(fn: (index: number) => void) => { chartCursorUpdaterRef.current = fn }}
+                  />
+                )}
+              </div>
+            </CollapsibleContent>
           </div>
-        </div>
+        </Collapsible>
       )}
     </div>
   )
