@@ -30,7 +30,7 @@ export function BikeCard({ model, translation, category, media, lang, dict }: Bi
       href={`/${lang}/bikes/${shortId(model.id)}`}
       className="group grid grid-cols-1 grid-rows-subgrid row-span-3 min-w-0 gap-y-3 mb-6 rounded-xl overflow-hidden border bg-card hover:shadow-md transition-shadow [&>*]:min-w-0"
     >
-      <div className="relative h-48 bg-[#c8dae8] overflow-hidden">
+      <div className="relative h-48 bg-white overflow-hidden">
         {media}
         <Badge variant="secondary" className="absolute top-3 right-3 shadow-sm z-10">
           {category.name}
