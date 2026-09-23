@@ -183,13 +183,6 @@ che risincronizzi `__drizzle_migrations` (come già fatto una volta il 2026-09-1
 `apply_migration` (MCP), non con `drizzle-kit migrate`** — su dev e produzione separatamente,
 verificando ogni volta con una query diretta che le tabelle esistano davvero.
 
-## Debito noto
-
-- **Le PR npm di Dependabot hanno il lockfile rotto**: il suo npm 11 toglie l'`esbuild`
-  opzionale di vite, che `npm ci` con npm 10 (Node 22, in CI) poi rifiuta. Non superano
-  nemmeno davvero il check `browser`: senza i secret il workflow si salta da solo e
-  riporta successo, quindi un verde lì non prova che i test abbiano girato.
-
 ## Decisioni passate ancora rilevanti
 
 - `docs/superpowers/specs/2026-09-22-flyover-elevation-chart-design.md` e il piano gemello
