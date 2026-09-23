@@ -79,6 +79,7 @@
   },
   "privacy": {
     "title": "Datenschutzerklärung",
+    "meta_description": "Wie wir die Daten der Besucher unserer Website gemäß DSGVO verarbeiten.",
     "last_updated": "Zuletzt aktualisiert: April 2026",
     "controller_title": "Verantwortlicher",
     "data_title": "Erhobene Daten",

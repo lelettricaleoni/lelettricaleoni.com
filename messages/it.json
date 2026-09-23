@@ -79,6 +79,7 @@
   },
   "privacy": {
     "title": "Privacy Policy",
+    "meta_description": "Come trattiamo i dati di chi visita il sito, in conformità al GDPR.",
     "last_updated": "Ultimo aggiornamento: aprile 2026",
     "controller_title": "Titolare del trattamento",
     "data_title": "Dati raccolti",
