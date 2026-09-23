@@ -146,7 +146,7 @@ function MediaThumb({
   return (
     <button
       onClick={() => onOpen(index)}
-      className={`relative overflow-hidden bg-white border shadow-sm hover:opacity-90 transition-opacity focus-visible:ring-2 ring-[#366DA1] outline-none cursor-pointer ${className ?? ''}`}
+      className={`relative overflow-hidden bg-white hover:opacity-90 transition-opacity focus-visible:ring-2 ring-[#366DA1] outline-none cursor-pointer ${className ?? ''}`}
     >
       {item.mediaType === 'video' ? (
         autoplay ? (
