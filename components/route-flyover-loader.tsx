@@ -2,7 +2,7 @@
 import dynamic from 'next/dynamic'
 import { MapLoader } from '@/components/map-loader'
 
-type FlyoverLabels = { toggle: string; altitude: string; distance: string; duration: string }
+type FlyoverLabels = { toggle: string; altitude: string; distance: string; duration: string; speed: string }
 type FlyoverProps = {
   points: [number, number, number][]
   difficulty?: string
