@@ -34,6 +34,8 @@ const TERRAIN_SAMPLE_CAP = 300
 // Metres above the terrain, enough to clear it without visibly hovering.
 const TRACK_OFFSET_M = 2
 const MARKER_OFFSET_M = 4
+// Cycled by the speed button; 1x plays the nominal 60s flight.
+const SPEED_STEPS = [0.5, 1, 2]
 
 // Module-level state machine — handles concurrent mounts and retries cleanly
 type LoadState = 'idle' | 'loading' | 'loaded'
@@ -68,6 +70,7 @@ interface FlyoverLabels {
   altitude: string
   distance: string
   duration: string
+  speed: string
 }
 
 export function RouteFlyover({
@@ -99,6 +102,7 @@ export function RouteFlyover({
   const [ready, setReady] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [chartOpen, setChartOpen] = useState(false)
+  const [speed, setSpeed] = useState(1)
   const chartCursorUpdaterRef = useRef<((index: number) => void) | null>(null)
   const altitudeLabelRef = useRef<HTMLSpanElement>(null)
   const distanceLabelRef = useRef<HTMLSpanElement>(null)
@@ -341,7 +345,7 @@ export function RouteFlyover({
     viewer.clock.stopTime = stop.clone()
     viewer.clock.currentTime = start.clone()
     viewer.clock.clockRange = Cesium.ClockRange.CLAMPED
-    viewer.clock.multiplier = 1
+    viewer.clock.multiplier = speed
 
     const pos = new Cesium.SampledPositionProperty()
     pos.setInterpolationOptions({
@@ -431,6 +435,15 @@ export function RouteFlyover({
     )
   }
 
+  // Cambia anche il volo in corso dal vivo: viewer.clock.multiplier è quanto
+  // veloce avanza il tempo simulato rispetto a quello reale, quindi basta
+  // riassegnarlo — nessun bisogno di ricalcolare la traiettoria campionata.
+  function cycleSpeed() {
+    const next = SPEED_STEPS[(SPEED_STEPS.indexOf(speed) + 1) % SPEED_STEPS.length]
+    setSpeed(next)
+    if (viewerRef.current) viewerRef.current.clock.multiplier = next
+  }
+
   if (error) {
     return (
       <div className="flex items-center justify-center h-72 sm:h-[420px] rounded-xl border border-border bg-muted text-sm text-muted-foreground px-4 text-center">
@@ -469,6 +482,14 @@ export function RouteFlyover({
                 <span className="text-sm font-semibold text-[#1e3a5f]">
                   {flying ? 'Stop' : 'Flyover 3D'}
                 </span>
+              </button>
+
+              <button
+                onClick={cycleSpeed}
+                className="px-2.5 py-1.5 rounded-full hover:bg-white/70 transition-colors cursor-pointer text-sm font-semibold text-[#1e3a5f] tabular-nums"
+                aria-label={labels.speed}
+              >
+                {speed}×
               </button>
 
               <div className="w-px h-6 bg-[#c9dbea] mx-0.5 shrink-0" />

@@ -162,6 +162,7 @@ export default async function RouteDetailPage({
               altitude: d.elevation_chart_altitude,
               distance: d.elevation_chart_distance,
               duration: d.elevation_chart_duration,
+              speed: d.elevation_chart_speed_label,
             }}
             totalDistanceKm={route.distanceKm ? Number(route.distanceKm) : undefined}
             totalDurationMin={route.durationMin}
