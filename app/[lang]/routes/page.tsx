@@ -13,6 +13,7 @@ import { FlagsExplorer } from '@/components/flags-explorer'
 import { shortId } from '@/lib/utils'
 import { getFlags } from '@/lib/flags'
 import { getRoutesListData } from '@/lib/routes-data'
+import { buildSocialMetadata } from '@/lib/metadata'
 
 // TODO: Cache Components adoption. Refactor this route so this opt-out can be removed.
 // See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
@@ -39,6 +40,9 @@ export async function generateMetadata({
   return {
     title: dict.routes.page_title,
     description: dict.routes.page_subtitle,
+    ...buildSocialMetadata({
+      lang, title: dict.routes.page_title, description: dict.routes.page_subtitle, url: `${siteUrl}/${lang}/routes`,
+    }),
     alternates: {
       canonical: `${siteUrl}/${lang}/routes`,
       languages: {

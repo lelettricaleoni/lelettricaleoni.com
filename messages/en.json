@@ -79,6 +79,7 @@
   },
   "privacy": {
     "title": "Privacy Policy",
+    "meta_description": "How we handle the data of people who visit the site, in line with GDPR.",
     "last_updated": "Last updated: April 2026",
     "controller_title": "Data Controller",
     "data_title": "Data Collected",

@@ -13,6 +13,7 @@ import { FlagsExplorer } from '@/components/flags-explorer'
 import { shortId } from '@/lib/utils'
 import { getFlags } from '@/lib/flags'
 import { getBikeModelsListData } from '@/lib/bikes-data'
+import { buildSocialMetadata } from '@/lib/metadata'
 
 // TODO: Cache Components adoption. Refactor this route so this opt-out can be removed.
 // See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
@@ -31,6 +32,9 @@ export async function generateMetadata({
   return {
     title: dict.bikes.page_title,
     description: dict.bikes.page_subtitle,
+    ...buildSocialMetadata({
+      lang, title: dict.bikes.page_title, description: dict.bikes.page_subtitle, url: `${siteUrl}/${lang}/bikes`,
+    }),
     alternates: {
       canonical: `${siteUrl}/${lang}/bikes`,
       languages: {
