@@ -172,6 +172,23 @@ sviluppo mentre Vercel punta alla produzione. Scaricare fuori dal progetto. Quas
 variabili su Vercel sono *Secret*: escono come `[SENSITIVE]`, non si rileggono. E sempre
 `npx vercel@latest`: la CLI locale è vecchia, senza `flags`, e cade in silenzio su `deploy`.
 
+**La prima connessione al pooler Supabase di un processo appena avviato può dare
+`ECONNRESET` a ripetizione per qualche minuto**, poi si risolve da sola non appena una
+connessione va a buon fine — riprodotto sia sotto `next dev` sia con uno script isolato
+fuori da Next, stesso comportamento in entrambi i casi. Sembra un problema di rete/TLS sulla
+primissima connessione verso `aws-1-eu-central-1.pooler.supabase.com:6543`, non un bug
+applicativo: nessuna query coinvolta era anomala. Non richiede azione — attendere, non
+inseguire un fix.
+
+**Un flag Vercel appena creato impiega ~15-20 minuti a propagarsi dopo un `update_flag`**,
+anche se l'API di gestione conferma il nuovo valore istantaneamente: la valutazione live
+(quella che le funzioni interrogano davvero, verosimilmente via Edge Config) resta indietro.
+Il ritardo si è manifestato una sola volta, proprio sul primo flag mai creato e acceso subito
+dopo (`bikes`, per farlo rivedere su un deployment preview) — non è chiaro se sia una
+proprietà generale di ogni flag nuovo o una particolarità di quel primo giro. Se un flag
+appena creato sembra non accendersi, prima di sospettare un bug: aspettare invece di fidarsi
+della risposta immediata di `update_flag`/`get_flag`.
+
 **`npx drizzle-kit migrate` fallisce in silenzio (uscita 1, nessun errore leggibile) da
 quando esiste almeno una migrazione applicata tramite lo strumento MCP `apply_migration`
 invece che dalla sua stessa CLI** (2026-09-17): la 0001 (`unlisted`) era stata applicata
@@ -185,10 +202,18 @@ verificando ogni volta con una query diretta che le tabelle esistano davvero.
 
 ## Debito noto
 
-- **Le PR npm di Dependabot hanno il lockfile rotto**: il suo npm 11 toglie l'`esbuild`
-  opzionale di vite, che `npm ci` con npm 10 (Node 22, in CI) poi rifiuta. Non superano
-  nemmeno davvero il check `browser`: senza i secret il workflow si salta da solo e
-  riporta successo, quindi un verde lì non prova che i test abbiano girato.
+- **Il test browser "il tedesco rende in tedesco" (`tests/browser/content.spec.ts:85`) è
+  flaky**: `locator('main')` trova due elementi invece di uno (`strict mode violation`),
+  visto su almeno quattro PR indipendenti con diff completamente diversi fra loro — non è
+  causato dal codice cambiato in nessuna di esse. Passa sempre al rilancio
+  (`gh run rerun <id> --failed`). Probabile causa: qualcosa nell'interazione fra Cache
+  Components/PPR e i worker Playwright in parallelo. Non ancora investigato a fondo — se
+  ricompare ancora, merita una sessione dedicata invece dell'ennesimo rilancio.
+- **I video dei modelli di bici non vengono trascodificati**: `lib/actions/bike-models.ts`
+  carica su `private/bike-model-videos/...`, ma il worker (repo separato
+  `videoStream-bucketWorker`) cerca sorgenti solo sotto `private/route-videos/`
+  (`SOURCE_PREFIX` fisso in `jobs/transcode.py`). Non è un bug, è lavoro non ancora fatto —
+  da riprendere generalizzando `SOURCE_PREFIX`/`OUTPUT_PREFIX` a una lista di coppie.
 
 ## Decisioni passate ancora rilevanti
 

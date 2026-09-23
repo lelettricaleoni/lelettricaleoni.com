@@ -35,6 +35,14 @@ _(niente in lavorazione)_
   riga in `SCHEDULES` con lo scheduler di BullMQ. Nota: **il piano Vercel è hobby**, quindi i
   cron di Vercel (due per progetto, uno al giorno) non sono un'alternativa per lavori più
   frequenti.
+- **Unificare login/cambio password admin con quelli pubblici** — oggi `/manage/login` e
+  `/manage/update-password` sono duplicati admin-only di `/[lang]/login` e
+  `/[lang]/update-password`, già multilingua (`/[lang]/login` sul sistema vero
+  `messages/*.json`, `/[lang]/update-password` con un dizionario inline da migrare).
+  Kevin ha confermato (2026-09-21) che serve quando arriveranno utenti normali che
+  prenotano e devono accedere al proprio profilo — lavoro architetturale a sé, da
+  affrontare con un brainstorming dedicato insieme al sistema di prenotazioni, non prima.
+  `/manage/users` (gestione staff) resta admin-only per sempre, non è coinvolta.
 
 ## Scartato
 
