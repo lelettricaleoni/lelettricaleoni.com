@@ -15,6 +15,7 @@ import { r2PublicUrl } from '@/lib/r2'
 import { getFlags } from '@/lib/flags'
 import { getBikeModelDetailData } from '@/lib/bikes-data'
 import { priceForDay } from '@/lib/bike-pricing'
+import { buildSocialMetadata } from '@/lib/metadata'
 
 // TODO: Cache Components adoption. Refactor this route so this opt-out can be removed.
 // See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
@@ -42,7 +43,7 @@ export async function generateMetadata({
   return {
     title,
     description,
-    openGraph: { title, description, images: [{ url: ogImage }], url: `${siteUrl}/${lang}/bikes/${id}` },
+    ...buildSocialMetadata({ lang, title, description, url: `${siteUrl}/${lang}/bikes/${id}`, image: { url: ogImage } }),
     alternates: {
       canonical: `${siteUrl}/${lang}/bikes/${id}`,
       languages: {

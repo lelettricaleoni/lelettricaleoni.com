@@ -7,6 +7,7 @@ import { Navbar } from '@/components/navbar'
 import { Footer } from '@/components/footer'
 import { Separator } from '@/components/ui/separator'
 import { getFlags } from '@/lib/flags'
+import { buildSocialMetadata } from '@/lib/metadata'
 
 // TODO: Cache Components adoption. Refactor this route so this opt-out can be removed.
 // See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
@@ -21,7 +22,13 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { lang } = await params
   if (!hasLocale(lang)) return {}
+  const dict = await getDictionary(lang)
+  const title = dict.privacy.title
+  const description = dict.privacy.meta_description
   return {
+    title,
+    description,
+    ...buildSocialMetadata({ lang, title, description, url: `${siteUrl}/${lang}/privacy` }),
     alternates: {
       canonical: `${siteUrl}/${lang}/privacy`,
     },
