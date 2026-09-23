@@ -13,11 +13,7 @@ _(niente in lavorazione)_
 
 ## Prossimo
 
-- **Lockfile delle PR npm di Dependabot — verificare col prossimo run reale (lunedì).**
-  CI passata a Node 24/npm 11 (2026-09-16), lo stesso major che scrive il lockfile di
-  Dependabot: `verify` supera `npm ci` contro il lockfile attuale, quindi il problema era la
-  versione di npm in CI, non il lockfile stesso. Ancora da confermare su una vera PR di
-  Dependabot (nessuna aperta oggi) prima di considerarlo chiuso per davvero.
+_(niente in coda)_
 
 ## Un giorno
 
