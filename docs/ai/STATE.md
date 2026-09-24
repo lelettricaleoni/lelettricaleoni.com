@@ -189,16 +189,26 @@ proprietà generale di ogni flag nuovo o una particolarità di quel primo giro. 
 appena creato sembra non accendersi, prima di sospettare un bug: aspettare invece di fidarsi
 della risposta immediata di `update_flag`/`get_flag`.
 
-**`npx drizzle-kit migrate` fallisce in silenzio (uscita 1, nessun errore leggibile) da
-quando esiste almeno una migrazione applicata tramite lo strumento MCP `apply_migration`
-invece che dalla sua stessa CLI** (2026-09-17): la 0001 (`unlisted`) era stata applicata
-via MCP il 2026-09-15, quindi la tabella `drizzle.__drizzle_migrations` non la conosce, e
-`migrate` prova a rieseguirla — va in conflitto su una colonna già esistente, ma lo
-spinner della CLI inghiotte l'errore reale. Finché non si scrive una migrazione dedicata
-che risincronizzi `__drizzle_migrations` (come già fatto una volta il 2026-09-14, vedi
-`_archive-2026-09-14/README.md`), **applicare l'SQL generato da `drizzle-kit generate` con
-`apply_migration` (MCP), non con `drizzle-kit migrate`** — su dev e produzione separatamente,
-verificando ogni volta con una query diretta che le tabelle esistano davvero.
+**Il tracking di `drizzle-kit migrate` si disallinea se si applica una migrazione a mano**
+(risolto su dev il 2026-09-24; **produzione ancora da risincronizzare**). `migrate` non
+confronta gli hash: legge l'ultima riga di `drizzle.__drizzle_migrations` (per `created_at`)
+e riesegue ogni migrazione del journal con `when` più recente. Le migrazioni 0001–0009 erano
+state applicate via MCP `apply_migration`, che non scrive nel tracking: in tabella c'era solo
+la baseline 0000, quindi `migrate` rieseguiva la 0001 (`ALTER TABLE ... ADD COLUMN "unlisted"`),
+la colonna esisteva già, e la CLI usciva con 1 **senza stampare l'errore** (lo spinner lo
+inghiotte). Corretto su dev inserendo le righe 0001–0009 (`hash` = SHA-256 del file con fine
+riga LF, `created_at` = `when` del journal) e verificato con un ciclo vero: `generate` →
+`migrate` → tabella creata e registrata. Gli hash calcolati su Windows (CRLF) non coincidono
+con quelli calcolati su Linux, ma non importa: contano solo i `created_at`.
+
+**Come si applica una migrazione ora**: `npx drizzle-kit generate`, poi `npm run db:migrate`
+(`scripts/migrate.mjs`: stessa cosa di `drizzle-kit migrate`, ma stampa l'errore vero) con
+`DATABASE_DIRECT_URL` del database giusto — dev da `.env.local`, produzione passando la
+variabile a mano. **Non applicare più migrazioni con `apply_migration` (MCP)**: è quello che
+ha causato il disallineamento. Se lo si fa comunque, va registrata a mano la riga nel tracking.
+**Produzione**: ha davvero 0001–0009 nello schema ma nel tracking solo la 0000. Finché non
+viene risincronizzata (INSERT idempotente, nella PR #… che ha introdotto questa nota),
+`db:migrate` contro produzione tenterebbe di rieseguire la 0001 e fallirebbe.
 
 ## Debito noto
 
