@@ -1,5 +1,6 @@
 import { RouteForm } from '@/components/admin/route-form'
 import { updateRouteAction, getRouteWithDetails } from '@/lib/actions/routes'
+import { listRouteBikeCategories } from '@/lib/actions/bike-options'
 import { getAdminUser } from '@/lib/supabase/server'
 import { notFound, redirect } from 'next/navigation'
 
@@ -16,6 +17,7 @@ export default async function EditRoutePage({ params }: { params: Promise<{ id: 
   if (!data) notFound()
 
   const action = updateRouteAction.bind(null, id)
+  const routeBikeCategories = await listRouteBikeCategories()
 
   return (
     <div className="space-y-6">
@@ -25,6 +27,7 @@ export default async function EditRoutePage({ params }: { params: Promise<{ id: 
         route={data.route}
         translations={data.translations}
         photos={data.photos}
+        bikeTypeOptions={routeBikeCategories.map((c) => c.name)}
       />
     </div>
   )
