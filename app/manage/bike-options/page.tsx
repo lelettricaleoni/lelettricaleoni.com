@@ -34,7 +34,7 @@ export default async function BikeOptionsPage() {
         </TabsList>
         <TabsContent value="sizes"><BikeSizeList sizes={sizes} /></TabsContent>
         <TabsContent value="versions"><BikeVersionList versions={versions} /></TabsContent>
-        <TabsContent value="categories"><BikeCategoryList categories={categories} /></TabsContent>
+        <TabsContent value="categories"><BikeCategoryList categories={categories} routeCategories={routeCategories} /></TabsContent>
         <TabsContent value="route-categories"><RouteBikeCategoryList categories={routeCategories} /></TabsContent>
       </Tabs>
     </div>

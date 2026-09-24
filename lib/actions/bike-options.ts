@@ -69,6 +69,7 @@ export async function deleteBikeVersionAction(id: string) {
 export interface BikeCategoryInput {
   name: string
   displayOrder: number
+  routeCategoryId?: string | null
   maxRentalDays: number
   pricingMode: 'table' | 'linear'
   day1Price: string
