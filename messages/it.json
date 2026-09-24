@@ -65,6 +65,11 @@
     "copy": "Sentieri e strade bianche attorno al Garda, con tracce GPX verificate e le statistiche per scegliere il percorso giusto.",
     "cta": "Vedi i percorsi consigliati"
   },
+  "bikes_teaser": {
+    "title": "Scegli la tua bici",
+    "copy": "E-bike Flyer, gravel e MTB da noleggiare a Dro: guarda i modelli, le taglie e i prezzi.",
+    "cta": "Vedi le nostre bici"
+  },
   "map": {
     "title": "Trovaci su Google Maps",
     "load_prompt": "Clicca per caricare la mappa",

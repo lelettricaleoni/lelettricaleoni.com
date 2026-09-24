@@ -65,6 +65,11 @@
     "copy": "Trails and gravel roads around Lake Garda, with verified GPX tracks and the stats to pick the right one.",
     "cta": "See the recommended routes"
   },
+  "bikes_teaser": {
+    "title": "Pick your bike",
+    "copy": "Flyer e-bikes, gravel and MTB to rent in Dro: browse the models, sizes and prices.",
+    "cta": "See our bikes"
+  },
   "map": {
     "title": "Find us on Google Maps",
     "load_prompt": "Click to load the map",

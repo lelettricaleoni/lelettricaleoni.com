@@ -38,6 +38,11 @@ test('la home mostra le sue sezioni', async ({ page }) => {
   const teaser = page.locator('#routes-teaser')
   await expect(teaser).toBeAttached()
   await expect(teaser.locator('a[href*="/routes"]')).toBeVisible()
+  // Same for the bikes teaser and the bikes flag: the bikes tests below
+  // already need it on, so this adds no assumption about the environment.
+  const bikesTeaser = page.locator('#bikes-teaser')
+  await expect(bikesTeaser).toBeAttached()
+  await expect(bikesTeaser.locator('a[href*="/bikes"]')).toBeVisible()
 })
 
 test('la lista percorsi mostra delle card complete', async ({ page }) => {
