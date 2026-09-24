@@ -1,6 +1,6 @@
 import { eq, and, asc, sql } from 'drizzle-orm'
 import { cacheLife, cacheTag } from 'next/cache'
-import { db, routes, routeTranslations, media } from '@/lib/db'
+import { db, routes, routeTranslations, routeBikeCategories, media } from '@/lib/db'
 import { resolveHlsUrl } from '@/lib/media'
 import { loadGpxPoints } from '@/lib/route-gpx'
 
@@ -36,6 +36,22 @@ export async function getRoutesListData(lang: Locale) {
     )
     .where(and(eq(routes.isPublished, true), eq(routes.unlisted, false)))
     .orderBy(asc(routes.displayOrder))
+}
+
+// Opzioni tipo-bici per il filtro pubblico e per il form admin. Un modulo di
+// dati e non una server action: una lettura pubblica dentro un file
+// 'use server' diventerebbe un endpoint invocabile da fuori. Il tag è quello
+// che le azioni admin in lib/actions/bike-options.ts già invalidano.
+export async function getRouteBikeCategoryNames() {
+  'use cache'
+  cacheLife('routesFlags')
+  cacheTag('route-bike-categories')
+
+  const rows = await db
+    .select({ name: routeBikeCategories.name })
+    .from(routeBikeCategories)
+    .orderBy(asc(routeBikeCategories.displayOrder))
+  return rows.map((r) => r.name)
 }
 
 // Same reasoning as getRoutesListData: flags themselves stay out of the cache

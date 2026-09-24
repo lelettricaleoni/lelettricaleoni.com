@@ -119,6 +119,7 @@
     "stat_distance_label": "Distanz",
     "stat_elevation_label": "Höhenmeter",
     "description_title": "Die Strecke",
+    "suggested_bikes_title": "Passende Fahrräder für diese Strecke",
     "open_strava": "Auf Strava öffnen",
     "open_komoot": "Auf Komoot öffnen",
     "download_gpx": "GPX herunterladen",

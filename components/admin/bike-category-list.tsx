@@ -9,9 +9,11 @@ import {
   type BikeCategoryInput,
 } from '@/lib/actions/bike-options'
 import { BikeCategoryForm } from './bike-category-form'
-import type { BikeCategory } from '@/lib/db'
+import type { BikeCategory, RouteBikeCategory } from '@/lib/db'
 
-export function BikeCategoryList({ categories }: { categories: BikeCategory[] }) {
+export function BikeCategoryList({
+  categories, routeCategories,
+}: { categories: BikeCategory[]; routeCategories: RouteBikeCategory[] }) {
   const [isPending, startTransition] = useTransition()
   const [editing, setEditing] = useState<BikeCategory | 'new' | null>(null)
 
@@ -43,6 +45,7 @@ export function BikeCategoryList({ categories }: { categories: BikeCategory[] })
     return (
       <BikeCategoryForm
         category={editing === 'new' ? undefined : editing}
+        routeCategories={routeCategories}
         onSubmit={handleSubmit}
         onCancel={() => setEditing(null)}
       />

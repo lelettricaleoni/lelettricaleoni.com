@@ -1,8 +1,9 @@
 'use server'
 import { eq, asc } from 'drizzle-orm'
-import { db, bikeSizes, bikeVersions, bikeCategories } from '@/lib/db'
+import { db, bikeSizes, bikeVersions, bikeCategories, routeBikeCategories } from '@/lib/db'
 import { getAdminUser } from '@/lib/supabase/server'
 import { updateTag } from 'next/cache'
+import { renameRouteBikeCategory, deleteRouteBikeCategory } from '@/lib/route-bike-categories'
 
 async function requireAdmin() {
   const user = await getAdminUser()
@@ -69,6 +70,7 @@ export async function deleteBikeVersionAction(id: string) {
 export interface BikeCategoryInput {
   name: string
   displayOrder: number
+  routeCategoryId?: string | null
   maxRentalDays: number
   pricingMode: 'table' | 'linear'
   day1Price: string
@@ -104,4 +106,40 @@ export async function deleteBikeCategoryAction(id: string) {
   await requireAdmin()
   await db.delete(bikeCategories).where(eq(bikeCategories.id, id))
   updateTag('bike-options')
+}
+
+// --- Route categories -----------------------------------------------------
+
+export async function listRouteBikeCategories() {
+  await requireAdmin()
+  return db.select().from(routeBikeCategories).orderBy(asc(routeBikeCategories.displayOrder))
+}
+
+export async function createRouteBikeCategoryAction(name: string, displayOrder: number) {
+  await requireAdmin()
+  await db.insert(routeBikeCategories).values({ name, displayOrder })
+  updateTag('route-bike-categories')
+}
+
+export async function updateRouteBikeCategoryAction(id: string, name: string, displayOrder: number) {
+  await requireAdmin()
+  // Rinominare aggiorna anche i percorsi che portano il vecchio nome.
+  await renameRouteBikeCategory(id, name, displayOrder)
+  updateTag('route-bike-categories')
+  updateTag('routes-list')
+}
+
+export async function deleteRouteBikeCategoryAction(id: string): Promise<{ error?: string }> {
+  await requireAdmin()
+  // Un errore lanciato da una Server Action arriva al client senza il suo
+  // messaggio, quindi il motivo "usata da dei percorsi" torna come valore.
+  // Una categoria ancora collegata a una categoria bici fallisce invece per
+  // la foreign key (nessun onDelete cascade nello schema) e lancia: il
+  // chiamante lo intercetta.
+  const result = await deleteRouteBikeCategory(id)
+  if (!result.ok) {
+    return { error: `Still used by ${result.routesUsing} route${result.routesUsing === 1 ? '' : 's'}` }
+  }
+  updateTag('route-bike-categories')
+  return {}
 }

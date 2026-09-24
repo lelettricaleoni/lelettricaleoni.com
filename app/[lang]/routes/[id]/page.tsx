@@ -20,6 +20,8 @@ import { r2PublicUrl } from '@/lib/r2'
 import { getFlags } from '@/lib/flags'
 import { getRouteDetailData } from '@/lib/routes-data'
 import { buildSocialMetadata } from '@/lib/metadata'
+import { getSuggestedBikesForRoute } from '@/lib/bikes-data'
+import { RouteSuggestedBikes } from '@/components/route-suggested-bikes'
 
 // TODO: Cache Components adoption. Refactor this route so this opt-out can be removed.
 // See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
@@ -104,6 +106,7 @@ export default async function RouteDetailPage({
   const { route, translation, allMedia, gpxPoints } = data
 
   const coverPhoto = allMedia.find((m) => m.mediaType === 'photo')
+  const suggestedBikes = await getSuggestedBikesForRoute(lang as 'it' | 'en' | 'de', route.bikeTypes)
 
   const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://www.lelettricaleoni.com').replace(/\/$/, '')
 
@@ -207,6 +210,10 @@ export default async function RouteDetailPage({
             <h2 className="text-lg font-bold text-[#1e3a5f]">{d.description_title}</h2>
             <p className="text-base leading-relaxed text-muted-foreground max-w-3xl">{translation.description}</p>
           </div>
+        )}
+
+        {suggestedBikes.length > 0 && (
+          <RouteSuggestedBikes bikes={suggestedBikes} lang={lang} dict={dict} title={d.suggested_bikes_title} />
         )}
 
         {/* Gallery */}
