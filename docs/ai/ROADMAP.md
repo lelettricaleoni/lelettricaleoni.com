@@ -13,7 +13,10 @@
   `docs/superpowers/specs/2026-09-23-route-bike-categories-design.md`, in attesa del piano
   di implementazione. Card "bici adatte a questo giro" nel dettaglio percorso, categorie
   percorso promosse da costante nel codice a tabella modificabile dall'admin, collegate
-  alle categorie bici (di prezzo) tramite un nuovo campo di raggruppamento.
+  alle categorie bici (di prezzo) tramite un nuovo campo di raggruppamento. Fatta anche la
+  card inversa, "percorsi consigliati con questa bici" nel dettaglio bici
+  (`getSuggestedRoutesForBike`, stessa relazione `bike_categories.routeCategoryId` letta
+  al contrario): fino a 3 percorsi pubblici, nell'ordine della lista.
 
 ## Prossimo
 
@@ -21,11 +24,6 @@ _(niente in coda)_
 
 ## Un giorno
 
-- **Card "percorsi adatti a questa bici" sul lato bici** — il contrario esatto della card
-  "bici adatte a questo giro" in lavorazione (`2026-09-23-route-bike-categories-design.md`).
-  Confermato da Kevin come feature voluta, rimandata apposta per non raddoppiare lo scope
-  di quella spec. I dati ci sono già una volta fatto quel lavoro: stessa relazione
-  `bike_categories.routeCategoryId`, letta in direzione opposta.
 - **Limitare l'area esplorabile della mappa 3D del flyover** a una zona attorno al
   tracciato GPX — oggi si può navigare su tutto il pianeta. Rimandato apposta il
   2026-09-22 alla consegna del profilo altimetrico, per tenere le due feature separate.

@@ -6,6 +6,11 @@ import { loadGpxPoints } from '@/lib/route-gpx'
 
 type Locale = 'it' | 'en' | 'de'
 
+// What the public list shows. One definition, because "which routes may a
+// visitor see" must not drift between the list and the routes suggested on a
+// bike page — an unlisted route leaking into a suggestion would defeat it.
+const publiclyListed = and(eq(routes.isPublished, true), eq(routes.unlisted, false))
+
 // getFlags() deliberately does NOT live in here: @flags-sdk/vercel reads
 // headers() internally (Vercel Toolbar override support), and Cache
 // Components forbids any headers()/cookies() access inside a "use cache"
@@ -34,8 +39,34 @@ export async function getRoutesListData(lang: Locale) {
       routeTranslations,
       and(eq(routeTranslations.routeId, routes.id), eq(routeTranslations.locale, lang))
     )
-    .where(and(eq(routes.isPublished, true), eq(routes.unlisted, false)))
+    .where(publiclyListed)
     .orderBy(asc(routes.displayOrder))
+}
+
+// The reverse of getSuggestedBikesForRoute (lib/bikes-data.ts): a bike's route
+// category name → the public routes that list that name in `bike_types`.
+// Same order as the public list (displayOrder), first three, id as tiebreaker
+// so a tie in displayOrder can't reshuffle the picks between regenerations.
+// One query, no per-route lookups (see the N+1 note on getRoutesListData).
+// No flags here: the caller gates on `flags.routes`, and the cards' media
+// (which the list doesn't gate on photo/video flags either) is resolved per
+// card, outside this cache, by RouteCardMediaAsync.
+export async function getSuggestedRoutesForBike(lang: Locale, routeCategoryName: string) {
+  'use cache'
+  cacheLife('routesFlags')
+  cacheTag('routes-list')
+  cacheTag('route-bike-categories')
+
+  return db
+    .select({ route: routes, translation: routeTranslations })
+    .from(routes)
+    .innerJoin(
+      routeTranslations,
+      and(eq(routeTranslations.routeId, routes.id), eq(routeTranslations.locale, lang))
+    )
+    .where(and(publiclyListed, sql`${routes.bikeTypes} @> ARRAY[${routeCategoryName}]::text[]`))
+    .orderBy(asc(routes.displayOrder), asc(routes.id))
+    .limit(3)
 }
 
 // Opzioni tipo-bici per il filtro pubblico e per il form admin. Un modulo di
