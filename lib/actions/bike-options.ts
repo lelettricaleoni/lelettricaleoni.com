@@ -1,6 +1,6 @@
 'use server'
 import { eq, asc } from 'drizzle-orm'
-import { db, bikeSizes, bikeVersions, bikeCategories } from '@/lib/db'
+import { db, bikeSizes, bikeVersions, bikeCategories, routeBikeCategories } from '@/lib/db'
 import { getAdminUser } from '@/lib/supabase/server'
 import { updateTag } from 'next/cache'
 
@@ -104,4 +104,32 @@ export async function deleteBikeCategoryAction(id: string) {
   await requireAdmin()
   await db.delete(bikeCategories).where(eq(bikeCategories.id, id))
   updateTag('bike-options')
+}
+
+// --- Route categories -----------------------------------------------------
+
+export async function listRouteBikeCategories() {
+  await requireAdmin()
+  return db.select().from(routeBikeCategories).orderBy(asc(routeBikeCategories.displayOrder))
+}
+
+export async function createRouteBikeCategoryAction(name: string, displayOrder: number) {
+  await requireAdmin()
+  await db.insert(routeBikeCategories).values({ name, displayOrder })
+  updateTag('route-bike-categories')
+}
+
+export async function updateRouteBikeCategoryAction(id: string, name: string, displayOrder: number) {
+  await requireAdmin()
+  await db.update(routeBikeCategories).set({ name, displayOrder }).where(eq(routeBikeCategories.id, id))
+  updateTag('route-bike-categories')
+}
+
+export async function deleteRouteBikeCategoryAction(id: string) {
+  await requireAdmin()
+  // bike_categories.route_category_id non ha onDelete cascade (vedi schema):
+  // cancellarne una ancora collegata deve fallire rumorosamente, non
+  // scollegare in silenzio le categorie bici che la usano.
+  await db.delete(routeBikeCategories).where(eq(routeBikeCategories.id, id))
+  updateTag('route-bike-categories')
 }
