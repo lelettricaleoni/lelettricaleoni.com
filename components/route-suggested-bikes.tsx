@@ -1,5 +1,7 @@
+import { Suspense } from 'react'
 import { BikeCard } from '@/components/bike-card'
 import { BikeCardMediaAsync } from '@/components/bike-card-media-async'
+import { Skeleton } from '@/components/ui/skeleton'
 import type { BikeModel, BikeModelTranslation, BikeCategory } from '@/lib/db'
 
 interface SuggestedBike {
@@ -28,7 +30,15 @@ export function RouteSuggestedBikes({
             model={model}
             translation={translation}
             category={category}
-            media={<BikeCardMediaAsync model={model} title={translation.name} />}
+            // Il media di ogni card fa query proprie e non cache-ate: senza un
+            // confine Suspense per card, la pagina di dettaglio del percorso
+            // aspetterebbe N query concorrenti prima di mostrare qualunque cosa
+            // — stessa regola di /bikes e delle card dei percorsi (STATE.md).
+            media={
+              <Suspense fallback={<Skeleton className="h-48 w-full rounded-none" />}>
+                <BikeCardMediaAsync model={model} title={translation.name} />
+              </Suspense>
+            }
             lang={lang}
             dict={dict}
           />

@@ -31,7 +31,11 @@ export function RouteBikeCategoryList({ categories }: { categories: RouteBikeCat
   function handleDelete(id: string) {
     startTransition(async () => {
       try {
-        await deleteRouteBikeCategoryAction(id)
+        const { error } = await deleteRouteBikeCategoryAction(id)
+        if (error) {
+          toast.error(error)
+          return
+        }
         toast.success('Category deleted')
       } catch {
         toast.error('This category is still linked to a bike category')

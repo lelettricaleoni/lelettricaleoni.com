@@ -3,6 +3,7 @@ import { eq, asc } from 'drizzle-orm'
 import { db, bikeSizes, bikeVersions, bikeCategories, routeBikeCategories } from '@/lib/db'
 import { getAdminUser } from '@/lib/supabase/server'
 import { updateTag } from 'next/cache'
+import { renameRouteBikeCategory, deleteRouteBikeCategory } from '@/lib/route-bike-categories'
 
 async function requireAdmin() {
   const user = await getAdminUser()
@@ -122,15 +123,23 @@ export async function createRouteBikeCategoryAction(name: string, displayOrder: 
 
 export async function updateRouteBikeCategoryAction(id: string, name: string, displayOrder: number) {
   await requireAdmin()
-  await db.update(routeBikeCategories).set({ name, displayOrder }).where(eq(routeBikeCategories.id, id))
+  // Rinominare aggiorna anche i percorsi che portano il vecchio nome.
+  await renameRouteBikeCategory(id, name, displayOrder)
   updateTag('route-bike-categories')
+  updateTag('routes-list')
 }
 
-export async function deleteRouteBikeCategoryAction(id: string) {
+export async function deleteRouteBikeCategoryAction(id: string): Promise<{ error?: string }> {
   await requireAdmin()
-  // bike_categories.route_category_id non ha onDelete cascade (vedi schema):
-  // cancellarne una ancora collegata deve fallire rumorosamente, non
-  // scollegare in silenzio le categorie bici che la usano.
-  await db.delete(routeBikeCategories).where(eq(routeBikeCategories.id, id))
+  // Un errore lanciato da una Server Action arriva al client senza il suo
+  // messaggio, quindi il motivo "usata da dei percorsi" torna come valore.
+  // Una categoria ancora collegata a una categoria bici fallisce invece per
+  // la foreign key (nessun onDelete cascade nello schema) e lancia: il
+  // chiamante lo intercetta.
+  const result = await deleteRouteBikeCategory(id)
+  if (!result.ok) {
+    return { error: `Still used by ${result.routesUsing} route${result.routesUsing === 1 ? '' : 's'}` }
+  }
   updateTag('route-bike-categories')
+  return {}
 }

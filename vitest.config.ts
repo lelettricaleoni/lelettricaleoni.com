@@ -1,4 +1,5 @@
 import { defineConfig } from 'vitest/config'
+import path from 'node:path'
 
 /**
  * Unit tests only.
@@ -10,6 +11,8 @@ import { defineConfig } from 'vitest/config'
  * services at all.
  */
 export default defineConfig({
+  // Stesso alias di tsconfig.json: i componenti importano da '@/...'.
+  resolve: { alias: { '@': path.resolve(__dirname) } },
   test: {
     include: ['lib/**/*.test.ts', 'lib/**/*.test.tsx', 'components/**/*.test.tsx'],
     exclude: ['node_modules', '.next', 'tests/browser/**'],
