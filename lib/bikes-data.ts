@@ -1,8 +1,8 @@
-import { eq, and, asc, sql } from 'drizzle-orm'
+import { eq, and, asc, sql, inArray } from 'drizzle-orm'
 import { cacheLife, cacheTag } from 'next/cache'
 import {
   db, bikeModels, bikeModelTranslations, bikeCategories, bikeUnits, bikeSizes,
-  bikeVersions, media,
+  bikeVersions, routeBikeCategories, media,
 } from '@/lib/db'
 import { resolveHlsUrl } from '@/lib/media'
 
@@ -40,6 +40,47 @@ export async function getBikeModelsListData(lang: Locale) {
   // non una query per modello dentro il map sotto: la stessa forma N+1 che
   // ha bloccato /routes due volte (STATE.md, 2026-09-15) non va reintrodotta
   // qui.
+  const sizeLinks = await db
+    .selectDistinct({ bikeModelId: bikeUnits.bikeModelId, size: bikeSizes })
+    .from(bikeUnits)
+    .innerJoin(bikeSizes, eq(bikeSizes.id, bikeUnits.bikeSizeId))
+
+  return models.map(({ model, translation, category }) => ({
+    model,
+    translation,
+    category,
+    sizesInGarage: dedupeById(
+      sizeLinks.filter((l) => l.bikeModelId === model.id).map((l) => l.size)
+    ),
+  }))
+}
+
+// Un solo join, non un giro per ogni tipo bici del percorso — stessa
+// lezione di getRoutesListData (STATE.md, 2026-09-15): un N+1 dentro un
+// Promise.all è quello che ha bloccato /routes due volte in produzione.
+export async function getSuggestedBikesForRoute(lang: Locale, bikeTypes: string[]) {
+  'use cache'
+  cacheLife('routesFlags')
+  cacheTag('bike-models')
+  cacheTag('bike-units')
+  cacheTag('bike-options')
+  cacheTag('route-bike-categories')
+
+  if (bikeTypes.length === 0) return []
+
+  const models = await db
+    .selectDistinct({ model: bikeModels, translation: bikeModelTranslations, category: bikeCategories })
+    .from(bikeModels)
+    .innerJoin(
+      bikeModelTranslations,
+      and(eq(bikeModelTranslations.bikeModelId, bikeModels.id), eq(bikeModelTranslations.locale, lang))
+    )
+    .innerJoin(bikeCategories, eq(bikeCategories.id, bikeModels.categoryId))
+    .innerJoin(routeBikeCategories, eq(routeBikeCategories.id, bikeCategories.routeCategoryId))
+    .innerJoin(bikeUnits, eq(bikeUnits.bikeModelId, bikeModels.id))
+    .where(and(eq(bikeModels.isPublished, true), inArray(routeBikeCategories.name, bikeTypes)))
+    .orderBy(asc(bikeModels.displayOrder))
+
   const sizeLinks = await db
     .selectDistinct({ bikeModelId: bikeUnits.bikeModelId, size: bikeSizes })
     .from(bikeUnits)
