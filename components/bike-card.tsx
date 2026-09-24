@@ -3,12 +3,13 @@ import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
 import { shortId } from '@/lib/utils'
 import { priceForDay } from '@/lib/bike-pricing'
-import type { BikeModel, BikeModelTranslation, BikeCategory } from '@/lib/db'
+import type { BikeModel, BikeModelTranslation, BikeCategory, RouteBikeCategory } from '@/lib/db'
 
 interface BikeCardProps {
   model: BikeModel
   translation: BikeModelTranslation
   category: BikeCategory
+  routeCategory?: RouteBikeCategory | null
   media: ReactNode
   lang: string
   dict: { bikes: Record<string, string> }
@@ -17,7 +18,7 @@ interface BikeCardProps {
 // Stessa tecnica grid-rows-subgrid di RouteCard: le tre fasce (media, titolo,
 // prezzo) sono righe della griglia esterna, non della card, così restano
 // allineate fra card vicine anche quando un titolo va su due righe.
-export function BikeCard({ model, translation, category, media, lang, dict }: BikeCardProps) {
+export function BikeCard({ model, translation, category, routeCategory, media, lang, dict }: BikeCardProps) {
   const d = dict.bikes
 
   // day1Price non è mai null nello schema e il giorno 1 è sempre entro
@@ -32,9 +33,10 @@ export function BikeCard({ model, translation, category, media, lang, dict }: Bi
     >
       <div className="relative h-48 bg-white overflow-hidden">
         {media}
-        <Badge variant="secondary" className="absolute top-3 right-3 shadow-sm z-10">
-          {category.name}
-        </Badge>
+        <div className="absolute top-3 right-3 z-10 flex flex-col items-end gap-1.5">
+          <Badge variant="secondary" className="shadow-sm">{category.name}</Badge>
+          {routeCategory && <Badge variant="outline" className="bg-background shadow-sm">{routeCategory.name}</Badge>}
+        </div>
       </div>
 
       <h3 className="px-4 font-bold text-[#1e3a5f] line-clamp-2 group-hover:text-[#366DA1] transition-colors">

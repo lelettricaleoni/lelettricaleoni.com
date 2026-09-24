@@ -4,19 +4,22 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import type { BikeCategory } from '@/lib/db'
+import type { BikeCategory, RouteBikeCategory } from '@/lib/db'
 import type { BikeCategoryInput } from '@/lib/actions/bike-options'
 
 export function BikeCategoryForm({
   category,
+  routeCategories,
   onSubmit,
   onCancel,
 }: {
   category?: BikeCategory
+  routeCategories: RouteBikeCategory[]
   onSubmit: (input: BikeCategoryInput) => void
   onCancel: () => void
 }) {
   const [name, setName] = useState(category?.name ?? '')
+  const [routeCategoryId, setRouteCategoryId] = useState<string>(category?.routeCategoryId ?? 'none')
   const [maxRentalDays, setMaxRentalDays] = useState(category?.maxRentalDays ?? 7)
   const [pricingMode, setPricingMode] = useState<'table' | 'linear'>(category?.pricingMode ?? 'table')
   const [day1Price, setDay1Price] = useState(category?.day1Price ?? '')
@@ -34,6 +37,7 @@ export function BikeCategoryForm({
     onSubmit({
       name,
       displayOrder: category?.displayOrder ?? 0,
+      routeCategoryId: routeCategoryId === 'none' ? null : routeCategoryId,
       maxRentalDays,
       pricingMode,
       day1Price,
@@ -62,6 +66,19 @@ export function BikeCategoryForm({
       <div className="space-y-1">
         <Label htmlFor="cat-name">Name *</Label>
         <Input id="cat-name" required value={name} onChange={(e) => setName(e.target.value)} />
+      </div>
+
+      <div className="space-y-1">
+        <Label htmlFor="cat-route-category">Route terrain group</Label>
+        <Select value={routeCategoryId} onValueChange={setRouteCategoryId}>
+          <SelectTrigger id="cat-route-category"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="none">None</SelectItem>
+            {routeCategories.map((rc) => (
+              <SelectItem key={rc.id} value={rc.id}>{rc.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="space-y-1">

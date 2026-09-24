@@ -9,7 +9,11 @@
 
 ## Adesso
 
-_(niente in lavorazione)_
+- **Categorie percorso e collegamento col catalogo bici** — spec pronta in
+  `docs/superpowers/specs/2026-09-23-route-bike-categories-design.md`, in attesa del piano
+  di implementazione. Card "bici adatte a questo giro" nel dettaglio percorso, categorie
+  percorso promosse da costante nel codice a tabella modificabile dall'admin, collegate
+  alle categorie bici (di prezzo) tramite un nuovo campo di raggruppamento.
 
 ## Prossimo
 
@@ -17,14 +21,11 @@ _(niente in coda)_
 
 ## Un giorno
 
-- **Collegare il catalogo bici ai percorsi**: una card nella sezione bici che mostra quali
-  bici sono adatte a completare un dato giro. Oggi le due sezioni usano due tassonomie
-  indipendenti — `routes.bikeTypes` è un array di testo libero scritto a mano
-  sull'admin dei percorsi ("eMTB", "MTB"...), mentre i modelli bici puntano a
-  `bike_categories.id`, una tabella gestita a parte — nessuna garanzia che le stringhe
-  combacino. Va fatto prima di questa feature. Il catalogo bici e inventario
-  (`2026-09-17-bike-models-and-inventory-design.md`) aveva già escluso di proposito il
-  collegamento con i percorsi dal suo scope.
+- **Card "percorsi adatti a questa bici" sul lato bici** — il contrario esatto della card
+  "bici adatte a questo giro" in lavorazione (`2026-09-23-route-bike-categories-design.md`).
+  Confermato da Kevin come feature voluta, rimandata apposta per non raddoppiare lo scope
+  di quella spec. I dati ci sono già una volta fatto quel lavoro: stessa relazione
+  `bike_categories.routeCategoryId`, letta in direzione opposta.
 - **Limitare l'area esplorabile della mappa 3D del flyover** a una zona attorno al
   tracciato GPX — oggi si può navigare su tutto il pianeta. Rimandato apposta il
   2026-09-22 alla consegna del profilo altimetrico, per tenere le due feature separate.

@@ -21,16 +21,16 @@ interface RouteFiltersProps {
   routes: RouteWithData[]
   lang: string
   dict: { routes: Record<string, string> }
+  bikeTypeOptions: string[]
 }
 
 const DIFFICULTY_KEYS = ['easy', 'medium', 'hard', 'expert'] as const
-const BIKE_TYPES = ['eMTB', 'MTB', 'Road Bike', 'E-Road Bike', 'Gravel', 'E-Gravel', 'City Bike', 'E-City Bike']
 
 const PILL_ACTIVE   = 'bg-[#1e3a5f] text-white border-[#1e3a5f]'
 const PILL_INACTIVE = 'bg-background text-muted-foreground border-border hover:border-[#366DA1] hover:text-[#366DA1]'
 
 
-export function RouteFilters({ routes, lang, dict }: RouteFiltersProps) {
+export function RouteFilters({ routes, lang, dict, bikeTypeOptions }: RouteFiltersProps) {
   const d = dict.routes
   const [activeDifficulty, setActiveDifficulty] = useState<string | null>(null)
   const [activeBikeType, setActiveBikeType] = useState<string | null>(null)
@@ -46,7 +46,7 @@ export function RouteFilters({ routes, lang, dict }: RouteFiltersProps) {
 
   const availableDifficulties = DIFFICULTY_KEYS.filter((k) => routes.some((r) => r.route.difficulty === k))
   const availableBikeTypes = [...new Set(routes.flatMap((r) => r.route.bikeTypes))]
-    .filter((t) => BIKE_TYPES.includes(t))
+    .filter((t) => bikeTypeOptions.includes(t))
 
   const activeFilterCount = (activeDifficulty ? 1 : 0) + (activeBikeType ? 1 : 0)
 
