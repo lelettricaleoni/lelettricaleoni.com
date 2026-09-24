@@ -65,6 +65,16 @@ export const bikeVersions = pgTable('bike_versions', {
   displayOrder: integer('display_order').notNull().default(0),
 })
 
+// Il terreno/stile per cui un percorso è adatto — non la categoria di
+// prezzo di bikeCategories sotto, che è un concetto diverso. Una categoria
+// di prezzo può collegarsi a una di queste (routeCategoryId), più categorie
+// di prezzo alla stessa, o a nessuna.
+export const routeBikeCategories = pgTable('route_bike_categories', {
+  id:           uuid('id').primaryKey().defaultRandom(),
+  name:         text('name').notNull().unique(),
+  displayOrder: integer('display_order').notNull().default(0),
+})
+
 // Prices: numeric() maps to Postgres NUMERIC, which postgres.js returns as a
 // string, not a number — cast with `::int`/`::numeric` in raw SQL, or
 // Number(...) after a Drizzle read, exactly like the rest of this codebase
@@ -73,6 +83,7 @@ export const bikeCategories = pgTable('bike_categories', {
   id:               uuid('id').primaryKey().defaultRandom(),
   name:             text('name').notNull(),
   displayOrder:     integer('display_order').notNull().default(0),
+  routeCategoryId:  uuid('route_category_id').references(() => routeBikeCategories.id),
   maxRentalDays:    integer('max_rental_days').notNull(),
   pricingMode:      bikePricingModeEnum('pricing_mode').notNull().default('table'),
   day1Price:        numeric('day1_price').notNull(),
@@ -88,6 +99,8 @@ export const bikeCategories = pgTable('bike_categories', {
 
 export type BikeSize = typeof bikeSizes.$inferSelect
 export type BikeVersion = typeof bikeVersions.$inferSelect
+export type RouteBikeCategory = typeof routeBikeCategories.$inferSelect
+export type NewRouteBikeCategory = typeof routeBikeCategories.$inferInsert
 export type BikeCategory = typeof bikeCategories.$inferSelect
 export type NewBikeSize = typeof bikeSizes.$inferInsert
 export type NewBikeVersion = typeof bikeVersions.$inferInsert

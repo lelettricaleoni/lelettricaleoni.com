@@ -12,7 +12,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { FlagsExplorer } from '@/components/flags-explorer'
 import { shortId } from '@/lib/utils'
 import { getFlags } from '@/lib/flags'
-import { getRoutesListData } from '@/lib/routes-data'
+import { getRoutesListData, getRouteBikeCategoryNames } from '@/lib/routes-data'
 import { buildSocialMetadata } from '@/lib/metadata'
 
 // TODO: Cache Components adoption. Refactor this route so this opt-out can be removed.
@@ -75,6 +75,7 @@ export default async function RoutesPage({
   if (!flags.routes) notFound()
 
   const routesWithTranslations = await getRoutesListData(lang)
+  const bikeTypeOptions = await getRouteBikeCategoryNames()
   const dict = await getDictionary(lang)
 
   // Only the fast, cached DB-backed bits (text, stats, filters) come from
@@ -119,7 +120,7 @@ export default async function RoutesPage({
             <h1 className="text-3xl font-bold text-[#1e3a5f]">{dict.routes.page_title}</h1>
             <p className="text-muted-foreground mt-2 max-w-xl">{dict.routes.page_subtitle}</p>
           </div>
-          <RouteFilters routes={routesWithData} lang={lang} dict={dict} />
+          <RouteFilters routes={routesWithData} lang={lang} dict={dict} bikeTypeOptions={bikeTypeOptions} />
         </div>
       </main>
       <Footer lang={lang} dict={dict} />

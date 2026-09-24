@@ -14,6 +14,8 @@ import { FlagsExplorer } from '@/components/flags-explorer'
 import { r2PublicUrl } from '@/lib/r2'
 import { getFlags } from '@/lib/flags'
 import { getBikeModelDetailData } from '@/lib/bikes-data'
+import { getSuggestedRoutesForBike } from '@/lib/routes-data'
+import { BikeSuggestedRoutes } from '@/components/bike-suggested-routes'
 import { priceForDay } from '@/lib/bike-pricing'
 import { buildSocialMetadata } from '@/lib/metadata'
 
@@ -71,10 +73,17 @@ export default async function BikeDetailPage({
 
   const data = await getBikeModelDetailData(lang as 'it' | 'en' | 'de', id)
   if (!data) notFound()
-  const { model, translation, category, allMedia, sizesInGarage, versionsInGarage } = data
+  const { model, translation, category, routeCategory, allMedia, sizesInGarage, versionsInGarage } = data
 
   const coverPhoto = allMedia.find((m) => m.mediaType === 'photo')
   const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://www.lelettricaleoni.com').replace(/\/$/, '')
+
+  // A bike whose category has no terrain group (e.g. the classic city bike)
+  // has nothing to suggest; and with the routes section switched off, a link
+  // into it would lead to a 404.
+  const suggestedRoutes = routeCategory && flags.routes
+    ? await getSuggestedRoutesForBike(lang as 'it' | 'en' | 'de', routeCategory.name)
+    : []
 
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -117,7 +126,10 @@ export default async function BikeDetailPage({
           <MediaGallery media={allMedia} title={translation?.name ?? id} />
 
           <div className="space-y-2">
-            <Badge variant="secondary">{category.name}</Badge>
+            <div className="flex flex-wrap gap-2">
+              <Badge variant="secondary">{category.name}</Badge>
+              {routeCategory && <Badge variant="outline">{routeCategory.name}</Badge>}
+            </div>
             <h1 className="text-3xl font-bold text-[#1e3a5f]">{translation?.name ?? id}</h1>
             <p className="text-muted-foreground max-w-2xl">{translation?.description}</p>
           </div>
@@ -166,6 +178,8 @@ export default async function BikeDetailPage({
               )}
             </div>
           </div>
+
+          <BikeSuggestedRoutes routes={suggestedRoutes} lang={lang} dict={dict} title={d.suggested_routes_title} />
 
           <div className="space-y-2">
             <h2 className="text-lg font-bold text-[#1e3a5f]">{d.contact_button}</h2>

@@ -12,16 +12,15 @@ import { MediaUpload } from './media-upload'
 import { getPresignedUploadUrlAction, getVideoPresignedUploadUrlAction, type RouteFormState } from '@/lib/actions/routes'
 import type { Route, RouteTranslation, Media } from '@/lib/db'
 
-const BIKE_TYPES = ['eMTB', 'MTB', 'Road Bike', 'E-Road Bike', 'Gravel', 'E-Gravel', 'City Bike', 'E-City Bike']
-
 interface RouteFormProps {
   action: (prev: RouteFormState, formData: FormData) => Promise<RouteFormState>
   route?: Route
   translations?: RouteTranslation[]
   photos?: Media[]
+  bikeTypeOptions: string[]
 }
 
-export function RouteForm({ action, route, translations, photos }: RouteFormProps) {
+export function RouteForm({ action, route, translations, photos, bikeTypeOptions }: RouteFormProps) {
   const [state, formAction, isPending] = useActionState(action, {})
   const itTranslation = translations?.find((t) => t.locale === 'it')
 
@@ -138,7 +137,7 @@ export function RouteForm({ action, route, translations, photos }: RouteFormProp
         <h2 className="text-lg font-semibold text-[#1e3a5f]">Bike type *</h2>
         {state.errors?.bikeTypes && <p className="text-xs text-destructive">{state.errors.bikeTypes[0]}</p>}
         <div className="flex flex-wrap gap-4">
-          {BIKE_TYPES.map((type) => (
+          {bikeTypeOptions.map((type) => (
             <div key={type} className="flex items-center gap-2">
               <Checkbox
                 id={`bike-${type}`}

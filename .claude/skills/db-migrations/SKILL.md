@@ -24,8 +24,10 @@ migrazioni funzionante dal 2026-09-14 — la storia di prima è in
 
 ```bash
 npx drizzle-kit generate   # genera SQL in lib/db/migrations/, dallo schema.ts
-npx drizzle-kit migrate    # applica al database (richiede DATABASE_DIRECT_URL)
+npm run db:migrate          # applica al database (richiede DATABASE_DIRECT_URL); come `drizzle-kit migrate`, ma stampa l'errore vero
 ```
+
+**Mai `apply_migration` (MCP)** per le migrazioni del repo: non scrive nel tracking e `migrate` si rompe (vedi STATE.md).
 
 Ambienti separati dal 2026-09-14: **sviluppo e produzione hanno ciascuno il proprio progetto
 Supabase**, non condividono più database né pooler (dettagli e credenziali in
