@@ -60,10 +60,11 @@ export default async function BikesPage({
   const modelsWithTranslations = await getBikeModelsListData(lang as 'it' | 'en' | 'de')
   const dict = await getDictionary(lang)
 
-  const modelsWithData = modelsWithTranslations.map(({ model, translation, category, sizesInGarage }) => ({
+  const modelsWithData = modelsWithTranslations.map(({ model, translation, category, routeCategory, sizesInGarage }) => ({
     model,
     translation,
     category,
+    routeCategory,
     sizesInGarage,
     media: (
       <Suspense fallback={<Skeleton className="h-48 w-full rounded-none" />}>

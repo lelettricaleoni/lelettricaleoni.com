@@ -6,12 +6,13 @@ import { trackEvent } from '@/lib/analytics'
 import { BikeCard } from './bike-card'
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover'
 import { Button } from './ui/button'
-import type { BikeModel, BikeModelTranslation, BikeCategory, BikeSize } from '@/lib/db'
+import type { BikeModel, BikeModelTranslation, BikeCategory, RouteBikeCategory, BikeSize } from '@/lib/db'
 
 interface BikeModelWithData {
   model: BikeModel
   translation: BikeModelTranslation
   category: BikeCategory
+  routeCategory?: RouteBikeCategory | null
   sizesInGarage: BikeSize[]
   media: ReactNode
 }
@@ -148,12 +149,13 @@ export function BikeFilters({ models, lang, dict }: BikeFiltersProps) {
           'grid gap-x-6 gap-y-0',
           filtered.length === 1 ? 'grid-cols-1 max-w-sm' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'
         )}>
-          {filtered.map(({ model, translation, category, media }) => (
+          {filtered.map(({ model, translation, category, routeCategory, media }) => (
             <BikeCard
               key={model.id}
               model={model}
               translation={translation}
               category={category}
+              routeCategory={routeCategory}
               media={media}
               lang={lang}
               dict={dict}

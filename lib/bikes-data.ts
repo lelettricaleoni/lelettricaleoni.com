@@ -23,15 +23,22 @@ export async function getBikeModelsListData(lang: Locale) {
   cacheLife('routesFlags')
   cacheTag('bike-models')
   cacheTag('bike-units')
+  cacheTag('route-bike-categories')
 
   const models = await db
-    .selectDistinct({ model: bikeModels, translation: bikeModelTranslations, category: bikeCategories })
+    .selectDistinct({
+      model: bikeModels, translation: bikeModelTranslations, category: bikeCategories,
+      routeCategory: routeBikeCategories,
+    })
     .from(bikeModels)
     .innerJoin(
       bikeModelTranslations,
       and(eq(bikeModelTranslations.bikeModelId, bikeModels.id), eq(bikeModelTranslations.locale, lang))
     )
     .innerJoin(bikeCategories, eq(bikeCategories.id, bikeModels.categoryId))
+    // left, non inner: molte categorie non hanno un collegamento, e quel
+    // modello deve comunque comparire.
+    .leftJoin(routeBikeCategories, eq(routeBikeCategories.id, bikeCategories.routeCategoryId))
     .innerJoin(bikeUnits, eq(bikeUnits.bikeModelId, bikeModels.id))
     .where(eq(bikeModels.isPublished, true))
     .orderBy(asc(bikeModels.displayOrder))
@@ -45,10 +52,11 @@ export async function getBikeModelsListData(lang: Locale) {
     .from(bikeUnits)
     .innerJoin(bikeSizes, eq(bikeSizes.id, bikeUnits.bikeSizeId))
 
-  return models.map(({ model, translation, category }) => ({
+  return models.map(({ model, translation, category, routeCategory }) => ({
     model,
     translation,
     category,
+    routeCategory,
     sizesInGarage: dedupeById(
       sizeLinks.filter((l) => l.bikeModelId === model.id).map((l) => l.size)
     ),
@@ -100,6 +108,7 @@ export async function getBikeModelDetailData(lang: Locale, id: string) {
   'use cache'
   cacheLife('routesFlags')
   cacheTag('bike-units')
+  cacheTag('route-bike-categories')
 
   const [model] = await db.select().from(bikeModels).where(
     and(sql`left(${bikeModels.id}::text, 8) = ${id}`, eq(bikeModels.isPublished, true))
@@ -117,6 +126,9 @@ export async function getBikeModelDetailData(lang: Locale, id: string) {
     and(eq(bikeModelTranslations.bikeModelId, model.id), eq(bikeModelTranslations.locale, lang))
   )
   const [category] = await db.select().from(bikeCategories).where(eq(bikeCategories.id, model.categoryId))
+  const [routeCategory] = category.routeCategoryId
+    ? await db.select().from(routeBikeCategories).where(eq(routeBikeCategories.id, category.routeCategoryId))
+    : []
 
   const unitsInGarage = await db
     .select({ size: bikeSizes, version: bikeVersions })
@@ -148,5 +160,5 @@ export async function getBikeModelDetailData(lang: Locale, id: string) {
     })
   )).filter((m): m is NonNullable<typeof m> => m !== null)
 
-  return { model, translation, category, allMedia, sizesInGarage, versionsInGarage }
+  return { model, translation, category, routeCategory: routeCategory ?? null, allMedia, sizesInGarage, versionsInGarage }
 }
