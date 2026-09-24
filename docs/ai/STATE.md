@@ -207,7 +207,7 @@ con quelli calcolati su Linux, ma non importa: contano solo i `created_at`.
 variabile a mano. **Non applicare più migrazioni con `apply_migration` (MCP)**: è quello che
 ha causato il disallineamento. Se lo si fa comunque, va registrata a mano la riga nel tracking.
 **Produzione**: ha davvero 0001–0009 nello schema ma nel tracking solo la 0000. Finché non
-viene risincronizzata (INSERT idempotente, nella PR #… che ha introdotto questa nota),
+viene risincronizzata (INSERT idempotente, nella PR #155, che ha introdotto questa nota),
 `db:migrate` contro produzione tenterebbe di rieseguire la 0001 e fallirebbe.
 
 ## Debito noto
