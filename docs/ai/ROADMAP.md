@@ -30,6 +30,11 @@
   Search Console: oggi è in disordine ("un bel casino") — prima un inventario di cosa c'è
   (proprietà, sitemap, pagine indicizzate, errori) e solo dopo si tocca qualcosa. Gli MCP
   `google-search-console` e `google-analytics` sono già registrati sulla macchina di Kevin.
+  **Inventario fatto il 2026-09-25** (sola lettura): scheda con numeri, problemi e proposte in
+  ordine in `docs/ai/ideas/search-console-analytics.md`. In breve: la ricerca è sana ma l'apex
+  senza `www` prende due terzi dei clic pur essendo un reindirizzamento (e il redirect di `/` è
+  un 301 che dipende dalla lingua), `staging` compare negli indici, e Analytics non ha né
+  dimensioni personalizzate né eventi chiave. Da decidere con Kevin cosa fare per primo.
 
 ## Un giorno
 
