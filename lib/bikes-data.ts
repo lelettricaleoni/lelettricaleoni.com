@@ -20,7 +20,7 @@ function dedupeById<T extends { id: string }>(items: T[]): T[] {
 // non su bike_units.
 export async function getBikeModelsListData(lang: Locale) {
   'use cache'
-  cacheLife('routesFlags')
+  cacheLife('catalog')
   cacheTag('bike-models')
   cacheTag('bike-units')
   cacheTag('route-bike-categories')
@@ -68,7 +68,7 @@ export async function getBikeModelsListData(lang: Locale) {
 // Promise.all è quello che ha bloccato /routes due volte in produzione.
 export async function getSuggestedBikesForRoute(lang: Locale, bikeTypes: string[]) {
   'use cache'
-  cacheLife('routesFlags')
+  cacheLife('catalog')
   cacheTag('bike-models')
   cacheTag('bike-units')
   cacheTag('bike-options')
@@ -106,7 +106,7 @@ export async function getSuggestedBikesForRoute(lang: Locale, bikeTypes: string[
 
 export async function getBikeModelDetailData(lang: Locale, id: string) {
   'use cache'
-  cacheLife('routesFlags')
+  cacheLife('catalog')
   cacheTag('bike-units')
   cacheTag('route-bike-categories')
 

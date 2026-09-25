@@ -104,8 +104,12 @@ dalla VM, non raggiunge le cache HLS e GPX che stanno lì accanto.
 dinamico l'intero albero sotto.
 
 **Cache Components (Next 16) è acceso**: lista e dettaglio percorsi cache-ano il lavoro
-DB/R2 (`lib/routes-data.ts`, `"use cache"`, ~30s, tag `routes-list` / `route-${id}`,
-invalidati da `updateTag` nelle azioni admin). `getFlags()` resta fuori dalla cache —
+DB/R2 (`lib/routes-data.ts`, `"use cache"`, profilo `catalog` 10s/30s, tag `routes-list` /
+`route-${id}`, invalidati da `updateTag` nelle azioni admin). **`updateTag` scade la voce
+solo nell'istanza serverless che esegue l'azione**: la cache `'use cache'` di default sta in
+memoria di ogni istanza, quindi le altre servono la loro copia fino a scadenza — con i
+vecchi 30s/120s riordinare le bici nel pannello e ricaricare il sito poteva mostrare l'ordine
+vecchio per due minuti (2026-09-25). Per questo `catalog` è corto. `getFlags()` resta fuori dalla cache —
 `@flags-sdk/vercel` legge `headers()` internamente, vietato anche indirettamente in uno
 scope `"use cache"` — e va preceduto da `await connection()` nella pagina: senza, durante
 la build `headers()` va in timeout, `lib/flags.ts` lo intercetta (fail-open, per design) e
