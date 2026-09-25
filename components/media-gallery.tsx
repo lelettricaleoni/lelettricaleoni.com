@@ -8,7 +8,7 @@ import Hls from 'hls.js'
 import { VideoOff } from 'lucide-react'
 import { VideoPlayer } from '@/components/video-player'
 import { MediaPlaceholder } from '@/components/media-placeholder'
-import { hlsUrl, photoUrl, lowestBitrateLevel, type MediaWithHls } from '@/lib/media-client'
+import { hlsUrl, photoUrl, photoWebUrl, lowestBitrateLevel, type MediaWithHls } from '@/lib/media-client'
 import type { Slide } from 'yet-another-react-lightbox'
 
 interface HlsSlide {
@@ -166,7 +166,7 @@ function MediaThumb({
         )
       ) : (
         <Image
-          src={photoUrl(item.storageKey)}
+          src={photoWebUrl(item.storageKey)}
           alt={item.altText ?? `${title} foto ${index + 1}`}
           fill
           priority={priority}

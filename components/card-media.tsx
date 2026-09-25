@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import Image from 'next/image'
 import Hls from 'hls.js'
-import { hlsUrl, photoUrl, lowestBitrateLevel, type MediaWithHls } from '@/lib/media-client'
+import { hlsUrl, photoWebUrl, lowestBitrateLevel, type MediaWithHls } from '@/lib/media-client'
 import { MediaPlaceholder } from '@/components/media-placeholder'
 import { usePreviewMode } from './route-preview-mode'
 
@@ -217,7 +217,7 @@ export function CardMedia({ media, gpxPath, mapCenter, difficulty, title }: Card
     <div ref={containerRef} className="relative w-full h-full">
       {!photoReady && <MediaPlaceholder pulse />}
       <Image
-        src={photoUrl(media.storageKey)}
+        src={photoWebUrl(media.storageKey)}
         alt={media.altText ?? title}
         fill
         loading="lazy"
