@@ -95,6 +95,11 @@ test('il tedesco rende in tedesco', async ({ page }) => {
   // the page to have content first: a negative check on a page that has not
   // arrived yet passes without looking at anything.
   await expect(page.locator('main h1').first()).not.toBeEmpty()
+  // While the page streams in, the loading skeleton's <main> and the real one
+  // are both in the DOM, with the same classes. Reading `main` in that window
+  // is a strict-mode violation, which is what made this test flaky (four PRs,
+  // then twice in one run). One <main> means the swap is done.
+  await expect(page.locator('main')).toHaveCount(1)
   const text = await page.locator('main').innerText()
   expect(text).not.toContain('Percorsi consigliati')
 })
