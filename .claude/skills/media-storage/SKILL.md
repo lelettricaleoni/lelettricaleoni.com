@@ -43,6 +43,16 @@ distinguono, senza migrazione.
   sempre.
 - Le anteprime social (`og:image`, JSON-LD) usano `photoShareUrl`, il piccolo JPEG che il
   worker scrive accanto al master: WhatsApp e Facebook non leggono AVIF.
+- **Card, cornici e miniature: `next/image` con `loader={photoLoader}`** (`lib/photo-loader.ts`)
+  e come `src` il master (`photoUrl`). Il loader sceglie fra le tre versioni AVIF che il
+  worker scrive accanto al master (`<uuid>.w480.avif`, `.w960`, `.w1600`, sempre tutte e tre)
+  e serve il master oltre i 1600 px. **Non passare un master AVIF dall'ottimizzatore di
+  Vercel**: non ridimensiona l'AVIF, restituisce l'originale da 2400 px (310 KiB) a qualunque
+  larghezza, e il browser lo riduce di sette volte in un colpo (raggi seghettati). I nomi e le
+  larghezze sono un accordo col worker (`imaging.RENDITION_WIDTHS`): si cambiano in due repo o
+  in nessuno. Le foto di prima del worker (JPEG, PNG, WebP) il loader le manda ancora
+  all'ottimizzatore di Next. Il viewer a schermo intero usa il master.
+- La cancellazione (`deleteMediaFiles`) porta via anche le tre versioni.
 - Lo stato passa da `videojob:v1:<storage-key>` con le fasi dei video (`transcoding`
   incluso): il token del worker scrive solo lì, e una fase sconosciuta viene scartata da
   `parseStatus`.

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import {
   isStagedPhotoKey, photoPublicKey, photoUrl, photoSourceExtension, photoContentType,
-  photoShareKey, photoShareUrl,
+  photoShareKey, photoShareUrl, photoRenditionKeys,
   PHOTO_SOURCE_EXTENSIONS,
 } from './media-client'
 
@@ -39,6 +39,23 @@ describe('photoShareKey', () => {
   it('is the photo itself when it predates the worker', () => {
     expect(photoShareKey('route-photos/r1/u1.jpg')).toBe('route-photos/r1/u1.jpg')
     expect(photoShareUrl('route-photos/r1/u1.jpg').endsWith('/route-photos/r1/u1.jpg')).toBe(true)
+  })
+})
+
+// Same pairs as the worker's tests/test_imaging.py (rendition_key_for).
+describe('photoRenditionKeys', () => {
+  it('lists the three renditions beside the master, as the worker names them', () => {
+    expect(photoRenditionKeys('private/route-photos/r1/u1.jpg')).toEqual([
+      'public/route-photos/r1/u1.w480.avif',
+      'public/route-photos/r1/u1.w960.avif',
+      'public/route-photos/r1/u1.w1600.avif',
+    ])
+    expect(photoRenditionKeys('private/bike-model-photos/m1/u.2.tiff')[1])
+      .toBe('public/bike-model-photos/m1/u.2.w960.avif')
+  })
+
+  it('is empty for a photo that predates the worker', () => {
+    expect(photoRenditionKeys('route-photos/r1/u1.jpg')).toEqual([])
   })
 })
 
