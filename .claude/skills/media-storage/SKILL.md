@@ -25,6 +25,30 @@ Sorgenti video in `private/route-videos/`, flussi HLS in `public/route-videos/`.
 vive solo per i minuti che il worker impiega a cancellarlo dopo la transcodifica — non
 trattarlo come se fosse davvero riservato.
 
+## Foto — staging privato, master pubblico
+
+Una foto caricata dal pannello va (URL presigned, PUT diretto dal browser) in
+`private/route-photos/…` o `private/bike-model-photos/…`; il worker la trasforma in un
+master AVIF (2400 px) sotto `public/…` con estensione `.avif`, e cancella il sorgente.
+Mappatura in `photoPublicKey` (`lib/media-client.ts`), **specchio di `imaging.py` nel repo
+del worker**: si cambia in due posti o in nessuno. Una foto pubblicata prima di questo lavoro
+ha una chiave *senza* `private/` e si serve com'è — è così che le due famiglie si
+distinguono, senza migrazione.
+
+- **Mai `r2PublicUrl(m.storageKey)` per una foto**: usare `photoUrl` (client) o
+  `resolvePhotoUrl` / `resolveReadyMedia` (server). Una foto senza master non compare, come un
+  video senza manifesto.
+- **Cancellare = `deleteMediaFiles`**, non `deleteR2Object(storageKey)`: per una foto in
+  staging quest'ultimo lascerebbe il master (e il JPEG per le anteprime social) su R2 per
+  sempre.
+- Le anteprime social (`og:image`, JSON-LD) usano `photoShareUrl`, il piccolo JPEG che il
+  worker scrive accanto al master: WhatsApp e Facebook non leggono AVIF.
+- Lo stato passa da `videojob:v1:<storage-key>` con le fasi dei video (`transcoding`
+  incluso): il token del worker scrive solo lì, e una fase sconosciuta viene scartata da
+  `parseStatus`.
+- `/api/upload` è solo per il GPX. I duplicati di foto si controllano nel browser
+  (`lib/hash-client.ts`).
+
 ## Manifesti HLS — due nomi possibili
 
 Il worker di transcodifica (`lelettricaleoni/videoStream-bucketWorker`, repo separato) ha
