@@ -100,24 +100,6 @@ export function photoShareUrl(storageKey: string): string {
   return mediaPublicUrl(photoShareKey(storageKey))
 }
 
-/**
- * The photo to hand to `next/image` for anything smaller than full screen: cards,
- * the gallery frames, the admin thumbnails.
- *
- * Not the AVIF master. Vercel's image optimizer returns an AVIF source untouched —
- * the same 2400 px and the same bytes whatever width is asked for, checked on a
- * preview with AVIF added to the output formats too — so a 340 px card downloaded
- * 310 KB and the browser shrank it seven times in one step, which leaves jagged
- * edges on thin lines like spokes. The 1200 px JPEG the worker writes beside every
- * master is a source the optimizer does resize, so it goes through it properly.
- * The master stays for the full-screen viewer, where its full size is the point.
- *
- * The JPEG has no transparency (the worker flattens it onto white), which is right
- * where it is used: the cards and frames are white. The worker uploads it before
- * the master, so wherever the master exists the JPEG does.
- */
-export const photoWebUrl = photoShareUrl
-
 /** Lower-cased extension of an uploaded file if the worker can decode it, otherwise null. */
 export function photoSourceExtension(fileName: string): PhotoSourceExtension | null {
   const dot = fileName.lastIndexOf('.')
