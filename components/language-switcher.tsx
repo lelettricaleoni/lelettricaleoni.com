@@ -43,6 +43,11 @@ export function LanguageSwitcher({ currentLang }: { currentLang: string }) {
           <ReactCountryFlag
             countryCode={locale.countryCode}
             svg
+            // The library fetches its SVGs from cdn.jsdelivr.net unless told otherwise,
+            // and this project takes no external CDN. The three flags are in
+            // public/svg/flags (flag-icons, MIT; the licence is beside them) —
+            // under svg/ because proxy.ts lets that path through without a locale.
+            cdnUrl="/svg/flags/"
             style={{ width: '1.2em', height: '1.2em', borderRadius: '2px' }}
             aria-label={locale.label}
           />

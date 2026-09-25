@@ -45,6 +45,23 @@ test('la home mostra le sue sezioni', async ({ page }) => {
   await expect(bikesTeaser.locator('a[href*="/bikes"]')).toBeVisible()
 })
 
+test('la home non dipende da CDN esterni', async ({ page }) => {
+  // Regola del progetto: tutto self-hosted (eccezioni volute: mappe e analytics).
+  // Le bandierine della lingua venivano da cdn.jsdelivr.net — lo faceva la
+  // libreria per default, senza che il codice lo dicesse — e nessun test se ne
+  // accorgeva.
+  const cdnHosts = new Set(['cdn.jsdelivr.net', 'unpkg.com', 'cdnjs.cloudflare.com'])
+  const external: string[] = []
+  page.on('request', (request) => {
+    // The exact host, not a substring of the URL: a match anywhere in the string
+    // would also catch a page that merely names a CDN in a query.
+    if (cdnHosts.has(new URL(request.url()).hostname)) external.push(request.url())
+  })
+  await visit(page, '/it')
+  await page.waitForLoadState('load')
+  expect(external, 'la home carica risorse da un CDN esterno').toEqual([])
+})
+
 test('la lista percorsi mostra delle card complete', async ({ page }) => {
   await visit(page, '/it/routes')
 
