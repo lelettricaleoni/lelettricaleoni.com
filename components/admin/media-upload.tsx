@@ -11,6 +11,7 @@ import {
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { GripVertical, X, Upload, Video, ImageIcon } from 'lucide-react'
+import Image from 'next/image'
 import { toast } from 'sonner'
 import { photoUrl, isStagedPhotoKey } from '@/lib/media-client'
 import { getMediaJobStatuses } from '@/lib/actions/media-jobs'
@@ -80,6 +81,12 @@ function ProgressBar({
  * master does not exist until the worker is done. Either way the <img> fails, and
  * an icon is a more honest thumbnail than a broken-image glyph. Keyed by `src` at
  * the call site, so a new source gets a fresh chance.
+ *
+ * A stored photo goes through Next/Image, not a bare <img>: the master is 2400 px
+ * wide and this box is 64, and a browser shrinking a photo by a factor of nearly
+ * forty in one step leaves jagged edges (no antialiasing, on a cut-out bike most
+ * of all). The optimizer resizes it properly and sends a few KB. A `blob:` URL is
+ * the file just picked, held in the browser, which the optimizer cannot reach.
  */
 function PhotoThumb({ src }: { src: string }) {
   const [failed, setFailed] = useState(false)
@@ -90,9 +97,24 @@ function PhotoThumb({ src }: { src: string }) {
       </div>
     )
   }
+  if (src.startsWith('blob:')) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img src={src} alt="" onError={() => setFailed(true)} className="w-16 h-12 object-cover rounded shrink-0" />
+    )
+  }
   return (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img src={src} alt="" onError={() => setFailed(true)} className="w-16 h-12 object-cover rounded shrink-0" />
+    <Image
+      src={src}
+      alt=""
+      // Twice the displayed size, for a 2x screen.
+      width={128}
+      height={96}
+      sizes="64px"
+      quality={75}
+      onError={() => setFailed(true)}
+      className="w-16 h-12 object-cover rounded shrink-0"
+    />
   )
 }
 
