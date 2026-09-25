@@ -13,7 +13,7 @@ import { CSS } from '@dnd-kit/utilities'
 import { GripVertical, X, Upload, Video, ImageIcon } from 'lucide-react'
 import Image from 'next/image'
 import { toast } from 'sonner'
-import { photoUrl, isStagedPhotoKey } from '@/lib/media-client'
+import { photoWebUrl, isStagedPhotoKey } from '@/lib/media-client'
 import { getMediaJobStatuses } from '@/lib/actions/media-jobs'
 import { recordMediaHashAction, findDuplicateMediaAction } from '@/lib/actions/media-hash'
 import { sha256HexOfFile, BROWSER_HASH_MAX_BYTES } from '@/lib/hash-client'
@@ -138,7 +138,7 @@ function SortableItem({
   // page will show — so the panel switches to it and the admin sees the result.
   const thumbSrc =
     item.mediaType === 'photo' && item.preview.startsWith('blob:') && job?.phase === 'done'
-      ? photoUrl(item.storageKey)
+      ? photoWebUrl(item.storageKey)
       : item.preview
 
   return (
@@ -200,7 +200,7 @@ export function MediaUpload({
       id: m.storageKey,
       storageKey: m.storageKey,
       mediaType: m.mediaType,
-      preview: m.mediaType === 'photo' ? photoUrl(m.storageKey) : '',
+      preview: m.mediaType === 'photo' ? photoWebUrl(m.storageKey) : '',
     }))
   )
   const [jobs, setJobs] = useState<Record<string, VideoJobStatus>>({})
