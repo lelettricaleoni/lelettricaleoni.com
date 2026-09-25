@@ -1,5 +1,5 @@
 'use server'
-import { updateTag } from 'next/cache'
+import { updateTag, revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { z } from 'zod'
 import { eq, and, asc } from 'drizzle-orm'
@@ -212,6 +212,10 @@ export async function deleteBikeModelAction(id: string) {
   // still references this model — no cascade on that foreign key, by design.
   await db.delete(bikeModels).where(eq(bikeModels.id, id))
   updateTag('bike-models')
+  // The tag above is for the public pages. The admin list reads the database
+  // directly, so it is only redone if the page itself is revalidated: without
+  // this the row kept its old state until the panel was reloaded.
+  revalidatePath('/manage/bikes')
 }
 
 export async function togglePublishBikeModelAction(id: string, isPublished: boolean) {
@@ -219,6 +223,7 @@ export async function togglePublishBikeModelAction(id: string, isPublished: bool
   await db.update(bikeModels).set({ isPublished, updatedAt: new Date() }).where(eq(bikeModels.id, id))
   updateTag('bike-models')
   updateTag(`bike-model-${id}`)
+  revalidatePath('/manage/bikes') // see deleteBikeModelAction
 }
 
 /** Staged for the worker, like a route photo: see getPresignedUploadUrlAction in routes.ts. */
