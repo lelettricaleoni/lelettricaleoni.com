@@ -1,4 +1,5 @@
 import type { Media } from './db'
+import { RENDITION_WIDTHS } from './photo-loader'
 
 /**
  * Media URL helpers safe to import from client components.
@@ -98,6 +99,17 @@ export function photoShareKey(storageKey: string): string {
 
 export function photoShareUrl(storageKey: string): string {
   return mediaPublicUrl(photoShareKey(storageKey))
+}
+
+/**
+ * The renditions the worker cuts beside a staged photo's master (see
+ * lib/photo-loader.ts), as keys — so that deleting a photo can take them along.
+ * Photos from before the worker have none.
+ */
+export function photoRenditionKeys(storageKey: string): string[] {
+  if (!isStagedPhotoKey(storageKey)) return []
+  const master = photoPublicKey(storageKey)
+  return RENDITION_WIDTHS.map((w) => master.replace(/\.avif$/, `.w${w}.avif`))
 }
 
 /** Lower-cased extension of an uploaded file if the worker can decode it, otherwise null. */
