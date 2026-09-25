@@ -3,20 +3,17 @@ import { PutObjectCommand } from '@aws-sdk/client-s3'
 import { eq } from 'drizzle-orm'
 import { getAdminUser } from '@/lib/supabase/server'
 import { s3, R2_BUCKET } from '@/lib/r2'
-import { db, media, routes } from '@/lib/db'
+import { db, routes } from '@/lib/db'
 import { sha256Hex } from '@/lib/hash'
 
-async function findDuplicateOwner(kind: 'photo' | 'gpx', sha256: string) {
-  if (kind === 'gpx') {
-    const [match] = await db.select({ id: routes.id }).from(routes).where(eq(routes.gpxSha256, sha256)).limit(1)
-    return match ? { routeId: match.id, bikeModelId: null as string | null } : null
-  }
-  const [match] = await db
-    .select({ routeId: media.routeId, bikeModelId: media.bikeModelId })
-    .from(media)
-    .where(eq(media.sha256, sha256))
-    .limit(1)
-  return match ?? null
+// GPX files only. Photos no longer pass through here: they go straight to
+// storage for the worker to process (a 120 MB TIFF does not fit in a serverless
+// request body), and their duplicate check moved to the browser — see
+// lib/hash-client.ts. Leaving a photo path open would also let one skip the
+// worker and land in the public prefix unprocessed.
+async function findDuplicateGpxOwner(sha256: string) {
+  const [match] = await db.select({ id: routes.id }).from(routes).where(eq(routes.gpxSha256, sha256)).limit(1)
+  return match ? { routeId: match.id, bikeModelId: null as string | null } : null
 }
 
 export async function POST(request: Request) {
@@ -26,17 +23,16 @@ export async function POST(request: Request) {
   const formData = await request.formData()
   const file = formData.get('file') as File | null
   const key = formData.get('key') as string | null
-  const kindRaw = formData.get('kind') as string | null
   const force = formData.get('force') === 'true'
-  const kind = kindRaw === 'photo' || kindRaw === 'gpx' ? kindRaw : null
 
   if (!file || !key) return new NextResponse('Missing file or key', { status: 400 })
+  if (formData.get('kind') !== 'gpx') return new NextResponse('Only GPX files are uploaded here', { status: 400 })
 
   const buffer = Buffer.from(await file.arrayBuffer())
   const sha256 = sha256Hex(buffer)
 
-  if (kind && !force) {
-    const owner = await findDuplicateOwner(kind, sha256)
+  if (!force) {
+    const owner = await findDuplicateGpxOwner(sha256)
     if (owner) {
       return NextResponse.json({ duplicate: true, sha256, owner }, { status: 409 })
     }

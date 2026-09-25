@@ -352,18 +352,3 @@ export async function getVideoPresignedUploadUrlAction(
   const url = await getVideoPresignedUploadUrl(key, contentType)
   return { url, key }
 }
-
-export async function savePhotosAction(
-  routeId: string,
-  photos: { storageKey: string; displayOrder: number; altText?: string }[]
-) {
-  await requireAdmin()
-  await db.delete(media).where(eq(media.routeId, routeId))
-  if (photos.length > 0) {
-    await db.insert(media).values(
-      photos.map((p) => ({ routeId, ...p }))
-    )
-  }
-  const [route] = await db.select().from(routes).where(eq(routes.id, routeId))
-  if (route) updateTag(`route-${shortId(route.id)}`)
-}
