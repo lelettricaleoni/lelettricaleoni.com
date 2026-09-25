@@ -123,7 +123,7 @@ export default async function BikeDetailPage({
             <ArrowLeft size={16} /> {d.back_to_list}
           </Link>
 
-          <MediaGallery media={allMedia} title={translation?.name ?? id} />
+          <MediaGallery media={allMedia} title={translation?.name ?? id} fit="contain" />
 
           <div className="space-y-2">
             <div className="flex flex-wrap gap-2">

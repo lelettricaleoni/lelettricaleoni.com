@@ -38,6 +38,11 @@ test('la home mostra le sue sezioni', async ({ page }) => {
   const teaser = page.locator('#routes-teaser')
   await expect(teaser).toBeAttached()
   await expect(teaser.locator('a[href*="/routes"]')).toBeVisible()
+  // Same for the bikes teaser and the bikes flag: the bikes tests below
+  // already need it on, so this adds no assumption about the environment.
+  const bikesTeaser = page.locator('#bikes-teaser')
+  await expect(bikesTeaser).toBeAttached()
+  await expect(bikesTeaser.locator('a[href*="/bikes"]')).toBeVisible()
 })
 
 test('la lista percorsi mostra delle card complete', async ({ page }) => {
@@ -90,6 +95,11 @@ test('il tedesco rende in tedesco', async ({ page }) => {
   // the page to have content first: a negative check on a page that has not
   // arrived yet passes without looking at anything.
   await expect(page.locator('main h1').first()).not.toBeEmpty()
+  // While the page streams in, the loading skeleton's <main> and the real one
+  // are both in the DOM, with the same classes. Reading `main` in that window
+  // is a strict-mode violation, which is what made this test flaky (four PRs,
+  // then twice in one run). One <main> means the swap is done.
+  await expect(page.locator('main')).toHaveCount(1)
   const text = await page.locator('main').innerText()
   expect(text).not.toContain('Percorsi consigliati')
 })

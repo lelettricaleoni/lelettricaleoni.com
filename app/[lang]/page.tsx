@@ -4,6 +4,7 @@ import { getDictionary, hasLocale } from './dictionaries'
 import { Navbar } from '@/components/navbar'
 import { HeroSection } from '@/components/hero-section'
 import { RoutesTeaserSection } from '@/components/routes-teaser-section'
+import { BikesTeaserSection } from '@/components/bikes-teaser-section'
 import { ServicesSection } from '@/components/services-section'
 import { PricingSection } from '@/components/pricing-section'
 import { MapSection } from '@/components/map-section'
@@ -49,6 +50,7 @@ export default async function HomePage({
         <HeroSection lang={lang} dict={dict} />
         {flags.routes && <RoutesTeaserSection lang={lang} dict={dict} />}
         <ServicesSection dict={dict} />
+        {flags.bikes && <BikesTeaserSection lang={lang} dict={dict} />}
         <PricingSection dict={dict} />
         <MapSection dict={dict} />
       </main>
