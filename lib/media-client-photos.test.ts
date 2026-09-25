@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import {
   isStagedPhotoKey, photoPublicKey, photoUrl, photoSourceExtension, photoContentType,
-  photoShareKey, photoShareUrl, photoWebUrl,
+  photoShareKey, photoShareUrl,
   PHOTO_SOURCE_EXTENSIONS,
 } from './media-client'
 
@@ -39,22 +39,6 @@ describe('photoShareKey', () => {
   it('is the photo itself when it predates the worker', () => {
     expect(photoShareKey('route-photos/r1/u1.jpg')).toBe('route-photos/r1/u1.jpg')
     expect(photoShareUrl('route-photos/r1/u1.jpg').endsWith('/route-photos/r1/u1.jpg')).toBe(true)
-  })
-})
-
-describe('photoWebUrl', () => {
-  // Vercel's optimizer does not resize an AVIF source, so a card or thumbnail
-  // has to be given the JPEG rendition, never the master. If this fails because
-  // it points at the master, cards are back to downloading 300 KB and shrinking
-  // it in the browser.
-  it('is the JPEG rendition of a staged photo, not the AVIF master', () => {
-    const url = photoWebUrl('private/bike-model-photos/m1/u1.tif')
-    expect(url.endsWith('/public/bike-model-photos/m1/u1.share.jpg')).toBe(true)
-    expect(url).not.toBe(photoUrl('private/bike-model-photos/m1/u1.tif'))
-  })
-
-  it('is the photo itself when it predates the worker', () => {
-    expect(photoWebUrl('route-photos/r1/u1.jpg')).toBe(photoUrl('route-photos/r1/u1.jpg'))
   })
 })
 
