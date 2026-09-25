@@ -140,6 +140,7 @@ export async function createBikeModelAction(
   await syncMediaItems(newModel.id, formData)
 
   updateTag('bike-models')
+  revalidatePath('/manage/bikes') // the admin list, see deleteBikeModelAction
   redirect('/manage/bikes')
 }
 
@@ -199,6 +200,7 @@ export async function updateBikeModelAction(
 
   updateTag('bike-models')
   updateTag(`bike-model-${id}`)
+  revalidatePath('/manage/bikes') // the admin list, see deleteBikeModelAction
   redirect('/manage/bikes')
 }
 
