@@ -4,7 +4,7 @@
 > componenti si ricava con `ls`; il motivo per cui i tile CARTO passano dal server no.
 > Se questo file supera le ~150 righe, qualcosa è entrato che non doveva.
 >
-> Ultimo allineamento: 2026-09-16.
+> Ultimo allineamento: 2026-09-25.
 
 ## Prodotto
 
@@ -36,7 +36,7 @@ pannello di amministrazione privato.
 
 ## Dati e servizi
 
-Postgres su **Supabase** via Drizzle (`routes`, `route_translations`, `route_photos`),
+Postgres su **Supabase** via Drizzle (schema in `lib/db/schema.ts`),
 **sempre dal pooler in transaction mode** (porta 6543): `lib/db/pooler.ts` corregge la porta
 anche se la variabile su Vercel dice 5432. Vedi le trappole. `npx drizzle-kit generate` e
 `migrate` funzionano davvero dal 2026-09-14 (`lib/db/migrations/`): prima nessuno dei due
@@ -141,47 +141,32 @@ due volte. Dal 2026-09-14 Preview ha il proprio progetto Supabase e il proprio b
 dettagli in `docs/environment-variables.md`. Se un blocco simile ricapitasse (stessa causa,
 ambiente diverso): `pg_terminate_backend` sulle sessioni `Supavisor` inattive le libera subito.
 
-**`max: 1` sul client Postgres non basta a evitare un blocco di cinque minuti.** Il
-2026-09-15 `/routes` e `/manage/routes` sono rimasti bloccati sullo scheletro di
-caricamento per 300 secondi — il timeout della funzione Vercel, non del database: la
-produzione applica già `statement_timeout = 2min` a livello di database, e nessuna query
-reale supera i pochi millisecondi (verificato in `pg_stat_statements`). Il tempo veniva
-speso in coda nel client `postgres.js`, in attesa dell'unica connessione che `max: 1`
-concedeva — Fluid Compute riusa la stessa istanza fra richieste concorrenti, e le
-revalidation in sottofondo di Cache Components possono partire in gruppo dalla stessa
-istanza. Quella coda lato client non ha un proprio timeout. Alzato a `max: 3` in
-`lib/db/index.ts`. **`statement_timeout` per connessione non funziona con questo pooler**:
-Supavisor in transaction mode può assegnare a uno statement successivo un backend diverso
-da quello che ha ricevuto il parametro di avvio — verificato con `show statement_timeout`
-subito dopo la connessione, tornava vuoto.
-
-Quel `max: 3` non è bastato: `/routes` si è bloccato altre due volte lo stesso giorno,
-tracciato stavolta in diretta con `pg_stat_activity` — backend fermi in `ClientRead` per
-minuti, cioè Postgres aveva già finito e il client non leggeva il risultato. Causa reale:
-`getRoutesListData` interrogava le traduzioni **una query per percorso** dentro un
-`Promise.all` — sette percorsi pubblicati, sette query concorrenti contro tre sole
-connessioni, a ogni rigenerazione di quella cache. Risolto con una singola query a join
-(`routes` × `route_translations` su `locale`). Mitigato dal vivo con
-`pg_terminate_backend`, ma quella è la toppa, non la cura: un N+1 dentro `Promise.all` va
-cercato per primo, prima di alzare `max`. Il giro sistematico sul resto del codice
-(2026-09-16) ha trovato lo stesso pattern in `getRoutesForAdmin` — non ancora esploso solo
-perché la lista admin ha meno visite di quella pubblica — corretto allo stesso modo.
-
-**La vera causa di quei blocchi era il pipelining di `postgres.js`, non l'N+1** (trovata il
-2026-09-24, quando `/manage/bike-options` — e con lei tutto il pannello — è andato in timeout
-a 30 s subito dopo la #154, che aveva portato le query in parallelo di quella pagina da tre a
-quattro). Di default `postgres.js` scrive una seconda query su una connessione ancora
-occupata, fino a 100 in coda; il pooler Supabase in transaction mode non lo regge: la query
-in più non torna mai, la connessione resta incastrata (`active / ClientRead` lato Postgres)
-e, con tutte e tre incastrate, ogni richiesta successiva della stessa istanza aspetta dietro.
-Misurato fuori da Next, contro il pooler: con `max: 3`, quattro query concorrenti si
-bloccano dal secondo giro, dieci non tornano proprio; tre query, `max: 4` o session mode
-vanno bene; `max_pipeline: 1` non basta (la prima query non conta, ne passa comunque una in
-più); **`max_pipeline: 0` risolve** — sei giri da 4 e da 10 query, tutte tornate, le eccedenti
-aspettano nella coda del client. Impostato in `lib/db/client-options.ts`, con un test che lo
-fissa. Un N+1 resta uno spreco, ma non blocca più il sito; e il prefetch dei link della
-sidebar admin (una raffica di 10–14 richieste per pagina caricata) non può più trasformare
-una pagina lenta in un pannello morto.
+**Un client Postgres fermo per minuti ha avuto tre cause, una dopo l'altra** (2026-09-15 e
+2026-09-24): `/routes`, `/manage/routes` e poi tutto `/manage` sono rimasti sullo scheletro
+di caricamento fino al timeout della funzione Vercel (300 s, poi 30 s), mentre nessuna query
+reale superava i pochi millisecondi (`pg_stat_statements`) e Postgres mostrava backend fermi
+in `active / ClientRead`: il tempo si perdeva nel client `postgres.js`, non nel database.
+(1) Con `max: 1` le richieste concorrenti sulla stessa istanza (Fluid Compute la riusa)
+facevano coda senza timeout → `max: 3`. (2) Un N+1 dentro `Promise.all`
+(`getRoutesListData`, `getRoutesForAdmin`) → un solo join. (3) **Il pipelining di
+`postgres.js`, la causa di fondo**: di default scrive una seconda query su una connessione
+ancora occupata, il pooler Supabase in transaction mode non la restituisce mai, la
+connessione resta incastrata e, con tutte e tre incastrate, ogni richiesta successiva
+dell'istanza aspetta dietro. La #154 ha portato le query di `/manage/bike-options` da tre a
+quattro e l'ha fatto esplodere. Misurato contro il pooler, fuori da Next: 4 e 10 query
+concorrenti si bloccano, `max_pipeline: 1` non basta, **`max_pipeline: 0` risolve**
+(`lib/db/client-options.ts`, con un test che lo fissa): le eccedenti aspettano nella coda del
+client. Un N+1 resta uno spreco, ma non blocca più il sito.
+**Prezzo di `max_pipeline: 0`: `db.transaction` non funziona più.** `postgres.js` marca la
+connessione come riservata solo se `sent.length < max_pipeline`, quindi il `BEGIN` viene
+rifiutato con `UNSAFE_TRANSACTION` (successo in produzione il 2026-09-25 su rinomina e
+cancellazione di una categoria percorso, subito dopo la #159). Un'operazione che deve essere
+atomica si scrive come un solo statement (una CTE lo è già: vedi
+`lib/route-bike-categories.ts`); `lib/db/no-transactions.test.ts` fa fallire la CI se
+qualcuno riapre una transazione sul client condiviso.
+**`statement_timeout` per connessione non funziona con questo pooler**: Supavisor in
+transaction mode può dare uno statement successivo a un backend diverso da quello che ha
+ricevuto il parametro di avvio (`show statement_timeout` tornava vuoto).
 
 **`vercel env pull .env.local` distrugge le chiavi locali**, che puntano al database di
 sviluppo mentre Vercel punta alla produzione. Scaricare fuori dal progetto. Quasi tutte le
@@ -205,26 +190,19 @@ proprietà generale di ogni flag nuovo o una particolarità di quel primo giro. 
 appena creato sembra non accendersi, prima di sospettare un bug: aspettare invece di fidarsi
 della risposta immediata di `update_flag`/`get_flag`.
 
-**Il tracking di `drizzle-kit migrate` si disallinea se si applica una migrazione a mano**
-(risolto su dev il 2026-09-24; **produzione ancora da risincronizzare**). `migrate` non
-confronta gli hash: legge l'ultima riga di `drizzle.__drizzle_migrations` (per `created_at`)
-e riesegue ogni migrazione del journal con `when` più recente. Le migrazioni 0001–0009 erano
-state applicate via MCP `apply_migration`, che non scrive nel tracking: in tabella c'era solo
-la baseline 0000, quindi `migrate` rieseguiva la 0001 (`ALTER TABLE ... ADD COLUMN "unlisted"`),
-la colonna esisteva già, e la CLI usciva con 1 **senza stampare l'errore** (lo spinner lo
-inghiotte). Corretto su dev inserendo le righe 0001–0009 (`hash` = SHA-256 del file con fine
-riga LF, `created_at` = `when` del journal) e verificato con un ciclo vero: `generate` →
-`migrate` → tabella creata e registrata. Gli hash calcolati su Windows (CRLF) non coincidono
-con quelli calcolati su Linux, ma non importa: contano solo i `created_at`.
-
-**Come si applica una migrazione ora**: `npx drizzle-kit generate`, poi `npm run db:migrate`
-(`scripts/migrate.mjs`: stessa cosa di `drizzle-kit migrate`, ma stampa l'errore vero) con
+**Il tracking di `drizzle-kit migrate` si disallinea se si applica una migrazione a mano.**
+`migrate` non confronta gli hash: legge l'ultima riga di `drizzle.__drizzle_migrations` (per
+`created_at`) e riesegue ogni migrazione del journal con `when` più recente. Le migrazioni
+0001–0009 erano state applicate con l'MCP `apply_migration`, che non scrive nel tracking:
+`migrate` rieseguiva la 0001, la colonna esisteva già, e la CLI usciva con 1 **senza stampare
+l'errore** (lo spinner lo inghiotte). Risincronizzato su dev (2026-09-24) e su produzione
+(verificato il 2026-09-25: 10 righe, `created_at` = `when` del journal; gli hash calcolati su
+Windows, con CRLF, non coincidono con quelli di Linux, ma non importa).
+**Si applica così**: `npx drizzle-kit generate`, poi `npm run db:migrate`
+(`scripts/migrate.mjs`: come `drizzle-kit migrate`, ma stampa l'errore vero) con
 `DATABASE_DIRECT_URL` del database giusto — dev da `.env.local`, produzione passando la
-variabile a mano. **Non applicare più migrazioni con `apply_migration` (MCP)**: è quello che
-ha causato il disallineamento. Se lo si fa comunque, va registrata a mano la riga nel tracking.
-**Produzione**: ha davvero 0001–0009 nello schema ma nel tracking solo la 0000. Finché non
-viene risincronizzata (INSERT idempotente, nella PR #155, che ha introdotto questa nota),
-`db:migrate` contro produzione tenterebbe di rieseguire la 0001 e fallirebbe.
+variabile a mano. **Non usare `apply_migration` (MCP) per lo schema**; se lo si fa comunque,
+registrare a mano la riga nel tracking.
 
 ## Debito noto
 
@@ -243,27 +221,15 @@ viene risincronizzata (INSERT idempotente, nella PR #155, che ha introdotto ques
 
 ## Decisioni passate ancora rilevanti
 
-- `docs/superpowers/specs/2026-09-22-flyover-elevation-chart-design.md` e il piano gemello
-  in `docs/superpowers/plans/` — profilo altimetrico nel flyover 3D, cursore condiviso tra
-  volo automatico e trascinamento manuale, caricato solo all'apertura del pannello. Bordi
-  del grafico misurati dal DOM (`.recharts-area-curve`, due `<ReferenceLine>` invisibili
-  come ancore verticali) invece di stimati a mano — verificato dal vivo confrontando la
-  posizione del cursore col `ReferenceDot` di Recharts, scarto di 0.02px. Deliberatamente
-  fuori scope: un limite all'area esplorabile della mappa 3D attorno al tracciato, e un
-  controllo di velocità per il flyover — vedi ROADMAP
-- `docs/superpowers/specs/2026-09-21-upload-sha256-design.md` e il piano gemello in
-  `docs/superpowers/plans/` — SHA-256 su ogni file caricato (foto, video, GPX), avviso
-  bloccante sui duplicati con override esplicito, anteprima del tracciato dopo un
-  caricamento GPX riuscito. I video già trascodificati non hanno lo SHA (il sorgente è
-  già stato cancellato) — solo i caricamenti da questa feature in poi
-- `docs/superpowers/specs/2026-09-17-bike-models-and-inventory-design.md` e il piano
-  gemello in `docs/superpowers/plans/` — catalogo modelli di bici e inventario "Il mio
-  negozio" (`/manage/bikes`, `/manage/bike-options`, `/manage/bikes/shop`), solo admin per
-  ora: niente pagina pubblica, niente collegamento con i percorsi, niente prenotazioni
-- `docs/superpowers/specs/2026-09-14-routes-caching-cache-components-design.md` — cache
-  reale su lista/dettaglio percorsi
-- `docs/superpowers/specs/2026-09-09-ai-docs-system-design.md` — questo sistema
-- `docs/superpowers/specs/2026-09-10-tests-against-preview-design.md` — test browser contro
-  il preview: geometria, contenuto, budget di prestazione
-- `docs/superpowers/specs/2026-05-29-percorsi-admin-design.md` — sezione percorsi e admin
-- `docs/superpowers/plans/2026-05-29-route-detail-redesign.md` — flyover 3D e bento grid
+Una spec e un piano per feature, in `docs/superpowers/specs/` e `docs/superpowers/plans/`
+(`ls` li elenca per data). Quelle che spiegano un vincolo ancora in vigore:
+
+- `2026-09-22-flyover-elevation-chart` — profilo altimetrico nel flyover; i bordi del grafico
+  sono misurati dal DOM (`.recharts-area-curve`), non stimati. Fuori scope apposta: limite
+  all'area esplorabile della mappa 3D (vedi ROADMAP).
+- `2026-09-21-upload-sha256` — SHA-256 su ogni file caricato; i video già trascodificati non
+  ce l'hanno (il sorgente era già stato cancellato).
+- `2026-09-17-bike-models-and-inventory` — catalogo bici e inventario "Il mio negozio".
+- `2026-09-14-routes-caching-cache-components` — cache reale su lista/dettaglio percorsi.
+- `2026-09-10-tests-against-preview` — test browser contro il preview.
+- `2026-09-09-ai-docs-system` — questo sistema.

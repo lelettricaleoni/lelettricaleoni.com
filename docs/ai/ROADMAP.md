@@ -9,14 +9,14 @@
 
 ## Adesso
 
-- **Categorie percorso e collegamento col catalogo bici** — spec pronta in
-  `docs/superpowers/specs/2026-09-23-route-bike-categories-design.md`, in attesa del piano
-  di implementazione. Card "bici adatte a questo giro" nel dettaglio percorso, categorie
-  percorso promosse da costante nel codice a tabella modificabile dall'admin, collegate
-  alle categorie bici (di prezzo) tramite un nuovo campo di raggruppamento. Fatta anche la
-  card inversa, "percorsi consigliati con questa bici" nel dettaglio bici
-  (`getSuggestedRoutesForBike`, stessa relazione `bike_categories.routeCategoryId` letta
-  al contrario): fino a 3 percorsi pubblici, nell'ordine della lista.
+- **Elaborazione delle foto sul worker** — le foto caricate dal pannello diventano un
+  master AVIF prodotto dal worker, con sorgente cancellato e SHA-256 pubblicato. Spec e piano
+  in `docs/superpowers/specs/2026-09-23-image-processing-worker-design.md` e
+  `docs/superpowers/plans/2026-09-23-image-processing-worker.md` (PR #158). Sito: fatti i
+  primi due task (`lib/media-client.ts`, `lib/media.ts`), il resto e tutta la parte del
+  worker non ancora. Il piano ha sei domande aperte che aspettano Kevin (JPEG per le
+  anteprime social, `R2_BUCKETS` sulla VM, foto vere per la calibrazione, duplicati nel
+  browser…), e il merge ha un ordine obbligato: prima il worker, poi il sito.
 
 ## Prossimo
 
@@ -27,10 +27,6 @@ _(niente in coda)_
 - **Limitare l'area esplorabile della mappa 3D del flyover** a una zona attorno al
   tracciato GPX — oggi si può navigare su tutto il pianeta. Rimandato apposta il
   2026-09-22 alla consegna del profilo altimetrico, per tenere le due feature separate.
-- **Controllo di velocità per il flyover 3D** (play/pausa/velocità come un player video) —
-  scartato per il profilo altimetrico stesso il 2026-09-22 ("lascialo per dopo"): oggi il
-  volo automatico ha una durata fissa (60s) e il grafico si trascina a mano solo a volo
-  fermo.
 - **Primi lavori non-video sul worker** — promemoria prenotazioni ed estratti conto. Non
   utile finché non si aggiungono molte altre funzionalità di cui Kevin parlerà in futuro:
   spostato qui da "Prossimo" il 2026-09-16, non è più imminente. L'impalcatura c'è già:
