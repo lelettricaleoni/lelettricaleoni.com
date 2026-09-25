@@ -20,6 +20,21 @@ describe('BikesTeaserSection', () => {
       expect(html).toContain(dict.bikes_teaser.cta)
       expect(html).toContain(`href="/${lang}/bikes"`)
     })
+
+    it(`lists the four families of the price list, by the price list's own names, in ${lang}`, () => {
+      const dict = dictionaries[lang]
+      const html = renderToStaticMarkup(<BikesTeaserSection lang={lang} dict={dict} />)
+
+      for (const label of [
+        dict.pricing.emtb_title,
+        dict.pricing.gravel_city_title,
+        dict.pricing.classic_bike_title,
+        dict.pricing.classic_mtb_title,
+      ]) {
+        // `&` is escaped in markup, so compare against the escaped form.
+        expect(html).toContain(label.replace(/&/g, '&amp;'))
+      }
+    })
   }
 
   it('is a different anchor from the routes teaser, so the two never collide', () => {
