@@ -78,3 +78,18 @@ test('og:image punta a un url assoluto', async ({ page }) => {
   expect(image, 'og:image mancante').toBeTruthy()
   expect(image).toMatch(/^https?:\/\//)
 })
+
+test("l'immagine di default per i social esiste davvero", async ({ request }) => {
+  // Le pagine dichiarano /opengraph-image come og:image, e il test qui sopra
+  // controlla solo che l'URL sia scritto bene. Per undici giorni (dal
+  // 2026-09-14) quella rotta ha risposto 500, perché leggeva il logo da
+  // public/ e su Vercel quei file non sono nel pacchetto della funzione:
+  // nessuna anteprima mostrava un'immagine e nessun test se ne accorgeva.
+  // Si scarica dal sito sotto test, non dall'URL dichiarato, che punta sempre
+  // alla produzione.
+  const response = await request.get('/opengraph-image')
+  expect(response.status(), "/opengraph-image non risponde").toBe(200)
+  expect(response.headers()['content-type']).toContain('image/png')
+  expect((await response.body()).length, 'immagine troppo piccola per essere vera')
+    .toBeGreaterThan(5_000)
+})
