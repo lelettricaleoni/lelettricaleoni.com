@@ -13,12 +13,23 @@ const nextConfig: NextConfig = {
     '/opengraph-image': ['./public/svg/LogoLelettrica_full.svg'],
   },
   cacheLife: {
-    // Matches the ~30s in-memory TTL lib/flags.ts already uses, so a
-    // kill-switch reaches visitors about as fast as it does today.
-    routesFlags: {
-      stale: 30,
-      revalidate: 30,
-      expire: 120,
+    // What the admin edits: the routes and bikes lists, their details and the
+    // suggestions between them.
+    //
+    // `updateTag` after an admin action expires the entry only in the serverless
+    // instance that ran the action. The default `'use cache'` store is in memory,
+    // per instance, so every other warm instance keeps serving its own copy until
+    // it goes stale on its own. With the old 30s/120s, reordering the bikes in the
+    // panel and reloading the public list could show the old order for up to two
+    // minutes — "the order has no effect", reported on 2026-09-25 with the
+    // database already right. Short lifetimes bound that lag to about half a
+    // minute; the reads are one query each, so the cost is negligible.
+    //
+    // `stale: 0` keeps the browser from reusing its own copy without asking.
+    catalog: {
+      stale: 0,
+      revalidate: 10,
+      expire: 30,
     },
     // No flag decides what's in the sitemap — search engines already learn
     // a switched-off route is off from the noindex meta tag it serves

@@ -19,7 +19,7 @@ const publiclyListed = and(eq(routes.isPublished, true), eq(routes.unlisted, fal
 // genuinely cacheable part.
 export async function getRoutesListData(lang: Locale) {
   'use cache'
-  cacheLife('routesFlags')
+  cacheLife('catalog')
   cacheTag('routes-list')
 
   // One query, not one-plus-N: this used to fetch routes, then fire a
@@ -53,7 +53,7 @@ export async function getRoutesListData(lang: Locale) {
 // card, outside this cache, by RouteCardMediaAsync.
 export async function getSuggestedRoutesForBike(lang: Locale, routeCategoryName: string) {
   'use cache'
-  cacheLife('routesFlags')
+  cacheLife('catalog')
   cacheTag('routes-list')
   cacheTag('route-bike-categories')
 
@@ -75,7 +75,7 @@ export async function getSuggestedRoutesForBike(lang: Locale, routeCategoryName:
 // che le azioni admin in lib/actions/bike-options.ts già invalidano.
 export async function getRouteBikeCategoryNames() {
   'use cache'
-  cacheLife('routesFlags')
+  cacheLife('catalog')
   cacheTag('route-bike-categories')
 
   const rows = await db
@@ -95,7 +95,7 @@ export async function getRouteDetailData(
   mediaFlags: { routeVideos: boolean; routePhotos: boolean; routeFlyover: boolean }
 ) {
   'use cache'
-  cacheLife('routesFlags')
+  cacheLife('catalog')
   cacheTag(`route-${id}`)
 
   const [route] = await db.select().from(routes).where(
