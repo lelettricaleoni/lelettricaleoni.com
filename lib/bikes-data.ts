@@ -4,7 +4,7 @@ import {
   db, bikeModels, bikeModelTranslations, bikeCategories, bikeUnits, bikeSizes,
   bikeVersions, routeBikeCategories, media,
 } from '@/lib/db'
-import { resolveHlsUrl } from '@/lib/media'
+import { resolveReadyMedia } from '@/lib/media'
 
 type Locale = 'it' | 'en' | 'de'
 
@@ -152,13 +152,7 @@ export async function getBikeModelDetailData(lang: Locale, id: string) {
   // caricamento": il worker non trascodifica ancora i sorgenti dei modelli
   // di bici (journal 2026-09-17), quindi oggi questo filtra sempre fuori i
   // video — le foto restano. Quando quel gap si chiude, funziona da solo.
-  const allMedia = (await Promise.all(
-    rawMedia.map(async (m) => {
-      if (m.mediaType !== 'video') return m
-      const hlsUrl = await resolveHlsUrl(m.storageKey)
-      return hlsUrl ? { ...m, hlsUrl } : null
-    })
-  )).filter((m): m is NonNullable<typeof m> => m !== null)
+  const allMedia = await resolveReadyMedia(rawMedia)
 
   return { model, translation, category, routeCategory: routeCategory ?? null, allMedia, sizesInGarage, versionsInGarage }
 }

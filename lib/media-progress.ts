@@ -42,32 +42,41 @@ const PHASE_LABELS: Record<VideoJobStatus['phase'], string> = {
   failed: 'Failed',
 }
 
-/** A photo is done when it has been uploaded; a video has only got halfway. */
+/** Every upload only gets halfway: the worker still has to process it. */
 const UPLOAD_SHARE = 50
+
+export interface MediaProgressOptions {
+  /**
+   * Whether a missing job status means "the worker has not got to it yet".
+   * True for a video (every one goes through the worker) and for a photo
+   * uploaded in this session. False for a photo the panel merely loaded: it
+   * either predates the worker or was finished long ago — the status outlives
+   * a finished job by minutes — and either way there is nothing to wait for.
+   */
+  awaiting?: boolean
+}
 
 export function mediaProgress(
   mediaType: 'photo' | 'video',
   upload?: UploadState,
-  job?: VideoJobStatus
+  job?: VideoJobStatus,
+  options: MediaProgressOptions = {}
 ): MediaProgress | null {
   if (upload?.failed) {
     return { percent: 100, label: 'Upload failed', tone: 'error', active: false }
   }
 
   if (upload) {
-    const share = mediaType === 'video' ? UPLOAD_SHARE / 100 : 1
     return {
-      percent: Math.round(upload.progress * share),
+      percent: Math.round((upload.progress * UPLOAD_SHARE) / 100),
       label: `Uploading ${upload.progress}%`,
       tone: 'working',
       active: true,
     }
   }
 
-  // Photos need nothing after the upload, so they stop having a progress bar.
-  if (mediaType === 'photo') return null
-
   if (!job) {
+    if (!(options.awaiting ?? mediaType === 'video')) return null
     // The file is on R2 and the worker finds it by listing the bucket, so this
     // wait is expected and finite. Saying nothing here is what made the work
     // look stalled.
@@ -100,9 +109,11 @@ export function mediaProgress(
     : job.phase === 'uploading' ? 95
     : 2
 
+  // A photo is one call to the encoder and reports no percentage: saying "0%"
+  // for the whole minute it takes would look like a job that never started.
   const label =
-    job.phase === 'transcoding'
-      ? `${PHASE_LABELS.transcoding} ${job.progress ?? 0}%`
+    job.phase === 'transcoding' && job.progress !== undefined
+      ? `${PHASE_LABELS.transcoding} ${job.progress}%`
       : PHASE_LABELS[job.phase]
 
   return {

@@ -8,8 +8,8 @@ import {
 } from '@/lib/db'
 import { getAdminUser } from '@/lib/supabase/server'
 import { translateFromItalian } from './translate'
-import { deleteR2Object, getPresignedUploadUrl } from '@/lib/r2'
-import { getVideoPresignedUploadUrl, deleteR2Prefix, deriveHlsPrefix } from '@/lib/media'
+import { getVideoPresignedUploadUrl, getPhotoPresignedUploadUrl, deleteMediaFiles } from '@/lib/media'
+import { photoSourceExtension, photoContentType } from '@/lib/media-client'
 import { needsRetranslation } from '@/lib/translations'
 
 const BikeModelSchema = z.object({
@@ -86,11 +86,7 @@ async function syncMediaItems(bikeModelId: string, formData: FormData) {
   const existing = await db.select().from(media).where(eq(media.bikeModelId, bikeModelId))
   const newKeys = new Set(mediaItems.map((i) => i.key))
   const removed = existing.filter((m) => !newKeys.has(m.storageKey))
-  await Promise.all(removed.map((m) =>
-    m.mediaType === 'video'
-      ? Promise.all([deleteR2Object(m.storageKey), deleteR2Prefix(deriveHlsPrefix(m.storageKey))])
-      : deleteR2Object(m.storageKey)
-  ))
+  await Promise.all(removed.map(deleteMediaFiles))
 
   await db.delete(media).where(eq(media.bikeModelId, bikeModelId))
   if (mediaItems.length > 0) {
@@ -210,11 +206,7 @@ export async function deleteBikeModelAction(id: string) {
   await requireAdmin()
 
   const items = await db.select().from(media).where(eq(media.bikeModelId, id))
-  await Promise.all(items.map((m) =>
-    m.mediaType === 'video'
-      ? Promise.all([deleteR2Object(m.storageKey), deleteR2Prefix(deriveHlsPrefix(m.storageKey))])
-      : deleteR2Object(m.storageKey)
-  ))
+  await Promise.all(items.map(deleteMediaFiles))
 
   // Fails loudly (thrown error, caught by the caller) if any bike_units row
   // still references this model — no cascade on that foreign key, by design.
@@ -229,17 +221,20 @@ export async function togglePublishBikeModelAction(id: string, isPublished: bool
   updateTag(`bike-model-${id}`)
 }
 
+/** Staged for the worker, like a route photo: see getPresignedUploadUrlAction in routes.ts. */
 export async function getBikeModelPresignedUploadUrlAction(
   bikeModelId: string,
   fileName: string,
-  contentType: string,
+  _contentType: string,
   _type: 'photo'
 ) {
   await requireAdmin()
-  const ext = fileName.split('.').pop()
-  const key = `bike-model-photos/${bikeModelId}/${crypto.randomUUID()}.${ext}`
-  const url = await getPresignedUploadUrl(key, contentType)
-  return { url, key }
+  const ext = photoSourceExtension(fileName)
+  if (!ext) throw new Error(`Unsupported photo format: ${fileName}`)
+  const key = `private/bike-model-photos/${bikeModelId}/${crypto.randomUUID()}.${ext}`
+  const contentType = photoContentType(ext)
+  const url = await getPhotoPresignedUploadUrl(key, contentType)
+  return { url, key, contentType }
 }
 
 export async function getBikeModelVideoPresignedUploadUrlAction(

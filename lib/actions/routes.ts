@@ -7,7 +7,8 @@ import { db, routes, routeTranslations, media } from '@/lib/db'
 import { getAdminUser } from '@/lib/supabase/server'
 import { translateFromItalian } from './translate'
 import { deleteR2Object, getPresignedUploadUrl } from '@/lib/r2'
-import { getVideoPresignedUploadUrl, deleteR2Prefix, deriveHlsPrefix } from '@/lib/media'
+import { getVideoPresignedUploadUrl, getPhotoPresignedUploadUrl, deleteMediaFiles } from '@/lib/media'
+import { photoSourceExtension, photoContentType } from '@/lib/media-client'
 import { needsRetranslation } from '@/lib/translations'
 import { shortId } from '@/lib/utils'
 
@@ -215,11 +216,7 @@ export async function updateRouteAction(
   const oldMedia = await db.select().from(media).where(eq(media.routeId, id))
   const newKeys = new Set(mediaItems.map((i) => i.key))
   const removed = oldMedia.filter((m) => !newKeys.has(m.storageKey))
-  await Promise.all(removed.map((m) =>
-    m.mediaType === 'video'
-      ? Promise.all([deleteR2Object(m.storageKey), deleteR2Prefix(deriveHlsPrefix(m.storageKey))])
-      : deleteR2Object(m.storageKey)
-  ))
+  await Promise.all(removed.map(deleteMediaFiles))
 
   await db.delete(media).where(eq(media.routeId, id))
   if (mediaItems.length > 0) {
@@ -276,11 +273,7 @@ export async function deleteRouteAction(id: string) {
   if (!route) return
 
   const existingMedia = await db.select().from(media).where(eq(media.routeId, id))
-  await Promise.all(existingMedia.map((m) =>
-    m.mediaType === 'video'
-      ? Promise.all([deleteR2Object(m.storageKey), deleteR2Prefix(deriveHlsPrefix(m.storageKey))])
-      : deleteR2Object(m.storageKey)
-  ))
+  await Promise.all(existingMedia.map(deleteMediaFiles))
   if (route.gpxKey) await deleteR2Object(route.gpxKey)
 
   await db.delete(routes).where(eq(routes.id, id))
@@ -321,6 +314,13 @@ export async function toggleUnlistedAction(id: string, unlisted: boolean) {
   if (route) updateTag(`route-${shortId(route.id)}`)
 }
 
+/**
+ * A photo goes to the staging prefix, where the worker turns it into an AVIF
+ * master (see lib/media-client.ts). The content type is derived from the
+ * extension and returned: it is signed into the URL, so the browser has to send
+ * exactly this value and not whatever `file.type` says (empty, for a HEIC file
+ * on Chrome for Windows).
+ */
 export async function getPresignedUploadUrlAction(
   routeId: string,
   fileName: string,
@@ -328,12 +328,17 @@ export async function getPresignedUploadUrlAction(
   type: 'photo' | 'gpx'
 ) {
   await requireAdmin()
-  const ext = fileName.split('.').pop()
-  const key = type === 'gpx'
-    ? `route-gpx/${routeId}/track.gpx`
-    : `route-photos/${routeId}/${crypto.randomUUID()}.${ext}`
+  if (type === 'photo') {
+    const ext = photoSourceExtension(fileName)
+    if (!ext) throw new Error(`Unsupported photo format: ${fileName}`)
+    const key = `private/route-photos/${routeId}/${crypto.randomUUID()}.${ext}`
+    const photoType = photoContentType(ext)
+    const url = await getPhotoPresignedUploadUrl(key, photoType)
+    return { url, key, contentType: photoType }
+  }
+  const key = `route-gpx/${routeId}/track.gpx`
   const url = await getPresignedUploadUrl(key, contentType)
-  return { url, key }
+  return { url, key, contentType }
 }
 
 export async function getVideoPresignedUploadUrlAction(
@@ -346,19 +351,4 @@ export async function getVideoPresignedUploadUrlAction(
   const key = `private/route-videos/${routeId}/${crypto.randomUUID()}.${ext}`
   const url = await getVideoPresignedUploadUrl(key, contentType)
   return { url, key }
-}
-
-export async function savePhotosAction(
-  routeId: string,
-  photos: { storageKey: string; displayOrder: number; altText?: string }[]
-) {
-  await requireAdmin()
-  await db.delete(media).where(eq(media.routeId, routeId))
-  if (photos.length > 0) {
-    await db.insert(media).values(
-      photos.map((p) => ({ routeId, ...p }))
-    )
-  }
-  const [route] = await db.select().from(routes).where(eq(routes.id, routeId))
-  if (route) updateTag(`route-${shortId(route.id)}`)
 }

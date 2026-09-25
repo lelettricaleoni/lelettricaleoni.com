@@ -10,11 +10,12 @@ import {
   useSortable, verticalListSortingStrategy, arrayMove,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { GripVertical, X, Upload, Video } from 'lucide-react'
+import { GripVertical, X, Upload, Video, ImageIcon } from 'lucide-react'
 import { toast } from 'sonner'
-import { r2PublicUrl } from '@/lib/r2'
-import { getVideoJobStatuses } from '@/lib/actions/video-jobs'
-import { recordVideoHashAction } from '@/lib/actions/media-hash'
+import { photoUrl, isStagedPhotoKey } from '@/lib/media-client'
+import { getMediaJobStatuses } from '@/lib/actions/media-jobs'
+import { recordMediaHashAction, findDuplicateMediaAction } from '@/lib/actions/media-hash'
+import { sha256HexOfFile, BROWSER_HASH_MAX_BYTES } from '@/lib/hash-client'
 import type { VideoJobStatus } from '@/lib/video-jobs'
 import { mediaProgress, type UploadState } from '@/lib/media-progress'
 import {
@@ -23,11 +24,7 @@ import {
   AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 
-class DuplicateUploadError extends Error {
-  constructor(public sha256: string) {
-    super('duplicate')
-  }
-}
+const VIDEO_EXTENSION = /\.(mp4|mov|avi|mkv|webm)$/i
 
 export interface MediaItem {
   id: string
@@ -38,7 +35,7 @@ export interface MediaItem {
   fileName?: string
   /** Present only until the file has finished leaving the browser. */
   upload?: UploadState
-  /** Known immediately for a photo; arrives later, via polling, for a video. */
+  /** Known before upload for a photo the browser could hash; otherwise arrives later, from the worker. */
   sha256?: string
 }
 
@@ -49,7 +46,11 @@ function ProgressBar({
   item: MediaItem
   job?: VideoJobStatus
 }) {
-  const progress = mediaProgress(item.mediaType, item.upload, job)
+  // Something the panel merely loaded has no status once the worker's has
+  // expired; only what was uploaded in this session is worth waiting on.
+  const progress = mediaProgress(item.mediaType, item.upload, job, {
+    awaiting: item.mediaType === 'video' || Boolean(item.fileName),
+  })
   if (!progress) return null
 
   const barColour =
@@ -74,6 +75,27 @@ function ProgressBar({
   )
 }
 
+/**
+ * A browser cannot draw a TIFF, and most cannot draw a HEIC; a processed photo's
+ * master does not exist until the worker is done. Either way the <img> fails, and
+ * an icon is a more honest thumbnail than a broken-image glyph. Keyed by `src` at
+ * the call site, so a new source gets a fresh chance.
+ */
+function PhotoThumb({ src }: { src: string }) {
+  const [failed, setFailed] = useState(false)
+  if (!src || failed) {
+    return (
+      <div className="w-16 h-12 rounded bg-muted flex items-center justify-center shrink-0">
+        <ImageIcon size={20} className="text-muted-foreground" />
+      </div>
+    )
+  }
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img src={src} alt="" onError={() => setFailed(true)} className="w-16 h-12 object-cover rounded shrink-0" />
+  )
+}
+
 function SortableItem({
   item,
   job,
@@ -89,6 +111,13 @@ function SortableItem({
     disabled: Boolean(item.upload),
   })
   const uploading = Boolean(item.upload)
+  // The thumbnail of a photo just uploaded is the file itself, held in the
+  // browser. Once the worker is done the real thing exists, and that is what the
+  // page will show — so the panel switches to it and the admin sees the result.
+  const thumbSrc =
+    item.mediaType === 'photo' && item.preview.startsWith('blob:') && job?.phase === 'done'
+      ? photoUrl(item.storageKey)
+      : item.preview
 
   return (
     <div
@@ -104,9 +133,8 @@ function SortableItem({
         </button>
       )}
 
-      {item.mediaType === 'photo' && item.preview ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={item.preview} alt="" className="w-16 h-12 object-cover rounded shrink-0" />
+      {item.mediaType === 'photo' ? (
+        <PhotoThumb key={thumbSrc} src={thumbSrc} />
       ) : (
         <div className="w-16 h-12 rounded bg-muted flex items-center justify-center shrink-0">
           <Video size={20} className="text-muted-foreground" />
@@ -142,7 +170,7 @@ export function MediaUpload({
 }: {
   ownerId: string
   defaultItems?: { storageKey: string; mediaType: 'photo' | 'video' }[]
-  getPresignedUploadUrl: (ownerId: string, fileName: string, contentType: string, type: 'photo') => Promise<{ url: string; key: string }>
+  getPresignedUploadUrl: (ownerId: string, fileName: string, contentType: string, type: 'photo') => Promise<{ url: string; key: string; contentType: string }>
   getVideoPresignedUploadUrl: (ownerId: string, fileName: string, contentType: string) => Promise<{ url: string; key: string }>
 }) {
   const [items, setItems] = useState<MediaItem[]>(
@@ -150,26 +178,28 @@ export function MediaUpload({
       id: m.storageKey,
       storageKey: m.storageKey,
       mediaType: m.mediaType,
-      preview: m.mediaType === 'photo' ? r2PublicUrl(m.storageKey) : '',
+      preview: m.mediaType === 'photo' ? photoUrl(m.storageKey) : '',
     }))
   )
   const [jobs, setJobs] = useState<Record<string, VideoJobStatus>>({})
 
+  // What the worker processes: every video, and every photo uploaded through
+  // the staging prefix. A photo that predates the worker has no status at all.
   // Strings, not arrays: an array literal would be a new object on every render
   // and restart the poll each time.
-  const videoKeys = items
-    .filter((i) => i.mediaType === 'video' && !i.upload)
+  const jobKeys = items
+    .filter((i) => !i.upload && (i.mediaType === 'video' || isStagedPhotoKey(i.storageKey)))
     .map((i) => i.storageKey)
     .join('|')
-  // Videos that arrived in this session are worth waiting on even before the
+  // Items that arrived in this session are worth waiting on even before the
   // worker has said anything; older ones simply never had a status.
   const freshKeys = items
-    .filter((i) => i.mediaType === 'video' && !i.upload && i.fileName)
+    .filter((i) => !i.upload && i.fileName && (i.mediaType === 'video' || isStagedPhotoKey(i.storageKey)))
     .map((i) => i.storageKey)
     .join('|')
 
   useEffect(() => {
-    const all = videoKeys ? videoKeys.split('|') : []
+    const all = jobKeys ? jobKeys.split('|') : []
     if (all.length === 0) return
     const fresh = new Set(freshKeys ? freshKeys.split('|') : [])
 
@@ -182,7 +212,7 @@ export function MediaUpload({
     async function tick(keys: string[]) {
       let statuses: Record<string, VideoJobStatus> = {}
       try {
-        statuses = await getVideoJobStatuses(keys)
+        statuses = await getMediaJobStatuses(keys)
       } catch {
         // A stale bar beats an error message in the panel.
         return
@@ -206,23 +236,24 @@ export function MediaUpload({
       cancelled = true
       clearTimeout(timer)
     }
-  }, [videoKeys, freshKeys])
+  }, [jobKeys, freshKeys])
 
-  // Once a video's job reports done with a sha256, record it — the only
-  // moment it's known, since the source is gone right after. Idempotent
-  // (recordVideoHashAction just re-writes the same value), so a rare double
-  // call from two renders in flight at once costs nothing.
+  // Once a job reports done with a sha256, record it — the only moment it's
+  // known for a video, since the source is gone right after, and for a photo
+  // the browser did not hash itself. Idempotent (recordMediaHashAction just
+  // re-writes the same value), so a rare double call from two renders in
+  // flight at once costs nothing.
   useEffect(() => {
     for (const item of items) {
-      if (item.mediaType !== 'video' || item.sha256 || item.upload) continue
+      if (item.sha256 || item.upload) continue
       const job = jobs[item.storageKey]
       if (job?.phase !== 'done' || !job.sha256) continue
       const sha256 = job.sha256
       const storageKey = item.storageKey
-      recordVideoHashAction(storageKey, sha256)
+      recordMediaHashAction(storageKey, sha256)
         .then(({ duplicate }) => {
           setItems((prev) => prev.map((i) => (i.storageKey === storageKey ? { ...i, sha256 } : i)))
-          if (duplicate) toast.warning('This video looks identical to one already uploaded elsewhere.')
+          if (duplicate) toast.warning(`This ${item.mediaType} looks identical to one already uploaded elsewhere.`)
         })
         .catch(() => { /* riprovato al prossimo render se lo stato del job resta */ })
     }
@@ -242,101 +273,98 @@ export function MediaUpload({
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   )
 
-  const [pendingDuplicate, setPendingDuplicate] = useState<{ file: File; key: string } | null>(null)
+  const [pendingDuplicate, setPendingDuplicate] = useState<File | null>(null)
 
-  const uploadFile = useCallback(async (file: File, opts?: { forceKey?: string }) => {
-    const isVideo = file.type.startsWith('video/')
+  const uploadFile = useCallback(async (file: File, opts?: { skipDuplicateCheck?: boolean }) => {
+    // By extension too: a browser reports no type at all for some containers
+    // (.mkv on several platforms), and a video mistaken for a photo would be
+    // refused as an unsupported photo format.
+    const isVideo = file.type.startsWith('video/') || VIDEO_EXTENSION.test(file.name)
 
-    // The key is known before a single byte moves, so the item can join the
-    // list now and keep its identity all the way to "pronto". It used to live
-    // in a second list and be replaced on completion, which is what put a gap
-    // in the middle of the journey. A forced retry after a duplicate warning
-    // reuses the same key instead of reserving a new one.
-    let key: string
-    let url: string | null = null
-    if (opts?.forceKey) {
-      key = opts.forceKey
-    } else {
+    // A photo is hashed before a single byte moves, so an identical one can be
+    // flagged while it costs nothing to stop. Hashing and the lookup are both a
+    // courtesy: neither may ever be the reason a photo cannot be uploaded.
+    let sha256: string | undefined
+    if (!isVideo && file.size <= BROWSER_HASH_MAX_BYTES) {
       try {
-        const result = isVideo
-          ? await getVideoPresignedUploadUrl(effectiveOwnerId, file.name, file.type)
-          : await getPresignedUploadUrl(effectiveOwnerId, file.name, file.type, 'photo')
-        key = result.key
-        url = result.url
+        sha256 = await sha256HexOfFile(file)
       } catch (err) {
         console.error(err)
-        toast.error(`Upload failed: ${file.name}`)
-        return
+      }
+      if (sha256 && !opts?.skipDuplicateCheck) {
+        try {
+          if ((await findDuplicateMediaAction(sha256)).duplicate) {
+            setPendingDuplicate(file)
+            return
+          }
+        } catch (err) {
+          console.error(err)
+        }
       }
     }
 
-    const preview = isVideo ? '' : URL.createObjectURL(file)
+    // The key is known before a single byte moves, so the item can join the
+    // list now and keep its identity all the way to "ready". It used to live in
+    // a second list and be replaced on completion, which is what put a gap in
+    // the middle of the journey.
+    let key: string
+    let url: string
+    let contentType: string
+    try {
+      if (isVideo) {
+        const result = await getVideoPresignedUploadUrl(effectiveOwnerId, file.name, file.type)
+        key = result.key
+        url = result.url
+        contentType = file.type
+      } else {
+        const result = await getPresignedUploadUrl(effectiveOwnerId, file.name, file.type, 'photo')
+        key = result.key
+        url = result.url
+        contentType = result.contentType
+      }
+    } catch (err) {
+      console.error(err)
+      toast.error(`Upload failed: ${file.name}`)
+      return
+    }
+
+    // A TIFF or HEIC cannot be drawn by the browser: the thumbnail falls back to
+    // an icon until the worker's result replaces it (see PhotoThumb).
     setItems((prev) => [...prev, {
       id: key,
       storageKey: key,
       mediaType: isVideo ? 'video' : 'photo',
-      preview,
+      preview: isVideo ? '' : URL.createObjectURL(file),
       fileName: file.name,
       upload: { progress: 0 },
+      sha256,
     }])
 
     const patch = (fields: Partial<MediaItem>) =>
       setItems((prev) => prev.map((i) => (i.storageKey === key ? { ...i, ...fields } : i)))
 
     try {
-      const responseText = await new Promise<string>((resolve, reject) => {
+      await new Promise<void>((resolve, reject) => {
         const xhr = new XMLHttpRequest()
-        if (isVideo && url) {
-          xhr.open('PUT', url)
-          xhr.setRequestHeader('Content-Type', file.type)
-        } else {
-          xhr.open('POST', '/api/upload')
-        }
+        xhr.open('PUT', url)
+        // Signed into the URL: it has to be exactly what the server chose.
+        xhr.setRequestHeader('Content-Type', contentType)
         xhr.upload.onprogress = (e) => {
           if (e.lengthComputable) {
             patch({ upload: { progress: Math.round((e.loaded / e.total) * 100) } })
           }
         }
         xhr.onload = () => {
-          if (xhr.status === 409) {
-            let sha256 = ''
-            try { sha256 = JSON.parse(xhr.responseText).sha256 } catch { /* ignore */ }
-            reject(new DuplicateUploadError(sha256))
-          } else if (xhr.status >= 200 && xhr.status < 300) {
-            resolve(xhr.responseText)
-          } else {
-            reject(new Error(`${xhr.status}`))
-          }
+          if (xhr.status >= 200 && xhr.status < 300) resolve()
+          else reject(new Error(`${xhr.status}`))
         }
         xhr.onerror = () => reject(new Error('Network error'))
-
-        if (isVideo && url) {
-          xhr.send(file)
-        } else {
-          const fd = new FormData()
-          fd.append('file', file)
-          fd.append('key', key)
-          fd.append('kind', 'photo')
-          if (opts?.forceKey) fd.append('force', 'true')
-          xhr.send(fd)
-        }
+        xhr.send(file)
       })
 
-      // A video hands its bar over to the worker's status; a photo already
-      // knows its sha256 from the response body.
-      if (isVideo) {
-        patch({ upload: undefined })
-      } else {
-        let sha256: string | undefined
-        try { sha256 = JSON.parse(responseText).sha256 } catch { /* ignore */ }
-        patch({ upload: undefined, sha256 })
-      }
+      // From here the bar belongs to the worker's status.
+      patch({ upload: undefined })
     } catch (err) {
-      if (err instanceof DuplicateUploadError) {
-        setItems((prev) => prev.filter((i) => i.storageKey !== key))
-        setPendingDuplicate({ file, key })
-        return
-      }
       console.error(err)
       toast.error(`Upload failed: ${file.name}`)
       patch({ upload: { progress: 0, failed: true } })
@@ -348,8 +376,18 @@ export function MediaUpload({
   }, [uploadFile])
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    // Exactly the formats the worker can decode, spelled out rather than as
+    // `image/*`: what a wildcard means next to a list of extensions changed
+    // between react-dropzone versions, and anything the worker cannot decode
+    // would sit unprocessed forever. The extensions matter as much as the types:
+    // Chrome on Windows reports no type at all for a HEIC file.
     accept: {
-      'image/*': ['.jpg', '.jpeg', '.webp', '.png'],
+      'image/jpeg': ['.jpg', '.jpeg'],
+      'image/png': ['.png'],
+      'image/webp': ['.webp'],
+      'image/tiff': ['.tif', '.tiff'],
+      'image/heic': ['.heic'],
+      'image/heif': ['.heif'],
       'video/*': ['.mp4', '.mov', '.avi', '.mkv', '.webm'],
     },
     onDrop,
@@ -400,7 +438,8 @@ export function MediaUpload({
           <Upload size={16} />
           <span>Add a photo or video (drag or click)</span>
         </div>
-        <p className="text-xs text-muted-foreground mt-1">After uploading, videos are prepared for playback: this can take a few minutes</p>
+        <p className="text-xs text-muted-foreground mt-1">Photos: JPG, PNG, WebP, TIFF or HEIC</p>
+        <p className="text-xs text-muted-foreground">After uploading, photos and videos are prepared for the site: this can take a few minutes</p>
       </div>
 
       <input type="hidden" name="mediaItems" value={mediaItemsJson} />
@@ -417,9 +456,9 @@ export function MediaUpload({
             <AlertDialogCancel onClick={() => setPendingDuplicate(null)}>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={() => {
               if (!pendingDuplicate) return
-              const { file, key } = pendingDuplicate
+              const file = pendingDuplicate
               setPendingDuplicate(null)
-              uploadFile(file, { forceKey: key })
+              uploadFile(file, { skipDuplicateCheck: true })
             }}>
               Upload anyway
             </AlertDialogAction>

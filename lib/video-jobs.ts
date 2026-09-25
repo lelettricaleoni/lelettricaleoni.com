@@ -15,6 +15,15 @@ import { getStore, CACHE_TIMEOUT_MS, type CacheStore } from './cache'
  * treats it as foreign input, because that is what it is.
  */
 
+/**
+ * Photos are reported through here too, under the same `videojob:v1:` keys and
+ * with the same phases — `transcoding` included, for a photo that is being
+ * encoded. Not a naming oversight: the worker's Upstash token can only SET keys
+ * starting `videojob:`, the storage key already says what kind of thing a job is
+ * about, and a phase this parser does not know is rejected, which reads as "the
+ * worker never touched it". Renaming the file would touch the worker's contract
+ * for no behaviour.
+ */
 export const VIDEO_JOB_PHASES = ['queued', 'downloading', 'transcoding', 'uploading', 'done', 'failed'] as const
 export type VideoJobPhase = (typeof VIDEO_JOB_PHASES)[number]
 
@@ -44,6 +53,17 @@ export const DONE_TTL_S = 5 * 60
 
 export function jobKey(storageKey: string): string {
   return `videojob:v1:${storageKey}`
+}
+
+/** Storage keys the worker reports on: what it takes from staging and turns into something playable or viewable. */
+export const TRACKED_JOB_PREFIXES = [
+  'private/route-videos/',
+  'private/route-photos/',
+  'private/bike-model-photos/',
+] as const
+
+export function isTrackedJobKey(key: unknown): key is string {
+  return typeof key === 'string' && TRACKED_JOB_PREFIXES.some((prefix) => key.startsWith(prefix))
 }
 
 /** Reject anything that is not a status the worker wrote, without throwing. */
