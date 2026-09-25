@@ -13,15 +13,21 @@ import { join, relative } from 'node:path'
  * needed, it needs its own client, not this one.
  */
 const ROOTS = ['lib', 'app', 'components']
-const SKIP = /node_modules|\.next|\.test\.tsx?$/
+const SKIP_DIRS = new Set(['node_modules', '.next'])
 const TRANSACTION = /\.(transaction|begin)\s*\(/
+
+function isSource(name: string): boolean {
+  const isTs = name.endsWith('.ts') || name.endsWith('.tsx')
+  const isTest = name.endsWith('.test.ts') || name.endsWith('.test.tsx')
+  return isTs && !isTest
+}
 
 function sourceFiles(dir: string): string[] {
   return readdirSync(dir).flatMap((name) => {
     const path = join(dir, name)
-    if (SKIP.test(path)) return []
+    if (SKIP_DIRS.has(name)) return []
     if (statSync(path).isDirectory()) return sourceFiles(path)
-    return /\.tsx?$/.test(name) ? [path] : []
+    return isSource(name) ? [path] : []
   })
 }
 
