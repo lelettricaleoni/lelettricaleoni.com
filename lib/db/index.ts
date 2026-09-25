@@ -2,6 +2,7 @@ import { drizzle } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
 import * as schema from './schema'
 import { transactionPoolerUrl } from './pooler'
+import { clientOptions } from './client-options'
 
 const globalForDb = globalThis as unknown as { db: ReturnType<typeof drizzle> }
 
@@ -31,12 +32,9 @@ function createDb() {
   // not honour it, since it can hand a later statement to a different
   // backend than the one that received the startup parameter. The 2-minute
   // ceiling seen in production is set some other way, outside this code.)
-  const client = postgres(transactionPoolerUrl(process.env.DATABASE_URL!), {
-    max: 3,
-    prepare: false,
-    idle_timeout: 20,
-    ssl: { rejectUnauthorized: false },
-  })
+  // The options themselves, and why `max_pipeline: 0` is among them, live in
+  // client-options.ts.
+  const client = postgres(transactionPoolerUrl(process.env.DATABASE_URL!), clientOptions)
   return drizzle(client, { schema })
 }
 
