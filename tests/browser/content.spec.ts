@@ -50,11 +50,12 @@ test('la home non dipende da CDN esterni', async ({ page }) => {
   // Le bandierine della lingua venivano da cdn.jsdelivr.net — lo faceva la
   // libreria per default, senza che il codice lo dicesse — e nessun test se ne
   // accorgeva.
+  const cdnHosts = new Set(['cdn.jsdelivr.net', 'unpkg.com', 'cdnjs.cloudflare.com'])
   const external: string[] = []
   page.on('request', (request) => {
-    if (/(?:cdn\.jsdelivr\.net|unpkg\.com|cdnjs\.cloudflare\.com)/.test(request.url())) {
-      external.push(request.url())
-    }
+    // The exact host, not a substring of the URL: a match anywhere in the string
+    // would also catch a page that merely names a CDN in a query.
+    if (cdnHosts.has(new URL(request.url()).hostname)) external.push(request.url())
   })
   await visit(page, '/it')
   await page.waitForLoadState('load')
