@@ -16,9 +16,8 @@
   Verificato: un TIF vero di Kevin, e sulla VM una foto sintetica (TIFF RGB, PNG trasparente,
   TIFF grigio a 16 bit, un `.jpg` corrotto che resta dov'è). **Da fare**: HEIC e PNG
   trasparente dal pannello, anteprima social con lo Sharing Debugger, tempi della pagina di un
-  percorso con foto in staging prima e dopo. La qualità AVIF (`IMAGE_QUALITY=65`) resta un
-  valore non misurato: a occhio Kevin la trova buona, e ha detto che si potrebbe salire del
-  5-10%, ma ha preferito non toccarla senza confronto su foto vere.
+  percorso con foto in staging prima e dopo. La qualità AVIF (`IMAGE_QUALITY=65`) resta
+  com'è: Kevin la trova buona a occhio e ha chiesto di non toccarla (2026-09-25).
 
 ## Prossimo
 
@@ -30,6 +29,13 @@
 
 ## Un giorno
 
+- **Studiare come usare il viola del logo** (`#795F91`, token `brand-purple`, oggi
+  inutilizzato). Kevin lo vuole nel sito ma non "blu dappertutto": l'idea è usarlo nelle
+  sezioni di **prenotazione e appuntamenti**, quando ci saranno, con uno studio più
+  approfondito di dove e come. Provato e bocciato il 2026-09-25: viola per "il lato bici"
+  (sezione in home, prezzo e categoria sulle card) — Kevin ha tenuto la composizione della
+  sezione ma ha voluto i colori di prima. Il contrasto sul bianco è 5,4:1, quindi regge
+  anche come testo.
 - **Limitare l'area esplorabile della mappa 3D del flyover** a una zona attorno al
   tracciato GPX — oggi si può navigare su tutto il pianeta. Rimandato apposta il
   2026-09-22 alla consegna del profilo altimetrico, per tenere le due feature separate.
