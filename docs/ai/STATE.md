@@ -167,6 +167,22 @@ cercato per primo, prima di alzare `max`. Il giro sistematico sul resto del codi
 (2026-09-16) ha trovato lo stesso pattern in `getRoutesForAdmin` — non ancora esploso solo
 perché la lista admin ha meno visite di quella pubblica — corretto allo stesso modo.
 
+**La vera causa di quei blocchi era il pipelining di `postgres.js`, non l'N+1** (trovata il
+2026-09-24, quando `/manage/bike-options` — e con lei tutto il pannello — è andato in timeout
+a 30 s subito dopo la #154, che aveva portato le query in parallelo di quella pagina da tre a
+quattro). Di default `postgres.js` scrive una seconda query su una connessione ancora
+occupata, fino a 100 in coda; il pooler Supabase in transaction mode non lo regge: la query
+in più non torna mai, la connessione resta incastrata (`active / ClientRead` lato Postgres)
+e, con tutte e tre incastrate, ogni richiesta successiva della stessa istanza aspetta dietro.
+Misurato fuori da Next, contro il pooler: con `max: 3`, quattro query concorrenti si
+bloccano dal secondo giro, dieci non tornano proprio; tre query, `max: 4` o session mode
+vanno bene; `max_pipeline: 1` non basta (la prima query non conta, ne passa comunque una in
+più); **`max_pipeline: 0` risolve** — sei giri da 4 e da 10 query, tutte tornate, le eccedenti
+aspettano nella coda del client. Impostato in `lib/db/client-options.ts`, con un test che lo
+fissa. Un N+1 resta uno spreco, ma non blocca più il sito; e il prefetch dei link della
+sidebar admin (una raffica di 10–14 richieste per pagina caricata) non può più trasformare
+una pagina lenta in un pannello morto.
+
 **`vercel env pull .env.local` distrugge le chiavi locali**, che puntano al database di
 sviluppo mentre Vercel punta alla produzione. Scaricare fuori dal progetto. Quasi tutte le
 variabili su Vercel sono *Secret*: escono come `[SENSITIVE]`, non si rileggono. E sempre
