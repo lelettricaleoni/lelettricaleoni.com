@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, type ComponentProps } from 'react'
 import Image from 'next/image'
 import Lightbox from 'yet-another-react-lightbox'
 import 'yet-another-react-lightbox/styles.css'
@@ -127,6 +127,23 @@ function HlsVideoSlide({ hlsUrl, active }: { hlsUrl: string; active: boolean }) 
  * on a white background (the bikes), where a crop cuts off a wheel.
  */
 export type GalleryFit = 'cover' | 'contain'
+
+/**
+ * The full-screen viewer for a product photo: white, with dark controls. The
+ * viewer is black by default, and a cut-out bike (PNG/AVIF with a transparent
+ * background) comes out black on black. Landscapes keep the default dark viewer.
+ * These are the lightbox's own CSS variables.
+ */
+const LIGHT_VIEWER: NonNullable<ComponentProps<typeof Lightbox>['styles']> = {
+  root: {
+    '--yarl__container_background_color': '#fff',
+    '--yarl__color_backdrop': '#fff',
+    '--yarl__color_button': '#1e3a5f',
+    '--yarl__color_button_active': '#366DA1',
+    '--yarl__color_button_disabled': 'rgba(30, 58, 95, 0.3)',
+    '--yarl__button_filter': 'none',
+  },
+}
 
 function MediaThumb({
   item,
@@ -280,6 +297,7 @@ export function MediaGallery({
         close={() => setLightboxIndex(-1)}
         slides={slides}
         plugins={[Zoom]}
+        styles={fit === 'contain' ? LIGHT_VIEWER : undefined}
         render={{
           slide: ({ slide, offset }) => {
             if (slide.type !== 'hls') return undefined
