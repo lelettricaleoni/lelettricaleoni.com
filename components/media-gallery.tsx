@@ -122,6 +122,13 @@ function HlsVideoSlide({ hlsUrl, active }: { hlsUrl: string; active: boolean }) 
   )
 }
 
+/**
+ * How a photo sits in its frame. `cover` fills the frame and crops, right for
+ * landscapes (the routes). `contain` shows the whole photo, right for a product
+ * on a white background (the bikes), where a crop cuts off a wheel.
+ */
+export type GalleryFit = 'cover' | 'contain'
+
 function MediaThumb({
   item,
   index,
@@ -132,6 +139,7 @@ function MediaThumb({
   priority,
   sizes,
   extraLabel,
+  fit,
 }: {
   item: MediaWithHls
   index: number
@@ -142,11 +150,14 @@ function MediaThumb({
   priority?: boolean
   sizes?: string
   extraLabel?: string
+  fit: GalleryFit
 }) {
   return (
     <button
       onClick={() => onOpen(index)}
-      className={`relative overflow-hidden bg-white hover:opacity-90 transition-opacity focus-visible:ring-2 ring-[#366DA1] outline-none cursor-pointer ${className ?? ''}`}
+      // A whole photo on white has no edge of its own, so `contain` gets a
+      // hairline; a cropped one fills its frame and needs none.
+      className={`relative overflow-hidden bg-white hover:opacity-90 transition-opacity focus-visible:ring-2 ring-[#366DA1] outline-none cursor-pointer ${fit === 'contain' ? 'border' : ''} ${className ?? ''}`}
     >
       {item.mediaType === 'video' ? (
         autoplay ? (
@@ -160,7 +171,7 @@ function MediaThumb({
           alt={item.altText ?? `${title} foto ${index + 1}`}
           fill
           priority={priority}
-          className="object-cover"
+          className={fit === 'contain' ? 'object-contain' : 'object-cover'}
           sizes={sizes ?? '(max-width: 768px) 100vw, 50vw'}
         />
       )}
@@ -173,7 +184,15 @@ function MediaThumb({
   )
 }
 
-export function MediaGallery({ media, title }: { media: MediaWithHls[]; title: string }) {
+export function MediaGallery({
+  media,
+  title,
+  fit = 'cover',
+}: {
+  media: MediaWithHls[]
+  title: string
+  fit?: GalleryFit
+}) {
   const [lightboxIndex, setLightboxIndex] = useState(-1)
 
   if (media.length === 0) return null
@@ -193,6 +212,7 @@ export function MediaGallery({ media, title }: { media: MediaWithHls[]; title: s
           autoplay
           title={title}
           onOpen={setLightboxIndex}
+          fit={fit}
           className="w-full aspect-video rounded-xl"
           priority
           sizes="(max-width: 640px) calc(100vw - 6rem), (max-width: 1152px) calc(100vw - 10rem), 992px"
@@ -209,6 +229,7 @@ export function MediaGallery({ media, title }: { media: MediaWithHls[]; title: s
               autoplay
               title={title}
               onOpen={setLightboxIndex}
+          fit={fit}
               className={i === 0 ? 'rounded-l-xl' : 'rounded-r-xl'}
               priority={i === 0}
               sizes="50vw"
@@ -225,6 +246,7 @@ export function MediaGallery({ media, title }: { media: MediaWithHls[]; title: s
             autoplay
             title={title}
             onOpen={setLightboxIndex}
+          fit={fit}
             className="col-span-2 row-span-2 rounded-l-xl"
             priority
             sizes="(max-width: 768px) 66vw, 50vw"
@@ -235,6 +257,7 @@ export function MediaGallery({ media, title }: { media: MediaWithHls[]; title: s
             autoplay
             title={title}
             onOpen={setLightboxIndex}
+          fit={fit}
             className="rounded-tr-xl"
             sizes="(max-width: 768px) 34vw, 25vw"
           />
@@ -244,6 +267,7 @@ export function MediaGallery({ media, title }: { media: MediaWithHls[]; title: s
             autoplay
             title={title}
             onOpen={setLightboxIndex}
+          fit={fit}
             className="rounded-br-xl"
             sizes="(max-width: 768px) 34vw, 25vw"
             extraLabel={media.length > 3 ? `+${media.length - 3}` : undefined}
