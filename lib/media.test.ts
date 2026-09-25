@@ -106,12 +106,15 @@ describe('resolveReadyMedia', () => {
 })
 
 describe('deleteMediaFiles', () => {
-  it('removes a staged photo\'s master and link preview along with its source', async () => {
+  it('removes a staged photo\'s master, link preview and renditions along with its source', async () => {
     await deleteMediaFiles({ storageKey: 'private/route-photos/r1/u1.jpg', mediaType: 'photo' })
     expect(deleteR2Object.mock.calls.map((c) => c[0]).sort()).toEqual([
       'private/route-photos/r1/u1.jpg',
       'public/route-photos/r1/u1.avif',
       'public/route-photos/r1/u1.share.jpg',
+      'public/route-photos/r1/u1.w1600.avif',
+      'public/route-photos/r1/u1.w480.avif',
+      'public/route-photos/r1/u1.w960.avif',
     ])
   })
 

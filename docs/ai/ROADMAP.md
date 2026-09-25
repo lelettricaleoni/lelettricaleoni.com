@@ -18,6 +18,10 @@
   trasparente dal pannello, anteprima social con lo Sharing Debugger, tempi della pagina di un
   percorso con foto in staging prima e dopo. La qualità AVIF (`IMAGE_QUALITY=65`) resta
   com'è: Kevin la trova buona a occhio e ha chiesto di non toccarla (2026-09-25).
+  **Fatto il 2026-09-25 (soluzione 3):** il worker scrive anche tre versioni AVIF
+  ridimensionate accanto a ogni master (worker PR #10, con il recupero dei master esistenti)
+  e il sito le sceglie con un loader suo (#176), perché l'ottimizzatore di Vercel non
+  ridimensiona l'AVIF. Verificato in produzione: le card caricano `…w480.avif`.
 
 ## Prossimo
 

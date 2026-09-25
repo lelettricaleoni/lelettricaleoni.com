@@ -84,7 +84,11 @@ arbitrario passato attraverso quella chiave non viene eseguito, resta testo iner
 
 **Foto: stessa strada dei video, coda propria** (`image-process`). Sorgenti in
 `private/route-photos/` e `private/bike-model-photos/`, master AVIF in `public/…/<uuid>.avif`
-più un piccolo JPEG `.share.jpg` per le anteprime social (che non leggono AVIF). Lo stato usa
+più un piccolo JPEG `.share.jpg` per le anteprime social (che non leggono AVIF) e tre versioni
+AVIF ridimensionate `.w480/.w960/.w1600.avif`, sempre tutte e tre (il sito sceglie con
+`lib/photo-loader.ts`, mai dall'ottimizzatore di Vercel: **non ridimensiona i sorgenti AVIF**,
+restituisce l'originale da 2400 px a qualunque larghezza — misurato 2026-09-25; un job di
+recupero, `image-renditions`, le ha create per i master esistenti). Lo stato usa
 il prefisso `videojob:` dei video perché il token del worker scrive solo lì. Le foto già
 pubblicate (chiave senza `private/`) non sono mai passate dal worker e restano com'erano.
 `/api/upload` è solo GPX: le foto vanno con PUT presigned e il duplicato si controlla nel
