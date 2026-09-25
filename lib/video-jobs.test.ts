@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import {
-  jobKey, parseStatus, readJobStatus, type VideoJobStatus,
+  jobKey, parseStatus, readJobStatus, isTrackedJobKey, type VideoJobStatus,
 } from './video-jobs'
 import type { CacheStore } from './cache'
 
@@ -71,6 +71,22 @@ describe('parseStatus', () => {
     expect(parseStatus({ phase: 'done', sha256: 'not-a-hash' })?.sha256).toBeUndefined()
     expect(parseStatus({ phase: 'done', sha256: 'A'.repeat(64) })?.sha256).toBeUndefined()
     expect(parseStatus({ phase: 'done', sha256: 123 })?.sha256).toBeUndefined()
+  })
+})
+
+describe('isTrackedJobKey', () => {
+  it('accepts the keys the worker takes from staging: videos and photos', () => {
+    expect(isTrackedJobKey('private/route-videos/r/u.mp4')).toBe(true)
+    expect(isTrackedJobKey('private/route-photos/r/u.heic')).toBe(true)
+    expect(isTrackedJobKey('private/bike-model-photos/m/u.tif')).toBe(true)
+  })
+
+  it('refuses anything else, so the panel cannot be made to read arbitrary cache keys', () => {
+    expect(isTrackedJobKey('route-photos/r/u.jpg')).toBe(false)
+    expect(isTrackedJobKey('__worker__')).toBe(false)
+    expect(isTrackedJobKey('hls:v2:private/route-videos/r/u.mp4')).toBe(false)
+    expect(isTrackedJobKey(42)).toBe(false)
+    expect(isTrackedJobKey(undefined)).toBe(false)
   })
 })
 
