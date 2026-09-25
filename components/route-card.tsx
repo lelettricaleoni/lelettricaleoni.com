@@ -4,6 +4,7 @@ import { Ruler, TrendingUp, Clock } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { BikeTypeIcon, bikeTypeBadgeClass } from '@/components/bike-type-icon'
 import { DifficultyBadge } from '@/components/difficulty-badge'
+import { CardTagRow } from '@/components/card-tag-row'
 import { shortId } from '@/lib/utils'
 import type { Route, RouteTranslation } from '@/lib/db'
 
@@ -60,36 +61,31 @@ export function RouteCard({ route, translation, media, lang, dict }: RouteCardPr
     >
       <div className="relative h-48 bg-[#c8dae8] overflow-hidden">
         {media}
-        <DifficultyBadge
-          difficulty={route.difficulty}
-          label={d[`difficulty_${route.difficulty}` as keyof typeof d] ?? route.difficulty}
-          className="absolute top-3 right-3 shadow-sm z-10"
-        />
       </div>
 
       <h3 className="px-4 font-bold text-[#1e3a5f] line-clamp-2 group-hover:text-[#366DA1] transition-colors">
         {translation.name}
       </h3>
 
-      {/* One line, scrolled by hand. A marquee would make the reader wait for
-          the tag they want to come round again, and would have to be turned
-          off under prefers-reduced-motion anyway. The fade says there is more
-          without moving; pan-x keeps a sideways drag from reading as a tap on
-          the link. */}
-      <div className="relative px-4 after:pointer-events-none after:absolute after:inset-y-0 after:right-4 after:w-8 after:bg-gradient-to-l after:from-card after:to-transparent">
-        <div className="flex w-full min-w-0 gap-1.5 overflow-x-auto [scrollbar-width:none] [touch-action:pan-x] [&::-webkit-scrollbar]:hidden">
-          {route.bikeTypes.map((type) => (
-            <Badge
-              key={type}
-              variant="outline"
-              className={`shrink-0 text-xs flex items-center gap-1 font-medium ${bikeTypeBadgeClass(type)}`}
-            >
-              <BikeTypeIcon type={type} size={12} />
-              {type}
-            </Badge>
-          ))}
-        </div>
-      </div>
+      {/* Difficulty leads the row: it is the tag a rider checks first, and it
+          used to sit on the photo. */}
+      <CardTagRow>
+        <DifficultyBadge
+          difficulty={route.difficulty}
+          label={d[`difficulty_${route.difficulty}` as keyof typeof d] ?? route.difficulty}
+          className="shrink-0"
+        />
+        {route.bikeTypes.map((type) => (
+          <Badge
+            key={type}
+            variant="outline"
+            className={`shrink-0 text-xs flex items-center gap-1 font-medium ${bikeTypeBadgeClass(type)}`}
+          >
+            <BikeTypeIcon type={type} size={12} />
+            {type}
+          </Badge>
+        ))}
+      </CardTagRow>
 
       <div className="px-4 pb-4">
         <div className="flex rounded-lg border bg-muted/30 overflow-hidden divide-x divide-border">
