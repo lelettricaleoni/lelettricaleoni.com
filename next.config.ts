@@ -5,6 +5,13 @@ const nextConfig: NextConfig = {
   experimental: {
     globalNotFound: true,
   },
+  // The social image reads the logo from disk. On Vercel the files in public/
+  // are served by the CDN and are not in the function's bundle, so without this
+  // the read fails with ENOENT and /opengraph-image answers 500 — as it did from
+  // 2026-09-14, on every page, without a single preview showing an image.
+  outputFileTracingIncludes: {
+    '/opengraph-image': ['./public/svg/LogoLelettrica_full.svg'],
+  },
   cacheLife: {
     // Matches the ~30s in-memory TTL lib/flags.ts already uses, so a
     // kill-switch reaches visitors about as fast as it does today.
