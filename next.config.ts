@@ -69,6 +69,12 @@ const nextConfig: NextConfig = {
     // 68 per le miniature delle card, che sono rese a ~313px; le altre
     // per le immagini a piena pagina.
     qualities: [68, 75, 80, 82, 100],
+    // The photos the worker makes are AVIF masters, 2400 px wide. Vercel's
+    // optimizer hands back an AVIF source untouched — same 2400 px, same bytes,
+    // whatever `w` asks for — unless AVIF is among the output formats. Left at the
+    // default (WebP only), a 340 px card downloaded 310 KB and the browser shrank
+    // it seven times in one step, leaving jagged edges on thin lines like spokes.
+    formats: ['image/avif', 'image/webp'],
     remotePatterns: [
       {
         protocol: 'https',
