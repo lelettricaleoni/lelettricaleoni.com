@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm'
 import { db, media } from '@/lib/db'
 import type { BikeModel } from '@/lib/db'
-import { resolveHlsUrl } from '@/lib/media'
+import { resolveReadyMedia } from '@/lib/media'
 import { CardMedia } from './card-media'
 
 interface BikeCardMediaAsyncProps {
@@ -21,14 +21,7 @@ export async function BikeCardMediaAsync({ model, title }: BikeCardMediaAsyncPro
     .where(eq(media.bikeModelId, model.id))
     .orderBy(media.displayOrder)
 
-  const readyMedia = await Promise.all(
-    mediaItems.map(async (m) => {
-      if (m.mediaType !== 'video') return m
-      const hlsUrl = await resolveHlsUrl(m.storageKey)
-      return hlsUrl ? { ...m, hlsUrl } : null
-    })
-  )
-  const coverMedia = readyMedia.find(Boolean) ?? undefined
+  const [coverMedia] = await resolveReadyMedia(mediaItems)
 
   return <CardMedia media={coverMedia} title={title} />
 }

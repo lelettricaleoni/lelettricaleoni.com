@@ -82,6 +82,15 @@ e torna indietro da sola se il container non parte sano. Verificato dal vivo: un
 arbitrario passato attraverso quella chiave non viene eseguito, resta testo inerte per
 `deploy.sh`.
 
+**Foto: stessa strada dei video, coda propria** (`image-process`). Sorgenti in
+`private/route-photos/` e `private/bike-model-photos/`, master AVIF in `public/…/<uuid>.avif`
+più un piccolo JPEG `.share.jpg` per le anteprime social (che non leggono AVIF). Lo stato usa
+il prefisso `videojob:` dei video perché il token del worker scrive solo lì. Le foto già
+pubblicate (chiave senza `private/`) non sono mai passate dal worker e restano com'erano.
+`/api/upload` è solo GPX: le foto vanno con PUT presigned e il duplicato si controlla nel
+browser. Spec e correzioni: `docs/superpowers/specs/2026-09-23-image-processing-worker-design.md`
+e il piano gemello.
+
 La coda è **ricostruibile, non durevole**: non può esserlo più dei dati che serve, e la
 verità sta nello storage.
 Il token Upstash del worker può **solo `SET` su `videojob:*`** e non può leggere: rubato

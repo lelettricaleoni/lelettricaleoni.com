@@ -17,7 +17,7 @@ async function main() {
 
   const { db, media, routes } = await import('../lib/db')
   const { eq, isNull } = await import('drizzle-orm')
-  const { mediaPublicUrl } = await import('../lib/media-client')
+  const { mediaPublicUrl, isStagedPhotoKey } = await import('../lib/media-client')
   const { sha256Hex } = await import('../lib/hash')
 
   async function hashUrl(key: string): Promise<string> {
@@ -28,7 +28,9 @@ async function main() {
   }
 
   const mediaRows = await db.select().from(media).where(isNull(media.sha256))
-  const photoRows = mediaRows.filter((m) => m.mediaType === 'photo')
+  // A staged photo's file is the worker's AVIF master, not the source that was
+  // uploaded, so hashing it would record a value no future upload can ever match.
+  const photoRows = mediaRows.filter((m) => m.mediaType === 'photo' && !isStagedPhotoKey(m.storageKey))
   console.log(`media senza sha256: ${mediaRows.length} (${photoRows.length} foto, resto video esclusi — vedi spec)`)
   for (const m of photoRows) {
     try {

@@ -41,6 +41,83 @@ export function hlsUrl(privateKey: string, manifest: string = HLS_MANIFESTS[1]):
 }
 
 /**
+ * Photos are uploaded to a staging prefix and the worker
+ * (lelettricaleoni/videoStream-bucketWorker, imaging.py) turns each one into an
+ * AVIF master under the matching `public/` key. **The key mapping and the
+ * extension list below are a contract with that file**: change one side and you
+ * must change the other; both test suites pin the same pairs.
+ *
+ * A photo uploaded before the worker handled photos sits directly at its public
+ * key. It is recognised by *not* being staged, and served exactly as before —
+ * no data migration, and nothing to backfill.
+ */
+export const PHOTO_STAGING_PREFIXES = ['private/route-photos/', 'private/bike-model-photos/'] as const
+
+/** Formats the worker can decode; anything else would sit in staging forever. */
+export const PHOTO_SOURCE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp', 'tif', 'tiff', 'heic', 'heif'] as const
+
+export type PhotoSourceExtension = (typeof PHOTO_SOURCE_EXTENSIONS)[number]
+
+const PHOTO_CONTENT_TYPES: Record<PhotoSourceExtension, string> = {
+  jpg: 'image/jpeg',
+  jpeg: 'image/jpeg',
+  png: 'image/png',
+  webp: 'image/webp',
+  tif: 'image/tiff',
+  tiff: 'image/tiff',
+  heic: 'image/heic',
+  heif: 'image/heif',
+}
+
+export function isStagedPhotoKey(storageKey: string): boolean {
+  return PHOTO_STAGING_PREFIXES.some((prefix) => storageKey.startsWith(prefix))
+}
+
+/** private/route-photos/{owner}/{uuid}.jpg → public/route-photos/{owner}/{uuid}.avif; any other key is already public. */
+export function photoPublicKey(storageKey: string): string {
+  if (!isStagedPhotoKey(storageKey)) return storageKey
+  const dot = storageKey.lastIndexOf('.')
+  const stem = dot > storageKey.lastIndexOf('/') ? storageKey.slice(0, dot) : storageKey
+  return 'public/' + stem.slice('private/'.length) + '.avif'
+}
+
+/** Public URL of a photo as it will be served once ready. Says nothing about whether it is ready. */
+export function photoUrl(storageKey: string): string {
+  return mediaPublicUrl(photoPublicKey(storageKey))
+}
+
+/**
+ * The small JPEG the worker writes beside a staged photo's master, for link
+ * previews only: WhatsApp, Facebook and LinkedIn do not read AVIF. A photo that
+ * predates the worker is already a JPEG, PNG or WebP and stands in for itself.
+ */
+export function photoShareKey(storageKey: string): string {
+  const key = photoPublicKey(storageKey)
+  return isStagedPhotoKey(storageKey) ? key.replace(/\.avif$/, '.share.jpg') : key
+}
+
+export function photoShareUrl(storageKey: string): string {
+  return mediaPublicUrl(photoShareKey(storageKey))
+}
+
+/** Lower-cased extension of an uploaded file if the worker can decode it, otherwise null. */
+export function photoSourceExtension(fileName: string): PhotoSourceExtension | null {
+  const dot = fileName.lastIndexOf('.')
+  if (dot === -1) return null
+  const ext = fileName.slice(dot + 1).toLowerCase()
+  return (PHOTO_SOURCE_EXTENSIONS as readonly string[]).includes(ext) ? (ext as PhotoSourceExtension) : null
+}
+
+/**
+ * Derived from the extension, not the browser's `file.type`: Chrome on Windows
+ * reports an empty type for a HEIC file, and the type is signed into the upload
+ * URL, so both sides have to agree on exactly one value.
+ */
+export function photoContentType(ext: PhotoSourceExtension): string {
+  return PHOTO_CONTENT_TYPES[ext]
+}
+
+/**
  * A media row with its HLS manifest already resolved on the server.
  *
  * Which manifest exists depends on when the worker processed the video, and

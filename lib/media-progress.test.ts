@@ -6,12 +6,41 @@ const job = (phase: VideoJobStatus['phase'], extra: Partial<VideoJobStatus> = {}
   ({ phase, updatedAt: 0, ...extra })
 
 describe('mediaProgress — photo', () => {
-  it('uses the whole bar for the upload', () => {
-    expect(mediaProgress('photo', { progress: 40 })?.percent).toBe(40)
+  it('the upload fills the first half, like a video: the worker still has to process it', () => {
+    expect(mediaProgress('photo', { progress: 40 })?.percent).toBe(20)
+    expect(mediaProgress('photo', { progress: 100 })?.percent).toBe(50)
   })
 
-  it('disappears once uploaded: nothing left to wait for', () => {
+  it('says nothing about a photo the panel merely loaded', () => {
+    // Either it predates the worker or it was finished long ago (a finished
+    // job's status only lives a few minutes): nothing left to wait for.
     expect(mediaProgress('photo', undefined)).toBeNull()
+  })
+
+  it('covers the gap between upload and worker for a photo uploaded just now', () => {
+    const p = mediaProgress('photo', undefined, undefined, { awaiting: true })
+    expect(p).toMatchObject({ percent: 50, tone: 'working', active: true })
+    expect(p!.label).toContain('Waiting')
+  })
+
+  it('follows the worker like a video does, and ends ready', () => {
+    expect(mediaProgress('photo', undefined, job('downloading'))?.label).toBe('Downloading')
+    expect(mediaProgress('photo', undefined, job('uploading'))?.label).toBe('Saving')
+    expect(mediaProgress('photo', undefined, job('done'))).toMatchObject({
+      percent: 100, tone: 'ready', active: false,
+    })
+  })
+
+  it('does not claim 0% for a step that reports no percentage', () => {
+    // The worker's photo step is a single encode: it publishes the phase and no number.
+    expect(mediaProgress('photo', undefined, job('transcoding'))?.label).toBe('Processing')
+    expect(mediaProgress('photo', undefined, job('transcoding', { progress: 0 }))?.label).toBe('Processing 0%')
+  })
+
+  it('shows a failure with its reason', () => {
+    expect(mediaProgress('photo', undefined, job('failed', { error: 'cannot identify image file' }))).toMatchObject({
+      tone: 'error', active: false, detail: 'cannot identify image file',
+    })
   })
 })
 

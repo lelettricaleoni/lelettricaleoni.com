@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm'
 import { db, media } from '@/lib/db'
 import type { Route } from '@/lib/db'
-import { resolveHlsUrl } from '@/lib/media'
+import { resolveReadyMedia } from '@/lib/media'
 import { loadGpxPoints } from '@/lib/route-gpx'
 import { gpxPointsToSvgPath, gpxPointsToMercatorPath, gpxBboxCenter } from '@/lib/gpx-svg'
 import { CardMedia } from './card-media'
@@ -11,7 +11,7 @@ interface RouteCardMediaAsyncProps {
   routeName: string
 }
 
-// Resolves cover media (skipping videos whose HLS isn't ready) and the GPX map preview —
+// Resolves cover media (skipping videos whose HLS isn't ready and photos the worker hasn't finished) and the GPX map preview —
 // the two checks that hit MinIO/R2 and can be slow or unreachable. Rendered inside a
 // Suspense boundary per card so a slow/down media backend can't block the rest of the page.
 export async function RouteCardMediaAsync({ route, routeName }: RouteCardMediaAsyncProps) {
@@ -21,14 +21,7 @@ export async function RouteCardMediaAsync({ route, routeName }: RouteCardMediaAs
     .where(eq(media.routeId, route.id))
     .orderBy(media.displayOrder)
 
-  const readyMedia = await Promise.all(
-    mediaItems.map(async (m) => {
-      if (m.mediaType !== 'video') return m
-      const hlsUrl = await resolveHlsUrl(m.storageKey)
-      return hlsUrl ? { ...m, hlsUrl } : null
-    })
-  )
-  const coverMedia = readyMedia.find(Boolean) ?? undefined
+  const [coverMedia] = await resolveReadyMedia(mediaItems)
 
   // Computed whether or not there's a photo/video: the list-wide media↔map
   // toggle needs every card able to show its track, not only the ones that

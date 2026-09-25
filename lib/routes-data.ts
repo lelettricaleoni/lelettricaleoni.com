@@ -1,7 +1,7 @@
 import { eq, and, asc, sql } from 'drizzle-orm'
 import { cacheLife, cacheTag } from 'next/cache'
 import { db, routes, routeTranslations, routeBikeCategories, media } from '@/lib/db'
-import { resolveHlsUrl } from '@/lib/media'
+import { resolveReadyMedia } from '@/lib/media'
 import { loadGpxPoints } from '@/lib/route-gpx'
 
 type Locale = 'it' | 'en' | 'de'
@@ -117,18 +117,14 @@ export async function getRouteDetailData(
     m.mediaType === 'video' ? mediaFlags.routeVideos : mediaFlags.routePhotos
   )
 
-  // Exclude videos the worker hasn't finished, and carry the resolved manifest
-  // URL down so the client doesn't have to guess which one exists.
-  // resolveHlsUrl and loadGpxPoints already have their own durable,
-  // near-permanent Upstash cache (lib/cache.ts) — this "use cache" wrapper is
-  // a thin, short-lived layer on top, not a replacement for it.
-  const allMedia = (await Promise.all(
-    permittedMedia.map(async (m) => {
-      if (m.mediaType !== 'video') return m
-      const hlsUrl = await resolveHlsUrl(m.storageKey)
-      return hlsUrl ? { ...m, hlsUrl } : null
-    })
-  )).filter((m): m is NonNullable<typeof m> => m !== null)
+  // Exclude what the worker hasn't finished — videos and photos alike — and
+  // carry the resolved manifest URL down so the client doesn't have to guess
+  // which one exists. resolveReadyMedia and loadGpxPoints already have their own
+  // durable, near-permanent Upstash cache (lib/cache.ts) — this "use cache"
+  // wrapper is a thin, short-lived layer on top, not a replacement for it. It
+  // is also why a photo that has just finished appears within its 30-120
+  // seconds, without anything invalidating the tag.
+  const allMedia = await resolveReadyMedia(permittedMedia)
 
   const gpxPoints =
     mediaFlags.routeFlyover && route.gpxKey

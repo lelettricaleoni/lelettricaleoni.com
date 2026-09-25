@@ -127,3 +127,26 @@ quella che già esiste.
   perde mai la sorgente ad alta qualità", ma è esattamente lo spazio che questo lavoro
   vuole recuperare, e per un'immagine (a differenza di un video) non c'è un caso d'uso
   concreto per rigenerare con parametri diversi in futuro.
+
+## Aggiornamento del 2026-09-24 — cosa il piano ha corretto
+
+Scrivendo il piano (`docs/superpowers/plans/2026-09-23-image-processing-worker.md`) e
+verificando i punti contro il codice e contro un'immagine Alpine reale, cinque affermazioni di
+questa spec sono risultate sbagliate o incomplete. Vale il piano; questa nota serve a non
+farle riproporre.
+
+- **"Le foto vanno dritte su R2 con un URL presigned"** — falso: passano da `POST /api/upload`,
+  una route Vercel con limite di 4,5 MB sul corpo. Il TIF da 120 MB non passa nemmeno oggi.
+  Le foto passano al PUT presigned diretto come i video, e il duplicato bloccante si sposta
+  nel browser.
+- **`imagejob:v1:<key>` e la fase `processing`** — il token Upstash del worker scrive solo
+  `videojob:*`, e `parseStatus` scarta le fasi che non conosce: si usa `videojob:v1:<key>` con
+  le fasi dei video (`transcoding` incluso).
+- **"Da verificare se ffmpeg ha AVIF/HEIC"** — verificato la strada alternativa: Pillow 12.3.0
+  + pillow-heif 1.8.0 hanno wheel musllinux per amd64 e arm64, funzionano su `python:3.12-alpine`,
+  nessuna modifica al `Dockerfile`.
+- **Cancellare `storageKey` basta** — non più: per una foto in staging lascerebbe il master
+  AVIF su R2 per sempre (`deleteMediaFiles`).
+- **Un solo master AVIF** — resta la decisione, con un'aggiunta proposta: un piccolo JPEG per
+  le anteprime social, perché WhatsApp e Facebook non leggono AVIF in `og:image`
+  (decisione D2 del piano, da confermare).

@@ -11,7 +11,7 @@ import { MediaGallery } from '@/components/media-gallery'
 import { BikeViewTracker } from '@/components/bike-view-tracker'
 import { BikeContactButtons } from '@/components/bike-contact-buttons'
 import { FlagsExplorer } from '@/components/flags-explorer'
-import { r2PublicUrl } from '@/lib/r2'
+import { photoShareUrl } from '@/lib/media-client'
 import { getFlags } from '@/lib/flags'
 import { getBikeModelDetailData } from '@/lib/bikes-data'
 import { getSuggestedRoutesForBike } from '@/lib/routes-data'
@@ -40,7 +40,7 @@ export async function generateMetadata({
   const title = translation?.name ?? id
   const description = translation?.description?.slice(0, 155) ?? ''
   const coverPhoto = allMedia.find((m) => m.mediaType === 'photo')
-  const ogImage = coverPhoto ? r2PublicUrl(coverPhoto.storageKey) : `${siteUrl}/opengraph-image`
+  const ogImage = coverPhoto ? photoShareUrl(coverPhoto.storageKey) : `${siteUrl}/opengraph-image`
 
   return {
     title,
@@ -91,7 +91,7 @@ export default async function BikeDetailPage({
     name: translation?.name ?? id,
     description: translation?.description,
     url: `${siteUrl}/${lang}/bikes/${id}`,
-    image: coverPhoto ? r2PublicUrl(coverPhoto.storageKey) : undefined,
+    image: coverPhoto ? photoShareUrl(coverPhoto.storageKey) : undefined,
     category: category.name,
     additionalProperty: [
       ...(model.batteryRange ? [{ '@type': 'PropertyValue', name: 'Battery range', value: model.batteryRange }] : []),
