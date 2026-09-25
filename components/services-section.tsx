@@ -14,7 +14,7 @@ interface ServicesSectionProps {
 
 export function ServicesSection({ dict }: ServicesSectionProps) {
   return (
-    <section id="servizi" className="py-20 bg-white">
+    <section id="servizi" className="py-20">
       <SectionViewTracker name="services" />
       <div className="max-w-5xl mx-auto px-4 sm:px-6">
         <h2 className="text-3xl sm:text-4xl font-bold text-center text-foreground mb-12">

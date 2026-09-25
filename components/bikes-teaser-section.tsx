@@ -47,13 +47,15 @@ export function BikesTeaserSection({ lang, dict }: BikesTeaserSectionProps) {
   ]
 
   return (
-    <section id="bikes-teaser" className="bg-primary/5 py-20 sm:py-28">
+    <section id="bikes-teaser" className="py-20 sm:py-28">
       <SectionViewTracker name="bikes_teaser" />
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 grid gap-10 md:grid-cols-2 md:gap-16 md:items-center">
-        <div>
+        {/* Centred on a phone like every other section of the page, left-aligned
+            from `md` up, where it sits beside the index. */}
+        <div className="text-center md:text-left">
           <h2 className="text-3xl sm:text-4xl font-bold text-foreground mb-3">{d.title}</h2>
-          <p className="text-muted-foreground max-w-md mb-8">{d.copy}</p>
+          <p className="text-muted-foreground max-w-md mx-auto md:mx-0 mb-8">{d.copy}</p>
           <Button asChild size="lg" className="font-semibold px-8">
             <Link href={`/${lang}/bikes`}>{d.cta}</Link>
           </Button>
@@ -61,7 +63,7 @@ export function BikesTeaserSection({ lang, dict }: BikesTeaserSectionProps) {
 
         <ul className="grid grid-cols-2 border-y border-primary/20 [&>li:nth-child(odd)]:border-r [&>li:nth-child(odd)]:border-primary/20 [&>li:nth-child(n+3)]:border-t [&>li:nth-child(n+3)]:border-primary/20">
           {families.map(({ icon: Icon, label }) => (
-            <li key={label} className="flex flex-col items-start gap-3 px-5 py-6">
+            <li key={label} className="flex flex-col items-center gap-3 px-3 py-6 text-center md:items-start md:px-5 md:text-left">
               <Icon size={26} strokeWidth={1.75} className="text-primary" aria-hidden />
               <span className="font-semibold text-foreground leading-snug">{label}</span>
             </li>

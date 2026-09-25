@@ -31,7 +31,7 @@ const MAPS_DIRECTIONS_URL =
 
 export function MapSection({ dict }: MapSectionProps) {
   return (
-    <section id="contatti" className="py-20 bg-white">
+    <section id="contatti" className="py-20">
       <SectionViewTracker name="contacts" />
       <div className="max-w-5xl mx-auto px-4 sm:px-6">
         <h2 className="text-3xl sm:text-4xl font-bold text-center text-foreground mb-12">

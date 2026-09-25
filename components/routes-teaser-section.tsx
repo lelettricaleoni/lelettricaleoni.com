@@ -39,7 +39,7 @@ export function RoutesTeaserSection({ lang, dict }: RoutesTeaserSectionProps) {
   const d = dict.routes_teaser
 
   return (
-    <section id="routes-teaser" className="relative overflow-hidden bg-slate-50 py-20 sm:py-28">
+    <section id="routes-teaser" className="relative overflow-hidden py-20 sm:py-28">
       <SectionViewTracker name="routes_teaser" />
 
       <svg

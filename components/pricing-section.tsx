@@ -81,7 +81,7 @@ export function PricingSection({ dict }: { dict: PricingDict }) {
   const p = dict.pricing
 
   return (
-    <section id="prezzi" className="py-20 bg-slate-50">
+    <section id="prezzi" className="py-20">
       <SectionViewTracker name="pricing" />
       <div className="max-w-5xl mx-auto px-4 sm:px-6">
         <div className="text-center mb-12">
