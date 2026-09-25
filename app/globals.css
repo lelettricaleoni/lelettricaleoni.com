@@ -47,8 +47,6 @@
   --color-ring: hsl(var(--ring));
   --color-brand-blue: #366DA1;
   --color-brand-purple: #795F91;
-  /* A whisper of the logo violet, for a section background. */
-  --color-brand-purple-soft: #f8f6fa;
   --color-brand-dark: #3D3D3B;
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);

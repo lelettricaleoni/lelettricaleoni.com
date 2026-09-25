@@ -38,18 +38,18 @@ export function BikeCard({ model, translation, category, routeCategory, media, l
         {media}
       </div>
 
-      <h3 className="px-4 font-bold text-[#1e3a5f] line-clamp-2 group-hover:text-brand-purple transition-colors">
+      <h3 className="px-4 font-bold text-[#1e3a5f] line-clamp-2 group-hover:text-[#366DA1] transition-colors">
         {translation.name}
       </h3>
 
       <CardTagRow>
-        <Badge variant="secondary" className="shrink-0 text-xs border-transparent bg-brand-purple/10 text-brand-purple font-semibold">{category.name}</Badge>
+        <Badge variant="secondary" className="shrink-0 text-xs">{category.name}</Badge>
         {routeCategory && <Badge variant="outline" className="shrink-0 text-xs">{routeCategory.name}</Badge>}
       </CardTagRow>
 
       <div className="px-4 pb-4">
         <p className="text-sm text-muted-foreground">
-          {d.from_price} <span className="font-bold text-brand-purple">€{priceFrom}</span> {d.price_per_day}
+          {d.from_price} <span className="font-bold text-[#1e3a5f]">€{priceFrom}</span> {d.price_per_day}
         </p>
       </div>
     </Link>
