@@ -9,21 +9,33 @@
 
 ## Adesso
 
-- **Elaborazione delle foto sul worker** — le foto caricate dal pannello diventano un
-  master AVIF prodotto dal worker, con sorgente cancellato e SHA-256 pubblicato. Spec e piano
-  in `docs/superpowers/specs/2026-09-23-image-processing-worker-design.md` e
-  `docs/superpowers/plans/2026-09-23-image-processing-worker.md` (PR #158). Sito: fatti i
-  primi due task (`lib/media-client.ts`, `lib/media.ts`), il resto e tutta la parte del
-  worker non ancora. Il piano ha sei domande aperte che aspettano Kevin (JPEG per le
-  anteprime social, `R2_BUCKETS` sulla VM, foto vere per la calibrazione, duplicati nel
-  browser…), e il merge ha un ordine obbligato: prima il worker, poi il sito.
+- **Elaborazione delle foto sul worker: in produzione dal 2026-09-25**, resta la verifica.
+  Le foto caricate dal pannello diventano un master AVIF prodotto dal worker, con sorgente
+  cancellato e SHA-256 pubblicato (worker PR #9, sito #162; spec e piano in
+  `docs/superpowers/specs/2026-09-23-image-processing-worker-design.md` e nel piano gemello).
+  Verificato: un TIF vero di Kevin, e sulla VM una foto sintetica (TIFF RGB, PNG trasparente,
+  TIFF grigio a 16 bit, un `.jpg` corrotto che resta dov'è). **Da fare**: HEIC e PNG
+  trasparente dal pannello, anteprima social con lo Sharing Debugger, tempi della pagina di un
+  percorso con foto in staging prima e dopo. La qualità AVIF (`IMAGE_QUALITY=65`) resta
+  com'è: Kevin la trova buona a occhio e ha chiesto di non toccarla (2026-09-25).
 
 ## Prossimo
 
-_(niente in coda)_
+- **Mettere a punto Google Search Console e Analytics**, dopo il giro di implementazioni in
+  corso (chiesto da Kevin il 2026-09-25). Su Analytics: costruire qualche dashboard. Su
+  Search Console: oggi è in disordine ("un bel casino") — prima un inventario di cosa c'è
+  (proprietà, sitemap, pagine indicizzate, errori) e solo dopo si tocca qualcosa. Gli MCP
+  `google-search-console` e `google-analytics` sono già registrati sulla macchina di Kevin.
 
 ## Un giorno
 
+- **Studiare come usare il viola del logo** (`#795F91`, token `brand-purple`, oggi
+  inutilizzato). Kevin lo vuole nel sito ma non "blu dappertutto": l'idea è usarlo nelle
+  sezioni di **prenotazione e appuntamenti**, quando ci saranno, con uno studio più
+  approfondito di dove e come. Provato e bocciato il 2026-09-25: viola per "il lato bici"
+  (sezione in home, prezzo e categoria sulle card) — Kevin ha tenuto la composizione della
+  sezione ma ha voluto i colori di prima. Il contrasto sul bianco è 5,4:1, quindi regge
+  anche come testo.
 - **Limitare l'area esplorabile della mappa 3D del flyover** a una zona attorno al
   tracciato GPX — oggi si può navigare su tutto il pianeta. Rimandato apposta il
   2026-09-22 alla consegna del profilo altimetrico, per tenere le due feature separate.
