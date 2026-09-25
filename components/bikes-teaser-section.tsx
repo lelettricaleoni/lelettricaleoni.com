@@ -93,7 +93,7 @@ export function BikesTeaserSection({ lang, dict }: BikesTeaserSectionProps) {
         <h2 className="text-3xl sm:text-4xl font-bold text-primary-foreground mb-3">
           {d.title}
         </h2>
-        <p className="text-primary-foreground/90 max-w-xl mx-auto mb-8">
+        <p className="text-primary-foreground/90 max-w-xl mx-auto mb-8 text-balance">
           {d.copy}
         </p>
         <Button asChild size="lg" className="bg-white text-primary hover:bg-white/90 font-semibold px-8">
