@@ -157,6 +157,13 @@ quattro e l'ha fatto esplodere. Misurato contro il pooler, fuori da Next: 4 e 10
 concorrenti si bloccano, `max_pipeline: 1` non basta, **`max_pipeline: 0` risolve**
 (`lib/db/client-options.ts`, con un test che lo fissa): le eccedenti aspettano nella coda del
 client. Un N+1 resta uno spreco, ma non blocca più il sito.
+**Prezzo di `max_pipeline: 0`: `db.transaction` non funziona più.** `postgres.js` marca la
+connessione come riservata solo se `sent.length < max_pipeline`, quindi il `BEGIN` viene
+rifiutato con `UNSAFE_TRANSACTION` (successo in produzione il 2026-09-25 su rinomina e
+cancellazione di una categoria percorso, subito dopo la #159). Un'operazione che deve essere
+atomica si scrive come un solo statement (una CTE lo è già: vedi
+`lib/route-bike-categories.ts`); `lib/db/no-transactions.test.ts` fa fallire la CI se
+qualcuno riapre una transazione sul client condiviso.
 **`statement_timeout` per connessione non funziona con questo pooler**: Supavisor in
 transaction mode può dare uno statement successivo a un backend diverso da quello che ha
 ricevuto il parametro di avvio (`show statement_timeout` tornava vuoto).
