@@ -1,5 +1,5 @@
-import { eq, sql } from 'drizzle-orm'
-import { db, routes, routeBikeCategories } from '@/lib/db'
+import { sql } from 'drizzle-orm'
+import { db } from '@/lib/db'
 
 /**
  * routes.bike_types stores category NAMES, not ids, so the name is the join key
@@ -11,40 +11,60 @@ import { db, routes, routeBikeCategories } from '@/lib/db'
  *
  * Not a Server Action file on purpose: the actions in lib/actions/bike-options.ts
  * call these after checking the caller is an admin.
+ *
+ * Each operation is ONE statement (a CTE), not `db.transaction`. A statement is
+ * atomic on its own, and a transaction cannot be used here at all: with
+ * `max_pipeline: 0` (lib/db/client-options.ts) postgres.js never marks the
+ * connection as reserved, so its BEGIN is refused with UNSAFE_TRANSACTION.
+ * That took rename and delete down in production on 2026-09-25, right after the
+ * pipelining fix. Data-modifying CTEs all run to completion whether or not the
+ * final SELECT reads them.
  */
 
 export async function renameRouteBikeCategory(id: string, name: string, displayOrder: number) {
-  await db.transaction(async (tx) => {
-    const [current] = await tx.select().from(routeBikeCategories).where(eq(routeBikeCategories.id, id))
-    if (!current) throw new Error('Route category not found')
-
-    await tx.update(routeBikeCategories).set({ name, displayOrder }).where(eq(routeBikeCategories.id, id))
-
-    if (current.name !== name) {
-      await tx
-        .update(routes)
-        .set({ bikeTypes: sql`array_replace(${routes.bikeTypes}, ${current.name}, ${name})` })
-        .where(sql`${routes.bikeTypes} @> ARRAY[${current.name}]::text[]`)
-    }
-  })
+  const [row] = await db.execute<{ updated: number }>(sql`
+    WITH cur AS (
+      SELECT name FROM route_bike_categories WHERE id = ${id}::uuid
+    ),
+    upd AS (
+      UPDATE route_bike_categories
+      SET name = ${name}::text, display_order = ${displayOrder}::int
+      WHERE id = ${id}::uuid
+      RETURNING id
+    ),
+    retag AS (
+      UPDATE routes
+      SET bike_types = array_replace(bike_types, (SELECT name FROM cur), ${name}::text)
+      WHERE (SELECT name FROM cur) <> ${name}::text
+        AND bike_types @> ARRAY[(SELECT name FROM cur)]::text[]
+      RETURNING id
+    )
+    SELECT (SELECT count(*) FROM upd)::int AS updated
+  `)
+  if (!row || row.updated === 0) throw new Error('Route category not found')
 }
 
 export type DeleteRouteBikeCategoryResult = { ok: true } | { ok: false; routesUsing: number }
 
 /** Refuses while any route is still tagged with the category. */
 export async function deleteRouteBikeCategory(id: string): Promise<DeleteRouteBikeCategoryResult> {
-  return db.transaction(async (tx) => {
-    const [current] = await tx.select().from(routeBikeCategories).where(eq(routeBikeCategories.id, id))
-    if (!current) return { ok: true }
-
-    const [{ count }] = await tx
-      .select({ count: sql<number>`count(*)::int` })
-      .from(routes)
-      .where(sql`${routes.bikeTypes} @> ARRAY[${current.name}]::text[]`)
-    if (count > 0) return { ok: false, routesUsing: count }
-
-    // Still fails loudly, by the foreign key, while a bike category is linked.
-    await tx.delete(routeBikeCategories).where(eq(routeBikeCategories.id, id))
-    return { ok: true }
-  })
+  const [row] = await db.execute<{ found: number; used: number }>(sql`
+    WITH cur AS (
+      SELECT name FROM route_bike_categories WHERE id = ${id}::uuid
+    ),
+    used AS (
+      SELECT count(*)::int AS n FROM routes
+      WHERE bike_types @> ARRAY[(SELECT name FROM cur)]::text[]
+    ),
+    del AS (
+      -- Still fails loudly, by the foreign key, while a bike category is linked.
+      DELETE FROM route_bike_categories
+      WHERE id = ${id}::uuid AND (SELECT n FROM used) = 0
+      RETURNING id
+    )
+    SELECT (SELECT count(*) FROM cur)::int AS found, (SELECT n FROM used) AS used
+  `)
+  if (!row || row.found === 0) return { ok: true }
+  if (row.used > 0) return { ok: false, routesUsing: row.used }
+  return { ok: true }
 }
