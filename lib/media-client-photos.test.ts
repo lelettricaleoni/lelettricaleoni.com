@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import {
   isStagedPhotoKey, photoPublicKey, photoUrl, photoSourceExtension, photoContentType,
+  photoShareKey, photoShareUrl,
   PHOTO_SOURCE_EXTENSIONS,
 } from './media-client'
 
@@ -25,6 +26,19 @@ describe('photoPublicKey', () => {
 
   it('does not treat a video source as a photo', () => {
     expect(photoPublicKey('private/route-videos/r1/u1.mp4')).toBe('private/route-videos/r1/u1.mp4')
+  })
+})
+
+// Same pairs as TestShare in the worker's tests/test_imaging.py.
+describe('photoShareKey', () => {
+  it('sits beside the master, as a JPEG', () => {
+    expect(photoShareKey('private/route-photos/r1/u1.jpg')).toBe('public/route-photos/r1/u1.share.jpg')
+    expect(photoShareKey('private/bike-model-photos/m1/u.2.tiff')).toBe('public/bike-model-photos/m1/u.2.share.jpg')
+  })
+
+  it('is the photo itself when it predates the worker', () => {
+    expect(photoShareKey('route-photos/r1/u1.jpg')).toBe('route-photos/r1/u1.jpg')
+    expect(photoShareUrl('route-photos/r1/u1.jpg').endsWith('/route-photos/r1/u1.jpg')).toBe(true)
   })
 })
 

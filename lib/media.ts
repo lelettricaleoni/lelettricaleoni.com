@@ -4,7 +4,7 @@ import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import { s3, R2_BUCKET, deleteR2Object } from './r2'
 import {
   deriveHlsPrefix, hlsUrl, HLS_MANIFESTS,
-  isStagedPhotoKey, photoPublicKey, photoUrl,
+  isStagedPhotoKey, photoPublicKey, photoShareKey, photoUrl,
   type MediaWithHls,
 } from './media-client'
 import { readThrough, type CacheStore, getStore } from './cache'
@@ -145,8 +145,8 @@ export async function resolveReadyMedia(
 
 /**
  * Everything a media row left on R2. A video leaves its source and its HLS
- * ladder; a staged photo leaves its source (if the worker never got to it) and
- * its master. Deleting only `storageKey` used to be enough, and would now strand
+ * ladder; a staged photo leaves its source (if the worker never got to it), its
+ * master and its link-preview JPEG. Deleting only `storageKey` used to be enough, and would now strand
  * every processed photo's AVIF forever.
  */
 export async function deleteMediaFiles(m: Pick<Media, 'storageKey' | 'mediaType'>): Promise<void> {
@@ -156,7 +156,9 @@ export async function deleteMediaFiles(m: Pick<Media, 'storageKey' | 'mediaType'
   }
   await Promise.all([
     deleteR2Object(m.storageKey),
-    ...(isStagedPhotoKey(m.storageKey) ? [deleteR2Object(photoPublicKey(m.storageKey))] : []),
+    ...(isStagedPhotoKey(m.storageKey)
+      ? [deleteR2Object(photoPublicKey(m.storageKey)), deleteR2Object(photoShareKey(m.storageKey))]
+      : []),
   ])
 }
 

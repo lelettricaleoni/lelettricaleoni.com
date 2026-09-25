@@ -86,6 +86,20 @@ export function photoUrl(storageKey: string): string {
   return mediaPublicUrl(photoPublicKey(storageKey))
 }
 
+/**
+ * The small JPEG the worker writes beside a staged photo's master, for link
+ * previews only: WhatsApp, Facebook and LinkedIn do not read AVIF. A photo that
+ * predates the worker is already a JPEG, PNG or WebP and stands in for itself.
+ */
+export function photoShareKey(storageKey: string): string {
+  const key = photoPublicKey(storageKey)
+  return isStagedPhotoKey(storageKey) ? key.replace(/\.avif$/, '.share.jpg') : key
+}
+
+export function photoShareUrl(storageKey: string): string {
+  return mediaPublicUrl(photoShareKey(storageKey))
+}
+
 /** Lower-cased extension of an uploaded file if the worker can decode it, otherwise null. */
 export function photoSourceExtension(fileName: string): PhotoSourceExtension | null {
   const dot = fileName.lastIndexOf('.')
