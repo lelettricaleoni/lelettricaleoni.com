@@ -5,6 +5,7 @@ import { Navbar } from '@/components/navbar'
 import { HeroSection } from '@/components/hero-section'
 import { RoutesTeaserSection } from '@/components/routes-teaser-section'
 import { BikesTeaserSection } from '@/components/bikes-teaser-section'
+import { SectionStack } from '@/components/section-stack'
 import { ServicesSection } from '@/components/services-section'
 import { PricingSection } from '@/components/pricing-section'
 import { MapSection } from '@/components/map-section'
@@ -48,11 +49,14 @@ export default async function HomePage({
       <Navbar lang={lang} dict={dict} showRoutes={flags.routes} showBikes={flags.bikes} />
       <main>
         <HeroSection lang={lang} dict={dict} />
-        {flags.routes && <RoutesTeaserSection lang={lang} dict={dict} />}
-        <ServicesSection dict={dict} />
-        {flags.bikes && <BikesTeaserSection lang={lang} dict={dict} />}
-        <PricingSection dict={dict} />
-        <MapSection dict={dict} />
+        {/* The stack alternates the backgrounds, so no section sets its own. */}
+        <SectionStack>
+          {flags.routes && <RoutesTeaserSection lang={lang} dict={dict} />}
+          <ServicesSection dict={dict} />
+          {flags.bikes && <BikesTeaserSection lang={lang} dict={dict} />}
+          <PricingSection dict={dict} />
+          <MapSection dict={dict} />
+        </SectionStack>
       </main>
       <Footer lang={lang} dict={dict} />
     </>
