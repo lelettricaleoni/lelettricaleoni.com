@@ -60,6 +60,29 @@
     "hours_value": "Tutti i giorni 09:00 – 13:00 / 14:00 – 19:00",
     "directions": "Ottieni indicazioni"
   },
+  "service_pages": {
+    "cta_bikes": "Vedi i modelli disponibili",
+    "ebike_rental": {
+      "h1": "Noleggio e-bike a Dro, sul Lago di Garda",
+      "meta_description": "Noleggia una e-bike a Dro: Gravel, City eBike ed eMTB Flyer, con casco e lucchetto inclusi. Prenota e ritira in negozio, aperto tutti i giorni.",
+      "intro": "A due passi dal Lago di Garda, noleggiamo e-bike Flyer per esplorare le valli del Trentino: Gravel e City eBike per la ciclabile e le strade bianche, eMTB per la montagna. Ogni noleggio include casco e lucchetto, e puoi noleggiare più bici insieme per un gruppo o una famiglia."
+    },
+    "emtb_rental": {
+      "h1": "Noleggio eMTB a Dro, per il Lago di Garda e le Dolomiti di Brenta",
+      "meta_description": "Noleggia una eMTB a Dro: modelli Flyer Front, Full Alu e Full Carbon. Prezzi da 1 a 7 giorni, casco e lucchetto inclusi.",
+      "intro": "Il Garda Trentino è uno dei territori più amati per l'eMTB in Italia, tra sterrati, single track e strade bianche verso lo Stivo e le Dolomiti di Brenta. Noleggiamo eMTB Flyer in tre allestimenti — Front, Full Alu e Full Carbon — per un pomeriggio o per tutta la vacanza."
+    },
+    "gravel_rental": {
+      "h1": "Noleggio bici gravel a Dro, sul Lago di Garda",
+      "meta_description": "Noleggia una bici gravel elettrica a Dro per le strade bianche del Garda Trentino. Prezzi da 1 a 7 giorni, casco e lucchetto inclusi.",
+      "intro": "Le strade bianche e le ciclabili attorno al Lago di Garda sono il terreno naturale della bici gravel. Noleggiamo Gravel eBike Flyer per chi vuole muoversi veloce tra Dro, Arco e Riva del Garda, in autonomia o a tappe più lunghe."
+    },
+    "ebike_repair": {
+      "h1": "Riparazione e manutenzione e-bike a Dro",
+      "meta_description": "Riparazione e manutenzione di e-bike, bici da corsa, mountain bike e monopattini a Dro. Porta la tua bici in negozio, aperto tutti i giorni.",
+      "intro": "Ripariamo e manteniamo bici elettriche, da corsa, mountain bike, monopattini e qualsiasi tipo di bicicletta. Porta la tua bici in negozio a Dro: valutiamo il problema e ti diciamo tempi e costo prima di iniziare."
+    }
+  },
   "routes_teaser": {
     "title": "Un territorio da scoprire in bici",
     "copy": "Sentieri e strade bianche attorno al Garda, con tracce GPX verificate e le statistiche per scegliere il percorso giusto.",

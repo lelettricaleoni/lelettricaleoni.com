@@ -196,3 +196,36 @@ test('il dettaglio di una bici apre i media a schermo intero', async ({ page }) 
   }).toPass({ timeout: 10_000 })
   expect(errors, 'il lightbox lancia un errore JS aprendosi').toEqual([])
 })
+
+// Non ancora pubblicate (docs/ai/ideas/search-strategy.md, Fase 2): niente
+// link da home/navbar/sitemap, raggiungibili solo per URL diretto finché
+// Kevin non approva. Coperte comunque, perché il codice esiste già sul sito.
+const SERVICE_PAGES = [
+  { path: '/it/noleggio-e-bike', h1Contains: 'Noleggio e-bike' },
+  { path: '/it/noleggio-emtb', h1Contains: 'Noleggio eMTB' },
+  { path: '/it/noleggio-gravel', h1Contains: 'gravel' },
+  { path: '/it/riparazione-e-bike', h1Contains: 'Riparazione' },
+  { path: '/en/e-bike-rental', h1Contains: 'E-Bike Rental' },
+  { path: '/en/emtb-rental', h1Contains: 'eMTB Rental' },
+  { path: '/en/gravel-bike-rental', h1Contains: 'Gravel' },
+  { path: '/en/e-bike-repair', h1Contains: 'E-Bike Repair' },
+  { path: '/de/e-bike-verleih', h1Contains: 'E-Bike Verleih' },
+  { path: '/de/emtb-verleih', h1Contains: 'eMTB Verleih' },
+  { path: '/de/gravel-bike-verleih', h1Contains: 'Gravelbike' },
+  { path: '/de/e-bike-reparatur', h1Contains: 'Reparatur' },
+]
+
+for (const { path, h1Contains } of SERVICE_PAGES) {
+  test(`pagina di servizio ${path} mostra titolo, prezzi e un contatto`, async ({ page }) => {
+    await visit(page, path)
+    await expect(page.locator('h1')).toContainText(h1Contains)
+    // Riusa <PricingSection>, la stessa della home: qui basta che sia presente.
+    await expect(page.locator('#prezzi')).toBeAttached()
+    await expect(page.locator('a[href^="tel:"]').first()).toBeVisible()
+  })
+}
+
+test('uno slug di servizio sconosciuto non finge di esistere', async ({ page }) => {
+  await page.goto('/it/questo-slug-non-esiste', { waitUntil: 'domcontentloaded' })
+  await expect(page.locator('meta[name="robots"][content*="noindex"]').first()).toBeAttached()
+})
