@@ -3,9 +3,11 @@ import { cacheLife, cacheTag } from 'next/cache'
 import { eq, and } from 'drizzle-orm'
 import { db, routes, bikeModels, bikeUnits } from '@/lib/db'
 import { shortId } from '@/lib/utils'
+import { SERVICE_KEYS, servicePageSlug } from '@/lib/service-pages'
+import type { Locale } from './[lang]/dictionaries'
 
 const BASE_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://www.lelettricaleoni.com').replace(/\/$/, '')
-const locales = ['it', 'en', 'de']
+const locales: Locale[] = ['it', 'en', 'de']
 const LAST_MODIFIED = new Date('2026-04-20')
 
 // No feature flag decides what shows up here — a switched-off route already
@@ -39,6 +41,23 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         languages: {
           ...Object.fromEntries(locales.map((l) => [l, `${BASE_URL}/${l}${path}`])),
           'x-default': `${BASE_URL}/it${path}`,
+        },
+      },
+    }))
+  )
+
+  // Same idea as staticEntries, but the slug is the search term itself and
+  // therefore differs per language — unlike every other static route here.
+  const serviceEntries: MetadataRoute.Sitemap = SERVICE_KEYS.flatMap((key) =>
+    locales.map((lang) => ({
+      url: `${BASE_URL}/${lang}/${servicePageSlug(key, lang)}`,
+      lastModified: LAST_MODIFIED,
+      changeFrequency: 'monthly' as const,
+      priority: 0.8,
+      alternates: {
+        languages: {
+          ...Object.fromEntries(locales.map((l) => [l, `${BASE_URL}/${l}/${servicePageSlug(key, l)}`])),
+          'x-default': `${BASE_URL}/it/${servicePageSlug(key, 'it')}`,
         },
       },
     }))
@@ -94,5 +113,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }))
   } catch {}
 
-  return [...staticEntries, ...dynamicEntries]
+  return [...staticEntries, ...serviceEntries, ...dynamicEntries]
 }
