@@ -16,6 +16,7 @@
   "services": {
     "title": "Our services",
     "learn_more": "Learn more",
+    "more_types_label": "Looking for something more specific?",
     "rental": {
       "title": "Rental",
       "desc": "Flyer e-bikes and classic bicycles to explore Lake Garda and the surrounding valleys."
