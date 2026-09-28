@@ -11,8 +11,13 @@ interface ServicesSectionProps {
     services: {
       title: string
       learn_more: string
+      more_types_label: string
       rental: { title: string; desc: string }
       repair: { title: string; desc: string }
+    }
+    service_pages: {
+      emtb_rental: { short_label: string }
+      gravel_rental: { short_label: string }
     }
   }
 }
@@ -68,6 +73,22 @@ export function ServicesSection({ lang, dict }: ServicesSectionProps) {
                 </span>
               </CardContent>
             </Card>
+          </Link>
+        </div>
+
+        <div className="flex flex-wrap items-center justify-center gap-2 mt-8 text-sm">
+          <span className="text-muted-foreground">{dict.services.more_types_label}</span>
+          <Link
+            href={`/${lang}/${servicePageSlug('emtbRental', lang)}`}
+            className="rounded-full border border-border px-3 py-1 text-foreground hover:border-primary hover:text-primary transition-colors"
+          >
+            {dict.service_pages.emtb_rental.short_label}
+          </Link>
+          <Link
+            href={`/${lang}/${servicePageSlug('gravelRental', lang)}`}
+            className="rounded-full border border-border px-3 py-1 text-foreground hover:border-primary hover:text-primary transition-colors"
+          >
+            {dict.service_pages.gravel_rental.short_label}
           </Link>
         </div>
       </div>
