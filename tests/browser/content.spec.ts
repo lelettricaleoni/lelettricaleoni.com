@@ -90,6 +90,29 @@ test('il dettaglio di un percorso mostra titolo e statistiche', async ({ page })
   await expect(page.getByText('durata', { exact: false }).first()).toBeVisible()
 })
 
+test('il dettaglio di un percorso apre i media a schermo intero', async ({ page }) => {
+  // Regressione 2026-09-25/28: passare styles={undefined} (invece di ometterlo
+  // o passare {}) al lightbox lo fa fallire in silenzio sul primo click — nessuna
+  // eccezione visibile all'utente, solo un errore in console. Coperto qui perché
+  // nessun altro test apriva mai il lightbox.
+  await visit(page, '/it/routes')
+  const href = await page.locator('a[href*="/routes/"]').filter({ has: page.locator('h3') })
+    .first().getAttribute('href')
+  expect(href, 'nessun percorso da aprire').toBeTruthy()
+  await visit(page, href!)
+
+  const errors: string[] = []
+  page.on('pageerror', (err) => errors.push(err.message))
+
+  // visit() only waits for domcontentloaded, so the button can exist before
+  // React attaches its onClick — retry the click until hydration catches up.
+  await expect(async () => {
+    await page.locator('button[aria-label*="media 1"]').first().click()
+    await expect(page.locator('.yarl__slide').first()).toBeVisible({ timeout: 1000 })
+  }).toPass({ timeout: 10_000 })
+  expect(errors, 'il lightbox lancia un errore JS aprendosi').toEqual([])
+})
+
 test('la privacy ha il suo testo, non un guscio', async ({ page }) => {
   await visit(page, '/it/privacy')
   // Questa pagina non usa <main>, quindi si guarda il corpo meno le parti
@@ -155,4 +178,21 @@ test('il dettaglio di una bici mostra titolo e prezzo', async ({ page }) => {
   await visit(page, href!)
   await expect(page.locator('h1')).not.toBeEmpty()
   await expect(page.getByText('€', { exact: false }).first()).toBeVisible()
+})
+
+test('il dettaglio di una bici apre i media a schermo intero', async ({ page }) => {
+  await visit(page, '/it/bikes')
+  const href = await page.locator('a[href*="/bikes/"]').filter({ has: page.locator('h3') })
+    .first().getAttribute('href')
+  expect(href, 'nessuna bici da aprire').toBeTruthy()
+  await visit(page, href!)
+
+  const errors: string[] = []
+  page.on('pageerror', (err) => errors.push(err.message))
+
+  await expect(async () => {
+    await page.locator('button[aria-label*="media 1"]').first().click()
+    await expect(page.locator('.yarl__slide').first()).toBeVisible({ timeout: 1000 })
+  }).toPass({ timeout: 10_000 })
+  expect(errors, 'il lightbox lancia un errore JS aprendosi').toEqual([])
 })
