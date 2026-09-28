@@ -77,8 +77,14 @@ Il collo di bottiglia non è la tecnica, è che **manca una pagina che risponda*
 senza il nome.
 - **Pagine per le ricerche che oggi non ci trovano:** noleggio e-bike, noleggio eMTB, noleggio
   gravel, riparazione e-bike, in italiano, tedesco e inglese, ciascuna con prezzi, modelli e un
-  contatto. Le pagine delle 7 bici sono già un inizio; si collegano dalle pagine di servizio e
-  viceversa.
+  contatto. Live dal 2026-09-28 (PR #185). **Non linkate dal resto del sito**: Kevin le vuole solo
+  per l'indicizzazione, non come pagine che un visitatore vero incontra navigando — raggiungibili
+  da chi cerca su Google, presenti in sitemap, ma senza link in home o nella lista bici (rimossi
+  il 2026-09-28, PR #185 li aveva aggiunti per un giorno).
+- **Zona geografica su cui puntare:** da Dro in su, verso Pietramurata — Marocche, Val di Cavedine,
+  Sarche, Drena, Toblino. **Non su Arco e verso Riva del Garda**: quella zona ha già molti
+  noleggi, qui la domanda è meno coperta. Vale per i testi delle pagine di servizio, i percorsi
+  in evidenza e qualunque contenuto nuovo pensato per la ricerca (deciso da Kevin il 2026-09-28).
 - **I percorsi come richiamo:** hanno traccia GPX, mappa e video, e sono la cosa che le altre
   attività non hanno. Ogni percorso deve avere titolo e testo che parlino di *chi lo cerca* ("giro
   in e-bike da Dro a…"), e un invito chiaro a noleggiare la bici adatta (la card "bici adatte a
