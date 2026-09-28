@@ -15,8 +15,6 @@
   },
   "services": {
     "title": "Unsere Leistungen",
-    "learn_more": "Mehr erfahren",
-    "more_types_label": "Suchen Sie etwas Spezifischeres?",
     "rental": {
       "title": "Verleih",
       "desc": "Flyer E-Bikes und klassische Fahrräder, um den Gardasee und die umliegenden Täler zu erkunden."
@@ -66,19 +64,16 @@
     "cta_bikes": "Verfügbare Modelle ansehen",
     "ebike_rental": {
       "h1": "E-Bike Verleih in Dro, Gardasee",
-      "short_label": "E-Bike Verleih",
       "meta_description": "E-Bike mieten in Dro: Flyer Gravel, City eBike und eMTB, Helm und Schloss inklusive. Buchen und im Geschäft abholen, täglich geöffnet.",
       "intro": "Nur wenige Schritte vom Gardasee entfernt vermieten wir Flyer E-Bikes für die Täler des Trentino: Gravel- und City-eBikes für Radwege und Schotterstraßen, eMTBs für die Berge. Jede Miete beinhaltet Helm und Schloss, mehrere Räder gleichzeitig für Gruppen oder Familien sind möglich."
     },
     "emtb_rental": {
       "h1": "eMTB Verleih in Dro, für den Gardasee und die Brenta-Dolomiten",
-      "short_label": "eMTB Verleih",
       "meta_description": "eMTB mieten in Dro: Flyer Front, Full Alu und Full Carbon. Preise für 1 bis 7 Tage, Helm und Schloss inklusive.",
       "intro": "Das Garda Trentino ist eines der beliebtesten eMTB-Reviere Italiens, mit Schotterstraßen, Single Trails und weißen Straßen Richtung Monte Stivo und Brenta-Dolomiten. Wir vermieten Flyer eMTBs in drei Ausführungen — Front, Full Alu und Full Carbon — für einen Nachmittag oder den ganzen Urlaub."
     },
     "gravel_rental": {
       "h1": "Gravelbike Verleih in Dro, Gardasee",
-      "short_label": "Gravelbike Verleih",
       "meta_description": "Elektrisches Gravelbike in Dro mieten für die Schotterstraßen des Garda Trentino. Preise für 1 bis 7 Tage, Helm und Schloss inklusive.",
       "intro": "Die Schotterstraßen und Radwege rund um den Gardasee sind das natürliche Terrain für Gravelbikes. Wir vermieten Flyer Gravel eBikes für alle, die zwischen Dro, Arco und Riva del Garda schnell unterwegs sein wollen — allein oder auf längeren Etappen."
     },
@@ -184,7 +179,6 @@
     "page_title": "Unsere Fahrräder",
     "bikes_count": "Modelle",
     "page_subtitle": "Unser Verleih-Fuhrpark in Dro, am Gardasee: elektrisch und muskelbetrieben, für jede Art von Ausflug.",
-    "browse_by_type": "Suchen Sie etwas Bestimmtes?",
     "filter_all": "Alle",
     "filter_category": "Kategorie",
     "filter_size": "Größe",

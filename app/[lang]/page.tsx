@@ -52,7 +52,7 @@ export default async function HomePage({
         {/* The stack alternates the backgrounds, so no section sets its own. */}
         <SectionStack>
           {flags.routes && <RoutesTeaserSection lang={lang} dict={dict} />}
-          <ServicesSection lang={lang} dict={dict} />
+          <ServicesSection dict={dict} />
           {flags.bikes && <BikesTeaserSection lang={lang} dict={dict} />}
           <PricingSection dict={dict} />
           <MapSection dict={dict} />
