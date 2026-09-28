@@ -15,6 +15,7 @@
   },
   "services": {
     "title": "Our services",
+    "learn_more": "Learn more",
     "rental": {
       "title": "Rental",
       "desc": "Flyer e-bikes and classic bicycles to explore Lake Garda and the surrounding valleys."
@@ -59,6 +60,32 @@
     "hours_label": "Hours",
     "hours_value": "Every day 09:00 – 13:00 / 14:00 – 19:00",
     "directions": "Get directions"
+  },
+  "service_pages": {
+    "cta_bikes": "See available models",
+    "ebike_rental": {
+      "h1": "E-Bike Rental in Dro, Lake Garda",
+      "short_label": "E-bike rental",
+      "meta_description": "Rent an e-bike in Dro: Flyer Gravel, City eBike and eMTB, helmet and lock included. Book and pick up in store, open every day.",
+      "intro": "Just steps from Lake Garda, we rent Flyer e-bikes to explore the valleys of Trentino: Gravel and City eBikes for the cycle path and gravel roads, eMTBs for the mountains. Every rental includes a helmet and lock, and you can rent several bikes together for a group or family."
+    },
+    "emtb_rental": {
+      "h1": "eMTB Rental in Dro, for Lake Garda and the Brenta Dolomites",
+      "short_label": "eMTB rental",
+      "meta_description": "Rent an eMTB in Dro: Flyer Front, Full Alu and Full Carbon models. Prices for 1 to 7 days, helmet and lock included.",
+      "intro": "Garda Trentino is one of Italy's most loved eMTB destinations, with gravel roads, single tracks and white roads toward Monte Stivo and the Brenta Dolomites. We rent Flyer eMTBs in three builds — Front, Full Alu and Full Carbon — for an afternoon or a whole holiday."
+    },
+    "gravel_rental": {
+      "h1": "Gravel Bike Rental in Dro, Lake Garda",
+      "short_label": "Gravel bike rental",
+      "meta_description": "Rent an electric gravel bike in Dro for the white roads of Garda Trentino. Prices for 1 to 7 days, helmet and lock included.",
+      "intro": "The gravel roads and cycle paths around Lake Garda are gravel bikes' natural ground. We rent Flyer Gravel eBikes for riders who want to move fast between Dro, Arco and Riva del Garda, solo or over longer routes."
+    },
+    "ebike_repair": {
+      "h1": "E-Bike Repair and Maintenance in Dro",
+      "meta_description": "Repair and maintenance of e-bikes, road bikes, mountain bikes and scooters in Dro. Bring your bike to our shop, open every day.",
+      "intro": "We repair and maintain e-bikes, road bikes, mountain bikes, scooters and any type of bicycle. Bring your bike to our shop in Dro: we check the problem and tell you the time and cost before we start."
+    }
   },
   "routes_teaser": {
     "title": "A landscape made for two wheels",
@@ -156,6 +183,7 @@
     "page_title": "Our bikes",
     "bikes_count": "models",
     "page_subtitle": "Our rental bike fleet in Dro, on Lake Garda: electric and muscular, for every kind of ride.",
+    "browse_by_type": "Looking for something specific?",
     "filter_all": "All",
     "filter_category": "Category",
     "filter_size": "Size",

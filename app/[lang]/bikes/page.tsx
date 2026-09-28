@@ -2,7 +2,9 @@ import { Suspense } from 'react'
 import { notFound } from 'next/navigation'
 import { connection } from 'next/server'
 import type { Metadata } from 'next'
+import Link from 'next/link'
 import { getDictionary, hasLocale } from '../dictionaries'
+import { servicePageSlug } from '@/lib/service-pages'
 import { Navbar } from '@/components/navbar'
 import { Footer } from '@/components/footer'
 import { BikeFilters } from '@/components/bike-filters'
@@ -100,6 +102,22 @@ export default async function BikesPage({
             <SectionViewTracker name="bikes_list" />
             <h1 className="text-3xl font-bold text-[#1e3a5f]">{dict.bikes.page_title}</h1>
             <p className="text-muted-foreground mt-2 max-w-xl">{dict.bikes.page_subtitle}</p>
+            <div className="flex flex-wrap items-center gap-2 mt-4 text-sm">
+              <span className="text-muted-foreground">{dict.bikes.browse_by_type}</span>
+              {([
+                { key: 'ebikeRental', dictKey: 'ebike_rental' },
+                { key: 'emtbRental', dictKey: 'emtb_rental' },
+                { key: 'gravelRental', dictKey: 'gravel_rental' },
+              ] as const).map(({ key, dictKey }) => (
+                <Link
+                  key={key}
+                  href={`/${lang}/${servicePageSlug(key, lang)}`}
+                  className="rounded-full border border-border px-3 py-1 text-foreground hover:border-primary hover:text-primary transition-colors"
+                >
+                  {dict.service_pages[dictKey].short_label}
+                </Link>
+              ))}
+            </div>
           </div>
           <BikeFilters models={modelsWithData} lang={lang} dict={dict} />
         </div>
