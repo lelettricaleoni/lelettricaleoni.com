@@ -197,9 +197,9 @@ test('il dettaglio di una bici apre i media a schermo intero', async ({ page }) 
   expect(errors, 'il lightbox lancia un errore JS aprendosi').toEqual([])
 })
 
-// Non ancora pubblicate (docs/ai/ideas/search-strategy.md, Fase 2): niente
-// link da home/navbar/sitemap, raggiungibili solo per URL diretto finché
-// Kevin non approva. Coperte comunque, perché il codice esiste già sul sito.
+// Solo per indicizzazione (docs/ai/ideas/search-strategy.md, Fase 2): in
+// sitemap, ma senza link da home/navbar/lista bici — Kevin le vuole
+// raggiungibili solo da chi cerca, non da chi naviga il sito.
 const SERVICE_PAGES = [
   { path: '/it/noleggio-e-bike', h1Contains: 'Noleggio e-bike' },
   { path: '/it/noleggio-emtb', h1Contains: 'Noleggio eMTB' },
@@ -213,6 +213,21 @@ const SERVICE_PAGES = [
   { path: '/de/emtb-verleih', h1Contains: 'eMTB Verleih' },
   { path: '/de/gravel-bike-verleih', h1Contains: 'Gravelbike' },
   { path: '/de/e-bike-reparatur', h1Contains: 'Reparatur' },
+  { path: '/it/noleggio-e-bike-drena', h1Contains: 'Drena' },
+  { path: '/it/noleggio-e-bike-sarche', h1Contains: 'Sarche' },
+  { path: '/it/noleggio-e-bike-cavedine', h1Contains: 'Cavedine' },
+  { path: '/it/noleggio-e-bike-marocche', h1Contains: 'Marocche' },
+  { path: '/it/noleggio-e-bike-toblino', h1Contains: 'Toblino' },
+  { path: '/en/e-bike-rental-drena', h1Contains: 'Drena' },
+  { path: '/en/e-bike-rental-sarche', h1Contains: 'Sarche' },
+  { path: '/en/e-bike-rental-cavedine', h1Contains: 'Cavedine' },
+  { path: '/en/e-bike-rental-marocche', h1Contains: 'Marocche' },
+  { path: '/en/e-bike-rental-toblino', h1Contains: 'Toblino' },
+  { path: '/de/e-bike-verleih-drena', h1Contains: 'Drena' },
+  { path: '/de/e-bike-verleih-sarche', h1Contains: 'Sarche' },
+  { path: '/de/e-bike-verleih-cavedine', h1Contains: 'Cavedine' },
+  { path: '/de/e-bike-verleih-marocche', h1Contains: 'Marocche' },
+  { path: '/de/e-bike-verleih-toblino', h1Contains: 'Toblino' },
 ]
 
 for (const { path, h1Contains } of SERVICE_PAGES) {

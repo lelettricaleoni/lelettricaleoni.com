@@ -81,6 +81,31 @@
       "h1": "Riparazione e assistenza e-bike a Dro",
       "meta_description": "Riparazione e assistenza e-bike a Dro: bici da corsa, mountain bike e monopattini. Se devi aggiustare la bici, portala in negozio, aperto tutti i giorni.",
       "intro": "Offriamo riparazione e assistenza e-bike, oltre a bici da corsa, mountain bike, monopattini e qualsiasi tipo di bicicletta. Se devi aggiustare la tua bici, portala nel nostro negozio a Dro: valutiamo il problema e ti diciamo tempi e costo prima di iniziare."
+    },
+    "ebike_rental_drena": {
+      "h1": "Noleggio e-bike a Drena, tra Dro e il Monte Stivo",
+      "meta_description": "Noleggia una e-bike a Dro per raggiungere Drena e le pendici del Monte Stivo: boschi, masi e sentieri nell'entroterra del Garda Trentino. Prezzi da 1 a 7 giorni.",
+      "intro": "Drena è una delle mete più battute di chi noleggia una e-bike da noi: i nostri percorsi verso il Monte Stivo e il Monte Velo passano proprio da qui, tra boschi, radure e piccoli masi nell'entroterra sopra Arco. Prepariamo la eMTB più adatta alla salita e indichiamo il giro giusto per il tuo livello."
+    },
+    "ebike_rental_sarche": {
+      "h1": "Noleggio e-bike a Sarche e in Valle dei Laghi",
+      "meta_description": "Noleggia una e-bike a Dro per raggiungere Sarche e la Valle dei Laghi, passando per Pietramurata sulla ciclabile del Sarca. Prezzi da 1 a 7 giorni.",
+      "intro": "Da Dro, la ciclabile lungo il Sarca porta fino a Pietramurata e poi a Sarche, la porta della Valle dei Laghi verso Ponte Arche e Comano. È il punto di passaggio di alcuni dei nostri percorsi più lunghi, con salite vere verso i rifugi della zona. Noleggia qui l'e-bike giusta per affrontarli."
+    },
+    "ebike_rental_cavedine": {
+      "h1": "Noleggio e-bike per il Lago di Cavedine, in Valle dei Laghi",
+      "meta_description": "Noleggia una e-bike a Dro per un giro facile fino al Lago di Cavedine, in Valle dei Laghi: dislivello contenuto, adatto anche a famiglie. Prezzi da 1 a 7 giorni.",
+      "intro": "Il giro verso il Lago di Cavedine, in Valle dei Laghi, è uno dei nostri percorsi più facili: poco dislivello, affrontabile senza fatica in e-bike, adatto anche a famiglie e a chi non è particolarmente allenato. Un modo semplice per scoprire paesaggi diversi da quelli del Lago di Garda, restando a pochi minuti da Dro."
+    },
+    "ebike_rental_marocche": {
+      "h1": "Noleggio e-bike alle Marocche di Dro",
+      "meta_description": "Noleggia una e-bike direttamente a Dro per le Marocche, l'area di frane e massi all'origine del paesaggio della Valle dei Laghi. Prezzi da 1 a 7 giorni.",
+      "intro": "Le Marocche, l'antica frana che ha dato forma al paesaggio tra Dro e la Valle dei Laghi — fino a formare lo stesso Lago di Cavedine — sono a pochi passi dal nostro negozio. Noleggia qui la tua e-bike per partire ed esplorare la zona senza muovere l'auto."
+    },
+    "ebike_rental_toblino": {
+      "h1": "Noleggio e-bike per il Lago di Toblino",
+      "meta_description": "Noleggia una e-bike a Dro per raggiungere il Lago di Toblino, con il celebre castello a picco sull'acqua, in Valle dei Laghi. Prezzi da 1 a 7 giorni.",
+      "intro": "Il Lago di Toblino, con il suo castello a picco sull'acqua, è uno degli scorci più fotografati del Trentino — e uno dei punti che i nostri percorsi in e-bike verso la Valle dei Laghi toccano lungo il giro. Noleggia qui la tua e-bike per arrivarci comodamente da Dro."
     }
   },
   "routes_teaser": {

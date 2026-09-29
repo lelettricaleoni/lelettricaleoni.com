@@ -81,6 +81,31 @@
       "h1": "E-Bike Reparatur und Wartung in Dro",
       "meta_description": "Reparatur und Wartung von E-Bikes, Rennrädern, Mountainbikes und Rollern in Dro. Bringen Sie Ihr Rad ins Geschäft, täglich geöffnet.",
       "intro": "Wir reparieren und warten E-Bikes, Rennräder, Mountainbikes, Roller und jede Art von Fahrrad. Bringen Sie Ihr Rad in unser Geschäft in Dro: Wir prüfen das Problem und nennen Ihnen Zeit und Kosten, bevor wir beginnen."
+    },
+    "ebike_rental_drena": {
+      "h1": "E-Bike Verleih für Drena, zwischen Dro und dem Monte Stivo",
+      "meta_description": "E-Bike in Dro mieten, um Drena und die Hänge des Monte Stivo zu erreichen: Wälder, Weiler und Trails im Hinterland von Garda Trentino. Preise für 1 bis 7 Tage.",
+      "intro": "Drena ist eines der beliebtesten Ziele bei unseren E-Bike-Vermietungen: Unsere Routen zum Monte Stivo und Monte Velo führen genau hier vorbei, durch Wälder, Lichtungen und kleine Weiler im Hinterland oberhalb von Arco. Wir stellen Ihnen das passende eMTB für den Anstieg bereit und zeigen Ihnen die Tour, die zu Ihrem Niveau passt."
+    },
+    "ebike_rental_sarche": {
+      "h1": "E-Bike Verleih für Sarche und das Valle dei Laghi",
+      "meta_description": "E-Bike in Dro mieten, um Sarche und das Valle dei Laghi zu erreichen, über Pietramurata auf dem Radweg entlang der Sarca. Preise für 1 bis 7 Tage.",
+      "intro": "Von Dro aus führt der Radweg entlang der Sarca bis Pietramurata und weiter nach Sarche, dem Tor zum Valle dei Laghi Richtung Ponte Arche und Comano. Hier verlaufen einige unserer längsten Touren, mit echten Anstiegen zu den Berghütten der Gegend. Mieten Sie hier das passende E-Bike dafür."
+    },
+    "ebike_rental_cavedine": {
+      "h1": "E-Bike Verleih für den Cavedine-See im Valle dei Laghi",
+      "meta_description": "E-Bike in Dro mieten für eine leichte Tour zum Cavedine-See im Valle dei Laghi: wenig Höhenmeter, auch für Familien geeignet. Preise für 1 bis 7 Tage.",
+      "intro": "Die Tour zum Cavedine-See im Valle dei Laghi ist eine unserer leichtesten Routen: wenig Höhenmeter, mühelos mit dem E-Bike zu bewältigen, auch für Familien und weniger trainierte Fahrer geeignet. Eine einfache Art, eine andere Landschaft als die des Gardasees zu entdecken, nur wenige Minuten von Dro entfernt."
+    },
+    "ebike_rental_marocche": {
+      "h1": "E-Bike Verleih bei den Marocche di Dro",
+      "meta_description": "E-Bike direkt in Dro mieten für die Marocche, das alte Bergsturzgebiet hinter der Landschaft des Valle dei Laghi. Preise für 1 bis 7 Tage.",
+      "intro": "Die Marocche, der alte Bergsturz, der die Landschaft zwischen Dro und dem Valle dei Laghi geformt hat — und sogar den Cavedine-See selbst entstehen ließ — liegen nur wenige Schritte von unserem Geschäft entfernt. Mieten Sie hier Ihr E-Bike und erkunden Sie die Gegend, ohne das Auto zu bewegen."
+    },
+    "ebike_rental_toblino": {
+      "h1": "E-Bike Verleih für den Toblino-See",
+      "meta_description": "E-Bike in Dro mieten, um den Toblino-See mit seinem berühmten Schloss über dem Wasser im Valle dei Laghi zu erreichen. Preise für 1 bis 7 Tage.",
+      "intro": "Der Toblino-See mit seinem Schloss über dem Wasser ist einer der meistfotografierten Orte des Trentino — und einer der Höhepunkte, an denen unsere E-Bike-Touren ins Valle dei Laghi vorbeiführen. Mieten Sie hier Ihr E-Bike für eine bequeme Fahrt von Dro aus."
     }
   },
   "routes_teaser": {
