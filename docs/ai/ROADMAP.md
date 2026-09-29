@@ -34,7 +34,12 @@
   ordine in `docs/ai/ideas/search-console-analytics.md`. In breve: la ricerca è sana ma l'apex
   senza `www` prende due terzi dei clic pur essendo un reindirizzamento (e il redirect di `/` è
   un 301 che dipende dalla lingua), `staging` compare negli indici, e Analytics non ha né
-  dimensioni personalizzate né eventi chiave. Da decidere con Kevin cosa fare per primo.
+  dimensioni personalizzate né eventi chiave. **Strategia scritta lo stesso giorno** in
+  `docs/ai/ideas/search-strategy.md`: obiettivo (i contatti: telefonate, email, indicazioni),
+  punto di partenza, quattro fasi (misurare → sistemare le basi → pagine per chi non ci conosce
+  → revisione mensile), i sei numeri da guardare e le quattro decisioni che aspettano Kevin
+  (credenziali per la dashboard, Google Business Profile, via alla Fase 1, testi delle pagine
+  di servizio).
 
 ## Un giorno
 

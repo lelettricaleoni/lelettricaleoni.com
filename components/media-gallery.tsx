@@ -172,6 +172,9 @@ function MediaThumb({
   return (
     <button
       onClick={() => onOpen(index)}
+      // A video thumbnail carries no accessible name of its own (a <video> is
+      // silent to a screen reader), unlike a photo's own alt text.
+      aria-label={`${title} media ${index + 1}`}
       // A whole photo on white has no edge of its own, so `contain` gets a
       // hairline; a cropped one fills its frame and needs none.
       className={`relative overflow-hidden bg-white hover:opacity-90 transition-opacity focus-visible:ring-2 ring-[#366DA1] outline-none cursor-pointer ${fit === 'contain' ? 'border' : ''} ${className ?? ''}`}
@@ -299,7 +302,7 @@ export function MediaGallery({
         close={() => setLightboxIndex(-1)}
         slides={slides}
         plugins={[Zoom]}
-        styles={fit === 'contain' ? LIGHT_VIEWER : undefined}
+        styles={fit === 'contain' ? LIGHT_VIEWER : {}}
         render={{
           slide: ({ slide, offset }) => {
             if (slide.type !== 'hls') return undefined
