@@ -14,12 +14,12 @@
     "test:browser": "playwright test"
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.1140.0",
-    "@aws-sdk/s3-request-presigner": "^3.1140.0",
+    "@aws-sdk/client-s3": "^3.1141.0",
+    "@aws-sdk/s3-request-presigner": "^3.1141.0",
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
-    "@flags-sdk/vercel": "^1.4.9",
+    "@flags-sdk/vercel": "^1.4.10",
     "@formatjs/intl-localematcher": "^0.9.0",
     "@next/third-parties": "^16.3.6",
     "@radix-ui/react-alert-dialog": "^1.1.23",
@@ -36,7 +36,7 @@
     "@radix-ui/react-switch": "^1.3.7",
     "@radix-ui/react-tabs": "^1.1.21",
     "@supabase/ssr": "^0.12.7",
-    "@supabase/supabase-js": "^2.117.1",
+    "@supabase/supabase-js": "^2.117.2",
     "@upstash/redis": "^1.39.0",
     "@videojs/hlsjs-video": "^10.0.0-rc.2",
     "@videojs/react": "^10.0.0-rc.2",
@@ -47,7 +47,7 @@
     "drizzle-orm": "^0.45.3",
     "fast-xml-parser": "^5.11.1",
     "flags": "^4.3.1",
-    "framer-motion": "^13.4.3",
+    "framer-motion": "^13.4.4",
     "hls.js": "^1.7.3",
     "lucide-react": "^1.48.0",
     "negotiator": "^1.1.0",
@@ -72,7 +72,7 @@
     "@playwright/test": "^1.63.0",
     "@tailwindcss/postcss": "^4.3.3",
     "@types/negotiator": "^0.6.5",
-    "@types/node": "^26.6.2",
+    "@types/node": "^26.6.3",
     "@types/pg": "^8.23.1",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
@@ -81,7 +81,7 @@
     "eslint-config-next": "16.3.6",
     "tailwindcss": "^4.3.3",
     "typescript": "^5",
-    "vitest": "^5.0.1"
+    "vitest": "^5.0.2"
   },
   "overrides": {
     "@esbuild-kit/core-utils": {
