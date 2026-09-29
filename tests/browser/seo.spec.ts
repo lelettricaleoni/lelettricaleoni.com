@@ -93,3 +93,47 @@ test("l'immagine di default per i social esiste davvero", async ({ request }) =>
   expect((await response.body()).length, 'immagine troppo piccola per essere vera')
     .toBeGreaterThan(5_000)
 })
+
+test('le liste dicono cosa sono e dove, nel titolo della scheda', async ({ page }) => {
+  // Prima: "Le nostre bici | Lelettrica" e "Percorsi consigliati | Lelettrica",
+  // che non dicono né cosa né dove a chi le vede tra i risultati di Google.
+  await visit(page, '/it/bikes')
+  expect(await page.title()).toMatch(/noleggio.*Dro/i)
+
+  await visit(page, '/it/routes')
+  expect(await page.title()).toMatch(/e-bike.*Dro/i)
+})
+
+test("l'H1 della home dice cosa siamo e dove", async ({ page }) => {
+  // Prima era solo "Lelettrica".
+  await visit(page, '/it')
+  const h1 = await page.locator('h1').first().innerText()
+  expect(h1).toMatch(/e-bike/i)
+  expect(h1).toMatch(/Dro/)
+})
+
+test('il catalogo nei dati strutturati della home viene dal database, e non vende auto', async ({ page }) => {
+  await visit(page, '/it')
+  const readBlocks = () =>
+    page.locator('script[type="application/ld+json"]').evaluateAll((els) => els.map((el) => el.textContent ?? ''))
+
+  // Il catalogo arriva in streaming, fuori dal percorso critico della home
+  // (components/home-catalog-jsonld-script.tsx): si aspetta che compaia.
+  await expect
+    .poll(async () => (await readBlocks()).some((b) => b.includes('hasOfferCatalog')), {
+      message: 'nessun blocco con hasOfferCatalog nella home',
+    })
+    .toBe(true)
+
+  const blocks = await readBlocks()
+  const withCatalog = blocks.map((b) => JSON.parse(b)).find((ld) => ld.hasOfferCatalog)
+
+  const offers = withCatalog.hasOfferCatalog.itemListElement
+  expect(offers.length, 'catalogo vuoto').toBeGreaterThan(0)
+  for (const offer of offers) {
+    expect(offer.url).toContain('/it/bikes/')
+    expect(offer.price, `prezzo mancante per ${offer.itemOffered?.name}`).toBeGreaterThan(0)
+  }
+  // Scritto a mano, il catalogo tipava le bici come RentalCar.
+  expect(blocks.join('')).not.toContain('RentalCar')
+})

@@ -38,10 +38,10 @@ export async function generateMetadata({
   const dict = await getDictionary(lang)
   const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://www.lelettricaleoni.com').replace(/\/$/, '')
   return {
-    title: dict.routes.page_title,
-    description: dict.routes.page_subtitle,
+    title: dict.routes.meta_title,
+    description: dict.routes.meta_description,
     ...buildSocialMetadata({
-      lang, title: dict.routes.page_title, description: dict.routes.page_subtitle, url: `${siteUrl}/${lang}/routes`,
+      lang, title: dict.routes.meta_title, description: dict.routes.meta_description, url: `${siteUrl}/${lang}/routes`,
     }),
     alternates: {
       canonical: `${siteUrl}/${lang}/routes`,
