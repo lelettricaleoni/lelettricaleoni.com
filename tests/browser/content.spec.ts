@@ -244,3 +244,19 @@ test('uno slug di servizio sconosciuto non finge di esistere', async ({ page }) 
   await page.goto('/it/questo-slug-non-esiste', { waitUntil: 'domcontentloaded' })
   await expect(page.locator('meta[name="robots"][content*="noindex"]').first()).toBeAttached()
 })
+
+test('la radice manda alla lingua con un redirect temporaneo, che dipende da Accept-Language', async ({ request }) => {
+  // Era un 301: la lingua viene dal browser di chi chiede, quindi lo stesso URL
+  // porta a /de per uno e a /it per l'altro, e un redirect permanente dice a
+  // browser e Google che "/" vale sempre una lingua sola.
+  for (const [lingua, atteso] of [['de', '/de'], ['it', '/it'], ['en', '/en']] as const) {
+    const res = await request.get('/', { maxRedirects: 0, headers: { 'accept-language': lingua } })
+    expect(res.status(), `/ con Accept-Language ${lingua}`).toBe(307)
+    expect(new URL(res.headers()['location'], 'https://x.test').pathname).toBe(atteso)
+    expect(res.headers()['vary'] ?? '').toMatch(/accept-language/i)
+  }
+
+  // Chi non manda l'header (un crawler) finisce sull'italiano.
+  const senza = await request.get('/', { maxRedirects: 0, headers: { 'accept-language': '' } })
+  expect(new URL(senza.headers()['location'], 'https://x.test').pathname).toBe('/it')
+})

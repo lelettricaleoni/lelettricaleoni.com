@@ -83,9 +83,15 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next({ request: { headers: requestHeaders } })
   }
 
+  // 307, not 301: the language comes from the visitor's Accept-Language, so the
+  // same URL leads to /de for one person and /it for the next. A permanent
+  // redirect tells browsers and Google that "/" always means one language, and
+  // they keep it. Vary says the answer depends on that header.
   const locale = getLocale(request)
   request.nextUrl.pathname = `/${locale}${pathname}`
-  return NextResponse.redirect(request.nextUrl, 301)
+  const response = NextResponse.redirect(request.nextUrl, 307)
+  response.headers.set('Vary', 'Accept-Language')
+  return response
 }
 
 export const config = {
