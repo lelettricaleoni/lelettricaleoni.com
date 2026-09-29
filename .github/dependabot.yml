@@ -34,6 +34,11 @@ updates:
         update-types: [version-update:semver-major]
       - dependency-name: react-dom
         update-types: [version-update:semver-major]
+      # eslint 10 rompe eslint-plugin-react ("getFilename is not a function"), che
+      # eslint-config-next porta con sé: il plugin dichiara compatibilità solo fino a
+      # eslint 9 (7.37.5, 2026-09-29). Da togliere quando una sua versione supporta 10.
+      - dependency-name: eslint
+        update-types: [version-update:semver-major]
 
   - package-ecosystem: github-actions
     directory: /
