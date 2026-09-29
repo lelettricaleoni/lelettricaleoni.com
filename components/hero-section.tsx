@@ -68,15 +68,17 @@ export function HeroSection({ lang, dict }: HeroSectionProps) {
           </Badge>
         </div>
 
-        {/* Headline */}
-        <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold text-white tracking-tight leading-tight">
-          {dict.hero.headline}
+        {/* The H1 carries the subheadline too, so the page's main heading says
+            what the shop does and where — "Lelettrica" alone said neither.
+            Two spans laid out exactly as the old h1 + paragraph were. */}
+        <h1 className="flex flex-col items-center gap-6">
+          <span className="text-5xl sm:text-6xl lg:text-7xl font-bold text-white tracking-tight leading-tight">
+            {dict.hero.headline}
+          </span>{' '}
+          <span className="text-xl sm:text-2xl text-white/80 font-light max-w-xl">
+            {dict.hero.subheadline}
+          </span>
         </h1>
-
-        {/* Subheadline */}
-        <p className="text-xl sm:text-2xl text-white/80 font-light max-w-xl">
-          {dict.hero.subheadline}
-        </p>
 
         {/* Quick info */}
         <div className="flex flex-col sm:flex-row items-center gap-4 text-white/70 text-sm mt-2">

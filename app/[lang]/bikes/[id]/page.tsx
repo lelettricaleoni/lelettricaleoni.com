@@ -37,7 +37,10 @@ export async function generateMetadata({
   const { translation, allMedia } = data
 
   const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://www.lelettricaleoni.com').replace(/\/$/, '')
-  const title = translation?.name ?? id
+  const dict = await getDictionary(lang)
+  // The model's name alone doesn't say what the page is or where: someone who
+  // searches "noleggio e-bike Dro" sees a bare "Mondraker Chrono Carbon DC".
+  const title = `${translation?.name ?? id} — ${dict.bikes.detail_title_suffix}`
   const description = translation?.description?.slice(0, 155) ?? ''
   const coverPhoto = allMedia.find((m) => m.mediaType === 'photo')
   const ogImage = coverPhoto ? photoShareUrl(coverPhoto.storageKey) : `${siteUrl}/opengraph-image`

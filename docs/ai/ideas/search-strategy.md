@@ -55,6 +55,12 @@ Senza questo, il resto è a sentimento.
   (3,9) e desktop (9,3) suggerisce che il grosso arriva dalle ricerche locali.
 
 ### Fase 1 — Sistemare le basi (settimane 1-3, tutto codice mio)
+> **Stato (2026-09-29):** le voci 2-5 sono fatte in un'unica PR; la voce 1 (radice) resta da fare,
+> per ultima e misurando. Nella 3, oltre alle liste, i titoli dei dettagli di bici e percorsi ora
+> portano un suffisso ("— a noleggio a Dro", "— percorso in bici"). Nella 5 il catalogo è uno
+> spezzone della stessa entità (stesso `@id` del negozio) emesso dalla home in un confine
+> Suspense con tetto di 2 s: la home non dipende dal database per uscire, e le offerte sono
+> marcate `LeaseOut` (noleggio), non vendita.
 1. **Radice `/`:** da 301 a **307**, e l'apex (`lelettricaleoni.com`) direttamente a
    `www…/it` in un salto solo. Oggi sono due salti e un permanente che dipende dalla lingua.
    Tocca la pagina che porta più traffico: si fa con misura prima e dopo, e si guarda Search

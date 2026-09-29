@@ -56,7 +56,8 @@ export async function generateMetadata({
   const { route, translation, allMedia } = data
 
   const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://www.lelettricaleoni.com').replace(/\/$/, '')
-  const title = translation?.name ?? id
+  const dict = await getDictionary(lang)
+  const title = `${translation?.name ?? id} — ${dict.routes.detail_title_suffix}`
   const description = translation?.description?.slice(0, 155) ?? ''
   const coverPhoto = allMedia.find((m) => m.mediaType === 'photo')
   const ogImage = coverPhoto ? photoShareUrl(coverPhoto.storageKey) : `${siteUrl}/opengraph-image`
