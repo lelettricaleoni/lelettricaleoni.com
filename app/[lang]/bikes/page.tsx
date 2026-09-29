@@ -30,10 +30,10 @@ export async function generateMetadata({
   const dict = await getDictionary(lang)
   const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://www.lelettricaleoni.com').replace(/\/$/, '')
   return {
-    title: dict.bikes.page_title,
-    description: dict.bikes.page_subtitle,
+    title: dict.bikes.meta_title,
+    description: dict.bikes.meta_description,
     ...buildSocialMetadata({
-      lang, title: dict.bikes.page_title, description: dict.bikes.page_subtitle, url: `${siteUrl}/${lang}/bikes`,
+      lang, title: dict.bikes.meta_title, description: dict.bikes.meta_description, url: `${siteUrl}/${lang}/bikes`,
     }),
     alternates: {
       canonical: `${siteUrl}/${lang}/bikes`,

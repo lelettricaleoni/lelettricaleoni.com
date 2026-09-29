@@ -99,6 +99,19 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  // staging.lelettricaleoni.com was showing up in Google's index next to the
+  // real site (Search Console inventory, 2026-09-25). The header covers every
+  // response on that host, robots.txt and images included, so nothing there
+  // can be indexed even if a page forgets its own meta tag.
+  async headers() {
+    return [
+      {
+        source: '/:path*',
+        has: [{ type: 'host', value: 'staging.lelettricaleoni.com' }],
+        headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow' }],
+      },
+    ]
+  },
   async redirects() {
     return [
       // Redirect vecchio PDF indicizzato da Google (vecchio sito)

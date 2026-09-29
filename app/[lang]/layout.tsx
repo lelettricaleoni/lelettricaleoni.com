@@ -233,6 +233,11 @@ const jsonLd = {
   ],
   areaServed: [
     { '@type': 'City', name: 'Dro' },
+    { '@type': 'City', name: 'Drena' },
+    { '@type': 'City', name: 'Sarche' },
+    { '@type': 'AdministrativeArea', name: 'Valle dei Laghi' },
+    { '@type': 'LakeBodyOfWater', name: 'Lago di Cavedine' },
+    { '@type': 'LakeBodyOfWater', name: 'Lago di Toblino' },
     { '@type': 'City', name: 'Arco' },
     { '@type': 'City', name: 'Riva del Garda' },
     { '@type': 'City', name: 'Nago-Torbole' },
@@ -243,67 +248,6 @@ const jsonLd = {
     { '@type': 'LakeBodyOfWater', name: 'Lago di Garda' },
   ],
   knowsAbout: ['E-Bike', 'Bici elettrica', 'Mondraker', 'MTB', 'Riparazione bici', 'Noleggio bici', 'Cicloturismo', 'Gravel bike'],
-  hasOfferCatalog: {
-    '@type': 'OfferCatalog',
-    name: 'Noleggio E-Bike e Riparazioni',
-    itemListElement: [
-      {
-        '@type': 'Offer',
-        itemOffered: {
-          '@type': 'RentalCar',
-          name: 'Mondraker Arid S — Gravel eBike',
-          description: 'Gravel e-bike Mondraker Arid S',
-        },
-        price: '25',
-        priceCurrency: 'EUR',
-        priceSpecification: { '@type': 'UnitPriceSpecification', referenceQuantity: { '@type': 'QuantitativeValue', value: 1, unitCode: 'DAY' } },
-      },
-      {
-        '@type': 'Offer',
-        itemOffered: {
-          '@type': 'RentalCar',
-          name: 'Upstreet 5.10 — City eBike',
-          description: 'E-bike da città Upstreet 5.10',
-        },
-        price: '33',
-        priceCurrency: 'EUR',
-        priceSpecification: { '@type': 'UnitPriceSpecification', referenceQuantity: { '@type': 'QuantitativeValue', value: 1, unitCode: 'DAY' } },
-      },
-      {
-        '@type': 'Offer',
-        itemOffered: {
-          '@type': 'RentalCar',
-          name: 'Mondraker Prime R — eMTB Front',
-          description: 'E-mountain bike frontale Mondraker Prime R',
-        },
-        price: '38',
-        priceCurrency: 'EUR',
-        priceSpecification: { '@type': 'UnitPriceSpecification', referenceQuantity: { '@type': 'QuantitativeValue', value: 1, unitCode: 'DAY' } },
-      },
-      {
-        '@type': 'Offer',
-        itemOffered: {
-          '@type': 'RentalCar',
-          name: 'Mondraker Scree S Alu — eMTB Full',
-          description: 'E-mountain bike full suspension Mondraker Scree S (telaio alluminio)',
-        },
-        price: '60',
-        priceCurrency: 'EUR',
-        priceSpecification: { '@type': 'UnitPriceSpecification', referenceQuantity: { '@type': 'QuantitativeValue', value: 1, unitCode: 'DAY' } },
-      },
-      {
-        '@type': 'Offer',
-        itemOffered: {
-          '@type': 'RentalCar',
-          name: 'Mondraker Scree S Carbon — eMTB Full',
-          description: 'E-mountain bike full suspension Mondraker Scree S (telaio carbonio)',
-        },
-        price: '70',
-        priceCurrency: 'EUR',
-        priceSpecification: { '@type': 'UnitPriceSpecification', referenceQuantity: { '@type': 'QuantitativeValue', value: 1, unitCode: 'DAY' } },
-      },
-    ],
-  },
 }
 
 export default async function LangLayout({
