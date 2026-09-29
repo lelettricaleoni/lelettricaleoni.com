@@ -1,3 +1,4 @@
+import { Suspense } from 'react'
 import { notFound } from 'next/navigation'
 import { connection } from 'next/server'
 import { getDictionary, hasLocale } from './dictionaries'
@@ -11,7 +12,10 @@ import { PricingSection } from '@/components/pricing-section'
 import { MapSection } from '@/components/map-section'
 import { Footer } from '@/components/footer'
 import { FlagsExplorer } from '@/components/flags-explorer'
+import { HomeCatalogJsonLd } from '@/components/home-catalog-jsonld-script'
 import { getFlags } from '@/lib/flags'
+
+const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://www.lelettricaleoni.com').replace(/\/$/, '')
 
 // TODO: Cache Components adoption. Refactor this route so this opt-out can be removed.
 // See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
@@ -45,6 +49,11 @@ export default async function HomePage({
 
   return (
     <>
+      {flags.bikes && (
+        <Suspense fallback={null}>
+          <HomeCatalogJsonLd lang={lang} siteUrl={siteUrl} name={dict.bikes.page_title} />
+        </Suspense>
+      )}
       <FlagsExplorer flags={flags} />
       <Navbar lang={lang} dict={dict} showRoutes={flags.routes} showBikes={flags.bikes} />
       <main>
