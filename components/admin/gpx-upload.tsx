@@ -61,7 +61,9 @@ export function GpxUpload({ routeId, defaultGpxKey, onUploaded }: GpxUploadProps
       const dur = stats.durationMin ? `, ${Math.floor(stats.durationMin / 60)}h${stats.durationMin % 60 > 0 ? `${stats.durationMin % 60}m` : ''}` : ''
       toast.success(`GPX uploaded — ${stats.distanceKm} km, +${stats.elevationM} m${dur}`)
     } catch (err) {
-      console.error('GPX upload error:', err)
+      // The message can carry the server's response text: no line breaks, so it
+      // cannot pass for a second log entry.
+      console.error('GPX upload error:', err instanceof Error ? err.message.replace(/\n|\r/g, ' ') : 'unknown')
       toast.error(`GPX error: ${err instanceof Error ? err.message : 'unknown'}`)
     } finally {
       setUploading(false)
