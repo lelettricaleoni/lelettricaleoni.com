@@ -249,7 +249,6 @@ export function RouteElevationChart({
             fill={color}
             stroke="white"
             strokeWidth={1.5}
-            isFront
             label={{
               value: `${peak.elevation} m`,
               position: 'top',
