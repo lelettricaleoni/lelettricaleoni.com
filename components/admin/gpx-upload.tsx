@@ -61,8 +61,10 @@ export function GpxUpload({ routeId, defaultGpxKey, onUploaded }: GpxUploadProps
       const dur = stats.durationMin ? `, ${Math.floor(stats.durationMin / 60)}h${stats.durationMin % 60 > 0 ? `${stats.durationMin % 60}m` : ''}` : ''
       toast.success(`GPX uploaded — ${stats.distanceKm} km, +${stats.elevationM} m${dur}`)
     } catch (err) {
-      console.error('GPX upload error:', err)
-      toast.error(`GPX error: ${err instanceof Error ? err.message : 'unknown'}`)
+      const rawMessage = err instanceof Error ? err.message : String(err)
+      const safeMessage = rawMessage.replace(/[\r\n]+/g, ' ')
+      console.error('GPX upload error:', safeMessage)
+      toast.error(`GPX error: ${safeMessage || 'unknown'}`)
     } finally {
       setUploading(false)
     }
