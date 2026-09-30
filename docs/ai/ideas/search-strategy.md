@@ -93,7 +93,8 @@ senza il nome.
   in evidenza e qualunque contenuto nuovo pensato per la ricerca (deciso da Kevin il 2026-09-28).
 > **Stato (2026-09-30):** titolo e descrizione di ogni percorso ora sono una regola nel codice (PR #206, `lib/route-seo.ts`):
 > la descrizione apre con distanza, dislivello e difficoltà, il titolo dice "percorso in e-bike da Dro". Riscritti in produzione
-> i nomi di 5 percorsi su 7 e le 2 descrizioni deboli (le altre erano già buone). **Resta:** rivedere dopo un mese i numeri di
+> i testi di tutti e 7 i percorsi: nomi ripuliti dove disordinati, e un'apertura breve (bici e luogo) prima di ogni descrizione,
+> con il resto del testo originale invariato; corrette a mano le traduzioni tedesche più stonate. **Resta:** rivedere dopo un mese i numeri di
 > Search Console per `/it/routes/bdd7a446` (294 impressioni, CTR 2,7% prima del cambio) e nominare le zone a nord di Dro
 > (Marocche, Cavedine, Sarche, Drena, Toblino) nei testi dei percorsi che passano di lì, dove è vero.
 - **I percorsi come richiamo:** hanno traccia GPX, mappa e video, e sono la cosa che le altre
