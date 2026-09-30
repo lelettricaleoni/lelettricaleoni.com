@@ -43,7 +43,14 @@
   punto di partenza, quattro fasi (misurare → sistemare le basi → pagine per chi non ci conosce
   → revisione mensile), i sei numeri da guardare e le quattro decisioni che aspettano Kevin
   (credenziali per la dashboard, Google Business Profile, via alla Fase 1, testi delle pagine
-  di servizio).
+  di servizio). **Aggiornamento 2026-09-30:** la Fase 1 è fatta (staging noindex, titoli, H1 e
+  dati strutturati dal database: #189; ogni percorso senza lingua ora con un 307: #190), le
+  pagine di servizio e le cinque di zona sono online solo per l'indicizzazione (#185, #188), e
+  titoli e descrizioni dei percorsi sono una regola nel codice (#206) con i testi dei 7
+  percorsi riscritti in produzione. **Restano**: le decisioni 1 e 2 di Kevin (credenziali di
+  Google per la dashboard, Google Business Profile), la dashboard `/manage/analytics` che ne
+  dipende, e rileggere Search Console a fine ottobre (punto di partenza: `/it/routes/bdd7a446`,
+  294 impressioni e CTR 2,7%).
 
 ## Un giorno
 
@@ -118,3 +125,15 @@
 - **404 vero al posto del 200 per una sezione spenta** — si otterrebbe spostando il
   controllo in `proxy.ts`, al prezzo di perdere la pagina "Pagina non trovata" curata. Il
   `noindex` iniettato da Next copre già il lato SEO.
+- **Ponte JPEG da 1200 px per le card, via l'ottimizzatore di Vercel** (#175, 2026-09-25) —
+  perdeva la trasparenza e a schermi ad alta densità era morbido. Sostituito dalle tre
+  versioni AVIF che il worker scrive accanto al master, scelte da `lib/photo-loader.ts`.
+- **`'use cache: remote'` per invalidare i cataloghi su tutte le istanze** — risolverebbe il
+  limite di `updateTag`, che scade la voce solo nell'istanza che esegue l'azione, ma costa un
+  giro di rete a ogni lettura e ha costi di piattaforma. Scartato per ora (2026-09-25): il
+  profilo `catalog` a 10s/30s rende sopportabile l'attesa.
+- **Fondere in un solo salto apex → `www` e lingua** — guadagnerebbe circa 200 ms, ma il
+  redirect dell'apex è un'impostazione di dominio di Vercel: spostarlo nel codice vorrebbe
+  dire gestire a mano `sitemap.xml`, `robots.txt` e i file statici, che il matcher del proxy
+  esclude e che l'apex servirebbe quindi con 200 (contenuto duplicato). Catena misurata in
+  produzione il 2026-09-29: 308 (http→https) → 308 (apex→www) → 301 (lingua, oggi 307) → 200.
