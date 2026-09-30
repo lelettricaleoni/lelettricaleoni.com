@@ -20,6 +20,7 @@ import { photoShareUrl } from '@/lib/media-client'
 import { getFlags } from '@/lib/flags'
 import { getRouteDetailData } from '@/lib/routes-data'
 import { buildSocialMetadata } from '@/lib/metadata'
+import { buildRouteDescription } from '@/lib/route-seo'
 import { getSuggestedBikesForRoute } from '@/lib/bikes-data'
 import { RouteSuggestedBikes } from '@/components/route-suggested-bikes'
 
@@ -58,7 +59,18 @@ export async function generateMetadata({
   const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://www.lelettricaleoni.com').replace(/\/$/, '')
   const dict = await getDictionary(lang)
   const title = `${translation?.name ?? id} — ${dict.routes.detail_title_suffix}`
-  const description = translation?.description?.slice(0, 155) ?? ''
+  const r = dict.routes
+  const description = buildRouteDescription({
+    lang,
+    description: translation?.description,
+    distanceKm: route.distanceKm,
+    elevationM: route.elevationM,
+    labels: {
+      distance: r.stat_distance_label,
+      elevation: r.stat_elevation_label,
+      difficulty: r[`difficulty_${route.difficulty}` as keyof typeof r] ?? '',
+    },
+  })
   const coverPhoto = allMedia.find((m) => m.mediaType === 'photo')
   const ogImage = coverPhoto ? photoShareUrl(coverPhoto.storageKey) : `${siteUrl}/opengraph-image`
 

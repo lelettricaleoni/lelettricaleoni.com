@@ -72,6 +72,24 @@ test('il dettaglio di un percorso non perde i campi ereditati dal layout', async
   expect(await ogContent(page, 'og:url')).toContain(href!)
 })
 
+test('il dettaglio di un percorso ha titolo e descrizione fatti per la ricerca', async ({ page }) => {
+  // Prima la descrizione era il testo del percorso tagliato a 155 caratteri, a
+  // metà parola e uguale nella forma per tutti. Ora comincia con le cifre del
+  // percorso (route-seo.ts) e finisce a fine frase o a fine parola.
+  await visit(page, '/it/routes')
+  const href = await page.locator('a[href*="/routes/"]').filter({ has: page.locator('h3') })
+    .first().getAttribute('href')
+  expect(href, 'nessun percorso da aprire').toBeTruthy()
+  await visit(page, href!)
+
+  await expect(page).toHaveTitle(/percorso in e-bike da Dro \| Lelettrica$/)
+  const description = await page.locator('meta[name="description"]').first().getAttribute('content')
+  expect(description, 'description mancante').toBeTruthy()
+  // Le cifre (km o metri di dislivello) aprono la descrizione, qualunque delle due manchi.
+  expect(description).toMatch(/^(Distanza [\d.,]+ km|Dislivello [\d.,]+ m)/)
+  expect(description!.length, 'description più lunga di ciò che Google mostra').toBeLessThanOrEqual(155)
+})
+
 test('og:image punta a un url assoluto', async ({ page }) => {
   await visit(page, '/it/bikes')
   const image = await ogContent(page, 'og:image')
