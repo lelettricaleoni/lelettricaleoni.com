@@ -91,6 +91,11 @@ senza il nome.
   Sarche, Drena, Toblino. **Non su Arco e verso Riva del Garda**: quella zona ha già molti
   noleggi, qui la domanda è meno coperta. Vale per i testi delle pagine di servizio, i percorsi
   in evidenza e qualunque contenuto nuovo pensato per la ricerca (deciso da Kevin il 2026-09-28).
+> **Stato (2026-09-30):** titolo e descrizione di ogni percorso ora sono una regola nel codice (PR #206, `lib/route-seo.ts`):
+> la descrizione apre con distanza, dislivello e difficoltà, il titolo dice "percorso in e-bike da Dro". Riscritti in produzione
+> i nomi di 5 percorsi su 7 e le 2 descrizioni deboli (le altre erano già buone). **Resta:** rivedere dopo un mese i numeri di
+> Search Console per `/it/routes/bdd7a446` (294 impressioni, CTR 2,7% prima del cambio) e nominare le zone a nord di Dro
+> (Marocche, Cavedine, Sarche, Drena, Toblino) nei testi dei percorsi che passano di lì, dove è vero.
 - **I percorsi come richiamo:** hanno traccia GPX, mappa e video, e sono la cosa che le altre
   attività non hanno. Ogni percorso deve avere titolo e testo che parlino di *chi lo cerca* ("giro
   in e-bike da Dro a…"), e un invito chiaro a noleggiare la bici adatta (la card "bici adatte a

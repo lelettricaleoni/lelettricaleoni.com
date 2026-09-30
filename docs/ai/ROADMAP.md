@@ -17,7 +17,11 @@
   TIFF grigio a 16 bit, un `.jpg` corrotto che resta dov'è). **Detto da Kevin il
   2026-09-29**: le foto dal pannello e l'anteprima social vanno bene (senza dettagliare i formati:
   HEIC e PNG trasparente non risultano provati uno per uno). **Da fare**: i tempi della pagina di
-  un percorso con foto in staging prima e dopo. La qualità AVIF (`IMAGE_QUALITY=65`) resta
+  un percorso con foto in staging prima e dopo. **Misurato il 2026-09-30 in produzione:** nessun percorso ha ancora
+  una foto passata dal worker (tutte `.jpg`/`.webp` vecchie), quindi il confronto richiede un percorso di prova con
+  foto nuove. Intanto: card da 11-32 KB con le versioni del worker contro 17-49 KB dall'ottimizzatore di Vercel, che
+  in più costa 0,6-0,9 s a freddo per ogni foto e larghezza nuova. Nota a margine: `trails-bucket…` risponde
+  `cf-cache-status: DYNAMIC`, cioè la cache di Cloudflare non è attiva su quel dominio (da verificare). La qualità AVIF (`IMAGE_QUALITY=65`) resta
   com'è: Kevin la trova buona a occhio e ha chiesto di non toccarla (2026-09-25).
   **Fatto il 2026-09-25 (soluzione 3):** il worker scrive anche tre versioni AVIF
   ridimensionate accanto a ogni master (worker PR #10, con il recupero dei master esistenti)
