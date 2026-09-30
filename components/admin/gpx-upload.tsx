@@ -61,9 +61,13 @@ export function GpxUpload({ routeId, defaultGpxKey, onUploaded }: GpxUploadProps
       const dur = stats.durationMin ? `, ${Math.floor(stats.durationMin / 60)}h${stats.durationMin % 60 > 0 ? `${stats.durationMin % 60}m` : ''}` : ''
       toast.success(`GPX uploaded — ${stats.distanceKm} km, +${stats.elevationM} m${dur}`)
     } catch (err) {
+      // The message can carry the server's response body, so it goes to the toast
+      // (where the admin reads it) and not to the console: CodeQL's log-injection
+      // rule did not accept a line-break filter here, and a fixed string is enough
+      // for a console that the response is visible in anyway (network tab).
       const rawMessage = err instanceof Error ? err.message : String(err)
       const safeMessage = rawMessage.replace(/[\r\n]+/g, ' ')
-      console.error('GPX upload error:', safeMessage)
+      console.error('GPX upload failed')
       toast.error(`GPX error: ${safeMessage || 'unknown'}`)
     } finally {
       setUploading(false)
