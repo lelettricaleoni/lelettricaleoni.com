@@ -4,7 +4,7 @@
 > componenti si ricava con `ls`; il motivo per cui i tile CARTO passano dal server no.
 > Se questo file supera le ~150 righe, qualcosa è entrato che non doveva.
 >
-> Ultimo allineamento: 2026-09-25.
+> Ultimo allineamento: 2026-09-30.
 
 ## Prodotto
 
@@ -25,14 +25,11 @@ pannello di amministrazione privato.
 
 ## Superfici
 
-- `app/[lang]/` — home, privacy, login, update-password, e la sezione `routes`
 - `app/[lang]/routes/[id]` — dettaglio percorso. L'`[id]` è uno **short id di 8 caratteri
   esadecimali** derivato dall'UUID, non lo slug: `/it/routes/aa7da601`
 - `app/manage/` — pannello amministrativo, non indicizzato, protetto in `proxy.ts`
 - `app/api/routes/[id]/gpx` — serve il GPX con watermark iniettato al volo; l'originale su
   R2 resta intatto
-- `app/api/map-tile/[z]/[x]/[y]` — proxy server-side dei tile CARTO
-- `app/.well-known/vercel/flags` — discovery endpoint dei feature flag
 
 ## Dati e servizi
 
@@ -59,7 +56,9 @@ aperta entro 250 ms. Lo stesso Upstash tiene lo stato di transcodifica del worke
 `dev-lelettrica-trails`), serviti da `trails-bucket.lelettricaleoni.com`. MinIO non esiste
 più. Sorgenti in `private/route-videos/`, flussi in `public/route-videos/`: **su R2 quel
 `private/` non protegge nulla** — il dominio pubblico espone tutto il bucket — ma il
-sorgente vive solo i minuti che il worker impiega a cancellarlo.
+sorgente vive solo i minuti che il worker impiega a cancellarlo. La cache di Cloudflare su
+quel dominio è attiva (`cf-cache-status: HIT`, `Age` di giorni): si legge con una GET, mai
+con HEAD, che risponde `DYNAMIC`.
 
 **Il worker** (`lelettricaleoni/videoStream-bucketWorker`) sta in `~/docker/worker` sulla VM
 `clustrenode1` (Oracle Cloud, ARM64, 2 CPU), con un Redis append-only per la coda BullMQ,
@@ -76,24 +75,20 @@ nessuna porta aperta. Quattro rendition HLS (1080/720/480/360p), segmenti da 4 s
 **Deploy automatico dal 2026-09-15**: ogni push a `main` con modifiche a `.py`,
 `requirements.txt` o `Dockerfile` costruisce l'immagine, la fissa per digest esatto e la
 distribuisce da sola sulla VM (`deploy.sh`, via una chiave SSH dedicata con comando forzato
-in `authorized_keys` — non può eseguire nient'altro). Prima di sostituire il container in
-esecuzione, `deploy.sh` prova l'immagine a freddo (importa tutti i moduli con l'`.env` vero)
-e torna indietro da sola se il container non parte sano. Verificato dal vivo: un comando
-arbitrario passato attraverso quella chiave non viene eseguito, resta testo inerte per
-`deploy.sh`.
+in `authorized_keys`: non può eseguire nient'altro, verificato dal vivo). Prima di sostituire
+il container, `deploy.sh` prova l'immagine a freddo (importa tutti i moduli con l'`.env`
+vero) e torna indietro da sola se non parte sano.
 
 **Foto: stessa strada dei video, coda propria** (`image-process`). Sorgenti in
 `private/route-photos/` e `private/bike-model-photos/`, master AVIF in `public/…/<uuid>.avif`
 più un piccolo JPEG `.share.jpg` per le anteprime social (che non leggono AVIF) e tre versioni
 AVIF ridimensionate `.w480/.w960/.w1600.avif`, sempre tutte e tre (il sito sceglie con
 `lib/photo-loader.ts`, mai dall'ottimizzatore di Vercel: **non ridimensiona i sorgenti AVIF**,
-restituisce l'originale da 2400 px a qualunque larghezza — misurato 2026-09-25; un job di
-recupero, `image-renditions`, le ha create per i master esistenti). Lo stato usa
+restituisce l'originale da 2400 px a qualunque larghezza — misurato 2026-09-25). Lo stato usa
 il prefisso `videojob:` dei video perché il token del worker scrive solo lì. Le foto già
 pubblicate (chiave senza `private/`) non sono mai passate dal worker e restano com'erano.
 `/api/upload` è solo GPX: le foto vanno con PUT presigned e il duplicato si controlla nel
-browser. Spec e correzioni: `docs/superpowers/specs/2026-09-23-image-processing-worker-design.md`
-e il piano gemello.
+browser (spec: `docs/superpowers/specs/2026-09-23-image-processing-worker-design.md`).
 
 La coda è **ricostruibile, non durevole**: non può esserlo più dei dati che serve, e la
 verità sta nello storage.
@@ -125,15 +120,18 @@ ortometriche, quelle di Cesium ellissoidiche: misurato su un percorso reale, sca
 −46,3 m e dispersione 29,3 m, con il 95% dei punti sottoterra. `lib/terrain.ts` campiona la
 quota del terreno sotto il tracciato e ridisegna lì traccia, marker e telecamera.
 
-**Cesium è self-hosted** in `public/cesium/`, copiato da `scripts/copy-cesium.mjs` a ogni
-`dev` e `build`. Non è versionato.
-
 **I tile della mappa passano dal server** invece che dal browser, per non esporre la chiave
 CARTO.
 
 **Build e dev girano con `--webpack`**, non con Turbopack: `next.config.ts` mappa
 `import cesium` su `window.Cesium` per evitare che SWC analizzi shader GLSL con sequenze di
 escape ottali. Sotto Turbopack quella configurazione viene ignorata.
+
+**Le pagine di servizio** (`app/[lang]/[slug]`, `lib/service-pages.ts`) **esistono solo per
+essere indicizzate**: in sitemap, mai linkate da home, navbar o lista bici (Kevin, 2026-09-28:
+raggiungibili da chi cerca su Google, non da chi naviga; un link tolto il giorno dopo, #185).
+I contenuti nuovi per la ricerca puntano a nord di Dro (Marocche, Cavedine, Sarche, Drena,
+Toblino), non ad Arco/Riva: `docs/ai/ideas/search-strategy.md`.
 
 **I feature flag stanno su Vercel Flags**, letti da `lib/flags.ts`, che è l'unico punto da
 cui passano. Il valore viene valutato una volta e riusato per 30 secondi, e un
@@ -147,16 +145,28 @@ quindi Next le trasmette in streaming e lo stato non è più modificabile quando
 scatta. Next compensa iniettando `<meta name="robots" content="noindex">`. **Non usare il
 codice HTTP per verificare se una sezione è accesa: guarda il contenuto.**
 
+**Su Vercel i file di `public/` non sono nel pacchetto delle funzioni** (li serve la CDN):
+un `readFile(process.cwd()/public/...)` in una rotta dinamica dà ENOENT. `/opengraph-image`
+ha risposto 500 su tutte le pagine dal 2026-09-14 al 2026-09-25 senza che un test se ne
+accorgesse. Il file va dichiarato in `outputFileTracingIncludes` (`next.config.ts`).
+
+**Unire una PR ha tre trappole.** (1) `gh pr merge` fallito + `git push origin --delete
+<branch>` nello stesso comando **chiude la PR**: cancellare il branch solo dopo aver letto
+`state=MERGED` (rimedio: ri-pushare il branch e `gh pr reopen`). (2) Subito dopo un push
+`gh pr checks` mostra ancora i verdi del commit precedente e il merge fallisce: confrontare
+`headRefOid` col commit dei check. (3) `git pull` si rifiuta se il journal, riscritto
+dall'hook, ha modifiche non committate: `git fetch && git merge --ff-only origin/main`.
+
 **Creando un flag su Vercel, il valore predefinito è Off in produzione e preview**, On solo
 in sviluppo. Creare i cinque flag ha spento la sezione percorsi in produzione senza che
 nulla segnalasse errore. Dopo aver creato un flag, verificare sempre i valori per ambiente.
 
-**Produzione e Preview usavano lo stesso database e lo stesso pooler**, copiati una volta sola
-108 giorni prima e mai più separati: il 2026-09-11 sei PR in test insieme hanno esaurito i
-quindici posti del pooler in session mode e mandato in errore la lista percorsi in produzione,
-due volte. Dal 2026-09-14 Preview ha il proprio progetto Supabase e il proprio bucket R2 —
-dettagli in `docs/environment-variables.md`. Se un blocco simile ricapitasse (stessa causa,
-ambiente diverso): `pg_terminate_backend` sulle sessioni `Supavisor` inattive le libera subito.
+**Produzione e Preview usavano lo stesso database e lo stesso pooler** (copiati una volta
+sola 108 giorni prima): il 2026-09-11 sei PR in test insieme hanno esaurito i quindici posti
+del pooler in session mode e mandato in errore la lista percorsi in produzione, due volte.
+Dal 2026-09-14 Preview ha il proprio progetto Supabase e il proprio bucket R2
+(`docs/environment-variables.md`). Se un blocco simile ricapitasse: `pg_terminate_backend`
+sulle sessioni `Supavisor` inattive le libera subito.
 
 **Un client Postgres fermo per minuti ha avuto tre cause, una dopo l'altra** (2026-09-15 e
 2026-09-24): `/routes`, `/manage/routes` e poi tutto `/manage` sono rimasti sullo scheletro
@@ -169,18 +179,18 @@ facevano coda senza timeout → `max: 3`. (2) Un N+1 dentro `Promise.all`
 `postgres.js`, la causa di fondo**: di default scrive una seconda query su una connessione
 ancora occupata, il pooler Supabase in transaction mode non la restituisce mai, la
 connessione resta incastrata e, con tutte e tre incastrate, ogni richiesta successiva
-dell'istanza aspetta dietro. La #154 ha portato le query di `/manage/bike-options` da tre a
-quattro e l'ha fatto esplodere. Misurato contro il pooler, fuori da Next: 4 e 10 query
-concorrenti si bloccano, `max_pipeline: 1` non basta, **`max_pipeline: 0` risolve**
+dell'istanza aspetta dietro (la #154 portò `/manage/bike-options` da tre a quattro query e lo
+fece esplodere). Misurato contro il pooler, fuori da Next: 4 e 10 query concorrenti si
+bloccano, `max_pipeline: 1` non basta, **`max_pipeline: 0` risolve**
 (`lib/db/client-options.ts`, con un test che lo fissa): le eccedenti aspettano nella coda del
 client. Un N+1 resta uno spreco, ma non blocca più il sito.
 **Prezzo di `max_pipeline: 0`: `db.transaction` non funziona più.** `postgres.js` marca la
 connessione come riservata solo se `sent.length < max_pipeline`, quindi il `BEGIN` viene
 rifiutato con `UNSAFE_TRANSACTION` (successo in produzione il 2026-09-25 su rinomina e
-cancellazione di una categoria percorso, subito dopo la #159). Un'operazione che deve essere
-atomica si scrive come un solo statement (una CTE lo è già: vedi
-`lib/route-bike-categories.ts`); `lib/db/no-transactions.test.ts` fa fallire la CI se
-qualcuno riapre una transazione sul client condiviso.
+cancellazione di una categoria percorso). Un'operazione che deve essere atomica si scrive come
+un solo statement (una CTE lo è già: vedi `lib/route-bike-categories.ts`);
+`lib/db/no-transactions.test.ts` fa fallire la CI se qualcuno riapre una transazione sul
+client condiviso.
 **`statement_timeout` per connessione non funziona con questo pooler**: Supavisor in
 transaction mode può dare uno statement successivo a un backend diverso da quello che ha
 ricevuto il parametro di avvio (`show statement_timeout` tornava vuoto).
@@ -190,22 +200,14 @@ sviluppo mentre Vercel punta alla produzione. Scaricare fuori dal progetto. Quas
 variabili su Vercel sono *Secret*: escono come `[SENSITIVE]`, non si rileggono. E sempre
 `npx vercel@latest`: la CLI locale è vecchia, senza `flags`, e cade in silenzio su `deploy`.
 
-**La prima connessione al pooler Supabase di un processo appena avviato può dare
-`ECONNRESET` a ripetizione per qualche minuto**, poi si risolve da sola non appena una
-connessione va a buon fine — riprodotto sia sotto `next dev` sia con uno script isolato
-fuori da Next, stesso comportamento in entrambi i casi. Sembra un problema di rete/TLS sulla
-primissima connessione verso `aws-1-eu-central-1.pooler.supabase.com:6543`, non un bug
-applicativo: nessuna query coinvolta era anomala. Non richiede azione — attendere, non
-inseguire un fix.
+**`ECONNRESET` alla prima connessione al pooler** di un processo appena avviato: si ripete per
+qualche minuto e poi si risolve da sola, anche con uno script fuori da Next, quindi non è un
+bug applicativo. Attendere, non inseguire un fix.
 
-**Un flag Vercel appena creato impiega ~15-20 minuti a propagarsi dopo un `update_flag`**,
-anche se l'API di gestione conferma il nuovo valore istantaneamente: la valutazione live
-(quella che le funzioni interrogano davvero, verosimilmente via Edge Config) resta indietro.
-Il ritardo si è manifestato una sola volta, proprio sul primo flag mai creato e acceso subito
-dopo (`bikes`, per farlo rivedere su un deployment preview) — non è chiaro se sia una
-proprietà generale di ogni flag nuovo o una particolarità di quel primo giro. Se un flag
-appena creato sembra non accendersi, prima di sospettare un bug: aspettare invece di fidarsi
-della risposta immediata di `update_flag`/`get_flag`.
+**Un flag Vercel appena creato può impiegare ~15-20 minuti a propagarsi dopo un
+`update_flag`**, anche se l'API di gestione conferma subito il nuovo valore (visto sul primo
+flag, `bikes`; non è chiaro se valga per ogni flag nuovo). Se non si accende, aspettare prima
+di sospettare un bug.
 
 **Il tracking di `drizzle-kit migrate` si disallinea se si applica una migrazione a mano.**
 `migrate` non confronta gli hash: legge l'ultima riga di `drizzle.__drizzle_migrations` (per
@@ -213,8 +215,7 @@ della risposta immediata di `update_flag`/`get_flag`.
 0001–0009 erano state applicate con l'MCP `apply_migration`, che non scrive nel tracking:
 `migrate` rieseguiva la 0001, la colonna esisteva già, e la CLI usciva con 1 **senza stampare
 l'errore** (lo spinner lo inghiotte). Risincronizzato su dev (2026-09-24) e su produzione
-(verificato il 2026-09-25: 10 righe, `created_at` = `when` del journal; gli hash calcolati su
-Windows, con CRLF, non coincidono con quelli di Linux, ma non importa).
+(verificato il 2026-09-25: 10 righe, `created_at` = `when` del journal).
 **Si applica così**: `npx drizzle-kit generate`, poi `npm run db:migrate`
 (`scripts/migrate.mjs`: come `drizzle-kit migrate`, ma stampa l'errore vero) con
 `DATABASE_DIRECT_URL` del database giusto — dev da `.env.local`, produzione passando la
@@ -224,10 +225,13 @@ registrare a mano la riga nel tracking.
 ## Debito noto
 
 - **I video dei modelli di bici non vengono trascodificati**: `lib/actions/bike-models.ts`
-  carica su `private/bike-model-videos/...`, ma il worker (repo separato
-  `videoStream-bucketWorker`) cerca sorgenti solo sotto `private/route-videos/`
-  (`SOURCE_PREFIX` fisso in `jobs/transcode.py`). Non è un bug, è lavoro non ancora fatto —
-  da riprendere generalizzando `SOURCE_PREFIX`/`OUTPUT_PREFIX` a una lista di coppie.
+  carica su `private/bike-model-videos/...`, ma il worker (repo `videoStream-bucketWorker`)
+  cerca sorgenti solo sotto `private/route-videos/` (`SOURCE_PREFIX` fisso in
+  `jobs/transcode.py`). Lavoro non ancora fatto: generalizzare `SOURCE_PREFIX`/`OUTPUT_PREFIX`
+  a una lista di coppie.
+- **Video.js v10 è ancora Release Candidate** (`rc.4`; la 8.x ha un'API diversa, non è un
+  aggiornamento). `components/video-player.tsx` legge `selectError` da `@videojs/core/dom`,
+  un dettaglio interno: ricontrollarlo a ogni RC (manifest 404 e HLS vero).
 
 ## Decisioni passate ancora rilevanti
 
@@ -239,7 +243,3 @@ Una spec e un piano per feature, in `docs/superpowers/specs/` e `docs/superpower
   all'area esplorabile della mappa 3D (vedi ROADMAP).
 - `2026-09-21-upload-sha256` — SHA-256 su ogni file caricato; i video già trascodificati non
   ce l'hanno (il sorgente era già stato cancellato).
-- `2026-09-17-bike-models-and-inventory` — catalogo bici e inventario "Il mio negozio".
-- `2026-09-14-routes-caching-cache-components` — cache reale su lista/dettaglio percorsi.
-- `2026-09-10-tests-against-preview` — test browser contro il preview.
-- `2026-09-09-ai-docs-system` — questo sistema.
