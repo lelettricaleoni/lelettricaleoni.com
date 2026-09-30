@@ -223,13 +223,6 @@ registrare a mano la riga nel tracking.
 
 ## Debito noto
 
-- **Il test browser "il tedesco rende in tedesco" (`tests/browser/content.spec.ts:85`) è
-  flaky**: `locator('main')` trova due elementi invece di uno (`strict mode violation`),
-  visto su almeno quattro PR indipendenti con diff completamente diversi fra loro — non è
-  causato dal codice cambiato in nessuna di esse. Passa sempre al rilancio
-  (`gh run rerun <id> --failed`). Probabile causa: qualcosa nell'interazione fra Cache
-  Components/PPR e i worker Playwright in parallelo. Non ancora investigato a fondo — se
-  ricompare ancora, merita una sessione dedicata invece dell'ennesimo rilancio.
 - **I video dei modelli di bici non vengono trascodificati**: `lib/actions/bike-models.ts`
   carica su `private/bike-model-videos/...`, ma il worker (repo separato
   `videoStream-bucketWorker`) cerca sorgenti solo sotto `private/route-videos/`
