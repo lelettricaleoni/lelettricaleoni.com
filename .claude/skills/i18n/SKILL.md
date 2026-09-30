@@ -8,9 +8,13 @@ description: "Use when working on internationalization in this project: adding o
 IT / EN / DE. **Il locale viene dall'URL, non da un header** — questa è stata una scelta
 deliberata, non la prima versione:
 
-- `proxy.ts` rileva la lingua al primo accesso (`accept-language` via `negotiator` +
-  `@formatjs/intl-localematcher`) e reindirizza a `/it`, `/en` o `/de` (301). Per un path che
-  ha già un prefisso di lingua, lascia passare la richiesta.
+- `proxy.ts` rileva la lingua di ogni richiesta **senza prefisso** (non solo `/`:
+  `/bikes` → `/it/bikes`) da `accept-language` (`negotiator` +
+  `@formatjs/intl-localematcher`) e reindirizza a `/it`, `/en` o `/de` con un **307**, non un
+  301, più `Vary: Accept-Language`: lo stesso URL porta a lingue diverse per persone
+  diverse, e un permanente direbbe a browser e Google che vale sempre una lingua sola
+  (cambiato il 2026-09-29, #190; il test è in `tests/browser/content.spec.ts`). Per un path
+  che ha già un prefisso di lingua, lascia passare la richiesta.
 - Il root layout, **`app/[lang]/layout.tsx`**, legge `params.lang` direttamente — noto a
   build time, non richiede `headers()`. `app/[lang]/dictionaries.ts` esporta `hasLocale`
   (guardia di tipo) e `getDictionary(locale)`, che importa dinamicamente `messages/<locale>.json`
