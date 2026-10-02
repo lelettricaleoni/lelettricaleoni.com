@@ -17,7 +17,7 @@ const rental = { id: 'r1', kind: 'counter_rental' as const, startsOn: '2031-07-1
 const maintenance = { id: 'm1', kind: 'maintenance' as const, startsOn: '2031-07-20', endsOn: '2031-07-22', label: 'chain' }
 
 function render(units: GridUnit[], today = '2031-07-15') {
-  return renderToStaticMarkup(createElement(BookingView, { month: '2031-07', today, units }))
+  return renderToStaticMarkup(createElement(BookingView, { month: '2031-07', today, units, models: [] }))
 }
 
 describe('BookingView', () => {
@@ -63,6 +63,11 @@ describe('BookingView', () => {
     const units = [unit('aaaaaaaa-0000', 'Mondraker')]
     expect(render(units, '2031-07-15').split('bg-[#366DA1]/15')).toHaveLength(2)
     expect(render(units, '2031-09-15').split('bg-[#366DA1]/15')).toHaveLength(1)
+  })
+
+  it('has a button to add a rental, also when the calendar is empty', () => {
+    expect(render([unit('aaaaaaaa-0000', 'Mondraker')])).toContain('New rental')
+    expect(render([])).toContain('New rental')
   })
 
   it('says so when the shop has no bikes yet', () => {

@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import { getAdminUser } from '@/lib/supabase/server'
+import { getPublishedModelsWithAllowedOptions } from '@/lib/actions/bike-units'
 import { getGrid } from '@/lib/reservations'
 import { currentMonthInRome, parseMonth, todayInRome } from '@/lib/dates'
 import { BookingView } from '@/components/admin/booking-view'
@@ -14,5 +15,7 @@ export default async function BookingsPage({ searchParams }: { searchParams: Pro
   const { month: monthParam } = await searchParams
   const month = parseMonth(monthParam) ?? currentMonthInRome()
 
-  return <BookingView month={month} today={todayInRome()} units={await getGrid(month)} />
+  const [units, models] = await Promise.all([getGrid(month), getPublishedModelsWithAllowedOptions()])
+
+  return <BookingView month={month} today={todayInRome()} units={units} models={models} />
 }

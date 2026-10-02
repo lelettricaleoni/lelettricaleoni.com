@@ -1,33 +1,39 @@
 'use client'
-import { Fragment, useTransition } from 'react'
+import { Fragment, useState, useTransition } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { cn } from '@/lib/utils'
 import { layoutBlocks } from '@/lib/booking-grid'
 import {
   dayOfMonth, isWeekendDay, monthDays, monthTitle, shiftMonth, weekdayLetter, type IsoDate, type IsoMonth,
 } from '@/lib/dates'
 import type { GridUnit } from '@/lib/reservations'
+import type { ModelOption } from '@/components/admin/booking-types'
 import { useReservationsRealtime } from '@/components/admin/use-reservations-realtime'
+import { RentalForm } from '@/components/admin/rental-form'
 
 interface BookingViewProps {
   month: IsoMonth
   today: IsoDate
   units: GridUnit[]
+  models: ModelOption[]
 }
 
 const LABEL_COLUMN = 'minmax(11rem, 14rem)'
 
-export function BookingView({ month, today, units }: BookingViewProps) {
+export function BookingView({ month, today, units, models }: BookingViewProps) {
   const router = useRouter()
   const [, startTransition] = useTransition()
+  const [rentalOpen, setRentalOpen] = useState(false)
   const days = monthDays(month)
 
   // router.refresh() re-runs this page's server component: the ping carries nothing to trust,
   // so the grid is simply read again.
-  useReservationsRealtime(() => startTransition(() => router.refresh()))
+  const reload = () => startTransition(() => router.refresh())
+  useReservationsRealtime(reload)
 
   const columns = `${LABEL_COLUMN} repeat(${days.length}, minmax(2rem, 1fr))`
 
@@ -36,6 +42,7 @@ export function BookingView({ month, today, units }: BookingViewProps) {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-bold text-[#1e3a5f]">Bookings</h1>
         <div className="flex items-center gap-2">
+          <Button onClick={() => setRentalOpen(true)}><Plus size={16} className="mr-1" />New rental</Button>
           <Button asChild variant="outline" size="icon" aria-label="Previous month">
             <Link href={`/manage/bookings?month=${shiftMonth(month, -1)}`}><ChevronLeft size={16} /></Link>
           </Button>
@@ -81,6 +88,13 @@ export function BookingView({ month, today, units }: BookingViewProps) {
           </div>
         </div>
       )}
+
+      <Dialog open={rentalOpen} onOpenChange={setRentalOpen}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>New rental</DialogTitle></DialogHeader>
+          <RentalForm models={models} onCreated={() => { setRentalOpen(false); reload() }} />
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
