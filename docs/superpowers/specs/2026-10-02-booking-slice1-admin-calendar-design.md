@@ -35,6 +35,8 @@ piano, nell'ordine in cui si costruiscono:
   impedisce le sovrapposizioni.
 - **Il posto si tiene 30 minuti durante il pagamento** (il minimo di una sessione Stripe
   Checkout) e poi si libera.
+- **Pagina pubblica: si prenota al massimo 180 giorni da oggi**, come nel calendario originale
+  di Kevin (`MAX_DAYS`). Il limite vale solo per la pagina pubblica, non per il pannello.
 - **Nulla di tutto questo va in produzione finché non è pronto** (vedi «Rilascio»).
 
 ---
@@ -196,9 +198,15 @@ di `lib/actions/`, validazione con `zod` (`z.iso.date()`, `z.uuid()`), e **senza
 Tutte le letture del pannello sono dal vivo, senza `'use cache'`: i dati del calendario devono
 essere esatti, non «entro 10-30 secondi».
 
-Un controllo di sensatezza sulle date (la fine non precede l'inizio, intervallo di al massimo
-366 giorni per un noleggio) sta in `lib/dates.ts`; il 366 è una scelta di questa spec, non una
-regola di Kevin: da confermare.
+**Nessun limite di anticipo né di durata nel pannello.** Il pannello controlla solo che le date
+siano valide e che la fine segua l'inizio (in `lib/dates.ts`): Kevin può registrare un noleggio
+o un fuori servizio in qualunque data futura. I limiti della prenotazione online sono un'altra
+cosa e valgono **solo per la pagina pubblica** (fetta 3), ripresi dal calendario originale di
+Kevin (`C:\AzureDevOps\firebase\app\rent\`): prenotabile fino a **180 giorni da oggi**
+(`MAX_DAYS = 180`). Quel prototipo limita anche la lunghezza dell'intervallo
+(`differenceInDays > 7`, cioè fino a 8 giorni compresi): se tenerla, e come si accorda ai giorni
+del listino (da 1 a 7, più una tariffa a giorno per le bici classiche), lo decide la spec della
+fetta 3. Questa fetta non implementa nessuno dei due limiti.
 
 «Oggi» si calcola sempre in `Europe/Rome` con `@date-fns/tz`, mai con `new Date()` nudo: il
 server Vercel gira in UTC e dopo le 22 a Roma vedrebbe già il giorno dopo.
