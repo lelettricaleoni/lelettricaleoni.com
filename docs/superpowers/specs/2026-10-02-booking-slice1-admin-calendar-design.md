@@ -44,8 +44,8 @@ piano, nell'ordine in cui si costruiscono:
 ## Obiettivo della fetta 1
 
 Un calendario nel pannello dove Kevin vede, per ogni bici fisica, quando è occupata, e dove può
-registrare un noleggio al banco, annullarlo, spostarlo su un'altra bici e mettere una bici fuori
-servizio. È la base di dati e di regole su cui poggiano tutte le fette successive; da sola è già
+registrare un noleggio al banco, annullarlo, spostarlo su un'altra bici e pianificare la
+manutenzione di una bici, con data di inizio e di fine. È la base di dati e di regole su cui poggiano tutte le fette successive; da sola è già
 utile a Kevin, e non è visibile al pubblico.
 
 ### Dentro questa fetta
@@ -53,7 +53,7 @@ utile a Kevin, e non è visibile al pubblico.
 - La tabella `bike_reservations` e il vincolo che impedisce le doppie assegnazioni
 - La pagina `/manage/bookings` con la vista a griglia bici × giorni
 - Noleggio al banco: crea (con assegnazione automatica della bici), annulla, sposta su un'altra bici
-- Fuori servizio senza data di fine, e riattivazione
+- Manutenzione di una bici con data di inizio e di fine (anche modifica e annullamento)
 - La libreria di date del progetto (`date-fns` 4 + `@date-fns/tz`) e `lib/dates.ts`
 
 ### Fuori da questa fetta
@@ -92,14 +92,19 @@ compreso è `starts_on = 2026-07-10`, `ends_on = 2026-07-13`. Chi riconsegna il 
 bici per chi ritira il 13: nessun conflitto. Il pannello mostra e chiede l'ultimo giorno
 compreso; la conversione sta in `lib/dates.ts` e in nessun altro punto.
 
-**Fuori servizio senza data di fine** (Kevin, 2026-10-02: «finché non la riattivi»).
-`ends_on` è `NULL`, cioè l'intervallo è aperto verso il futuro; «riattiva» valorizza `ends_on`
-con il giorno scelto. Rischio accettato: una bici dimenticata resta nascosta ai clienti. Per
-questo la lista delle bici mostra **«fuori servizio da N giorni»**.
+**Manutenzione con data di inizio e di fine** (Kevin, 2026-10-02). Una prima versione
+prevedeva il fuori servizio *senza* fine, «finché non la riattivi»; Kevin l'ha corretta: una
+bici senza fine resterebbe bloccata per sempre, e nessuno potrebbe prenotarla nemmeno per
+l'anno prossimo mentre in realtà è ferma solo per qualche giorno. La manutenzione è quindi un
+intervallo come un noleggio, con primo e ultimo giorno compresi, e `ends_on` non è mai nullo.
 
-**Mettere fuori servizio una bici con noleggi futuri viene rifiutato**, con l'elenco dei
-noleggi in conflitto (data e nome): Kevin li sposta prima su altre bici. Non si annullano mai
-prenotazioni di nascosto.
+**Il periodo di manutenzione si sceglie su giorni liberi.** Il selettore di date disabilita i
+giorni in cui quella bici ha già una prenotazione e non permette di attraversarli (`disabled`
+ed `excludeDisabled` di `react-day-picker` in modalità intervallo, verificato nella 10.0.2).
+Se per fermare la bici servono giorni già prenotati, Kevin sposta prima quei noleggi su altre
+bici: non si annullano mai prenotazioni di nascosto. Il database resta l'ultima parola: se
+due azioni si incrociano, il vincolo rifiuta e l'azione restituisce l'elenco dei noleggi in
+conflitto (data e nome).
 
 **Annullare non cancella.** Lo stato passa a `cancelled`; il vincolo vale solo per le righe
 `confirmed`, quindi le date tornano libere ma lo storico resta. Un rimborso futuro (fetta 3)
@@ -133,8 +138,8 @@ l'errore di chiave esterna in un messaggio comprensibile.
 - Intervalli `[inizio, fine+1)`: ritiro il giorno dopo la riconsegna non confligge.
 
 **Verifiche sul modello dati reale**: il vincolo funziona su `uuid` (`bike_units.id` lo è),
-con un intervallo aperto (`ends_on` nullo), su una colonna generata, e con `WHERE status =
-'confirmed'` (una riga annullata non blocca).
+su una colonna generata, e con `WHERE status = 'confirmed'` (una riga annullata non blocca).
+È stato provato anche con un intervallo aperto (`ends_on` nullo), ma il disegno non lo usa più.
 
 L'estensione `btree_gist` è disponibile sia sul database di sviluppo sia su quello di
 produzione, ma **non installata** su nessuno dei due: la prima migrazione la crea.
@@ -153,7 +158,7 @@ bike_reservations
   kind         enum         'counter_rental' | 'maintenance'
   status       enum         'confirmed' | 'cancelled'
   starts_on    date         not null                    (modo 'string' in Drizzle)
-  ends_on      date         null = aperto; esclusivo    (modo 'string' in Drizzle)
+  ends_on      date         not null; esclusivo         (modo 'string' in Drizzle)
   during       daterange    generata: daterange(starts_on, ends_on, '[)'), stored
   label        text         null: nome o nota libera
   created_at   timestamp    not null, defaultNow()
@@ -161,8 +166,7 @@ bike_reservations
   EXCLUDE USING gist (bike_unit_id extensions.gist_uuid_ops WITH =, during WITH &&)
           WHERE (status = 'confirmed')
 
-  CHECK  ends_on IS NULL OR ends_on > starts_on
-  CHECK  kind = 'maintenance' OR ends_on IS NOT NULL      (un noleggio ha sempre una fine)
+  CHECK  ends_on > starts_on                              (mai un intervallo vuoto)
 ```
 
 - Drizzle non genera i vincoli di esclusione né le colonne generate di tipo `daterange`: come
@@ -188,19 +192,19 @@ di `lib/actions/`, validazione con `zod` (`z.iso.date()`, `z.uuid()`), e **senza
 2. **Annulla** — `status = 'cancelled'`.
 3. **Sposta** — cambia `bike_unit_id` di una riga `confirmed`; se la nuova bici non è libera il
    vincolo rifiuta e l'azione lo dice.
-4. **Metti fuori servizio** — riga `maintenance`, `starts_on` = oggi in `Europe/Rome` (o una data
-   scelta), `ends_on` nullo. Se la bici ha righe `confirmed` che si sovrappongono, l'azione
-   rifiuta e restituisce l'elenco.
-5. **Riattiva** — valorizza `ends_on` con il giorno scelto. Se quel giorno non è successivo a
-   `starts_on` (bici messa fuori servizio e riattivata lo stesso giorno) l'intervallo sarebbe
-   vuoto e il `CHECK` lo vieta: in quel caso la riga `maintenance` passa a `cancelled`.
+4. **Pianifica manutenzione** — riga `maintenance` per una bici, con primo e ultimo giorno
+   compresi (convertiti in `starts_on` e `ends_on` esclusivo) e un motivo facoltativo in
+   `label`. Se la bici ha righe `confirmed` che si sovrappongono, l'azione rifiuta e
+   restituisce l'elenco.
+5. **Modifica o annulla la manutenzione** — cambia le date (stesse regole e stesso vincolo:
+   per chiuderla prima o allungarla) oppure la passa a `cancelled`.
 
 Tutte le letture del pannello sono dal vivo, senza `'use cache'`: i dati del calendario devono
 essere esatti, non «entro 10-30 secondi».
 
 **Nessun limite di anticipo né di durata nel pannello.** Il pannello controlla solo che le date
 siano valide e che la fine segua l'inizio (in `lib/dates.ts`): Kevin può registrare un noleggio
-o un fuori servizio in qualunque data futura. I limiti della prenotazione online sono un'altra
+o una manutenzione in qualunque data futura. I limiti della prenotazione online sono un'altra
 cosa e valgono **solo per la pagina pubblica** (fetta 3), ripresi dal calendario originale di
 Kevin (`C:\AzureDevOps\firebase\app\rent\`): prenotabile fino a **180 giorni da oggi**
 (`MAX_DAYS = 180`). Quel prototipo limita anche la lunghezza dell'intervallo
@@ -221,15 +225,18 @@ tradotto: etichette in inglese.
 
 - **Vista a griglia**: righe = bici fisiche, raggruppate per modello (nome, taglia, versione e
   i primi 8 caratteri dell'id, come in `bike-unit-list.tsx`); colonne = giorni del mese.
-  Noleggi e fuori servizio colorati in modo distinguibile. Il mese sta nell'URL
+  Noleggi e manutenzioni colorati in modo distinguibile. Il mese sta nell'URL
   (`?month=2026-07`).
-- **Dettaglio**: un clic su un blocco apre un pannello con le azioni (annulla, sposta,
-  riattiva).
+- **Dettaglio**: un clic su un blocco apre un pannello con le azioni (annulla, sposta, modifica
+  le date di una manutenzione).
 - **Nuovo noleggio**: modulo con modello → taglia → versione (le opzioni vengono da
   `getPublishedModelsWithAllowedOptions()`, già usata dal modulo «Shop»), intervallo con il
   calendario di shadcn (`react-day-picker`) e nome.
-- **Lista «Shop»** (`/manage/bikes/shop`): per ogni bici, l'etichetta «fuori servizio da N giorni»
-  quando c'è una riga `maintenance` aperta.
+- **Nuova manutenzione**: parte da una bici (dalla griglia o dalla lista «Shop»); intervallo con
+  il calendario di shadcn che disabilita i giorni già prenotati di quella bici e un motivo
+  facoltativo.
+- **Lista «Shop»** (`/manage/bikes/shop`): per ogni bici, `Maintenance until <data>` quando c'è
+  una manutenzione in corso, o `Maintenance from <data>` se è la prossima in programma.
 
 **La vista a griglia non è ancora decisa a livello di componente.** Per la regola «librerie
 prima del custom», il primo task del piano è cercare una libreria per una griglia risorse ×
