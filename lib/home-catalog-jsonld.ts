@@ -17,6 +17,11 @@ interface CatalogModel {
  * in the layout) so a search engine merges the two. `LeaseOut` marks the offers
  * as rentals: these bikes are hired by the day, never sold.
  *
+ * The catalogue lists `Product`s that carry their own `offers`, not `Offer`s
+ * wrapping an `itemOffered` product: Google's product-snippet check reads every
+ * `Product` it finds on its own and rejects one with no `offers`, `review` or
+ * `aggregateRating` — seven "invalid items" in Search Console (2026-10-02).
+ *
  * A model whose category has no day-1 price is left out rather than priced at
  * zero: no price is better than a made-up one.
  */
@@ -31,34 +36,39 @@ export function buildHomeCatalogJsonLd({
   name: string
   models: CatalogModel[]
 }) {
-  const offers = models.flatMap(({ model, translation, category }) => {
+  const products = models.flatMap(({ model, translation, category }) => {
     const price = priceForDay(category, 1)
     if (price === null) return []
     const url = `${siteUrl}/${lang}/bikes/${shortId(model.id)}`
     return [
       {
-        '@type': 'Offer',
+        '@type': 'Product',
+        name: translation.name,
+        category: category.name,
         url,
-        price,
-        priceCurrency: 'EUR',
-        businessFunction: 'https://purl.org/goodrelations/v1#LeaseOut',
-        priceSpecification: {
-          '@type': 'UnitPriceSpecification',
+        offers: {
+          '@type': 'Offer',
+          url,
           price,
           priceCurrency: 'EUR',
-          referenceQuantity: { '@type': 'QuantitativeValue', value: 1, unitCode: 'DAY' },
+          businessFunction: 'https://purl.org/goodrelations/v1#LeaseOut',
+          priceSpecification: {
+            '@type': 'UnitPriceSpecification',
+            price,
+            priceCurrency: 'EUR',
+            referenceQuantity: { '@type': 'QuantitativeValue', value: 1, unitCode: 'DAY' },
+          },
         },
-        itemOffered: { '@type': 'Product', name: translation.name, category: category.name, url },
       },
     ]
   })
 
-  if (offers.length === 0) return null
+  if (products.length === 0) return null
 
   return {
     '@context': 'https://schema.org',
     '@type': ['LocalBusiness', 'BikeShop'],
     '@id': `${siteUrl}/#business`,
-    hasOfferCatalog: { '@type': 'OfferCatalog', name, itemListElement: offers },
+    hasOfferCatalog: { '@type': 'OfferCatalog', name, itemListElement: products },
   }
 }

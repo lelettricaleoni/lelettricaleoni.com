@@ -146,11 +146,13 @@ test('il catalogo nei dati strutturati della home viene dal database, e non vend
   const blocks = await readBlocks()
   const withCatalog = blocks.map((b) => JSON.parse(b)).find((ld) => ld.hasOfferCatalog)
 
-  const offers = withCatalog.hasOfferCatalog.itemListElement
-  expect(offers.length, 'catalogo vuoto').toBeGreaterThan(0)
-  for (const offer of offers) {
-    expect(offer.url).toContain('/it/bikes/')
-    expect(offer.price, `prezzo mancante per ${offer.itemOffered?.name}`).toBeGreaterThan(0)
+  const products = withCatalog.hasOfferCatalog.itemListElement
+  expect(products.length, 'catalogo vuoto').toBeGreaterThan(0)
+  for (const product of products) {
+    // Google scarta un Product senza offers/review/aggregateRating (7 errori in Search Console).
+    expect(product['@type']).toBe('Product')
+    expect(product.offers?.url).toContain('/it/bikes/')
+    expect(product.offers?.price, `prezzo mancante per ${product.name}`).toBeGreaterThan(0)
   }
   // Scritto a mano, il catalogo tipava le bici come RentalCar.
   expect(blocks.join('')).not.toContain('RentalCar')

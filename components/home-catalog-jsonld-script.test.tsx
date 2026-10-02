@@ -50,6 +50,6 @@ describe('HomeCatalogJsonLd never holds the home page hostage', () => {
     const el = await HomeCatalogJsonLd(props)
     const html = (el!.props as { dangerouslySetInnerHTML: { __html: string } }).dangerouslySetInnerHTML.__html
     expect(html).not.toContain('</script>')
-    expect(JSON.parse(html).hasOfferCatalog.itemListElement[0].itemOffered.name).toBe('</script><script>alert(1)</script>')
+    expect(JSON.parse(html).hasOfferCatalog.itemListElement[0].name).toBe('</script><script>alert(1)</script>')
   })
 })

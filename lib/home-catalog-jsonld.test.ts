@@ -36,10 +36,19 @@ describe('buildHomeCatalogJsonLd', () => {
     const ld = buildHomeCatalogJsonLd({ ...base, models: [gravel, classic] })!
     const [first, second] = ld.hasOfferCatalog.itemListElement
 
-    expect(first.url).toBe('https://www.example.test/it/bikes/aa7da601')
-    expect(first.price).toBe(25)
-    expect(first.itemOffered).toMatchObject({ '@type': 'Product', name: 'Mondraker Arid S', category: 'Gravel' })
-    expect(second.price).toBe(15)
+    expect(first).toMatchObject({ '@type': 'Product', name: 'Mondraker Arid S', category: 'Gravel' })
+    expect(first.offers.url).toBe('https://www.example.test/it/bikes/aa7da601')
+    expect(first.offers.price).toBe(25)
+    expect(second.offers.price).toBe(15)
+  })
+
+  it('gives every product its own offer, which Google requires of a Product', () => {
+    const ld = buildHomeCatalogJsonLd({ ...base, models: [gravel, classic] })!
+    for (const product of ld.hasOfferCatalog.itemListElement) {
+      expect(product['@type']).toBe('Product')
+      expect(product.offers).toMatchObject({ '@type': 'Offer', priceCurrency: 'EUR' })
+    }
+    expect(JSON.stringify(ld)).not.toContain('itemOffered')
   })
 
   it('shares the business @id of the layout, so the two fragments merge', () => {
