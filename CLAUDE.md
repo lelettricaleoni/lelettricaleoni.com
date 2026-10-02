@@ -33,10 +33,11 @@ importato qui sopra. Non duplicarli in questo file.
 
 ## Regole sempre valide
 - **Mai commit diretti su `main` o `staging`.** Ogni modifica passa da una PR, anche una
-  riga di documentazione: la CI costa quaranta secondi. La protezione su GitHub esenta gli
-  amministratori, quindi non ferma nessuno di noi due — per questo c'è
-  `.githooks/pre-commit`, attivo con `git config core.hooksPath .githooks` (va rifatto su
-  ogni clone nuovo). Prima di committare, `git branch --show-current`.
+  riga di documentazione: la CI costa quaranta secondi. La protezione su GitHub vale anche
+  per gli amministratori (dal 2026-09-16: prima li esentava e dei push diretti sono finiti
+  su `main`), quindi un push diretto viene rifiutato. `.githooks/pre-commit` ferma l'errore
+  prima, già al commit, in locale: si attiva con `git config core.hooksPath .githooks` (va
+  rifatto su ogni clone nuovo). Prima di committare, `git branch --show-current`.
 - **Dopo aver aperto una PR non aspettare i check**: niente `gh pr checks --watch` né cicli
   di attesa che bloccano la sessione (Kevin, 2026-10-02). Passa ad altro e unisci dopo, oppure
   lancia in background un controllo che unisce solo se tutti i check passano sullo stesso
