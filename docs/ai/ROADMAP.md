@@ -31,6 +31,8 @@
   libreria `date-fns` 4 + `@date-fns/tz`, calendario di shadcn (`react-day-picker`) con la
   vista settimana/mese di Kevin sopra. Validazione con `zod`, telefoni con `libphonenumber-js`,
   firma del webhook Stripe con l'SDK: niente regex né controlli fatti a mano.
+  **Anticipo massimo**: pagina pubblica prenotabile fino a 180 giorni da oggi (`MAX_DAYS` del
+  calendario di Kevin), solo lì, non nel pannello (Kevin, 2026-10-02).
 
 ## Prossimo
 
