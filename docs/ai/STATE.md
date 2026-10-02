@@ -154,12 +154,15 @@ un `readFile(process.cwd()/public/...)` in una rotta dinamica dà ENOENT. `/open
 ha risposto 500 su tutte le pagine dal 2026-09-14 al 2026-09-25 senza che un test se ne
 accorgesse. Il file va dichiarato in `outputFileTracingIncludes` (`next.config.ts`).
 
-**Unire una PR ha tre trappole.** (1) `gh pr merge` fallito + `git push origin --delete
+**Unire una PR ha quattro trappole.** (1) `gh pr merge` fallito + `git push origin --delete
 <branch>` nello stesso comando **chiude la PR**: cancellare il branch solo dopo aver letto
 `state=MERGED` (rimedio: ri-pushare il branch e `gh pr reopen`). (2) Subito dopo un push
 `gh pr checks` mostra ancora i verdi del commit precedente e il merge fallisce: confrontare
 `headRefOid` col commit dei check. (3) `git pull` si rifiuta se il journal, riscritto
-dall'hook, ha modifiche non committate: `git fetch && git merge --ff-only origin/main`.
+dall'hook, ha modifiche non committate: `git fetch && git merge --ff-only origin/main`. (4) `gh pr edit` fallisce
+senza lo scope `read:project` del token: titolo e descrizione si cambiano con
+`gh api -X PATCH repos/<repo>/pulls/<n> -f title=… -f body=…`. Una PR rimasta `BEHIND` dopo altri
+merge (protezione di `main` con `strict`) richiede `gh pr update-branch` e check rifatti.
 
 **Creando un flag su Vercel, il valore predefinito è Off in produzione e preview**, On solo
 in sviluppo. Creare i cinque flag ha spento la sezione percorsi in produzione senza che

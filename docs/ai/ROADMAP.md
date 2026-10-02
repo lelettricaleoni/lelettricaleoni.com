@@ -23,6 +23,11 @@
   posti scaduti + assegnazione in istruzioni separate, senza transazioni (`max_pipeline: 0`).
   Il calendario di Kevin sta in `C:\AzureDevOps\firebase` (`app/rent/`, da portare ricollegandolo
   ai dati veri); il resto di quel repo (Firestore, Stripe di prova) non si riusa.
+  **Date**: colonne `date`/`daterange` e stringhe `YYYY-MM-DD` (mai `Date` per un giorno di
+  calendario: il server Vercel è in UTC e dopo le 22 a Roma vedrebbe già il giorno dopo);
+  libreria `date-fns` 4 + `@date-fns/tz`, calendario di shadcn (`react-day-picker`) con la
+  vista settimana/mese di Kevin sopra. Validazione con `zod`, telefoni con `libphonenumber-js`,
+  firma del webhook Stripe con l'SDK: niente regex né controlli fatti a mano.
 
 ## Prossimo
 
