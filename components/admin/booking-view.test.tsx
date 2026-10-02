@@ -9,8 +9,10 @@ vi.mock('@/components/admin/use-reservations-realtime', () => ({ useReservations
 import { BookingView } from './booking-view'
 import type { GridUnit } from '@/lib/reservations'
 
-const unit = (id: string, modelName: string, reservations: GridUnit['reservations'] = []): GridUnit => ({
-  id, shortId: id.slice(0, 8), modelName, sizeName: 'M', versionName: 'Alu', reservations,
+const unit = (
+  id: string, modelName: string, reservations: GridUnit['reservations'] = [], retiredOn: string | null = null,
+): GridUnit => ({
+  id, shortId: id.slice(0, 8), modelName, sizeName: 'M', versionName: 'Alu', retiredOn, reservations,
 })
 
 const rental = { id: 'r1', kind: 'counter_rental' as const, startsOn: '2031-07-10', endsOn: '2031-07-13', label: 'Rossi' }
@@ -79,6 +81,11 @@ describe('BookingView', () => {
   it('has a button to plan maintenance on every bike', () => {
     const html = render([unit('aaaaaaaa-0001', 'Mondraker'), unit('aaaaaaaa-0002', 'Mondraker')])
     expect(html.split('aria-label="Plan maintenance"')).toHaveLength(3)
+  })
+
+  it('says when a bike is retired, and only then', () => {
+    expect(render([unit('aaaaaaaa-0000', 'Mondraker', [], '2031-07-20')])).toContain('Retired from 2031-07-20')
+    expect(render([unit('aaaaaaaa-0000', 'Mondraker')])).not.toContain('Retired')
   })
 
   it('says so when the shop has no bikes yet', () => {

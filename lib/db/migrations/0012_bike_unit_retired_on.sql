@@ -1,0 +1,1 @@
+ALTER TABLE "bike_units" ADD COLUMN "retired_on" date;
