@@ -1,13 +1,13 @@
 import { describe, it, expect } from 'vitest'
 import {
   createRentalSchema, planMaintenanceSchema, updateMaintenanceSchema, moveReservationSchema, occupiedRangesSchema,
-  retireBikeSchema, bikeUnitIdSchema,
+  retireBikeSchema, bikeUnitIdSchema, searchCustomersSchema,
 } from './reservation-schemas'
 
 const id = () => crypto.randomUUID()
 const rental = () => ({
   requestKey: id(), bikeModelId: id(), bikeSizeId: id(), bikeVersionId: id(),
-  firstDay: '2026-07-10', lastDay: '2026-07-12', label: 'Rossi',
+  firstDay: '2026-07-10', lastDay: '2026-07-12', customerId: id(),
 })
 
 describe('createRentalSchema', () => {
@@ -16,21 +16,10 @@ describe('createRentalSchema', () => {
     expect(parsed.confirmDuplicate).toBe(false)
   })
 
-  it('trims the name', () => {
-    expect(createRentalSchema.parse({ ...rental(), label: '  Élodie  ' }).label).toBe('Élodie')
-  })
-
-  it('rejects an empty name and a name of only spaces', () => {
-    expect(createRentalSchema.safeParse({ ...rental(), label: '' }).success).toBe(false)
-    expect(createRentalSchema.safeParse({ ...rental(), label: '    ' }).success).toBe(false)
-  })
-
-  it('rejects a name longer than 120 characters', () => {
-    expect(createRentalSchema.safeParse({ ...rental(), label: 'a'.repeat(121) }).success).toBe(false)
-  })
-
-  it('keeps accents and symbols in a name', () => {
-    expect(createRentalSchema.parse({ ...rental(), label: 'Müller & Söhne 🚲' }).label).toBe('Müller & Söhne 🚲')
+  it('needs the customer, as a uuid: who rents is chosen or created first', () => {
+    const { customerId: _omitted, ...withoutCustomer } = rental()
+    expect(createRentalSchema.safeParse(withoutCustomer).success).toBe(false)
+    expect(createRentalSchema.safeParse({ ...rental(), customerId: 'Mario Rossi' }).success).toBe(false)
   })
 
   it('rejects impossible days and ids that are not uuids', () => {
@@ -38,11 +27,12 @@ describe('createRentalSchema', () => {
     expect(createRentalSchema.safeParse({ ...rental(), lastDay: '10/07/2026' }).success).toBe(false)
     expect(createRentalSchema.safeParse({ ...rental(), requestKey: 'not-a-uuid' }).success).toBe(false)
   })
+})
 
-  it('says what is wrong with the name', () => {
-    const result = createRentalSchema.safeParse({ ...rental(), label: ' ' })
-    expect(result.success).toBe(false)
-    if (!result.success) expect(result.error.issues[0].message).toBe('Name is required')
+describe('searchCustomersSchema', () => {
+  it('trims the search and refuses an absurdly long one', () => {
+    expect(searchCustomersSchema.parse({ query: '  mario ros ' }).query).toBe('mario ros')
+    expect(searchCustomersSchema.safeParse({ query: 'a'.repeat(101) }).success).toBe(false)
   })
 })
 

@@ -45,8 +45,14 @@ describe('bike_reservations constraints', () => {
   })
 
   it('treats a maintenance block like any other reservation', async () => {
-    await insert(reservationValues(fx.unitIds[0], '2031-07-10', '2031-07-13', { kind: 'maintenance' }))
-    expect(await failureCode(insert(reservationValues(fx.unitIds[0], '2031-07-11', '2031-07-12')))).toBe(EXCLUSION_VIOLATION)
+    await insert(reservationValues(fx.unitIds[0], '2031-07-10', '2031-07-13'))
+    const rental = { kind: 'counter_rental' as const, customerId: fx.customerId }
+    expect(await failureCode(insert(reservationValues(fx.unitIds[0], '2031-07-11', '2031-07-12', rental)))).toBe(EXCLUSION_VIOLATION)
+  })
+
+  it('does not accept a rental without a customer, but a maintenance has none', async () => {
+    expect(await failureCode(insert(reservationValues(fx.unitIds[0], '2031-07-10', '2031-07-13', { kind: 'counter_rental' })))).toBe(CHECK_VIOLATION)
+    expect(await failureCode(insert(reservationValues(fx.unitIds[0], '2031-07-10', '2031-07-13')))).toBeUndefined()
   })
 
   it('rejects an empty range with the CHECK, and a reversed one before it gets there', async () => {

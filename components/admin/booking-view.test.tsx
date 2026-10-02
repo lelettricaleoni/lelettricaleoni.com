@@ -15,8 +15,8 @@ const unit = (
   id, shortId: id.slice(0, 8), modelName, sizeName: 'M', versionName: 'Alu', retiredOn, reservations,
 })
 
-const rental = { id: 'r1', kind: 'counter_rental' as const, startsOn: '2031-07-10', endsOn: '2031-07-13', label: 'Rossi' }
-const maintenance = { id: 'm1', kind: 'maintenance' as const, startsOn: '2031-07-20', endsOn: '2031-07-22', label: 'chain' }
+const rental = { id: 'r1', kind: 'counter_rental' as const, startsOn: '2031-07-10', endsOn: '2031-07-13', label: 'Mario Rossi', customer: { id: 'c1', firstName: 'Mario', lastName: 'Rossi', email: null, phone: null, notes: null } }
+const maintenance = { id: 'm1', kind: 'maintenance' as const, startsOn: '2031-07-20', endsOn: '2031-07-22', label: 'chain', customer: null }
 
 function render(units: GridUnit[], today = '2031-07-15') {
   return renderToStaticMarkup(createElement(BookingView, { month: '2031-07', today, units, models: [] }))
@@ -74,7 +74,7 @@ describe('BookingView', () => {
 
   it('makes every reservation a button that opens its detail', () => {
     const html = render([unit('aaaaaaaa-0000', 'Mondraker', [rental, maintenance])])
-    expect(html.match(/<button type="button"[^>]*title="Rossi"/g)).toHaveLength(1)
+    expect(html.match(/<button type="button"[^>]*title="Mario Rossi"/g)).toHaveLength(1)
     expect(html.match(/<button type="button"[^>]*title="chain"/g)).toHaveLength(1)
   })
 

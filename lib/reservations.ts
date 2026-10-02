@@ -1,8 +1,10 @@
-import { and, asc, eq, gt, lt, ne, sql } from 'drizzle-orm'
+import { and, asc, eq, gt, lt, ne, sql, type SQL } from 'drizzle-orm'
 import {
-  db, bikeReservations, bikeUnits, bikeModelTranslations, bikeSizes, bikeVersions,
-  type BikeReservation,
+  db, bikeReservations, bikeUnits, bikeModelTranslations, bikeSizes, bikeVersions, customers,
+  type BikeReservation, type Customer,
 } from '@/lib/db'
+import { fullName } from '@/lib/customer'
+import { summarize, type CustomerSummary } from '@/lib/customers'
 import { EXCLUSION_VIOLATION, FOREIGN_KEY_VIOLATION, pgErrorCode } from '@/lib/pg-errors'
 import { daysBetween, exclusiveEnd, monthDays, type DayRange, type IsoDate, type IsoMonth } from '@/lib/dates'
 
@@ -24,11 +26,28 @@ export interface ReservationSummary {
   label: string | null
 }
 
-function summary(row: BikeReservation): ReservationSummary {
+type CustomerName = Pick<Customer, 'firstName' | 'lastName'>
+
+/** What the calendar writes on a block: the customer's name for a rental, the reason for a maintenance. */
+function caption(row: BikeReservation, customer: CustomerName | null): string | null {
+  return customer ? fullName(customer.firstName, customer.lastName) : row.label
+}
+
+function summary(row: BikeReservation, customer: CustomerName | null): ReservationSummary {
   return {
     id: row.id, bikeUnitId: row.bikeUnitId, kind: row.kind,
-    startsOn: row.startsOn, endsOn: row.endsOn, label: row.label,
+    startsOn: row.startsOn, endsOn: row.endsOn, label: caption(row, customer),
   }
+}
+
+/** Reservations with the caption ready, earliest first. */
+async function selectSummaries(where: SQL | undefined): Promise<ReservationSummary[]> {
+  const rows = await db.select({ reservation: bikeReservations, customer: customers })
+    .from(bikeReservations)
+    .leftJoin(customers, eq(customers.id, bikeReservations.customerId))
+    .where(where)
+    .orderBy(asc(bikeReservations.startsOn))
+  return rows.map((row) => summary(row.reservation, row.customer))
 }
 
 async function findByRequestKey(requestKey: string): Promise<BikeReservation | undefined> {
@@ -39,14 +58,13 @@ async function findByRequestKey(requestKey: string): Promise<BikeReservation | u
 async function findOverlaps(
   bikeUnitId: string, startsOn: IsoDate, endsOn: IsoDate, excludeId?: string,
 ): Promise<ReservationSummary[]> {
-  const rows = await db.select().from(bikeReservations).where(and(
+  return selectSummaries(and(
     eq(bikeReservations.bikeUnitId, bikeUnitId),
     eq(bikeReservations.status, 'confirmed'),
     lt(bikeReservations.startsOn, endsOn),
     gt(bikeReservations.endsOn, startsOn),
     excludeId ? ne(bikeReservations.id, excludeId) : undefined,
-  )).orderBy(asc(bikeReservations.startsOn))
-  return rows.map(summary)
+  ))
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -61,7 +79,7 @@ export interface CreateRentalInput {
   bikeVersionId: string
   startsOn: IsoDate
   endsOn: IsoDate
-  label: string
+  customerId: string
   confirmDuplicate: boolean
 }
 
@@ -73,18 +91,20 @@ export type CreateRentalResult =
 
 /**
  * The case the exclusion constraint cannot see: the same rental typed twice, with two free
- * bikes, takes two DIFFERENT bikes without any error. Same name (ignoring case and surrounding
- * spaces), same model and size, overlapping days.
+ * bikes, takes two DIFFERENT bikes without any error. Same customer, same model and size,
+ * overlapping days.
  */
 async function findPossibleDuplicate(input: CreateRentalInput): Promise<ReservationSummary | null> {
   const rows = await db.execute<{
-    id: string; bike_unit_id: string; starts_on: string; ends_on: string; label: string | null
+    id: string; bike_unit_id: string; starts_on: string; ends_on: string; first_name: string; last_name: string
   }>(sql`
-    select r.id, r.bike_unit_id, r.starts_on::text as starts_on, r.ends_on::text as ends_on, r.label
+    select r.id, r.bike_unit_id, r.starts_on::text as starts_on, r.ends_on::text as ends_on,
+           c.first_name, c.last_name
     from bike_reservations r
     join bike_units u on u.id = r.bike_unit_id
+    join customers c on c.id = r.customer_id
     where r.kind = 'counter_rental' and r.status = 'confirmed'
-      and lower(btrim(r.label)) = lower(btrim(${input.label}::text))
+      and r.customer_id = ${input.customerId}::uuid
       and u.bike_model_id = ${input.bikeModelId}::uuid
       and u.bike_size_id = ${input.bikeSizeId}::uuid
       and r.starts_on < ${input.endsOn}::date and ${input.startsOn}::date < r.ends_on
@@ -93,7 +113,7 @@ async function findPossibleDuplicate(input: CreateRentalInput): Promise<Reservat
   if (!row) return null
   return {
     id: row.id, bikeUnitId: row.bike_unit_id, kind: 'counter_rental',
-    startsOn: row.starts_on, endsOn: row.ends_on, label: row.label,
+    startsOn: row.starts_on, endsOn: row.ends_on, label: fullName(row.first_name, row.last_name),
   }
 }
 
@@ -111,9 +131,9 @@ export async function createCounterRental(input: CreateRentalInput): Promise<Cre
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
     try {
       const rows = await db.execute<{ id: string; bike_unit_id: string }>(sql`
-        insert into bike_reservations (bike_unit_id, kind, status, starts_on, ends_on, label, request_key)
+        insert into bike_reservations (bike_unit_id, kind, status, starts_on, ends_on, customer_id, request_key)
         select u.id, 'counter_rental'::reservation_kind, 'confirmed'::reservation_status,
-               ${input.startsOn}::date, ${input.endsOn}::date, ${input.label}::text, ${input.requestKey}::uuid
+               ${input.startsOn}::date, ${input.endsOn}::date, ${input.customerId}::uuid, ${input.requestKey}::uuid
         from bike_units u
         where u.bike_model_id = ${input.bikeModelId}::uuid
           and u.bike_size_id = ${input.bikeSizeId}::uuid
@@ -330,7 +350,10 @@ export interface GridReservation {
   kind: ReservationKind
   startsOn: IsoDate
   endsOn: IsoDate
+  /** The customer's name for a rental, the reason for a maintenance. */
   label: string | null
+  /** Who rents, with the contacts: null for a maintenance. */
+  customer: CustomerSummary | null
 }
 
 export interface GridUnit {
@@ -365,17 +388,23 @@ export async function getGrid(month: IsoMonth): Promise<GridUnit[]> {
         asc(bikeModelTranslations.name), asc(bikeSizes.displayOrder), asc(bikeVersions.displayOrder),
         asc(bikeUnits.createdAt), asc(bikeUnits.id),
       ),
-    db.select().from(bikeReservations).where(and(
-      eq(bikeReservations.status, 'confirmed'),
-      lt(bikeReservations.startsOn, monthEnd),
-      gt(bikeReservations.endsOn, monthStart),
-    )),
+    db.select({ reservation: bikeReservations, customer: customers })
+      .from(bikeReservations)
+      .leftJoin(customers, eq(customers.id, bikeReservations.customerId))
+      .where(and(
+        eq(bikeReservations.status, 'confirmed'),
+        lt(bikeReservations.startsOn, monthEnd),
+        gt(bikeReservations.endsOn, monthStart),
+      )),
   ])
 
   const byUnit = new Map<string, GridReservation[]>()
-  for (const row of reservations) {
+  for (const { reservation: row, customer } of reservations) {
     const list = byUnit.get(row.bikeUnitId) ?? []
-    list.push({ id: row.id, kind: row.kind, startsOn: row.startsOn, endsOn: row.endsOn, label: row.label })
+    list.push({
+      id: row.id, kind: row.kind, startsOn: row.startsOn, endsOn: row.endsOn,
+      label: caption(row, customer), customer: customer ? summarize(customer) : null,
+    })
     byUnit.set(row.bikeUnitId, list)
   }
 
@@ -418,12 +447,12 @@ export async function retireBikeUnit(id: string, retiredOn: IsoDate): Promise<Re
   const [unit] = await db.select({ id: bikeUnits.id }).from(bikeUnits).where(eq(bikeUnits.id, id))
   if (!unit) return { status: 'not_found' }
 
-  const conflicts = await db.select().from(bikeReservations).where(and(
+  const conflicts = await selectSummaries(and(
     eq(bikeReservations.bikeUnitId, id),
     eq(bikeReservations.status, 'confirmed'),
     gt(bikeReservations.endsOn, retiredOn),
-  )).orderBy(asc(bikeReservations.startsOn))
-  return { status: 'conflict', conflicts: conflicts.map(summary) }
+  ))
+  return { status: 'conflict', conflicts }
 }
 
 export type RestoreResult = { status: 'restored' } | { status: 'not_found' }

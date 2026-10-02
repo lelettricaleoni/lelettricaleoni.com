@@ -1,6 +1,6 @@
 import {
   pgTable, text, integer, numeric, boolean,
-  timestamp, uuid, pgEnum, index, unique, date
+  timestamp, uuid, pgEnum, index, unique, uniqueIndex, date
 } from 'drizzle-orm/pg-core'
 
 export const difficultyEnum = pgEnum('difficulty', ['easy', 'medium', 'hard', 'expert'])
@@ -172,6 +172,27 @@ export type NewBikeUnit = typeof bikeUnits.$inferInsert
 export const reservationKindEnum = pgEnum('reservation_kind', ['counter_rental', 'maintenance'])
 export const reservationStatusEnum = pgEnum('reservation_status', ['confirmed', 'cancelled'])
 
+// The people who rent, from the counter or (later) online. One row per person: the same phone or
+// the same email is the same customer, so a counter customer who later registers online with that
+// email lands on the same row and keeps the history. `user_id` is the auth account, once there is one.
+// First and last name are required; the contacts are optional but unique when present.
+export const customers = pgTable('customers', {
+  id:        uuid('id').primaryKey().defaultRandom(),
+  userId:    uuid('user_id').unique(),
+  firstName: text('first_name').notNull(),
+  lastName:  text('last_name').notNull(),
+  email:     text('email'),
+  phone:     text('phone'),
+  notes:     text('notes'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+}, (t) => [
+  uniqueIndex('customers_email_unique').on(t.email),
+  uniqueIndex('customers_phone_unique').on(t.phone),
+])
+
+export type Customer = typeof customers.$inferSelect
+
 // One row per bike and period: a rental at the counter, or a maintenance block. The rule that
 // two `confirmed` rows on the same bike cannot overlap lives in the database (an EXCLUDE
 // constraint on `during`), added by hand in migration 0010 because Drizzle generates neither
@@ -188,10 +209,15 @@ export const bikeReservations = pgTable('bike_reservations', {
   status:      reservationStatusEnum('status').notNull().default('confirmed'),
   startsOn:    date('starts_on', { mode: 'string' }).notNull(),
   endsOn:      date('ends_on', { mode: 'string' }).notNull(),
+  // `label` is only the reason of a maintenance. A rental points at its customer.
   label:       text('label'),
+  customerId:  uuid('customer_id').references(() => customers.id),
   requestKey:  uuid('request_key').notNull().unique(),
   createdAt:   timestamp('created_at').notNull().defaultNow(),
-}, (t) => [index('bike_reservations_unit_starts_idx').on(t.bikeUnitId, t.startsOn)])
+}, (t) => [
+  index('bike_reservations_unit_starts_idx').on(t.bikeUnitId, t.startsOn),
+  index('bike_reservations_customer_idx').on(t.customerId),
+])
 
 export type BikeReservation = typeof bikeReservations.$inferSelect
 export type NewBikeReservation = typeof bikeReservations.$inferInsert

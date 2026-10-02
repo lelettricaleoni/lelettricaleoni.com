@@ -12,7 +12,7 @@ const RANGE = { startsOn: '2031-07-10', endsOn: '2031-07-13' }
 function rental(fx: Fixture, overrides: Partial<CreateRentalInput> = {}): CreateRentalInput {
   return {
     requestKey: crypto.randomUUID(), bikeModelId: fx.modelId, bikeSizeId: fx.sizeId,
-    bikeVersionId: fx.versionId, ...RANGE, label: 'Rossi', confirmDuplicate: false, ...overrides,
+    bikeVersionId: fx.versionId, ...RANGE, customerId: fx.customerId, confirmDuplicate: true, ...overrides,
   }
 }
 
@@ -31,18 +31,18 @@ describe('a retired bike is no longer offered', () => {
 
   it('is never assigned to a rental that reaches its retirement day', async () => {
     expect(await retireBikeUnit(fx.unitIds[0], '2031-07-01')).toEqual({ status: 'retired' })
-    const first = created(await createCounterRental(rental(fx, { label: 'A' })))
+    const first = created(await createCounterRental(rental(fx)))
     expect(first.bikeUnitId).toBe(fx.unitIds[1])
-    expect((await createCounterRental(rental(fx, { label: 'B' }))).status).toBe('no_bike_free')
+    expect((await createCounterRental(rental(fx))).status).toBe('no_bike_free')
   })
 
   it('is still offered for rentals that end on or before the retirement day', async () => {
     await retireBikeUnit(fx.unitIds[0], '2031-07-13')
-    created(await createCounterRental(rental(fx, { label: 'A' })))
-    const second = created(await createCounterRental(rental(fx, { label: 'B' })))
+    created(await createCounterRental(rental(fx)))
+    const second = created(await createCounterRental(rental(fx)))
     // both bikes are used: the retired one is fine for a rental whose last day is the 12th
     expect(new Set([second.bikeUnitId]).size).toBe(1)
-    expect((await createCounterRental(rental(fx, { label: 'C' }))).status).toBe('no_bike_free')
+    expect((await createCounterRental(rental(fx))).status).toBe('no_bike_free')
   })
 
   it('is not offered for a rental that runs one day past the retirement day', async () => {
@@ -80,12 +80,12 @@ describe('retireBikeUnit', () => {
   })
 
   it('refuses while the bike has a rental on or after that day, and lists it', async () => {
-    created(await createCounterRental(rental(fx, { label: 'Rossi' })))
+    created(await createCounterRental(rental(fx)))
     const result = await retireBikeUnit(fx.unitIds[0], '2031-07-11')
     expect(result.status).toBe('conflict')
     if (result.status === 'conflict') {
       expect(result.conflicts).toHaveLength(1)
-      expect(result.conflicts[0]).toMatchObject({ label: 'Rossi', startsOn: '2031-07-10', endsOn: '2031-07-13' })
+      expect(result.conflicts[0]).toMatchObject({ label: expect.stringMatching(/^db-test /), startsOn: '2031-07-10', endsOn: '2031-07-13' })
     }
     expect(await retiredOnOf(fx.unitIds[0])).toBeNull()
   })

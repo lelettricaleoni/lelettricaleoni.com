@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { layoutBlocks, occupiedDayRanges } from './booking-grid'
 
 const res = (startsOn: string, endsOn: string, id = 'r1') => ({
-  id, kind: 'counter_rental' as const, startsOn, endsOn, label: 'Rossi',
+  id, kind: 'counter_rental' as const, startsOn, endsOn, label: 'Rossi', customer: { id: 'c1', firstName: 'Mario', lastName: 'Rossi', email: null, phone: null, notes: null },
 })
 
 describe('layoutBlocks', () => {

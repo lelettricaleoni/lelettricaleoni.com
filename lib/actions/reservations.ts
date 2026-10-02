@@ -35,7 +35,7 @@ export async function createRentalAction(input: unknown): Promise<reservations.C
     bikeVersionId: parsed.data.bikeVersionId,
     startsOn: range.startsOn,
     endsOn: range.endsOn,
-    label: parsed.data.label,
+    customerId: parsed.data.customerId,
     confirmDuplicate: parsed.data.confirmDuplicate,
   })
 }
