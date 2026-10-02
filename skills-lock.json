@@ -1,6 +1,12 @@
 {
   "version": 1,
   "skills": {
+    "react-email": {
+      "source": "resend/react-email",
+      "sourceType": "github",
+      "skillPath": "skills/react-email/SKILL.md",
+      "computedHash": "aafd7a5f1e1e44dae83dc545eb2fac7c45d5eb20c1dd47afbebd879eb825fa64"
+    },
     "supabase": {
       "source": "supabase/agent-skills",
       "sourceType": "github",
