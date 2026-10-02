@@ -322,11 +322,18 @@ tradotto: etichette in inglese.
 - **Lista «Shop»** (`/manage/bikes/shop`): per ogni bici, `Maintenance until <data>` quando c'è
   una manutenzione in corso, o `Maintenance from <data>` se è la prossima in programma.
 
-**La vista a griglia non è ancora decisa a livello di componente.** Per la regola «librerie
-prima del custom», il primo task del piano è cercare una libreria per una griglia risorse ×
-giorni adatta, libera e compatibile con React 19; se non ce n'è una, la griglia si costruisce su
-`date-fns` e shadcn. Il calendario di Kevin (`C:\AzureDevOps\firebase`, `app/rent/`) è un
-selettore di intervallo per il lato pubblico: serve alla fetta 3, non a questa.
+**La griglia è costruita su `date-fns` e CSS, senza libreria di scheduler** (decisione di Kevin,
+2026-10-02, dopo aver confrontato i candidati). Quelli con la vista a risorse sono a pagamento:
+Bryntum Scheduler da $680 per sviluppatore, MUI X Event Timeline (Premium, $599 l'anno, ancora
+in beta), Schedule-X Resource Scheduler (Premium, €479 l'anno o €999 una tantum). Gli altri non
+fanno al caso: la vista a risorse di CalendarKit (MIT) mostra le 24 ore di **un solo giorno** e
+solo gli eventi che iniziano quel giorno, quindi non un mese a giorni con noleggi di più giorni;
+`react-big-calendar` non ha la timeline a risorse; `react-calendar-timeline` è in beta e porta
+`dayjs`, una seconda libreria di date. Le date, la parte delicata, restano in `date-fns`; la
+griglia è solo disposizione (`lib/booking-grid.ts`). Il calendario di Kevin
+(`C:\AzureDevOps\firebase`, `app/rent/`) è un selettore di intervallo per il lato pubblico: serve
+alla fetta 3, non a questa. Se in futuro Kevin vorrà **trascinare i noleggi con il mouse**, una
+libreria a pagamento tornerà a valere il costo.
 
 ---
 
