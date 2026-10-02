@@ -66,6 +66,25 @@
   (vedi Scartato), e con lei cade la decisione 1 (credenziali di Google su Vercel).
   **Restano**: la decisione 2 (Google Business Profile) e rileggere Search Console a fine ottobre
   (punto di partenza: `/it/routes/bdd7a446`, 294 impressioni e CTR 2,7%).
+- **Avvisi di sicurezza di Supabase** (portati da Kevin il 2026-10-02, da risolvere dopo; letti
+  con gli advisor, sola lettura, nulla è stato modificato):
+  - **Produzione** (`hhfnhzdourgkinwlqvtc`): `public.rls_auto_enable()` è `SECURITY DEFINER` ed
+    eseguibile da `anon` e da `authenticated` via `/rest/v1/rpc/rls_auto_enable` (due avvisi). È la
+    funzione dell'event trigger `ensure_rls`, che abilita l'RLS su ogni tabella nuova in `public`;
+    ritorna `event_trigger`, quindi chiamata da fuori non fa nulla, ma l'avviso resta. Rimedio:
+    `REVOKE EXECUTE ON FUNCTION public.rls_auto_enable() FROM PUBLIC, anon, authenticated;`
+    (l'event trigger continua a scattare, gira come `postgres`).
+  - **Password trapelate** (HaveIBeenPwned): protezione disattivata su entrambi i progetti. È
+    un'impostazione di Auth nella dashboard; da verificare se il piano la consente.
+  - **Sviluppo e Preview** (`wvyruunbxdqquiarhknt`): tutte e 12 le tabelle di `public` sono
+    **senza RLS** (avviso di livello ERRORE), quindi raggiungibili con la chiave anon via
+    PostgREST. Su quel database non c'è né `ensure_rls` né la funzione: le tabelle nuove
+    nascono aperte, mentre in produzione nascono con RLS attivo e nessuna policy (chiuse). L'app
+    non ne risente, perché Drizzle si collega come `postgres`, che aggira l'RLS. Rimedio:
+    `ENABLE ROW LEVEL SECURITY` sulle 12 tabelle, e replicare `ensure_rls` perché i due ambienti
+    non divergano.
+  - Le tabelle e le funzioni nuove delle prenotazioni nascono già a posto in ogni ambiente (RLS
+    esplicito, `REVOKE` sulla funzione del trigger): vedi il piano della fetta 1.
 
 ## Un giorno
 
