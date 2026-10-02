@@ -131,6 +131,32 @@ l'errore di chiave esterna in un messaggio comprensibile.
 
 ---
 
+## Bici ritirate (aggiunta dopo la revisione finale, 2026-10-02)
+
+La revisione ha trovato una lacuna: una bici con prenotazioni, anche solo annullate, non si può
+cancellare («non si elimina una bici con prenotazioni»), e finché esiste viene assegnata ai nuovi
+noleggi. Se Kevin vende una bici, il sistema continuerebbe a offrirla. Kevin ha scelto di
+**ritirarla con una data**.
+
+- `bike_units.retired_on` (`date`, nullabile): **il primo giorno in cui la bici non è più
+  offerta**. Nullo = in servizio. La storia non si tocca: le sue prenotazioni restano.
+- **Assegnazione e spostamento**: valgono solo se la fine del periodo (esclusiva) è entro
+  `retired_on`; fino a quel giorno la bici si può ancora noleggiare.
+- **Il ritiro è rifiutato, con l'elenco dei noleggi**, finché una prenotazione confermata
+  raggiunge `retired_on` o i giorni dopo: Kevin li sposta prima. Non si annulla mai niente di
+  nascosto. Un solo statement, quindi il controllo e l'aggiornamento non si separano. Resta una
+  corsa teorica con un noleggio inserito nello stesso istante, accettata perché l'admin è uno solo.
+- **Griglia**: una bici ritirata sparisce dai mesi dal giorno del ritiro in poi, ma resta nei mesi
+  in cui aveva prenotazioni; la riga dice «Retired from …».
+- **Lista Shop**: «Retire» (sceglie il giorno) e «Bring back into service».
+- **Sito pubblico**: la lista, le bici suggerite per percorso, il dettaglio e la sitemap contano
+  solo le bici non ritirate a oggi in `Europe/Rome` (`inGarage()`, deciso in SQL perché quelle
+  query girano dentro `'use cache'`); un modello senza bici in servizio sparisce dalla lista. Un
+  test-guardia (`lib/in-garage.test.ts`) pretende il filtro in ogni punto che raggiunge
+  `bike_units`.
+
+---
+
 ## Prove fatte prima di scrivere (2026-10-02, database di sviluppo, poi ripulito)
 
 **Spike di concorrenza**, con le opzioni del client del sito (`max: 3`, `prepare: false`,

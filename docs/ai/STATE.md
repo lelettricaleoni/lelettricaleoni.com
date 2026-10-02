@@ -53,6 +53,15 @@ Suspense separato apposta, per non bloccare il resto della pagina.
 già analizzati, che non cambiano mai. Senza credenziali è un no-op, e ogni lettura fallisce
 aperta entro 250 ms. Lo stesso Upstash tiene lo stato di transcodifica del worker.
 
+**Prenotazioni (fetta 1, in `staging`, non ancora in produzione).** `bike_reservations`: una riga per
+bici e periodo, `ends_on` esclusivo, `EXCLUDE` su `during` per le sole righe `confirmed`, `request_key`
+come chiave di idempotenza, RLS esplicito. Il vincolo non vede lo stesso noleggio inserito due volte
+con due bici libere: lo coprono `request_key` e l'avviso di doppione. Una bici si ritira con
+`bike_units.retired_on` (primo giorno non più offerto), mai cancellandola: la storia la referenzia; il
+sito pubblico conta le bici con `inGarage()`, in SQL perché gira dentro `'use cache'`. Il campanello
+Realtime parte da un trigger e non porta dati personali; il canale è pubblico, quindi i ricaricamenti
+sono limitati (`lib/coalesce.ts`). Dettagli: spec e piano in `docs/superpowers/`.
+
 ## Infrastruttura dei media
 
 **Tutti i media stanno su Cloudflare R2**, un bucket per ambiente (`lelettrica-trails`,
@@ -228,6 +237,12 @@ l'errore** (lo spinner lo inghiotte). Risincronizzato su dev (2026-09-24) e su p
 `DATABASE_DIRECT_URL` del database giusto — dev da `.env.local`, produzione passando la
 variabile a mano. **Non usare `apply_migration` (MCP) per lo schema**; se lo si fa comunque,
 registrare a mano la riga nel tracking.
+
+**Ogni sezione di `/manage` ha bisogno del suo `layout.tsx` con `AdminShell`**: è l'unico posto con il
+`Toaster`, e senza ogni `toast.*` sparisce in silenzio (`/manage/bookings` è uscita così;
+`lib/admin-layouts.test.ts` lo impone). **`npm run test:db`** gira solo contro lo sviluppo e rifiuta la
+produzione. Una PR con `main` come origine non passa `browser` (nessun preview Vercel): la
+sincronizzazione `main → staging` si fa da un ramo copia, con **merge commit**, mai squash.
 
 ## Debito noto
 

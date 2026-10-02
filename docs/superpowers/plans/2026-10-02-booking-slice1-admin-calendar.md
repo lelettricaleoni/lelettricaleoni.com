@@ -3640,3 +3640,21 @@ Kevin può cominciare a registrare i noleggi veri. Le fette 2-5 (account cliente
 | RLS esplicito e `REVOKE` sulla funzione (avvisi di sicurezza di Supabase) | Task 2, 5, 10 |
 | Rilascio: `staging`, eccezione per la fetta 1, migrazione di produzione | Setup, Task 10 |
 | Limiti della pagina pubblica non implementati | (nessun task: fuori da questa fetta) |
+
+---
+
+## Aggiunte dopo l'esecuzione (2026-10-02)
+
+Il piano è stato eseguito in modo nativo, con i task 1-9 nelle PR #227, #228, #229. La revisione
+dell'intero ramo ha prodotto altre due PR, **non previste dal piano**:
+
+- **#230, correzioni**: `/manage/bookings` non aveva `layout.tsx`, quindi niente `AdminShell` e
+  niente `Toaster` (ogni messaggio spariva); i ricaricamenti dal canale pubblico sono limitati a uno
+  ogni 250 ms (`lib/coalesce.ts`); il rifiuto dei non-admin è provato per tutte le sette azioni.
+- **#231, fase D, bici ritirate** (scelta di Kevin): `bike_units.retired_on`, migrazione `0012`,
+  `retireBikeUnit`/`restoreBikeUnit`, regole in assegnazione, spostamento e griglia, pulsanti nella
+  lista Shop, filtro `inGarage()` sulle query pubbliche. Vedi la sezione «Bici ritirate» della spec.
+
+Ancora da fare, **il task 10** di sopra: la prova a mano su `staging` con il login admin, le
+migrazioni `0010`, `0011` e `0012` sul database di produzione, e la PR `staging → main` con merge
+commit.
