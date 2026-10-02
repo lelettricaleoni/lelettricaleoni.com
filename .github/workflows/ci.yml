@@ -10,7 +10,7 @@ name: CI
 on:
   pull_request:
   push:
-    branches: [main]
+    branches: [main, staging]
 
 # A new push to the same branch makes the previous run pointless
 concurrency:

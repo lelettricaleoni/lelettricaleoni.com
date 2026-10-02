@@ -19,7 +19,7 @@ pannello di amministrazione privato.
 |---|---|
 | Produzione | `main` → https://www.lelettricaleoni.com, deploy automatico Vercel |
 | Progetto Vercel | `lelettricaleoni`, team `lelettrica` |
-| Branch `staging` | cancellato il 2026-10-02 (Kevin). `staging.lelettricaleoni.com` su Vercel era legato a lui e resta configurato: da togliere, con la regola `noindex` di quell'host in `next.config.ts` |
+| Branch `staging` | ricreato il 2026-10-02 da `main` (cancellato per errore un'ora prima) per il lavoro sulle prenotazioni: nulla di quel lavoro va in produzione finché non è pronto (Kevin). I suoi deploy usano l'ambiente Preview (database e bucket propri) su `staging.lelettricaleoni.com`, con `noindex`. PR verso `staging`; in produzione una sola PR `staging → main`, e solo allora la migrazione sul database vero. Protezione: `verify` e `browser`, admin inclusi; `CodeQL` da aggiungere dopo averlo visto girare qui |
 | Merge | solo via PR: `verify`, `browser` e `CodeQL` devono passare, **nessuna esenzione admin** dal 2026-09-16 — chiude la falla che aveva permesso due push diretti su `main` |
 | CI | `verify` (lint, tipi, unit), `browser` (Playwright contro il preview), CodeQL in default setup, suite `extended` |
 

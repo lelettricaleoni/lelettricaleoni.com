@@ -9,8 +9,20 @@
 
 ## Adesso
 
-Niente in corso. Le foto sul worker e i video dei modelli di bici sono in produzione e verificati
-(foto: tempi della pagina e formati HEIC/PNG trasparente dati per fatti da Kevin il 2026-10-02).
+- **Sistema di prenotazioni: brainstorming iniziato il 2026-10-02**, la spec andrà in
+  `docs/superpowers/specs/`. Troppo grande per una spec sola: fette indipendenti, ognuna con
+  spec e piano (calendario e stato bici nel pannello → account cliente e login unificato →
+  prenotazione dal sito con Stripe → email e promemoria dal worker → appuntamenti di
+  riparazione). Lavoro su `staging`, in produzione solo a lavoro finito. **Deciso da Kevin:**
+  conferma immediata con pagamento **intero** su Stripe; rimborso intero fino a 48 ore prima;
+  solo giorni interi; account obbligatorio; i noleggi al banco si registrano nello stesso
+  calendario del pannello; disponibilità per **bici fisica e intervallo di date**, con un
+  vincolo di esclusione di Postgres (`btree_gist`, disponibile e non installata su dev e
+  produzione) contro le doppie prenotazioni; posto tenuto 30 minuti (minimo di una sessione
+  Stripe Checkout). Da provare per prima cosa con richieste concorrenti vere: rilascio dei
+  posti scaduti + assegnazione in istruzioni separate, senza transazioni (`max_pipeline: 0`).
+  Il calendario di Kevin sta in `C:\AzureDevOps\firebase` (`app/rent/`, da portare ricollegandolo
+  ai dati veri); il resto di quel repo (Firestore, Stripe di prova) non si riusa.
 
 ## Prossimo
 
