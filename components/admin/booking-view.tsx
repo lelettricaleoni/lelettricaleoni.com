@@ -2,7 +2,7 @@
 import { Fragment, useState, useTransition } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { ChevronLeft, ChevronRight, Plus } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Plus, Wrench } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { cn } from '@/lib/utils'
@@ -10,10 +10,12 @@ import { layoutBlocks } from '@/lib/booking-grid'
 import {
   dayOfMonth, isWeekendDay, monthDays, monthTitle, shiftMonth, weekdayLetter, type IsoDate, type IsoMonth,
 } from '@/lib/dates'
-import type { GridUnit } from '@/lib/reservations'
+import type { GridReservation, GridUnit } from '@/lib/reservations'
 import type { ModelOption } from '@/components/admin/booking-types'
 import { useReservationsRealtime } from '@/components/admin/use-reservations-realtime'
 import { RentalForm } from '@/components/admin/rental-form'
+import { MaintenanceForm } from '@/components/admin/maintenance-form'
+import { ReservationDialog } from '@/components/admin/reservation-dialog'
 
 interface BookingViewProps {
   month: IsoMonth
@@ -28,6 +30,8 @@ export function BookingView({ month, today, units, models }: BookingViewProps) {
   const router = useRouter()
   const [, startTransition] = useTransition()
   const [rentalOpen, setRentalOpen] = useState(false)
+  const [selected, setSelected] = useState<{ unit: GridUnit; reservation: GridReservation } | null>(null)
+  const [maintenanceUnit, setMaintenanceUnit] = useState<GridUnit | null>(null)
   const days = monthDays(month)
 
   // router.refresh() re-runs this page's server component: the ping carries nothing to trust,
@@ -82,7 +86,11 @@ export function BookingView({ month, today, units, models }: BookingViewProps) {
                     {unit.modelName}
                   </div>
                 )}
-                <UnitRow unit={unit} month={month} days={days} today={today} />
+                <UnitRow
+                  unit={unit} month={month} days={days} today={today}
+                  onSelect={(reservation) => setSelected({ unit, reservation })}
+                  onPlanMaintenance={() => setMaintenanceUnit(unit)}
+                />
               </Fragment>
             ))}
           </div>
@@ -93,6 +101,19 @@ export function BookingView({ month, today, units, models }: BookingViewProps) {
         <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>New rental</DialogTitle></DialogHeader>
           <RentalForm models={models} onCreated={() => { setRentalOpen(false); reload() }} />
+        </DialogContent>
+      </Dialog>
+
+      {selected && (
+        <ReservationDialog unit={selected.unit} reservation={selected.reservation} onClose={() => { setSelected(null); reload() }} />
+      )}
+
+      <Dialog open={maintenanceUnit !== null} onOpenChange={(open) => { if (!open) setMaintenanceUnit(null) }}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>Plan maintenance</DialogTitle></DialogHeader>
+          {maintenanceUnit && (
+            <MaintenanceForm unit={maintenanceUnit} onPlanned={() => { setMaintenanceUnit(null); reload() }} />
+          )}
         </DialogContent>
       </Dialog>
     </div>
@@ -108,14 +129,29 @@ function Legend() {
   )
 }
 
-function UnitRow({ unit, month, days, today }: { unit: GridUnit; month: IsoMonth; days: IsoDate[]; today: IsoDate }) {
+interface UnitRowProps {
+  unit: GridUnit
+  month: IsoMonth
+  days: IsoDate[]
+  today: IsoDate
+  onSelect: (reservation: GridReservation) => void
+  onPlanMaintenance: () => void
+}
+
+function UnitRow({ unit, month, days, today, onSelect, onPlanMaintenance }: UnitRowProps) {
   const blocks = layoutBlocks(month, unit.reservations)
+  const byId = new Map(unit.reservations.map((reservation) => [reservation.id, reservation]))
 
   return (
     <>
-      <div className="sticky left-0 z-10 flex flex-col justify-center border-b bg-card px-2 py-1">
-        <span className="font-mono text-[10px] text-muted-foreground">{unit.shortId}</span>
-        <span className="text-xs">{unit.sizeName} · {unit.versionName}</span>
+      <div className="sticky left-0 z-10 flex items-center justify-between border-b bg-card px-2 py-1">
+        <div className="flex flex-col justify-center">
+          <span className="font-mono text-[10px] text-muted-foreground">{unit.shortId}</span>
+          <span className="text-xs">{unit.sizeName} · {unit.versionName}</span>
+        </div>
+        <Button variant="ghost" size="icon" className="size-7" aria-label="Plan maintenance" onClick={onPlanMaintenance}>
+          <Wrench size={14} />
+        </Button>
       </div>
       <div
         className="relative grid min-h-10 border-b"
@@ -129,11 +165,13 @@ function UnitRow({ unit, month, days, today }: { unit: GridUnit; month: IsoMonth
           />
         ))}
         {blocks.map((block) => (
-          <div
+          <button
+            type="button"
             key={block.reservationId}
+            onClick={() => onSelect(byId.get(block.reservationId)!)}
             title={block.label ?? undefined}
             className={cn(
-              'z-[1] my-1 truncate px-1.5 text-xs leading-7',
+              'z-[1] my-1 cursor-pointer truncate px-1.5 text-left text-xs leading-7',
               block.kind === 'maintenance' ? 'bg-amber-300 text-amber-950' : 'bg-[#366DA1] text-white',
               block.clippedStart ? 'rounded-l-none' : 'rounded-l-md',
               block.clippedEnd ? 'rounded-r-none' : 'rounded-r-md',
@@ -141,7 +179,7 @@ function UnitRow({ unit, month, days, today }: { unit: GridUnit; month: IsoMonth
             style={{ gridColumn: `${block.startColumn} / span ${block.span}`, gridRow: 1 }}
           >
             {block.label ?? (block.kind === 'maintenance' ? 'Maintenance' : '')}
-          </div>
+          </button>
         ))}
       </div>
     </>

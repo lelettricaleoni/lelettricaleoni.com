@@ -70,6 +70,17 @@ describe('BookingView', () => {
     expect(render([])).toContain('New rental')
   })
 
+  it('makes every reservation a button that opens its detail', () => {
+    const html = render([unit('aaaaaaaa-0000', 'Mondraker', [rental, maintenance])])
+    expect(html.match(/<button type="button"[^>]*title="Rossi"/g)).toHaveLength(1)
+    expect(html.match(/<button type="button"[^>]*title="chain"/g)).toHaveLength(1)
+  })
+
+  it('has a button to plan maintenance on every bike', () => {
+    const html = render([unit('aaaaaaaa-0001', 'Mondraker'), unit('aaaaaaaa-0002', 'Mondraker')])
+    expect(html.split('aria-label="Plan maintenance"')).toHaveLength(3)
+  })
+
   it('says so when the shop has no bikes yet', () => {
     expect(render([])).toContain('No bikes in the shop yet')
   })
