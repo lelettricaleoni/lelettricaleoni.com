@@ -33,10 +33,16 @@ importato qui sopra. Non duplicarli in questo file.
 
 ## Regole sempre valide
 - **Mai commit diretti su `main` o `staging`.** Ogni modifica passa da una PR, anche una
-  riga di documentazione: la CI costa quaranta secondi. La protezione su GitHub esenta gli
-  amministratori, quindi non ferma nessuno di noi due — per questo c'è
-  `.githooks/pre-commit`, attivo con `git config core.hooksPath .githooks` (va rifatto su
-  ogni clone nuovo). Prima di committare, `git branch --show-current`.
+  riga di documentazione: la CI costa quaranta secondi. La protezione su GitHub vale anche
+  per gli amministratori (dal 2026-09-16: prima li esentava e dei push diretti sono finiti
+  su `main`), quindi un push diretto viene rifiutato. `.githooks/pre-commit` ferma l'errore
+  prima, già al commit, in locale: si attiva con `git config core.hooksPath .githooks` (va
+  rifatto su ogni clone nuovo). Prima di committare, `git branch --show-current`.
+- **Dopo aver aperto una PR non aspettare i check**: niente `gh pr checks --watch` né cicli
+  di attesa che bloccano la sessione (Kevin, 2026-10-02). Passa ad altro e unisci dopo, oppure
+  lancia in background un controllo che unisce solo se tutti i check passano sullo stesso
+  commit (`headRefOid`) e cancella il branch solo dopo aver letto `MERGED`. L'auto-merge di
+  GitHub non è abilitato sul repo.
 - **Server Action, non route handler.** Le rotte `app/api/` si aggiungono solo quando a
   chiamare è qualcosa che *non* è il nostro frontend — un servizio esterno, un webhook, il
   video worker — perché le Server Action si invocano con un id generato al build e non sono
@@ -52,8 +58,16 @@ importato qui sopra. Non duplicarli in questo file.
   `messages/{it,en,de}.json` sono in lingua.
 - **Nessun CDN esterno**: tutto self-hosted, niente unpkg/cdnjs/jsdelivr. Eccezioni note e
   volute: tile delle mappe e analytics. Cesium è self-hosted in `public/cesium/`.
-- **Librerie prima del custom**: prima di costruire un componente, cerca se esiste già in
-  shadcn/ui o in una libreria consolidata. shadcn è il sistema UI primario.
+- **Librerie prima del custom, sempre** (Kevin, 2026-10-02): per qualunque cosa non banale
+  — componenti, date e fusi orari, validazione di input, parsing, formati, telefoni, URL,
+  soldi, crittografia, autenticazione — cerca prima una libreria consolidata e usala. Non
+  scrivere a mano regex di validazione né aritmetica sulle date: una libreria che esiste da
+  anni ha già risolto casi limite che non rifaremo mai alla perfezione, e ci fa scrivere
+  meno codice. Se nel progetto ce n'è già una, si usa quella. Scelte fatte: `zod` per la
+  validazione (`z.email()`, `z.uuid()`, `z.iso.date()`…), `date-fns` 4 con `@date-fns/tz`
+  per le date (da installare con la prima fetta delle prenotazioni; le date di calendario
+  viaggiano come stringhe `YYYY-MM-DD` e «oggi» si calcola in `Europe/Rome`), e
+  `libphonenumber-js` per i telefoni. shadcn è il sistema UI primario.
 - **`--webpack`, mai Turbopack**: `next dev --webpack` e `next build --webpack`. Non esiste
   `--no-turbopack`.
 - **Niente `next-seo`**: è per il Pages Router. Usa l'API `Metadata` nativa e JSON-LD.
