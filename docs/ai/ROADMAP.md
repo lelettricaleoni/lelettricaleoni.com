@@ -13,7 +13,8 @@
   `docs/superpowers/specs/`. Troppo grande per una spec sola: fette indipendenti, ognuna con
   spec e piano (calendario e stato bici nel pannello → account cliente e login unificato →
   prenotazione dal sito con Stripe → email e promemoria dal worker → appuntamenti di
-  riparazione). Lavoro su `staging`, in produzione solo a lavoro finito. **Deciso da Kevin:**
+  riparazione). Lavoro su `staging`, in produzione solo a lavoro finito, **tranne la fetta 1** (solo pannello):
+  ci va appena pronta, perché Kevin registri i noleggi veri (2026-10-02). **Deciso da Kevin:**
   conferma immediata con pagamento **intero** su Stripe; rimborso intero fino a 48 ore prima;
   solo giorni interi; account obbligatorio; i noleggi al banco si registrano nello stesso
   calendario del pannello; disponibilità per **bici fisica e intervallo di date**, con un
@@ -33,6 +34,11 @@
   firma del webhook Stripe con l'SDK: niente regex né controlli fatti a mano.
   **Anticipo massimo**: pagina pubblica prenotabile fino a 180 giorni da oggi (`MAX_DAYS` del
   calendario di Kevin), solo lì, non nel pannello (Kevin, 2026-10-02).
+  **Controlli e tempo reale** (Kevin, 2026-10-02): più livelli contro gli inserimenti doppi, in
+  pannello e in pagina pubblica (pulsante disattivato, chiave di idempotenza `request_key`,
+  avviso di doppione per lo stesso nome con due bici diverse, controllo su dati freschi,
+  vincolo del database), e aggiornamenti in tempo reale con Supabase Realtime Broadcast inviato
+  da un trigger del database (solo un campanello senza dati personali, il client rilegge).
 
 ## Prossimo
 

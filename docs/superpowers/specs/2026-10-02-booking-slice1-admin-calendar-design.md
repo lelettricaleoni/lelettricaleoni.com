@@ -37,7 +37,13 @@ piano, nell'ordine in cui si costruiscono:
   Checkout) e poi si libera.
 - **Pagina pubblica: si prenota al massimo 180 giorni da oggi**, come nel calendario originale
   di Kevin (`MAX_DAYS`). Il limite vale solo per la pagina pubblica, non per il pannello.
-- **Nulla di tutto questo va in produzione finché non è pronto** (vedi «Rilascio»).
+- **Controlli contro gli inserimenti doppi** sia nel pannello sia nella pagina pubblica (Kevin,
+  2026-10-02): vedi «Controlli contro l'inserimento doppio».
+- **Aggiornamenti in tempo reale** del calendario e della disponibilità: vedi «Aggiornamenti in
+  tempo reale».
+- **Nulla di tutto questo va in produzione finché non è pronto**, con una eccezione voluta: la
+  fetta 1, solo pannello, ci va appena pronta, perché Kevin vuole cominciare a registrare i
+  noleggi veri (vedi «Rilascio»).
 
 ---
 
@@ -54,11 +60,13 @@ utile a Kevin, e non è visibile al pubblico.
 - La pagina `/manage/bookings` con la vista a griglia bici × giorni
 - Noleggio al banco: crea (con assegnazione automatica della bici), annulla, sposta su un'altra bici
 - Manutenzione di una bici con data di inizio e di fine (anche modifica e annullamento)
+- I controlli contro l'inserimento doppio, per il pannello
+- Aggiornamenti in tempo reale della griglia del pannello
 - La libreria di date del progetto (`date-fns` 4 + `@date-fns/tz`) e `lib/dates.ts`
 
 ### Fuori da questa fetta
 
-- Pagina pubblica con la disponibilità (fetta 3)
+- Pagina pubblica con la disponibilità, e i suoi aggiornamenti in tempo reale (fetta 3)
 - Account e profilo cliente (fetta 2)
 - Stripe, annullamenti con rimborso, la testata `bookings` che raggruppa le bici di un pagamento
   (fetta 3)
@@ -161,6 +169,7 @@ bike_reservations
   ends_on      date         not null; esclusivo         (modo 'string' in Drizzle)
   during       daterange    generata: daterange(starts_on, ends_on, '[)'), stored
   label        text         null: nome o nota libera
+  request_key  uuid         not null, UNIQUE: chiave di idempotenza generata dal modulo
   created_at   timestamp    not null, defaultNow()
 
   EXCLUDE USING gist (bike_unit_id extensions.gist_uuid_ops WITH =, during WITH &&)
@@ -185,8 +194,8 @@ Tutto passa da **Server Action** (non route handler), ognuna con `requireAdmin()
 di `lib/actions/`, validazione con `zod` (`z.iso.date()`, `z.uuid()`), e **senza
 `db.transaction`** (`max_pipeline: 0`): ogni operazione è un solo statement.
 
-1. **Crea un noleggio al banco** — input: modello, taglia, versione, primo e ultimo giorno
-   compreso, nome. Un solo `INSERT … SELECT` sceglie la prima bici libera di quel modello,
+1. **Crea un noleggio al banco** — input: `request_key`, modello, taglia, versione, primo e
+   ultimo giorno compreso, nome. Un solo `INSERT … SELECT` sceglie la prima bici libera di quel modello,
    taglia e versione. Se il vincolo risponde `23P01` si ritenta (fino a 8 volte, come nello
    spike); se non ci sono bici libere l'errore dice «nessuna bici libera in queste date».
 2. **Annulla** — `status = 'cancelled'`.
@@ -214,6 +223,81 @@ fetta 3. Questa fetta non implementa nessuno dei due limiti.
 
 «Oggi» si calcola sempre in `Europe/Rome` con `@date-fns/tz`, mai con `new Date()` nudo: il
 server Vercel gira in UTC e dopo le 22 a Roma vedrebbe già il giorno dopo.
+
+---
+
+## Controlli contro l'inserimento doppio
+
+Kevin, 2026-10-02: «diversi controlli per evitare un inserimento doppio», nel pannello e nella
+pagina pubblica. Vale per il pannello in questa fetta e per la pagina pubblica nella fetta 3, che
+riusa gli stessi meccanismi. Sei livelli, dal più vicino a chi clicca al più profondo:
+
+1. **Il pulsante si disattiva mentre l'azione è in corso** (`useTransition` o `useActionState`):
+   un doppio clic non parte due volte.
+2. **Chiave di idempotenza.** Il modulo genera un UUID all'apertura (`request_key`, `UNIQUE`
+   sul database). L'inserimento è `INSERT … ON CONFLICT (request_key) DO NOTHING`: se la riga
+   esiste già, l'azione restituisce quella e non ne crea un'altra. Copre il doppio clic che
+   sfugge al livello 1, il doppio tocco su telefono, il ritentativo dopo un errore di rete e il
+   «indietro e reinvia». Nella fetta 3 la stessa chiave viaggia come `Idempotency-Key` verso
+   Stripe.
+3. **Avviso di possibile doppione.** È il caso che il vincolo del database **non** vede: lo
+   stesso noleggio inserito due volte, con due bici libere, prende due bici *diverse* senza
+   errore. Se esiste già un noleggio `confirmed` con lo stesso nome (senza distinguere maiuscole),
+   lo stesso modello e la stessa taglia, e date che si sovrappongono, l'azione non inserisce e
+   risponde `possible_duplicate` con quel noleggio; Kevin conferma con «Create anyway». Per due
+   bici uguali allo stesso cliente basta ripetere l'inserimento e confermare l'avviso; un campo
+   «quantità» (un solo statement, quindi atomico) è rimandato e lo decide il piano.
+4. **Controllo su dati freschi.** L'azione verifica sempre sul database al momento dell'invio,
+   mai su quello che la pagina mostrava. Se la disponibilità è cambiata nel frattempo risponde
+   con il conflitto e non inserisce.
+5. **Vincolo di esclusione nel database, e ritentativo.** L'ultima parola: nessuna bici può
+   avere due righe `confirmed` con date sovrapposte, qualunque cosa faccia il codice (provato
+   nello spike).
+6. **Tempo reale** (sezione seguente): chi guarda il calendario vede la bici appena presa
+   senza ricaricare, quindi smette di proporre qualcosa di già occupato.
+
+Per la pagina pubblica la fetta 3 deciderà in più i controlli sul cliente (per esempio un solo
+posto tenuto alla volta per utente, e cosa fare se paga due volte la stessa sessione).
+
+---
+
+## Aggiornamenti in tempo reale
+
+Kevin, 2026-10-02: «dovrebbero esserci aggiornamenti in tempo reale». In questa fetta vale per
+la griglia del pannello (per esempio una seconda scheda aperta, o più persone al banco); nella
+fetta 3 per la disponibilità sulla pagina pubblica e, di rimbalzo, per il pannello quando un
+cliente prenota online.
+
+**Meccanismo: Supabase Realtime Broadcast inviato dal database.** Un trigger su
+`bike_reservations` (`AFTER INSERT OR UPDATE`) chiama `realtime.send(payload, event, topic,
+is_private)`. La documentazione di Supabase conferma che Broadcast si può inviare dal database,
+dall'API REST o dalle librerie client. Scelto il database perché notifica **qualunque**
+scrittura (azione del pannello, pagamento Stripe, worker, una correzione a mano), senza che il
+codice si ricordi di farlo.
+
+**Il messaggio è solo un campanello, mai un dato.** Contiene al massimo la bici e le date
+(`bike_unit_id`, `starts_on`, `ends_on`, l'operazione), **mai nomi o note**. Il client che lo
+riceve non si fida del contenuto: rilegge la finestra di date visibile con una Server Action
+(autenticata per il pannello; per la pagina pubblica restituisce solo libero/occupato). Il
+motivo: un canale **pubblico** lo può ascoltare chiunque senza autenticarsi, e un canale
+privato richiede policy RLS su `realtime.messages`, che qui non servono se il messaggio non
+trasporta nulla di sensibile.
+
+**Perché non «Postgres Changes».** Le tabelle si leggono lato server con Drizzle, non dal
+browser: far arrivare le righe al client richiederebbe policy RLS che espongono nomi e date.
+
+**Se la connessione cade**, il client rilegge i dati alla riconnessione e quando la scheda
+torna in primo piano: un messaggio perso non lascia mai la griglia sbagliata a lungo.
+
+**Libreria**: `@supabase/supabase-js` è già nel progetto (Supabase Auth); l'abbonamento al canale
+sta in un solo componente client.
+
+**Limiti verificati sulla documentazione Supabase** (piano gratuito): 200 connessioni
+concorrenti, 100 messaggi al secondo, 100 ingressi in un canale al secondo. Bastano per il
+pannello. Per la pagina pubblica ogni visitatore sulla pagina della disponibilità è una
+connessione: la fetta 3 dovrà dire cosa fare oltre le 200 (ricadere sul ritentativo periodico).
+Se il piano del progetto sia davvero quello gratuito e Realtime sia attivo su Preview e
+produzione è un controllo del primo task che lo tocca.
 
 ---
 
@@ -250,6 +334,8 @@ selettore di intervallo per il lato pubblico: serve alla fetta 3, non a questa.
 
 - **Unit** (vitest): `lib/dates.ts` (conversione fine inclusiva ↔ esclusiva, «oggi» a Roma a
   cavallo di mezzanotte UTC, controlli di sensatezza) e le regole pure delle azioni.
+- **Doppioni**: stessa `request_key` inviata due volte = una riga sola; stesso nome, modello,
+  taglia e date sovrapposte = `possible_duplicate`, e con conferma passa.
 - **Concorrenza**: lo spike diventa un test automatico contro il database di Preview. Se la CI
   non può raggiungerlo (oggi i check «non toccano Supabase»), diventa uno script documentato
   da lanciare a mano prima di ogni migrazione su produzione: lo decide il piano.
@@ -260,18 +346,16 @@ selettore di intervallo per il lato pubblico: serve alla fetta 3, non a questa.
 
 ## Rilascio
 
-Tutto il codice del sistema di prenotazioni va su **`staging`**, con PR verso `staging`. I
-deploy di quel branch usano l'ambiente Preview, con database e bucket propri, su
-`staging.lelettricaleoni.com`. La migrazione si applica al database di Preview; **a quello di
-produzione solo quando si unisce `staging` a `main`**, con una sola PR a lavoro finito.
+Il codice del sistema di prenotazioni va su **`staging`**, con PR verso `staging`: i deploy di
+quel branch usano l'ambiente Preview, con database e bucket propri, su
+`staging.lelettricaleoni.com`. La migrazione si applica prima al database di Preview.
 
-### Domanda aperta per Kevin
-
-La fetta 1 è solo pannello, quindi invisibile al pubblico. Potrebbe andare in produzione **prima
-del resto**, così Kevin comincia a registrare i noleggi veri e il calendario è già popolato
-quando si aprono le prenotazioni online. Contro: va contro «nulla in produzione finché non è
-pronto», e la migrazione arriva in produzione prima del tempo. Decisione di Kevin, da prendere
-prima del piano.
+**Eccezione voluta per la fetta 1** (Kevin, 2026-10-02: «così inizio già ad inserire i
+noleggi in calendario»): è solo pannello, invisibile al pubblico, e il suo valore sta nel
+riempirsi di noleggi veri prima che si aprano le prenotazioni online. Quindi va in produzione
+appena pronta, con una PR verso `main` e la migrazione sul database di produzione (estensione
+`btree_gist`, tabella, vincolo e trigger). Le fette 2 e seguenti restano su `staging` finché
+non è tutto pronto. Il pannello è dietro login admin e la pagina pubblica non cambia.
 
 ---
 
