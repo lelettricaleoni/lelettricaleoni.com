@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import {
-  rentalFeedback, cancelFeedback, moveFeedback, maintenancePlanFeedback, maintenanceUpdateFeedback,
+  rentalFeedback, cancelFeedback, moveFeedback, maintenancePlanFeedback, maintenanceUpdateFeedback, deleteBikeFeedback,
 } from './reservation-feedback'
 
 const existing = { id: 'r1', bikeUnitId: 'u1', kind: 'counter_rental' as const, startsOn: '2031-07-10', endsOn: '2031-07-13', label: 'Rossi' }
@@ -76,5 +76,18 @@ describe('maintenance feedback', () => {
     expect(maintenanceUpdateFeedback({ status: 'updated' })).toEqual({ tone: 'success', message: 'Maintenance updated' })
     expect(maintenanceUpdateFeedback({ status: 'conflict', conflicts: [existing] }).tone).toBe('error')
     expect(maintenancePlanFeedback({ status: 'unknown_bike' })).toEqual({ tone: 'error', message: 'This bike no longer exists' })
+  })
+})
+
+describe('deleteBikeFeedback', () => {
+  it('confirms a bike removed from the shop', () => {
+    expect(deleteBikeFeedback({ ok: true })).toEqual({ tone: 'success', message: 'Bike removed from the shop' })
+  })
+
+  it('explains that a bike with reservations, even cancelled ones, stays', () => {
+    expect(deleteBikeFeedback({ ok: false, reason: 'has_reservations' })).toEqual({
+      tone: 'error',
+      message: 'This bike has reservations, even cancelled ones, so it cannot be removed',
+    })
   })
 })

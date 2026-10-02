@@ -1,6 +1,8 @@
 import { getAdminUser } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { getBikeUnitsForAdmin, getPublishedModelsWithAllowedOptions } from '@/lib/actions/bike-units'
+import { getMaintenanceByUnit } from '@/lib/reservations'
+import { todayInRome } from '@/lib/dates'
 import { BikeUnitForm } from '@/components/admin/bike-unit-form'
 import { BikeUnitList } from '@/components/admin/bike-unit-list'
 
@@ -12,16 +14,17 @@ export default async function BikeShopPage() {
   const user = await getAdminUser()
   if (!user) redirect('/manage/login')
 
-  const [units, models] = await Promise.all([
+  const [units, models, maintenance] = await Promise.all([
     getBikeUnitsForAdmin(),
     getPublishedModelsWithAllowedOptions(),
+    getMaintenanceByUnit(todayInRome()),
   ])
 
   return (
     <div className="space-y-6 max-w-3xl">
       <h1 className="text-2xl font-bold text-[#1e3a5f]">Shop</h1>
       <BikeUnitForm models={models} />
-      <BikeUnitList units={units} />
+      <BikeUnitList units={units} maintenance={maintenance} />
     </div>
   )
 }

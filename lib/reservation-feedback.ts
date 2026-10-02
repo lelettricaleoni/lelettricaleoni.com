@@ -99,3 +99,9 @@ export function maintenanceUpdateFeedback(result: UpdateMaintenanceResult | Acti
       return { tone: 'error', message: result.message }
   }
 }
+
+export function deleteBikeFeedback(result: { ok: true } | { ok: false; reason: 'has_reservations' }): Feedback {
+  return result.ok
+    ? { tone: 'success', message: 'Bike removed from the shop' }
+    : { tone: 'error', message: 'This bike has reservations, even cancelled ones, so it cannot be removed' }
+}
