@@ -1,6 +1,6 @@
 import {
   pgTable, text, integer, numeric, boolean,
-  timestamp, uuid, pgEnum, index, unique
+  timestamp, uuid, pgEnum, index, unique, date
 } from 'drizzle-orm/pg-core'
 
 export const difficultyEnum = pgEnum('difficulty', ['easy', 'medium', 'hard', 'expert'])
@@ -160,10 +160,41 @@ export const bikeUnits = pgTable('bike_units', {
   bikeSizeId:    uuid('bike_size_id').notNull().references(() => bikeSizes.id),
   bikeVersionId: uuid('bike_version_id').notNull().references(() => bikeVersions.id),
   createdAt:     timestamp('created_at').notNull().defaultNow(),
+  // The first day this bike is NOT offered any more (sold, retired); null = in service. Rentals
+  // and the public "in garage" lists stop at that day. Never deleted instead: its reservations
+  // are the history, and bike_reservations points at it.
+  retiredOn:     date('retired_on', { mode: 'string' }),
 })
 
 export type BikeUnit = typeof bikeUnits.$inferSelect
 export type NewBikeUnit = typeof bikeUnits.$inferInsert
+
+export const reservationKindEnum = pgEnum('reservation_kind', ['counter_rental', 'maintenance'])
+export const reservationStatusEnum = pgEnum('reservation_status', ['confirmed', 'cancelled'])
+
+// One row per bike and period: a rental at the counter, or a maintenance block. The rule that
+// two `confirmed` rows on the same bike cannot overlap lives in the database (an EXCLUDE
+// constraint on `during`), added by hand in migration 0010 because Drizzle generates neither
+// exclusion constraints nor generated columns. `during` is that generated daterange,
+// [starts_on, ends_on): it is deliberately not declared here, the app only ever reads the two dates.
+//
+// `ends_on` is exclusive: a rental from the 10th to the 12th included is ends_on = the 13th.
+// `request_key` is the idempotency key the form generates when it opens: a repeated submit
+// finds the row instead of creating a second one.
+export const bikeReservations = pgTable('bike_reservations', {
+  id:          uuid('id').primaryKey().defaultRandom(),
+  bikeUnitId:  uuid('bike_unit_id').notNull().references(() => bikeUnits.id),
+  kind:        reservationKindEnum('kind').notNull(),
+  status:      reservationStatusEnum('status').notNull().default('confirmed'),
+  startsOn:    date('starts_on', { mode: 'string' }).notNull(),
+  endsOn:      date('ends_on', { mode: 'string' }).notNull(),
+  label:       text('label'),
+  requestKey:  uuid('request_key').notNull().unique(),
+  createdAt:   timestamp('created_at').notNull().defaultNow(),
+}, (t) => [index('bike_reservations_unit_starts_idx').on(t.bikeUnitId, t.startsOn)])
+
+export type BikeReservation = typeof bikeReservations.$inferSelect
+export type NewBikeReservation = typeof bikeReservations.$inferInsert
 
 // Generalized from route_photos on 2026-09-17 to also hold bike model
 // media. Exactly one of routeId/bikeModelId is set, enforced by a CHECK
