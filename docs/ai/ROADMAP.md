@@ -9,23 +9,8 @@
 
 ## Adesso
 
-- **Elaborazione delle foto sul worker: in produzione dal 2026-09-25**, resta la verifica.
-  Le foto caricate dal pannello diventano un master AVIF prodotto dal worker, con sorgente
-  cancellato e SHA-256 pubblicato (worker PR #9, sito #162; spec e piano in
-  `docs/superpowers/specs/2026-09-23-image-processing-worker-design.md` e nel piano gemello).
-  Verificato: un TIF vero di Kevin, e sulla VM una foto sintetica (TIFF RGB, PNG trasparente,
-  TIFF grigio a 16 bit, un `.jpg` corrotto che resta dov'è). **Detto da Kevin il
-  2026-09-29**: le foto dal pannello e l'anteprima social vanno bene (senza dettagliare i formati:
-  HEIC e PNG trasparente non risultano provati uno per uno). **Da fare**: i tempi della pagina di
-  un percorso con foto in staging prima e dopo. **Misurato il 2026-09-30 in produzione:** nessun percorso ha ancora
-  una foto passata dal worker (tutte `.jpg`/`.webp` vecchie), quindi il confronto richiede un percorso di prova con
-  foto nuove. Intanto: card da 11-32 KB con le versioni del worker contro 17-49 KB dall'ottimizzatore di Vercel, che
-  in più costa 0,6-0,9 s a freddo per ogni foto e larghezza nuova. La qualità AVIF (`IMAGE_QUALITY=65`) resta
-  com'è: Kevin la trova buona a occhio e ha chiesto di non toccarla (2026-09-25).
-  **Fatto il 2026-09-25 (soluzione 3):** il worker scrive anche tre versioni AVIF
-  ridimensionate accanto a ogni master (worker PR #10, con il recupero dei master esistenti)
-  e il sito le sceglie con un loader suo (#176), perché l'ottimizzatore di Vercel non
-  ridimensiona l'AVIF. Verificato in produzione: le card caricano `…w480.avif`.
+Niente in corso. Le foto sul worker e i video dei modelli di bici sono in produzione e verificati
+(foto: tempi della pagina e formati HEIC/PNG trasparente dati per fatti da Kevin il 2026-10-02).
 
 ## Prossimo
 
@@ -47,10 +32,12 @@
   dati strutturati dal database: #189; ogni percorso senza lingua ora con un 307: #190), le
   pagine di servizio e le cinque di zona sono online solo per l'indicizzazione (#185, #188), e
   titoli e descrizioni dei percorsi sono una regola nel codice (#206) con i testi dei 7
-  percorsi riscritti in produzione. **Restano**: le decisioni 1 e 2 di Kevin (credenziali di
-  Google per la dashboard, Google Business Profile), la dashboard `/manage/analytics` che ne
-  dipende, e rileggere Search Console a fine ottobre (punto di partenza: `/it/routes/bdd7a446`,
-  294 impressioni e CTR 2,7%).
+  percorsi riscritti in produzione. **Aggiornamento 2026-10-02:** i sette «Product snippets» non
+  validi sulla home (annidati in `Offer.itemOffered`) sono corretti con #214: resta da premere
+  «Convalida correzione» in Search Console. Kevin ha escluso la dashboard `/manage/analytics`
+  (vedi Scartato), e con lei cade la decisione 1 (credenziali di Google su Vercel).
+  **Restano**: la decisione 2 (Google Business Profile) e rileggere Search Console a fine ottobre
+  (punto di partenza: `/it/routes/bdd7a446`, 294 impressioni e CTR 2,7%).
 
 ## Un giorno
 
@@ -137,3 +124,10 @@
   dire gestire a mano `sitemap.xml`, `robots.txt` e i file statici, che il matcher del proxy
   esclude e che l'apex servirebbe quindi con 200 (contenuto duplicato). Catena misurata in
   produzione il 2026-09-29: 308 (http→https) → 308 (apex→www) → 301 (lingua, oggi 307) → 200.
+- **Dashboard di Analytics e Search Console dentro il pannello (`/manage/analytics`)** — era nella
+  strategia di ricerca; esclusa da Kevin il 2026-10-02 («per analytics non si fa nulla sulla
+  dashboard del sito»), motivo non dichiarato. Con lei cade la credenziale di Google su Vercel.
+  Nota: l'MCP di Analytics è in sola lettura (report, funnel, realtime), non può creare grafici
+  o dimensioni dentro Google Analytics.
+- **Cambiare la qualità AVIF delle foto (`IMAGE_QUALITY=65`)** — Kevin la trova buona a occhio e
+  ha chiesto di non toccarla (2026-09-25).
