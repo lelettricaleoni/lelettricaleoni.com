@@ -4,9 +4,10 @@ import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { CountrySelect } from '@/components/admin/country-select'
 import { Textarea } from '@/components/ui/textarea'
 import { createCustomerAction, searchCustomersAction } from '@/lib/actions/customers'
-import { fullName } from '@/lib/customer'
+import { DEFAULT_PHONE_COUNTRY, fullName } from '@/lib/customer'
 import type { CustomerSummary } from '@/lib/customers'
 
 /** "mario rossi" → first name "mario", last name "rossi": the search text becomes the start of a new customer. */
@@ -116,6 +117,8 @@ function NewCustomer({
   const [firstName, setFirstName] = useState(initial.firstName)
   const [lastName, setLastName] = useState(initial.lastName)
   const [phone, setPhone] = useState('')
+  // Only a number typed without its prefix depends on it: "+49 151…" is German whatever is picked here.
+  const [phoneCountry, setPhoneCountry] = useState<string>(DEFAULT_PHONE_COUNTRY)
   const [email, setEmail] = useState('')
   const [notes, setNotes] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -124,7 +127,7 @@ function NewCustomer({
   function save() {
     setError(null)
     startTransition(async () => {
-      const result = await createCustomerAction({ firstName, lastName, phone, email, notes })
+      const result = await createCustomerAction({ firstName, lastName, phone, phoneCountry, email, notes })
       if (result.status === 'invalid') { setError(result.message); return }
       if (result.status === 'exists') {
         // The phone or the email belongs to someone already in the list: use that person.
@@ -146,15 +149,16 @@ function NewCustomer({
           <Input id="customer-last-name" value={lastName} onChange={(e) => setLastName(e.target.value)} maxLength={80} />
         </div>
       </div>
-      <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-1">
-          <Label htmlFor="customer-phone">Mobile</Label>
+      <div className="space-y-1">
+        <Label htmlFor="customer-phone">Mobile</Label>
+        <div className="flex gap-2">
+          <CountrySelect value={phoneCountry} onChange={setPhoneCountry} />
           <Input id="customer-phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="347 123 4567" />
         </div>
-        <div className="space-y-1">
-          <Label htmlFor="customer-email">Email</Label>
-          <Input id="customer-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
-        </div>
+      </div>
+      <div className="space-y-1">
+        <Label htmlFor="customer-email">Email</Label>
+        <Input id="customer-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
       </div>
       <div className="space-y-1">
         <Label htmlFor="customer-notes">Notes</Label>

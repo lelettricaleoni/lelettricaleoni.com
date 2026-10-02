@@ -105,7 +105,7 @@ export function BookingView({ month, today, units, models }: BookingViewProps) {
       )}
 
       <Dialog open={rentalOpen} onOpenChange={setRentalOpen}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
           <DialogHeader><DialogTitle>New rental</DialogTitle></DialogHeader>
           <RentalForm models={models} onCreated={() => { setRentalOpen(false); reload() }} />
         </DialogContent>

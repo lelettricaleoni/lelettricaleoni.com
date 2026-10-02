@@ -1,27 +1,33 @@
 'use client'
-import { useState, useTransition } from 'react'
+import { useMemo, useState, useTransition } from 'react'
 import type { DateRange } from 'react-day-picker'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Calendar } from '@/components/ui/calendar'
 import { Label } from '@/components/ui/label'
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { CustomerPicker } from '@/components/admin/customer-picker'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { SearchSelect } from '@/components/admin/search-select'
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
   AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 import { createRentalAction } from '@/lib/actions/reservations'
-import { inclusiveEnd, isoDay } from '@/lib/dates'
+import { fullName } from '@/lib/customer'
+import { daysBetween, inclusiveEnd, isoDay } from '@/lib/dates'
 import { rentalFeedback } from '@/lib/reservation-feedback'
 import { onlyChoice, sizesOf, versionsOf, type RentalOption } from '@/lib/rental-options'
 import type { CustomerSummary } from '@/lib/customers'
 import type { ReservationSummary } from '@/lib/reservations'
 
+/** The chosen size or version: the site blue, so it cannot be mistaken for the hover. */
+const CHOSEN = 'data-[state=on]:bg-[#366DA1] data-[state=on]:text-white data-[state=on]:hover:bg-[#2f5f8d]'
+
 /**
- * `models` are the models, sizes and versions of the bikes really in the shop (not the ones a
- * model is allowed to have on paper): each choice narrows the next, and a choice with a single
- * possibility is made for the person.
+ * Two columns on a wide screen (the bike and the days on the left, who rents and the summary on
+ * the right), one on a phone. `models` are the models, sizes and versions of the bikes really in
+ * the shop (not the ones a model is allowed to have on paper): each choice narrows the next, and a
+ * choice with a single possibility is made for the person.
  */
 export function RentalForm({ models, onCreated }: { models: RentalOption[]; onCreated: () => void }) {
   const [isPending, startTransition] = useTransition()
@@ -35,6 +41,10 @@ export function RentalForm({ models, onCreated }: { models: RentalOption[]; onCr
   const [requestKey, setRequestKey] = useState(() => crypto.randomUUID())
   const [duplicate, setDuplicate] = useState<ReservationSummary | null>(null)
 
+  const modelOptions = useMemo(
+    () => models.map((model) => ({ value: model.modelId, label: model.modelName })),
+    [models],
+  )
   const sizes = sizesOf(models, modelId)
   const versions = versionsOf(models, modelId, sizeId)
   const ready = Boolean(modelId && sizeId && versionId && range?.from && customer)
@@ -85,57 +95,81 @@ export function RentalForm({ models, onCreated }: { models: RentalOption[]; onCr
     return <p className="text-sm text-muted-foreground">There are no bikes in the shop yet. Add them in Shop first.</p>
   }
 
+  const firstDay = range?.from ? isoDay(range.from) : null
+  const lastDay = range?.from ? isoDay(range.to ?? range.from) : null
+  const dayCount = firstDay && lastDay ? daysBetween(firstDay, lastDay) + 1 : 0
+  const modelName = models.find((model) => model.modelId === modelId)?.modelName
+  const sizeName = sizes.find((size) => size.id === sizeId)?.name
+  const versionName = versions.find((version) => version.id === versionId)?.name
+
   return (
-    <form onSubmit={(event) => { event.preventDefault(); if (ready && !isPending) submit(false) }} className="space-y-4">
-      <div className="space-y-1">
-        <Label htmlFor="rental-model">Model *</Label>
-        <Select value={modelId} onValueChange={chooseModel}>
-          <SelectTrigger id="rental-model"><SelectValue placeholder="Choose a model" /></SelectTrigger>
-          <SelectContent>
-            {models.map((m) => <SelectItem key={m.modelId} value={m.modelId}>{m.modelName}</SelectItem>)}
-          </SelectContent>
-        </Select>
-      </div>
-
-      {modelId && (
-        <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-1">
-            <Label htmlFor="rental-size">Size *</Label>
-            <Select value={sizeId} onValueChange={chooseSize}>
-              <SelectTrigger id="rental-size"><SelectValue placeholder="Size" /></SelectTrigger>
-              <SelectContent>
-                {sizes.map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-1">
-            <Label htmlFor="rental-version">Version *</Label>
-            <Select value={versionId} onValueChange={setVersionId} disabled={!sizeId}>
-              <SelectTrigger id="rental-version"><SelectValue placeholder={sizeId ? 'Version' : 'Pick a size first'} /></SelectTrigger>
-              <SelectContent>
-                {versions.map((v) => <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </div>
+    <form
+      onSubmit={(event) => { event.preventDefault(); if (ready && !isPending) submit(false) }}
+      className="grid gap-6 md:grid-cols-2"
+    >
+      <div className="space-y-5">
+        <div className="space-y-1">
+          <Label htmlFor="rental-model">Model *</Label>
+          <SearchSelect
+            id="rental-model" options={modelOptions} value={modelId} onChange={chooseModel}
+            placeholder="Choose a model" searchPlaceholder="Search model" emptyText="No model found."
+            className="w-full"
+          />
         </div>
-      )}
 
-      <div className="space-y-1">
-        <Label>Days *</Label>
-        <Calendar mode="range" selected={range} onSelect={setRange} className="mx-auto rounded-md border" />
-        {range?.from && (
-          <p className="text-xs text-muted-foreground">
-            From {isoDay(range.from)} to {isoDay(range.to ?? range.from)} included
-          </p>
+        {modelId && (
+          <div className="space-y-1">
+            <Label id="rental-size-label">Size *</Label>
+            <ToggleGroup
+              type="single" variant="outline" value={sizeId} aria-labelledby="rental-size-label"
+              onValueChange={(id) => { if (id) chooseSize(id) }} className="flex-wrap justify-start"
+            >
+              {sizes.map((size) => <ToggleGroupItem key={size.id} value={size.id} className={CHOSEN}>{size.name}</ToggleGroupItem>)}
+            </ToggleGroup>
+          </div>
         )}
+
+        {sizeId && (
+          <div className="space-y-1">
+            <Label id="rental-version-label">Version *</Label>
+            <ToggleGroup
+              type="single" variant="outline" value={versionId} aria-labelledby="rental-version-label"
+              onValueChange={(id) => { if (id) setVersionId(id) }} className="flex-wrap justify-start"
+            >
+              {versions.map((version) => <ToggleGroupItem key={version.id} value={version.id} className={CHOSEN}>{version.name}</ToggleGroupItem>)}
+            </ToggleGroup>
+          </div>
+        )}
+
+        <div className="space-y-1">
+          <Label>Days *</Label>
+          <Calendar mode="range" selected={range} onSelect={setRange} className="mx-auto rounded-md border" />
+        </div>
       </div>
 
-      <div className="space-y-1">
-        <Label>Customer *</Label>
-        <CustomerPicker value={customer} onChange={setCustomer} />
-      </div>
+      <div className="space-y-5">
+        <div className="space-y-1">
+          <Label>Customer *</Label>
+          <CustomerPicker value={customer} onChange={setCustomer} />
+        </div>
 
-      <Button type="submit" disabled={isPending || !ready}>Add rental</Button>
+        <div className="space-y-1 rounded-md bg-muted/50 p-3 text-sm" aria-live="polite">
+          <p className="font-medium">Summary</p>
+          <p className="text-muted-foreground">
+            {modelName ? [modelName, sizeName, versionName].filter(Boolean).join(' · ') : 'No bike chosen yet'}
+          </p>
+          <p className="text-muted-foreground">
+            {firstDay && lastDay
+              ? `${firstDay} to ${lastDay} included · ${dayCount} ${dayCount === 1 ? 'day' : 'days'}`
+              : 'No days chosen yet'}
+          </p>
+          <p className="text-muted-foreground">
+            {customer ? fullName(customer.firstName, customer.lastName) : 'No customer chosen yet'}
+          </p>
+        </div>
+
+        <Button type="submit" className="w-full" disabled={isPending || !ready}>Add rental</Button>
+      </div>
 
       <AlertDialog open={duplicate !== null} onOpenChange={(open) => { if (!open) setDuplicate(null) }}>
         <AlertDialogContent>

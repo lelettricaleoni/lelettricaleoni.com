@@ -12,6 +12,21 @@ describe('customerSchema', () => {
     expect(customerSchema.parse({ ...base, phone: '+49 151 23456789' }).phone).toBe('+4915123456789')
   })
 
+  it('reads a number without a prefix in the country of the phone, which the person picks', () => {
+    expect(customerSchema.parse({ ...base, phone: '0151 23456789', phoneCountry: 'DE' }).phone).toBe('+4915123456789')
+    expect(customerSchema.parse({ ...base, phone: '347 123 4567', phoneCountry: 'IT' }).phone).toBe('+393471234567')
+  })
+
+  it('lets a number with its own prefix win over the chosen country, and never stores the country', () => {
+    const parsed = customerSchema.parse({ ...base, phone: '+49 151 23456789', phoneCountry: 'IT' })
+    expect(parsed.phone).toBe('+4915123456789')
+    expect('phoneCountry' in parsed).toBe(false)
+  })
+
+  it('rejects a country that does not exist', () => {
+    expect(customerSchema.safeParse({ ...base, phoneCountry: 'XX' }).success).toBe(false)
+  })
+
   it('rejects a phone number that cannot exist, naming the field', () => {
     const result = customerSchema.safeParse({ ...base, phone: '12345' })
     expect(result.success).toBe(false)
