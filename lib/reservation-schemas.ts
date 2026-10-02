@@ -30,3 +30,5 @@ export const updateMaintenanceSchema = z.object({ id, firstDay: day, lastDay: da
 export const reservationIdSchema = z.object({ id })
 export const moveReservationSchema = z.object({ id, bikeUnitId: id })
 export const occupiedRangesSchema = z.object({ bikeUnitId: id, excludeId: id.optional() })
+export const retireBikeSchema = z.object({ id, retiredOn: day })
+export const bikeUnitIdSchema = z.object({ id })

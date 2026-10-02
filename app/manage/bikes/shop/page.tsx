@@ -24,7 +24,7 @@ export default async function BikeShopPage() {
     <div className="space-y-6 max-w-3xl">
       <h1 className="text-2xl font-bold text-[#1e3a5f]">Shop</h1>
       <BikeUnitForm models={models} />
-      <BikeUnitList units={units} maintenance={maintenance} />
+      <BikeUnitList units={units} maintenance={maintenance} today={todayInRome()} />
     </div>
   )
 }

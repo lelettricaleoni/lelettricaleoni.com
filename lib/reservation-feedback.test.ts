@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import {
   rentalFeedback, cancelFeedback, moveFeedback, maintenancePlanFeedback, maintenanceUpdateFeedback, deleteBikeFeedback,
+  retireFeedback, restoreFeedback,
 } from './reservation-feedback'
 
 const existing = { id: 'r1', bikeUnitId: 'u1', kind: 'counter_rental' as const, startsOn: '2031-07-10', endsOn: '2031-07-13', label: 'Rossi' }
@@ -89,5 +90,37 @@ describe('deleteBikeFeedback', () => {
       tone: 'error',
       message: 'This bike has reservations, even cancelled ones, so it cannot be removed',
     })
+  })
+})
+
+describe('retiring and restoring a bike', () => {
+  it('says from which day the bike is retired', () => {
+    expect(retireFeedback({ status: 'retired' }, '2031-10-15')).toEqual({ tone: 'success', message: 'Bike retired from 2031-10-15' })
+  })
+
+  it('lists the rentals that still reach that day, last day included', () => {
+    expect(retireFeedback({ status: 'conflict', conflicts: [existing] }, '2031-07-11')).toEqual({
+      tone: 'error',
+      message: 'Still booked: Rossi (2031-07-10 to 2031-07-12). Move those rentals first.',
+    })
+  })
+
+  it('does not invent a list when there is none, and calls a missing bike stale', () => {
+    expect(retireFeedback({ status: 'conflict', conflicts: [] }, '2031-07-11').tone).toBe('error')
+    expect(retireFeedback({ status: 'not_found' }, '2031-07-11')).toEqual({ tone: 'stale', message: 'This was already changed or removed' })
+  })
+
+  it('reports a restore, and a bike that is gone', () => {
+    expect(restoreFeedback({ status: 'restored' })).toEqual({ tone: 'success', message: 'Bike back in service' })
+    expect(restoreFeedback({ status: 'not_found' })).toEqual({ tone: 'stale', message: 'This was already changed or removed' })
+  })
+
+  it('does not mistake a validation problem for a bike that is gone', () => {
+    expect(restoreFeedback({ status: 'invalid', message: 'Invalid bike' })).toEqual({ tone: 'error', message: 'Invalid bike' })
+  })
+
+  it('passes a validation message through', () => {
+    expect(retireFeedback({ status: 'invalid', message: 'That is not a valid date' }, '2031-07-11'))
+      .toEqual({ tone: 'error', message: 'That is not a valid date' })
   })
 })
