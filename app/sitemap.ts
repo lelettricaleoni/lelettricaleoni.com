@@ -3,6 +3,7 @@ import { cacheLife, cacheTag } from 'next/cache'
 import { eq, and } from 'drizzle-orm'
 import { db, routes, bikeModels, bikeUnits } from '@/lib/db'
 import { shortId } from '@/lib/utils'
+import { inGarage } from '@/lib/in-garage'
 import { SERVICE_KEYS, servicePageSlug } from '@/lib/service-pages'
 import type { Locale } from './[lang]/dictionaries'
 
@@ -93,7 +94,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const publishedModelsWithUnits = await db
       .selectDistinct({ id: bikeModels.id, updatedAt: bikeModels.updatedAt })
       .from(bikeModels)
-      .innerJoin(bikeUnits, eq(bikeUnits.bikeModelId, bikeModels.id))
+      .innerJoin(bikeUnits, and(eq(bikeUnits.bikeModelId, bikeModels.id), inGarage()))
       .where(eq(bikeModels.isPublished, true))
 
     dynamicEntries.push(...publishedModelsWithUnits.flatMap((model) => {

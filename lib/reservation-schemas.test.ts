@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import {
   createRentalSchema, planMaintenanceSchema, updateMaintenanceSchema, moveReservationSchema, occupiedRangesSchema,
+  retireBikeSchema, bikeUnitIdSchema,
 } from './reservation-schemas'
 
 const id = () => crypto.randomUUID()
@@ -57,5 +58,19 @@ describe('the other schemas', () => {
     expect(moveReservationSchema.safeParse({ id: id(), bikeUnitId: id() }).success).toBe(true)
     expect(moveReservationSchema.safeParse({ id: id() }).success).toBe(false)
     expect(occupiedRangesSchema.safeParse({ bikeUnitId: id() }).success).toBe(true)
+  })
+})
+
+describe('retiring a bike', () => {
+  it('needs the bike and a real day', () => {
+    expect(retireBikeSchema.safeParse({ id: id(), retiredOn: '2026-10-15' }).success).toBe(true)
+    expect(retireBikeSchema.safeParse({ id: id(), retiredOn: '2026-02-30' }).success).toBe(false)
+    expect(retireBikeSchema.safeParse({ id: id() }).success).toBe(false)
+    expect(retireBikeSchema.safeParse({ id: 'nope', retiredOn: '2026-10-15' }).success).toBe(false)
+  })
+
+  it('needs just the bike to bring it back', () => {
+    expect(bikeUnitIdSchema.safeParse({ id: id() }).success).toBe(true)
+    expect(bikeUnitIdSchema.safeParse({ id: 'nope' }).success).toBe(false)
   })
 })

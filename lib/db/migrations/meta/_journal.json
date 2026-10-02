@@ -85,6 +85,13 @@
       "when": 1790939829051,
       "tag": "0011_reservation_realtime",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1790943399148,
+      "tag": "0012_bike_unit_retired_on",
+      "breakpoints": true
     }
   ]
 }

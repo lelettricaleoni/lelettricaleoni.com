@@ -160,6 +160,10 @@ export const bikeUnits = pgTable('bike_units', {
   bikeSizeId:    uuid('bike_size_id').notNull().references(() => bikeSizes.id),
   bikeVersionId: uuid('bike_version_id').notNull().references(() => bikeVersions.id),
   createdAt:     timestamp('created_at').notNull().defaultNow(),
+  // The first day this bike is NOT offered any more (sold, retired); null = in service. Rentals
+  // and the public "in garage" lists stop at that day. Never deleted instead: its reservations
+  // are the history, and bike_reservations points at it.
+  retiredOn:     date('retired_on', { mode: 'string' }),
 })
 
 export type BikeUnit = typeof bikeUnits.$inferSelect

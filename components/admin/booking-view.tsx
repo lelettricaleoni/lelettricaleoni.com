@@ -155,6 +155,7 @@ function UnitRow({ unit, month, days, today, onSelect, onPlanMaintenance }: Unit
         <div className="flex flex-col justify-center">
           <span className="font-mono text-[10px] text-muted-foreground">{unit.shortId}</span>
           <span className="text-xs">{unit.sizeName} · {unit.versionName}</span>
+          {unit.retiredOn && <span className="text-[10px] font-medium text-amber-700">Retired from {unit.retiredOn}</span>}
         </div>
         <Button variant="ghost" size="icon" className="size-7" aria-label="Plan maintenance" onClick={onPlanMaintenance}>
           <Wrench size={14} />

@@ -5,6 +5,7 @@ import {
   bikeVersions, routeBikeCategories, media,
 } from '@/lib/db'
 import { resolveReadyMedia } from '@/lib/media'
+import { inGarage } from '@/lib/in-garage'
 
 type Locale = 'it' | 'en' | 'de'
 
@@ -39,7 +40,7 @@ export async function getBikeModelsListData(lang: Locale) {
     // left, non inner: molte categorie non hanno un collegamento, e quel
     // modello deve comunque comparire.
     .leftJoin(routeBikeCategories, eq(routeBikeCategories.id, bikeCategories.routeCategoryId))
-    .innerJoin(bikeUnits, eq(bikeUnits.bikeModelId, bikeModels.id))
+    .innerJoin(bikeUnits, and(eq(bikeUnits.bikeModelId, bikeModels.id), inGarage()))
     .where(eq(bikeModels.isPublished, true))
     .orderBy(asc(bikeModels.displayOrder))
 
@@ -51,6 +52,7 @@ export async function getBikeModelsListData(lang: Locale) {
     .selectDistinct({ bikeModelId: bikeUnits.bikeModelId, size: bikeSizes })
     .from(bikeUnits)
     .innerJoin(bikeSizes, eq(bikeSizes.id, bikeUnits.bikeSizeId))
+    .where(inGarage())
 
   return models.map(({ model, translation, category, routeCategory }) => ({
     model,
@@ -85,7 +87,7 @@ export async function getSuggestedBikesForRoute(lang: Locale, bikeTypes: string[
     )
     .innerJoin(bikeCategories, eq(bikeCategories.id, bikeModels.categoryId))
     .innerJoin(routeBikeCategories, eq(routeBikeCategories.id, bikeCategories.routeCategoryId))
-    .innerJoin(bikeUnits, eq(bikeUnits.bikeModelId, bikeModels.id))
+    .innerJoin(bikeUnits, and(eq(bikeUnits.bikeModelId, bikeModels.id), inGarage()))
     .where(and(eq(bikeModels.isPublished, true), inArray(routeBikeCategories.name, bikeTypes)))
     .orderBy(asc(bikeModels.displayOrder))
 
@@ -93,6 +95,7 @@ export async function getSuggestedBikesForRoute(lang: Locale, bikeTypes: string[
     .selectDistinct({ bikeModelId: bikeUnits.bikeModelId, size: bikeSizes })
     .from(bikeUnits)
     .innerJoin(bikeSizes, eq(bikeSizes.id, bikeUnits.bikeSizeId))
+    .where(inGarage())
 
   return models.map(({ model, translation, category }) => ({
     model,
@@ -135,7 +138,7 @@ export async function getBikeModelDetailData(lang: Locale, id: string) {
     .from(bikeUnits)
     .innerJoin(bikeSizes, eq(bikeSizes.id, bikeUnits.bikeSizeId))
     .innerJoin(bikeVersions, eq(bikeVersions.id, bikeUnits.bikeVersionId))
-    .where(eq(bikeUnits.bikeModelId, model.id))
+    .where(and(eq(bikeUnits.bikeModelId, model.id), inGarage()))
 
   const sizesInGarage = dedupeById(unitsInGarage.map((u) => u.size))
   const versionsInGarage = dedupeById(unitsInGarage.map((u) => u.version))

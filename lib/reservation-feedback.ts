@@ -1,7 +1,8 @@
 import { inclusiveEnd } from '@/lib/dates'
 import type { ActionInvalid } from '@/lib/reservation-schemas'
 import type {
-  CancelResult, CreateRentalResult, MaintenanceResult, MoveResult, ReservationSummary, UpdateMaintenanceResult,
+  CancelResult, CreateRentalResult, MaintenanceResult, MoveResult, ReservationSummary, RestoreResult,
+  RetireResult, UpdateMaintenanceResult,
 } from '@/lib/reservations'
 
 /**
@@ -104,4 +105,33 @@ export function deleteBikeFeedback(result: { ok: true } | { ok: false; reason: '
   return result.ok
     ? { tone: 'success', message: 'Bike removed from the shop' }
     : { tone: 'error', message: 'This bike has reservations, even cancelled ones, so it cannot be removed' }
+}
+
+export function retireFeedback(result: RetireResult | ActionInvalid, retiredOn: string): Feedback {
+  switch (result.status) {
+    case 'retired':
+      return { tone: 'success', message: `Bike retired from ${retiredOn}` }
+    case 'conflict':
+      return {
+        tone: 'error',
+        message: result.conflicts.length > 0
+          ? `Still booked: ${conflictList(result.conflicts)}. Move those rentals first.`
+          : 'That bike is still booked on or after that day',
+      }
+    case 'not_found':
+      return { tone: 'stale', message: STALE }
+    case 'invalid':
+      return { tone: 'error', message: result.message }
+  }
+}
+
+export function restoreFeedback(result: RestoreResult | ActionInvalid): Feedback {
+  switch (result.status) {
+    case 'restored':
+      return { tone: 'success', message: 'Bike back in service' }
+    case 'not_found':
+      return { tone: 'stale', message: STALE }
+    case 'invalid':
+      return { tone: 'error', message: result.message }
+  }
 }

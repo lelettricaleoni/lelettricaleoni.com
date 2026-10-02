@@ -118,6 +118,7 @@ export async function createCounterRental(input: CreateRentalInput): Promise<Cre
         where u.bike_model_id = ${input.bikeModelId}::uuid
           and u.bike_size_id = ${input.bikeSizeId}::uuid
           and u.bike_version_id = ${input.bikeVersionId}::uuid
+          and (u.retired_on is null or ${input.endsOn}::date <= u.retired_on)
           and not exists (
             select 1 from bike_reservations r
             where r.bike_unit_id = u.id and r.status = 'confirmed'
@@ -205,6 +206,7 @@ export async function getMoveCandidates(reservationId: string): Promise<MoveCand
     join bike_versions v on v.id = u.bike_version_id
     left join bike_model_translations mt on mt.bike_model_id = u.bike_model_id and mt.locale = 'it'
     where u.id <> ${reservation.bikeUnitId}::uuid
+      and (u.retired_on is null or ${reservation.endsOn}::date <= u.retired_on)
       and not exists (
         select 1 from bike_reservations r
         where r.bike_unit_id = u.id and r.status = 'confirmed'
@@ -337,6 +339,8 @@ export interface GridUnit {
   modelName: string
   sizeName: string
   versionName: string
+  /** The first day the bike is no longer offered, or null while it is in service. */
+  retiredOn: IsoDate | null
   reservations: GridReservation[]
 }
 
@@ -349,7 +353,7 @@ export async function getGrid(month: IsoMonth): Promise<GridUnit[]> {
   const [units, reservations] = await Promise.all([
     db.select({
       id: bikeUnits.id, modelName: bikeModelTranslations.name,
-      sizeName: bikeSizes.name, versionName: bikeVersions.name,
+      sizeName: bikeSizes.name, versionName: bikeVersions.name, retiredOn: bikeUnits.retiredOn,
     })
       .from(bikeUnits)
       .leftJoin(bikeModelTranslations, and(
@@ -375,14 +379,58 @@ export async function getGrid(month: IsoMonth): Promise<GridUnit[]> {
     byUnit.set(row.bikeUnitId, list)
   }
 
-  return units.map((unit) => ({
-    id: unit.id,
-    shortId: unit.id.slice(0, 8),
-    modelName: unit.modelName ?? 'Untitled',
-    sizeName: unit.sizeName,
-    versionName: unit.versionName,
-    reservations: byUnit.get(unit.id) ?? [],
-  }))
+  // A bike retired on or before the first day of the month has nothing to show in it, unless it
+  // was still booked then: the history is never hidden.
+  return units
+    .filter((unit) => !unit.retiredOn || daysBetween(monthStart, unit.retiredOn) > 0 || byUnit.has(unit.id))
+    .map((unit) => ({
+      id: unit.id,
+      shortId: unit.id.slice(0, 8),
+      modelName: unit.modelName ?? 'Untitled',
+      sizeName: unit.sizeName,
+      versionName: unit.versionName,
+      retiredOn: unit.retiredOn,
+      reservations: byUnit.get(unit.id) ?? [],
+    }))
+}
+
+// ---------------------------------------------------------------------------------------------
+// Retiring a bike
+
+export type RetireResult =
+  | { status: 'retired' } | { status: 'conflict'; conflicts: ReservationSummary[] } | { status: 'not_found' }
+
+/**
+ * From `retiredOn` the bike is not offered any more. Refused, with the list, while it has a
+ * confirmed reservation that reaches that day or later: those are moved first, never cancelled
+ * behind Kevin's back. ONE statement, so the check and the update cannot be separated.
+ */
+export async function retireBikeUnit(id: string, retiredOn: IsoDate): Promise<RetireResult> {
+  const rows = await db.execute<{ id: string }>(sql`
+    update bike_units u set retired_on = ${retiredOn}::date
+    where u.id = ${id}::uuid
+      and not exists (
+        select 1 from bike_reservations r
+        where r.bike_unit_id = u.id and r.status = 'confirmed' and r.ends_on > ${retiredOn}::date)
+    returning u.id`)
+  if (rows.length > 0) return { status: 'retired' }
+
+  const [unit] = await db.select({ id: bikeUnits.id }).from(bikeUnits).where(eq(bikeUnits.id, id))
+  if (!unit) return { status: 'not_found' }
+
+  const conflicts = await db.select().from(bikeReservations).where(and(
+    eq(bikeReservations.bikeUnitId, id),
+    eq(bikeReservations.status, 'confirmed'),
+    gt(bikeReservations.endsOn, retiredOn),
+  )).orderBy(asc(bikeReservations.startsOn))
+  return { status: 'conflict', conflicts: conflicts.map(summary) }
+}
+
+export type RestoreResult = { status: 'restored' } | { status: 'not_found' }
+
+export async function restoreBikeUnit(id: string): Promise<RestoreResult> {
+  const rows = await db.update(bikeUnits).set({ retiredOn: null }).where(eq(bikeUnits.id, id)).returning({ id: bikeUnits.id })
+  return rows.length > 0 ? { status: 'restored' } : { status: 'not_found' }
 }
 
 // ---------------------------------------------------------------------------------------------
