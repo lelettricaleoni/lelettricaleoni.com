@@ -6,6 +6,7 @@ import {
 } from '@/lib/db'
 import { getAdminUser } from '@/lib/supabase/server'
 import { updateTag } from 'next/cache'
+import { deleteBikeUnitUnlessReserved } from '@/lib/reservations'
 
 async function requireAdmin() {
   const user = await getAdminUser()
@@ -87,8 +88,10 @@ export async function createBikeUnitAction(bikeModelId: string, bikeSizeId: stri
   updateTag('bike-units')
 }
 
-export async function deleteBikeUnitAction(id: string) {
+export async function deleteBikeUnitAction(id: string): Promise<{ ok: true } | { ok: false; reason: 'has_reservations' }> {
   await requireAdmin()
-  await db.delete(bikeUnits).where(eq(bikeUnits.id, id))
+  const result = await deleteBikeUnitUnlessReserved(id)
+  if (result.status === 'has_reservations') return { ok: false, reason: 'has_reservations' }
   updateTag('bike-units')
+  return { ok: true }
 }
