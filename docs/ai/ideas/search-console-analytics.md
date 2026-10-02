@@ -4,6 +4,9 @@
 > richiesta di Kevin ("su Search Console al momento c'è un bel casino", "su Analytics qualche
 > dashboard"). Dati dei 90 giorni fino al 2026-09-25 per Search Console, 30 giorni per Analytics.
 
+> **2026-10-02:** la dashboard nel pannello (`/manage/analytics`) citata qui sotto è stata
+> esclusa da Kevin: vedi `ROADMAP.md`, Scartato. Il resto della scheda resta valido.
+
 ## Cosa c'è
 
 **Search Console.** Una sola proprietà, di **dominio** (`sc-domain:lelettricaleoni.com`), che

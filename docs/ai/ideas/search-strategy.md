@@ -5,6 +5,9 @@
 > I numeri sono piccoli (qualche centinaio di clic al trimestre): niente obiettivi finti al
 > decimale, e ogni decisione va guardata su almeno un mese.
 
+> **2026-10-02:** la dashboard nel pannello (`/manage/analytics`) citata qui sotto è stata
+> esclusa da Kevin: vedi `ROADMAP.md`, Scartato. Il resto della scheda resta valido.
+
 ## 1. A cosa serve il sito
 
 Il sito non vende online: il suo lavoro è **far arrivare un contatto** a un negozio di noleggio a

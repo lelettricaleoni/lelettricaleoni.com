@@ -19,7 +19,7 @@ pannello di amministrazione privato.
 |---|---|
 | Produzione | `main` → https://www.lelettricaleoni.com, deploy automatico Vercel |
 | Progetto Vercel | `lelettricaleoni`, team `lelettrica` |
-| Branch `staging` | esiste sul remoto, non usato; protezione non allineata a `main` (solo `verify`) |
+| Branch `staging` | ricreato il 2026-10-02 da `main` (cancellato per errore un'ora prima) per il lavoro sulle prenotazioni: nulla di quel lavoro va in produzione finché non è pronto (Kevin). I suoi deploy usano l'ambiente Preview (database e bucket propri) su `staging.lelettricaleoni.com`, con `noindex`. PR verso `staging`; in produzione una sola PR `staging → main`, e solo allora la migrazione sul database vero. Protezione: `verify` e `browser`, admin inclusi; `CodeQL` da aggiungere dopo averlo visto girare qui |
 | Merge | solo via PR: `verify`, `browser` e `CodeQL` devono passare, **nessuna esenzione admin** dal 2026-09-16 — chiude la falla che aveva permesso due push diretti su `main` |
 | CI | `verify` (lint, tipi, unit), `browser` (Playwright contro il preview), CodeQL in default setup, suite `extended` |
 
@@ -42,6 +42,9 @@ Autenticazione admin con Supabase Auth: `getAdminUser()` richiede `app_metadata.
 'admin'` — **non** `user_metadata`, che è modificabile dall'utente stesso.
 Foto, GPX, video e flussi HLS su **Cloudflare R2**.
 Traduzioni IT→EN/DE generate da **Azure Translator**: l'admin scrive solo l'italiano.
+Azure traduce «rifugio» con «Zuflucht» (asilo) invece di «Schutzhütte»: il tedesco di ogni percorso
+con un rifugio va riletto, e una correzione a mano si perde se dal pannello si rilancia la
+ritraduzione (flag `retranslate`). Visto su `bdd7a446`, lasciato com'è.
 
 Se R2 rallenta, le card dei percorsi si degradano da sole: i media stanno in un confine
 Suspense separato apposta, per non bloccare il resto della pagina.
