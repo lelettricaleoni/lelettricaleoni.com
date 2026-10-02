@@ -14,10 +14,15 @@ import {
 import { createRentalAction } from '@/lib/actions/reservations'
 import { inclusiveEnd, isoDay } from '@/lib/dates'
 import { rentalFeedback } from '@/lib/reservation-feedback'
+import { onlyChoice, sizesOf, versionsOf, type RentalOption } from '@/lib/rental-options'
 import type { ReservationSummary } from '@/lib/reservations'
-import type { ModelOption } from '@/components/admin/booking-types'
 
-export function RentalForm({ models, onCreated }: { models: ModelOption[]; onCreated: () => void }) {
+/**
+ * `models` are the models, sizes and versions of the bikes really in the shop (not the ones a
+ * model is allowed to have on paper): each choice narrows the next, and a choice with a single
+ * possibility is made for the person.
+ */
+export function RentalForm({ models, onCreated }: { models: RentalOption[]; onCreated: () => void }) {
   const [isPending, startTransition] = useTransition()
   const [modelId, setModelId] = useState('')
   const [sizeId, setSizeId] = useState('')
@@ -29,8 +34,21 @@ export function RentalForm({ models, onCreated }: { models: ModelOption[]; onCre
   const [requestKey, setRequestKey] = useState(() => crypto.randomUUID())
   const [duplicate, setDuplicate] = useState<ReservationSummary | null>(null)
 
-  const selected = models.find((m) => m.model.id === modelId)
+  const sizes = sizesOf(models, modelId)
+  const versions = versionsOf(models, modelId, sizeId)
   const ready = Boolean(modelId && sizeId && versionId && range?.from && label.trim())
+
+  function chooseModel(id: string) {
+    const nextSize = onlyChoice(sizesOf(models, id))
+    setModelId(id)
+    setSizeId(nextSize)
+    setVersionId(onlyChoice(versionsOf(models, id, nextSize)))
+  }
+
+  function chooseSize(id: string) {
+    setSizeId(id)
+    setVersionId(onlyChoice(versionsOf(models, modelId, id)))
+  }
 
   function reset() {
     setModelId(''); setSizeId(''); setVersionId(''); setRange(undefined); setLabel('')
@@ -62,35 +80,39 @@ export function RentalForm({ models, onCreated }: { models: ModelOption[]; onCre
     })
   }
 
+  if (models.length === 0) {
+    return <p className="text-sm text-muted-foreground">There are no bikes in the shop yet. Add them in Shop first.</p>
+  }
+
   return (
     <form onSubmit={(event) => { event.preventDefault(); if (ready && !isPending) submit(false) }} className="space-y-4">
       <div className="space-y-1">
         <Label htmlFor="rental-model">Model *</Label>
-        <Select value={modelId} onValueChange={(id) => { setModelId(id); setSizeId(''); setVersionId('') }}>
+        <Select value={modelId} onValueChange={chooseModel}>
           <SelectTrigger id="rental-model"><SelectValue placeholder="Choose a model" /></SelectTrigger>
           <SelectContent>
-            {models.map((m) => <SelectItem key={m.model.id} value={m.model.id}>{m.name}</SelectItem>)}
+            {models.map((m) => <SelectItem key={m.modelId} value={m.modelId}>{m.modelName}</SelectItem>)}
           </SelectContent>
         </Select>
       </div>
 
-      {selected && (
+      {modelId && (
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1">
             <Label htmlFor="rental-size">Size *</Label>
-            <Select value={sizeId} onValueChange={setSizeId}>
+            <Select value={sizeId} onValueChange={chooseSize}>
               <SelectTrigger id="rental-size"><SelectValue placeholder="Size" /></SelectTrigger>
               <SelectContent>
-                {selected.allowedSizes.map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+                {sizes.map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
           <div className="space-y-1">
             <Label htmlFor="rental-version">Version *</Label>
-            <Select value={versionId} onValueChange={setVersionId}>
-              <SelectTrigger id="rental-version"><SelectValue placeholder="Version" /></SelectTrigger>
+            <Select value={versionId} onValueChange={setVersionId} disabled={!sizeId}>
+              <SelectTrigger id="rental-version"><SelectValue placeholder={sizeId ? 'Version' : 'Pick a size first'} /></SelectTrigger>
               <SelectContent>
-                {selected.allowedVersions.map((v) => <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>)}
+                {versions.map((v) => <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>

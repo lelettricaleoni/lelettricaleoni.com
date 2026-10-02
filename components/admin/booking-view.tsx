@@ -12,7 +12,7 @@ import {
   dayOfMonth, isWeekendDay, monthDays, monthTitle, shiftMonth, weekdayLetter, type IsoDate, type IsoMonth,
 } from '@/lib/dates'
 import type { GridReservation, GridUnit } from '@/lib/reservations'
-import type { ModelOption } from '@/components/admin/booking-types'
+import type { RentalOption } from '@/lib/rental-options'
 import { useReservationsRealtime } from '@/components/admin/use-reservations-realtime'
 import { RentalForm } from '@/components/admin/rental-form'
 import { MaintenanceForm } from '@/components/admin/maintenance-form'
@@ -22,7 +22,7 @@ interface BookingViewProps {
   month: IsoMonth
   today: IsoDate
   units: GridUnit[]
-  models: ModelOption[]
+  models: RentalOption[]
 }
 
 const LABEL_COLUMN = 'minmax(11rem, 14rem)'
