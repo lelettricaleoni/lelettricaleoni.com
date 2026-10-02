@@ -4,11 +4,10 @@ import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { CountrySelect } from '@/components/admin/country-select'
 import { Textarea } from '@/components/ui/textarea'
 import { createCustomerAction, searchCustomersAction } from '@/lib/actions/customers'
 import { DEFAULT_PHONE_COUNTRY, fullName } from '@/lib/customer'
-import { phoneCountryOptions } from '@/lib/phone-countries'
 import type { CustomerSummary } from '@/lib/customers'
 
 /** "mario rossi" → first name "mario", last name "rossi": the search text becomes the start of a new customer. */
@@ -120,7 +119,6 @@ function NewCustomer({
   const [phone, setPhone] = useState('')
   // Only a number typed without its prefix depends on it: "+49 151…" is German whatever is picked here.
   const [phoneCountry, setPhoneCountry] = useState<string>(DEFAULT_PHONE_COUNTRY)
-  const countries = phoneCountryOptions()
   const [email, setEmail] = useState('')
   const [notes, setNotes] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -154,12 +152,7 @@ function NewCustomer({
       <div className="space-y-1">
         <Label htmlFor="customer-phone">Mobile</Label>
         <div className="flex gap-2">
-          <Select value={phoneCountry} onValueChange={setPhoneCountry}>
-            <SelectTrigger aria-label="Country of the phone number" className="w-40 shrink-0"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              {countries.map((country) => <SelectItem key={country.code} value={country.code}>{country.label}</SelectItem>)}
-            </SelectContent>
-          </Select>
+          <CountrySelect value={phoneCountry} onChange={setPhoneCountry} />
           <Input id="customer-phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="347 123 4567" />
         </div>
       </div>
