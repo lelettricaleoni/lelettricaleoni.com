@@ -23,11 +23,14 @@
   Stripe Checkout). **Provato il 2026-10-02** con richieste concorrenti vere sul pooler (spike,
   15/15 controlli): il vincolo regge, ma il codice deve ritentare su `23P01`; rilascio dei
   posti scaduti e assegnazione sono istruzioni separate, senza transazioni (`max_pipeline: 0`).
-  Fetta 1 (calendario e stato delle bici nel pannello): spec in
+  **Fetta 1 (calendario e stato delle bici nel pannello): codice finito e in `staging`** (PR #227-#231,
+  revisione dell'intero ramo fatta), **non ancora in produzione**. Restano: la prova a mano su
+  `staging` con il login admin (due schede, tempo reale), le migrazioni `0010`-`0012` sul database di
+  produzione e la PR `staging → main` con merge commit. Spec in
   `docs/superpowers/specs/2026-10-02-booking-slice1-admin-calendar-design.md`, piano in
-  `docs/superpowers/plans/2026-10-02-booking-slice1-admin-calendar.md` (10 task, 4 fasi, codice su
-  `staging`); il piano è da rivedere da Kevin prima di scrivere codice. Griglia su `date-fns` e CSS:
-  gli scheduler con vista a risorse sono a pagamento o non adatti (confronto nella spec).
+  `docs/superpowers/plans/2026-10-02-booking-slice1-admin-calendar.md`. Griglia su `date-fns` e CSS:
+  gli scheduler con vista a risorse sono a pagamento o non adatti (confronto nella spec). Le fette 2-5
+  sono da disegnare.
   Il calendario di Kevin sta in `C:\AzureDevOps\firebase` (`app/rent/`, da portare ricollegandolo
   ai dati veri); il resto di quel repo (Firestore, Stripe di prova) non si riusa.
   **Date**: colonne `date`/`daterange` e stringhe `YYYY-MM-DD` (mai `Date` per un giorno di
@@ -88,6 +91,21 @@
     non divergano.
   - Le tabelle e le funzioni nuove delle prenotazioni nascono già a posto in ogni ambiente (RLS
     esplicito, `REVOKE` sulla funzione del trigger): vedi il piano della fetta 1.
+- **Sintassi Tailwind v3 nei componenti shadcn già presenti** (scoperta il 2026-10-02 cercando il
+  difetto del calendario, che era uguale e che è già corretto: #233). Il progetto è su Tailwind v4,
+  dove una classe con una variabile CSS si scrive `h-(--x)` e non `h-[--x]`: la forma vecchia non
+  produce nulla. Restano da correggere, **uno per uno e guardandoli in un browser vero**:
+  - `components/ui/select.tsx`: `max-h-[--radix-select-content-available-height]`, quindi il menu a
+    tendina potrebbe non limitarsi all'altezza disponibile (moduli del pannello, con liste lunghe) e
+    uscire dallo schermo; `origin-[--radix-select-content-transform-origin]` è solo animazione.
+  - `components/ui/chart.tsx`: `border-[--color-border]` e `bg-[--color-bg]`: i pallini colorati del
+    suggerimento del grafico altimetrico (**sito pubblico**, flyover) potrebbero aver perso il colore.
+  - `components/ui/dropdown-menu.tsx` e `popover.tsx`: `origin-[--radix-…]`, solo l'origine
+    dell'animazione (cosmetico).
+  Prima di cominciare: `grep -rnE "[a-zA-Z:-]+-\[--[a-zA-Z-]+\]" components app lib` per l'elenco
+  aggiornato; `lib/calendar-tailwind.test.ts` fa già da guardia per il solo calendario e si può
+  estendere a tutta `components/ui/` quando gli altri sono a posto. Ogni nuovo componente che
+  `npx shadcn@latest add` genera va guardato con lo stesso occhio.
 
 ## Un giorno
 
