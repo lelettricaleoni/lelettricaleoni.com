@@ -13,7 +13,11 @@ vi.mock('@/lib/reservations', () => ({
 
 import { getAdminUser } from '@/lib/supabase/server'
 import * as reservations from '@/lib/reservations'
-import { createRentalAction, planMaintenanceAction, updateMaintenanceAction } from './reservations'
+import * as actions from './reservations'
+import {
+  cancelReservationAction, createRentalAction, getMoveCandidatesAction, getOccupiedRangesAction,
+  moveReservationAction, planMaintenanceAction, updateMaintenanceAction,
+} from './reservations'
 
 const id = () => crypto.randomUUID()
 const rentalInput = () => ({
@@ -71,5 +75,27 @@ describe('maintenance actions', () => {
     const result = await updateMaintenanceAction({ id: id(), firstDay: '2026-07-12', lastDay: '2026-07-10' })
     expect(result.status).toBe('invalid')
     expect(reservations.updateMaintenance).not.toHaveBeenCalled()
+  })
+})
+
+describe('every action refuses anyone who is not an admin', () => {
+  const calls: Record<string, () => Promise<unknown>> = {
+    createRentalAction: () => createRentalAction(rentalInput()),
+    cancelReservationAction: () => cancelReservationAction({ id: id() }),
+    moveReservationAction: () => moveReservationAction({ id: id(), bikeUnitId: id() }),
+    getMoveCandidatesAction: () => getMoveCandidatesAction({ id: id() }),
+    planMaintenanceAction: () => planMaintenanceAction({ requestKey: id(), bikeUnitId: id(), firstDay: '2026-07-10', lastDay: '2026-07-10' }),
+    updateMaintenanceAction: () => updateMaintenanceAction({ id: id(), firstDay: '2026-07-10', lastDay: '2026-07-10' }),
+    getOccupiedRangesAction: () => getOccupiedRangesAction({ bikeUnitId: id() }),
+  }
+
+  it('is tested for every exported action, so a new one cannot skip the check', () => {
+    expect(Object.keys(calls).sort()).toEqual(Object.keys(actions).sort())
+  })
+
+  it.each(Object.keys(calls))('%s', async (name) => {
+    vi.mocked(getAdminUser).mockResolvedValue(null as never)
+    await expect(calls[name]()).rejects.toThrow('Unauthorized')
+    for (const fn of Object.values(reservations)) expect(fn).not.toHaveBeenCalled()
   })
 })

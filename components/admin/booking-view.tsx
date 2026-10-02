@@ -1,5 +1,5 @@
 'use client'
-import { Fragment, useState, useTransition } from 'react'
+import { Fragment, useEffect, useMemo, useState, useTransition } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { ChevronLeft, ChevronRight, Plus, Wrench } from 'lucide-react'
@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { cn } from '@/lib/utils'
 import { layoutBlocks } from '@/lib/booking-grid'
+import { coalesce } from '@/lib/coalesce'
 import {
   dayOfMonth, isWeekendDay, monthDays, monthTitle, shiftMonth, weekdayLetter, type IsoDate, type IsoMonth,
 } from '@/lib/dates'
@@ -35,8 +36,14 @@ export function BookingView({ month, today, units, models }: BookingViewProps) {
   const days = monthDays(month)
 
   // router.refresh() re-runs this page's server component: the ping carries nothing to trust,
-  // so the grid is simply read again.
-  const reload = () => startTransition(() => router.refresh())
+  // so the grid is simply read again. One reload per quarter of a second at most: a save asks
+  // for one and the ping it causes arrives a moment later (one reload, not two), and the public
+  // channel cannot be used to make this page reload in a loop.
+  const reload = useMemo(
+    () => coalesce(() => startTransition(() => router.refresh()), 250),
+    [router, startTransition],
+  )
+  useEffect(() => () => reload.cancel(), [reload])
   useReservationsRealtime(reload)
 
   const columns = `${LABEL_COLUMN} repeat(${days.length}, minmax(2rem, 1fr))`
