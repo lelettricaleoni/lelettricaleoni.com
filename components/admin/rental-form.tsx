@@ -99,7 +99,7 @@ export function RentalForm({ models, onCreated }: { models: ModelOption[]; onCre
 
       <div className="space-y-1">
         <Label>Days *</Label>
-        <Calendar mode="range" selected={range} onSelect={setRange} className="rounded-md border" />
+        <Calendar mode="range" selected={range} onSelect={setRange} className="mx-auto rounded-md border" />
         {range?.from && (
           <p className="text-xs text-muted-foreground">
             From {isoDay(range.from)} to {isoDay(range.to ?? range.from)} included

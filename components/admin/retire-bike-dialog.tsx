@@ -50,7 +50,7 @@ export function RetireBikeDialog({ unitId, label, today }: { unitId: string; lab
               move first.
             </DialogDescription>
           </DialogHeader>
-          <Calendar mode="single" selected={day} onSelect={setDay} defaultMonth={day} className="rounded-md border" />
+          <Calendar mode="single" selected={day} onSelect={setDay} defaultMonth={day} className="mx-auto rounded-md border" />
           <p className="text-xs text-muted-foreground">
             {day ? `Not offered from ${isoDay(day)}` : 'Pick the first day it is no longer offered'}
           </p>

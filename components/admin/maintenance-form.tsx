@@ -57,7 +57,7 @@ export function MaintenanceForm({ unit, onPlanned }: { unit: GridUnit; onPlanned
         <Calendar
           mode="range" selected={range} onSelect={setRange}
           disabled={occupiedDayRanges(occupied)} excludeDisabled
-          className="rounded-md border"
+          className="mx-auto rounded-md border"
         />
         {range?.from && (
           <p className="text-xs text-muted-foreground">
