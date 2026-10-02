@@ -1,9 +1,11 @@
 #!/bin/sh
 # Rifiuta i commit diretti su main e staging.
 #
-# La protezione su GitHub esenta gli amministratori, quindi non ferma né Kevin
-# né un agente che opera con le sue credenziali. Il 2026-09-10 sono finiti tre
-# commit su main perché ero convinto di essere sul branch di una PR e non ho
+# Dal 2026-09-16 la protezione su GitHub vale anche per gli amministratori, quindi un
+# push diretto verrebbe rifiutato dal remoto: questo hook ferma l'errore prima, già al
+# commit, in locale. Prima non era così: la protezione esentava gli amministratori e
+# non fermava né Kevin né un agente con le sue credenziali. Il 2026-09-10 sono finiti
+# tre commit su main perché ero convinto di essere sul branch di una PR e non ho
 # guardato: nessun danno, ma nessun controllo li ha fermati.
 #
 # Per un caso genuinamente eccezionale: `git commit --no-verify`.
