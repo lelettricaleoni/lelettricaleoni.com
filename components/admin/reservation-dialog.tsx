@@ -171,7 +171,7 @@ function EditMaintenance({
     <div className="space-y-3">
       <Calendar
         mode="range" selected={range} onSelect={setRange} defaultMonth={range?.from}
-        disabled={occupiedDayRanges(occupied)} excludeDisabled className="rounded-md border"
+        disabled={occupiedDayRanges(occupied)} excludeDisabled className="mx-auto rounded-md border"
       />
       <div className="flex gap-2">
         <Button disabled={isPending || !range?.from} onClick={save}>Save dates</Button>
