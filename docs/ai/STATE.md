@@ -4,7 +4,7 @@
 > componenti si ricava con `ls`; il motivo per cui i tile CARTO passano dal server no.
 > Se questo file supera le ~150 righe, qualcosa è entrato che non doveva.
 >
-> Ultimo allineamento: 2026-09-30.
+> Ultimo allineamento: 2026-10-02.
 
 ## Prodotto
 
@@ -54,7 +54,8 @@ aperta entro 250 ms. Lo stesso Upstash tiene lo stato di transcodifica del worke
 
 **Tutti i media stanno su Cloudflare R2**, un bucket per ambiente (`lelettrica-trails`,
 `dev-lelettrica-trails`), serviti da `trails-bucket.lelettricaleoni.com`. MinIO non esiste
-più. Sorgenti in `private/route-videos/`, flussi in `public/route-videos/`: **su R2 quel
+più. Sorgenti in `private/route-videos/` e `private/bike-model-videos/`, flussi sotto lo stesso
+percorso con `public/` al posto di `private/` (worker PR #11, provato dal vivo il 2026-10-02): **su R2 quel
 `private/` non protegge nulla** — il dominio pubblico espone tutto il bucket — ma il
 sorgente vive solo i minuti che il worker impiega a cancellarlo. La cache di Cloudflare su
 quel dominio è attiva (`cf-cache-status: HIT`, `Age` di giorni): si legge con una GET, mai
@@ -224,11 +225,6 @@ registrare a mano la riga nel tracking.
 
 ## Debito noto
 
-- **I video dei modelli di bici non vengono trascodificati**: `lib/actions/bike-models.ts`
-  carica su `private/bike-model-videos/...`, ma il worker (repo `videoStream-bucketWorker`)
-  cerca sorgenti solo sotto `private/route-videos/` (`SOURCE_PREFIX` fisso in
-  `jobs/transcode.py`). Lavoro non ancora fatto: generalizzare `SOURCE_PREFIX`/`OUTPUT_PREFIX`
-  a una lista di coppie.
 - **Video.js v10 è ancora Release Candidate** (`rc.4`; la 8.x ha un'API diversa, non è un
   aggiornamento). `components/video-player.tsx` legge `selectError` da `@videojs/core/dom`,
   un dettaglio interno: ricontrollarlo a ogni RC (manifest 404 e HLS vero).
