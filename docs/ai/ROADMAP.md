@@ -19,8 +19,11 @@
   calendario del pannello; disponibilità per **bici fisica e intervallo di date**, con un
   vincolo di esclusione di Postgres (`btree_gist`, disponibile e non installata su dev e
   produzione) contro le doppie prenotazioni; posto tenuto 30 minuti (minimo di una sessione
-  Stripe Checkout). Da provare per prima cosa con richieste concorrenti vere: rilascio dei
-  posti scaduti + assegnazione in istruzioni separate, senza transazioni (`max_pipeline: 0`).
+  Stripe Checkout). **Provato il 2026-10-02** con richieste concorrenti vere sul pooler (spike,
+  15/15 controlli): il vincolo regge, ma il codice deve ritentare su `23P01`; rilascio dei
+  posti scaduti e assegnazione sono istruzioni separate, senza transazioni (`max_pipeline: 0`).
+  Spec della fetta 1 (calendario e stato delle bici nel pannello), da approvare:
+  `docs/superpowers/specs/2026-10-02-booking-slice1-admin-calendar-design.md`.
   Il calendario di Kevin sta in `C:\AzureDevOps\firebase` (`app/rent/`, da portare ricollegandolo
   ai dati veri); il resto di quel repo (Firestore, Stripe di prova) non si riusa.
   **Date**: colonne `date`/`daterange` e stringhe `YYYY-MM-DD` (mai `Date` per un giorno di
