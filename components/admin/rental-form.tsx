@@ -4,8 +4,8 @@ import type { DateRange } from 'react-day-picker'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Calendar } from '@/components/ui/calendar'
-import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { CustomerPicker } from '@/components/admin/customer-picker'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
@@ -15,6 +15,7 @@ import { createRentalAction } from '@/lib/actions/reservations'
 import { inclusiveEnd, isoDay } from '@/lib/dates'
 import { rentalFeedback } from '@/lib/reservation-feedback'
 import { onlyChoice, sizesOf, versionsOf, type RentalOption } from '@/lib/rental-options'
+import type { CustomerSummary } from '@/lib/customers'
 import type { ReservationSummary } from '@/lib/reservations'
 
 /**
@@ -28,7 +29,7 @@ export function RentalForm({ models, onCreated }: { models: RentalOption[]; onCr
   const [sizeId, setSizeId] = useState('')
   const [versionId, setVersionId] = useState('')
   const [range, setRange] = useState<DateRange | undefined>()
-  const [label, setLabel] = useState('')
+  const [customer, setCustomer] = useState<CustomerSummary | null>(null)
   // One key per form opening: a repeated submit (double click, network retry, back and resend)
   // finds the rental already saved instead of creating a second one.
   const [requestKey, setRequestKey] = useState(() => crypto.randomUUID())
@@ -36,7 +37,7 @@ export function RentalForm({ models, onCreated }: { models: RentalOption[]; onCr
 
   const sizes = sizesOf(models, modelId)
   const versions = versionsOf(models, modelId, sizeId)
-  const ready = Boolean(modelId && sizeId && versionId && range?.from && label.trim())
+  const ready = Boolean(modelId && sizeId && versionId && range?.from && customer)
 
   function chooseModel(id: string) {
     const nextSize = onlyChoice(sizesOf(models, id))
@@ -51,19 +52,19 @@ export function RentalForm({ models, onCreated }: { models: RentalOption[]; onCr
   }
 
   function reset() {
-    setModelId(''); setSizeId(''); setVersionId(''); setRange(undefined); setLabel('')
+    setModelId(''); setSizeId(''); setVersionId(''); setRange(undefined); setCustomer(null)
     setDuplicate(null)
     setRequestKey(crypto.randomUUID())
   }
 
   function submit(confirmDuplicate: boolean) {
     const first = range?.from
-    if (!first) return
+    if (!first || !customer) return
     startTransition(async () => {
       const result = await createRentalAction({
         requestKey, bikeModelId: modelId, bikeSizeId: sizeId, bikeVersionId: versionId,
         firstDay: isoDay(first), lastDay: isoDay(range.to ?? first),
-        label, confirmDuplicate,
+        customerId: customer.id, confirmDuplicate,
       })
       const feedback = rentalFeedback(result)
       if (feedback.tone === 'confirm-duplicate') {
@@ -130,8 +131,8 @@ export function RentalForm({ models, onCreated }: { models: RentalOption[]; onCr
       </div>
 
       <div className="space-y-1">
-        <Label htmlFor="rental-name">Name *</Label>
-        <Input id="rental-name" value={label} onChange={(e) => setLabel(e.target.value)} maxLength={120} placeholder="Who is renting" />
+        <Label>Customer *</Label>
+        <CustomerPicker value={customer} onChange={setCustomer} />
       </div>
 
       <Button type="submit" disabled={isPending || !ready}>Add rental</Button>

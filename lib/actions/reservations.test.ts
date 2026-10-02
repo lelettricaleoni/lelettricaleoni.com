@@ -20,9 +20,10 @@ import {
 } from './reservations'
 
 const id = () => crypto.randomUUID()
+const CUSTOMER = id()
 const rentalInput = () => ({
   requestKey: id(), bikeModelId: id(), bikeSizeId: id(), bikeVersionId: id(),
-  firstDay: '2026-07-10', lastDay: '2026-07-12', label: 'Rossi',
+  firstDay: '2026-07-10', lastDay: '2026-07-12', customerId: CUSTOMER,
 })
 
 beforeEach(() => {
@@ -52,7 +53,7 @@ describe('createRentalAction', () => {
     vi.mocked(reservations.createCounterRental).mockResolvedValue({ status: 'no_bike_free' })
     await createRentalAction(rentalInput())
     expect(reservations.createCounterRental).toHaveBeenCalledWith(
-      expect.objectContaining({ startsOn: '2026-07-10', endsOn: '2026-07-13', label: 'Rossi', confirmDuplicate: false }),
+      expect.objectContaining({ startsOn: '2026-07-10', endsOn: '2026-07-13', customerId: CUSTOMER, confirmDuplicate: false }),
     )
   })
 
