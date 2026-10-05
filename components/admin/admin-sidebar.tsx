@@ -1,7 +1,7 @@
 'use client'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Home, Map, Users, Code2, LogOut, Bike, SlidersHorizontal, Warehouse, CalendarDays, Contact } from 'lucide-react'
+import { Home, Map, Users, Code2, LogOut, Bike, SlidersHorizontal, Warehouse, CalendarDays, Contact, Plug } from 'lucide-react'
 import { logoutAction } from '@/lib/actions/auth'
 import { cn } from '@/lib/utils'
 import type { AdminUserSummary } from '@/lib/admin-users'
@@ -34,6 +34,7 @@ const navGroups: NavGroup[] = [
   ] },
   { label: 'System', items: [
     { href: '/manage/users', label: 'Access', icon: Users },
+    { href: '/manage/integrations', label: 'Integrations', icon: Plug },
   ] },
 ]
 

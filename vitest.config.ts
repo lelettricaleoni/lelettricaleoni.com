@@ -12,7 +12,13 @@ import path from 'node:path'
  */
 export default defineConfig({
   // Stesso alias di tsconfig.json: i componenti importano da '@/...'.
-  resolve: { alias: { '@': path.resolve(__dirname) } },
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname),
+      // See tests/server-only-stub.ts.
+      'server-only': path.resolve(__dirname, 'tests/server-only-stub.ts'),
+    },
+  },
   test: {
     include: ['lib/**/*.test.ts', 'lib/**/*.test.tsx', 'components/**/*.test.tsx'],
     exclude: ['node_modules', '.next', 'tests/browser/**'],
