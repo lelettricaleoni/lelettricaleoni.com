@@ -72,11 +72,9 @@
   validi sulla home (annidati in `Offer.itemOffered`) sono corretti con #214: resta da premere
   «Convalida correzione» in Search Console. Kevin ha escluso la dashboard `/manage/analytics`
   (vedi Scartato), e con lei cade la decisione 1 (credenziali di Google su Vercel).
-  **Restano**: la decisione 2 (Google Business Profile) e rileggere Search Console a fine ottobre
+  **Fatto da Kevin il 2026-10-05**: la scheda Google Business Profile (decisione 2), «Convalida correzione» sui
+  prodotti della home e la protezione delle password trapelate. **Resta**: rileggere Search Console a fine ottobre
   (punto di partenza: `/it/routes/bdd7a446`, 294 impressioni e CTR 2,7%).
-- **Password trapelate (HaveIBeenPwned)**: protezione disattivata su entrambi i progetti Supabase. È un'impostazione
-  di Auth nella dashboard, da verificare se il piano la consente (resta a Kevin). Gli altri avvisi di sicurezza
-  portati da Kevin il 2026-10-02 sono chiusi il 2026-10-05: vedi STATE.
 
 ## Un giorno
 
