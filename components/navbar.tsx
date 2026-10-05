@@ -15,18 +15,16 @@ interface NavbarProps {
    * read here: this component is rendered from client pages too, so it must
    * not depend on server-only state.
    */
-  showRoutes?: boolean
-  showBikes?: boolean
 }
 
-export function Navbar({ lang, dict, showRoutes = true, showBikes = true }: NavbarProps) {
+export function Navbar({ lang, dict }: NavbarProps) {
   const navLinks = [
     { href: `/${lang}`, label: 'Home' },
     { href: `/${lang}#servizi`, label: dict.nav.services },
     { href: `/${lang}#prezzi`, label: dict.nav.pricing },
     { href: `/${lang}#contatti`, label: dict.nav.contact },
-    ...(showRoutes && dict.routes ? [{ href: `/${lang}/routes`, label: dict.routes.nav_label }] : []),
-    ...(showBikes && dict.bikes ? [{ href: `/${lang}/bikes`, label: dict.bikes.nav_label }] : []),
+    ...(dict.routes ? [{ href: `/${lang}/routes`, label: dict.routes.nav_label }] : []),
+    ...(dict.bikes ? [{ href: `/${lang}/bikes`, label: dict.bikes.nav_label }] : []),
   ]
 
   return (
@@ -53,12 +51,12 @@ export function Navbar({ lang, dict, showRoutes = true, showBikes = true }: Navb
           <Link href={`/${lang}#contatti`} className="hover:text-primary transition-colors">
             {dict.nav.contact}
           </Link>
-          {showRoutes && dict.routes && (
+          {dict.routes && (
             <Link href={`/${lang}/routes`} className="hover:text-primary transition-colors">
               {dict.routes.nav_label}
             </Link>
           )}
-          {showBikes && dict.bikes && (
+          {dict.bikes && (
             <Link href={`/${lang}/bikes`} className="hover:text-primary transition-colors">
               {dict.bikes.nav_label}
             </Link>

@@ -11,15 +11,8 @@ const BASE_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://www.lelettricaleo
 const locales: Locale[] = ['it', 'en', 'de']
 const LAST_MODIFIED = new Date('2026-04-20')
 
-// No feature flag decides what shows up here — a switched-off route already
-// tells crawlers not to index it directly (the noindex meta tag from the
-// "pages that stream can't change status code" trap in STATE.md), so listing
-// it in the sitemap too changes nothing for SEO. Measured in Observability:
-// with getFlags() in here, this was the single most expensive route in
-// Active CPU despite being hit twice a day, because a route hit that rarely
-// almost never reuses a warm instance — every crawl re-evaluated all 5 flags
-// cold (network round trips to Vercel's flags service) for a value nothing
-// here used to read past `routes`.
+// What is listed here does not depend on anything dynamic: a route that is not published tells crawlers not to index
+// it on its own page, so there is nothing to decide per request and the sitemap is cached.
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   'use cache'
   cacheLife('sitemap')

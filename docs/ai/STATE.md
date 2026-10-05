@@ -142,12 +142,9 @@ DB/R2 (`lib/routes-data.ts`, `"use cache"`, profilo `catalog` 10s/30s, tag `rout
 solo nell'istanza serverless che esegue l'azione**: la cache `'use cache'` di default sta in
 memoria di ogni istanza, quindi le altre servono la loro copia fino a scadenza — con i
 vecchi 30s/120s riordinare le bici nel pannello e ricaricare il sito poteva mostrare l'ordine
-vecchio per due minuti (2026-09-25). Per questo `catalog` è corto. `getFlags()` resta fuori dalla cache —
-`@flags-sdk/vercel` legge `headers()` internamente, vietato anche indirettamente in uno
-scope `"use cache"` — e va preceduto da `await connection()` nella pagina: senza, durante
-la build `headers()` va in timeout, `lib/flags.ts` lo intercetta (fail-open, per design) e
-quel valore resta congelato nello shell statico finché non c'è un nuovo deploy — il
-kill-switch smette di funzionare in silenzio, senza che la build lo segnali.
+vecchio per due minuti (2026-09-25). Per questo `catalog` è corto. Le pagine che leggono dati da
+database e R2 (home, percorsi, bici) hanno `await connection()`: si renderizzano a ogni richiesta e
+non nella build, che non ha un database; il lavoro vero lo fanno le funzioni `"use cache"` dietro.
 
 **La traccia GPX si ancora al terreno, non alla propria quota.** Le quote GPX sono
 ortometriche, quelle di Cesium ellissoidiche: misurato su un percorso reale, scarto mediano
@@ -167,10 +164,8 @@ raggiungibili da chi cerca su Google, non da chi naviga; un link tolto il giorno
 I contenuti nuovi per la ricerca puntano a nord di Dro (Marocche, Cavedine, Sarche, Drena,
 Toblino), non ad Arco/Riva: `docs/ai/ideas/search-strategy.md`.
 
-**I feature flag stanno su Vercel Flags**, letti da `lib/flags.ts`, che è l'unico punto da
-cui passano. Il valore viene valutato una volta e riusato per 30 secondi, e un
-aggiornamento avviene in sottofondo: nessuna richiesta attende il servizio. Senza questa
-cache la home passava da 0,15 s a 6,2 s — misurato.
+**Non ci sono feature flag** (tolti il 2026-10-05, Kevin: non li usava mai). Erano sei interruttori su Vercel Flags
+(percorsi, foto, video, flyover, GPX, bici), tutti accesi in produzione: spegnere una sezione ora è una modifica del codice.
 
 ## Trappole
 
@@ -193,10 +188,6 @@ dall'hook, ha modifiche non committate: `git fetch && git merge --ff-only origin
 senza lo scope `read:project` del token: titolo e descrizione si cambiano con
 `gh api -X PATCH repos/<repo>/pulls/<n> -f title=… -f body=…`. Una PR rimasta `BEHIND` dopo altri
 merge (protezione di `main` con `strict`) richiede `gh pr update-branch` e check rifatti.
-
-**Creando un flag su Vercel, il valore predefinito è Off in produzione e preview**, On solo
-in sviluppo. Creare i cinque flag ha spento la sezione percorsi in produzione senza che
-nulla segnalasse errore. Dopo aver creato un flag, verificare sempre i valori per ambiente.
 
 **Produzione e Preview usavano lo stesso database e lo stesso pooler** (copiati una volta
 sola 108 giorni prima): il 2026-09-11 sei PR in test insieme hanno esaurito i quindici posti
@@ -235,16 +226,11 @@ ricevuto il parametro di avvio (`show statement_timeout` tornava vuoto).
 **`vercel env pull .env.local` distrugge le chiavi locali**, che puntano al database di
 sviluppo mentre Vercel punta alla produzione. Scaricare fuori dal progetto. Quasi tutte le
 variabili su Vercel sono *Secret*: escono come `[SENSITIVE]`, non si rileggono. E sempre
-`npx vercel@latest`: la CLI locale è vecchia, senza `flags`, e cade in silenzio su `deploy`.
+`npx vercel@latest`: la CLI locale è vecchia e cade in silenzio su `deploy`.
 
 **`ECONNRESET` alla prima connessione al pooler** di un processo appena avviato: si ripete per
 qualche minuto e poi si risolve da sola, anche con uno script fuori da Next, quindi non è un
 bug applicativo. Attendere, non inseguire un fix.
-
-**Un flag Vercel appena creato può impiegare ~15-20 minuti a propagarsi dopo un
-`update_flag`**, anche se l'API di gestione conferma subito il nuovo valore (visto sul primo
-flag, `bikes`; non è chiaro se valga per ogni flag nuovo). Se non si accende, aspettare prima
-di sospettare un bug.
 
 **Il tracking di `drizzle-kit migrate` si disallinea se si applica una migrazione a mano.**
 `migrate` non confronta gli hash: legge l'ultima riga di `drizzle.__drizzle_migrations` (per

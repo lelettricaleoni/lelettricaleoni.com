@@ -11,21 +11,15 @@ import { ServicesSection } from '@/components/services-section'
 import { PricingSection } from '@/components/pricing-section'
 import { MapSection } from '@/components/map-section'
 import { Footer } from '@/components/footer'
-import { FlagsExplorer } from '@/components/flags-explorer'
 import { HomeCatalogJsonLd } from '@/components/home-catalog-jsonld-script'
-import { getFlags } from '@/lib/flags'
 
 const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://www.lelettricaleoni.com').replace(/\/$/, '')
 
 // TODO: Cache Components adoption. Refactor this route so this opt-out can be removed.
 // See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
 //
-// getFlags() can't move into a "use cache" function: @flags-sdk/vercel reads
-// headers() internally (Vercel Toolbar override support), and Cache
-// Components forbids any headers()/cookies() access inside a cache scope,
-// even indirect. This page has no other data to cache, so there is nothing
-// left here for Cache Components to win — it stays exactly as dynamic as
-// it always was, same as `main`.
+// This page reads its data through "use cache" functions; there is nothing left here for Cache Components to win
+// by prerendering the shell, so it stays request-bound, exactly as it always was.
 export const instant = false;
 
 export default async function HomePage({
@@ -36,33 +30,24 @@ export default async function HomePage({
   const { lang } = await params
   if (!hasLocale(lang)) notFound()
 
-  // Without this, the build's own prerender pass has no real request, so
-  // headers() (read internally by the flags SDK) hangs and rejects, gets
-  // caught by getFlags()'s fail-open handling, and the resulting "on" value
-  // gets baked into the static shell forever — the kill switch would only
-  // ever take effect on the next deploy. connection() forces genuine
-  // per-request evaluation instead. Found live: toggling the routes flag
-  // off on a deployed preview did nothing until this was added.
+  // Rendered on every request, not prerendered at build: the build has no database. What these pages read is
+  // cached by the "use cache" functions behind them (profile `catalog`), so a request stays cheap.
   await connection()
   const dict = await getDictionary(lang)
-  const flags = await getFlags()
 
   return (
     <>
-      {flags.bikes && (
-        <Suspense fallback={null}>
-          <HomeCatalogJsonLd lang={lang} siteUrl={siteUrl} name={dict.bikes.page_title} />
-        </Suspense>
-      )}
-      <FlagsExplorer flags={flags} />
-      <Navbar lang={lang} dict={dict} showRoutes={flags.routes} showBikes={flags.bikes} />
+      <Suspense fallback={null}>
+        <HomeCatalogJsonLd lang={lang} siteUrl={siteUrl} name={dict.bikes.page_title} />
+      </Suspense>
+      <Navbar lang={lang} dict={dict} />
       <main>
         <HeroSection lang={lang} dict={dict} />
         {/* The stack alternates the backgrounds, so no section sets its own. */}
         <SectionStack>
-          {flags.routes && <RoutesTeaserSection lang={lang} dict={dict} />}
+          <RoutesTeaserSection lang={lang} dict={dict} />
           <ServicesSection dict={dict} />
-          {flags.bikes && <BikesTeaserSection lang={lang} dict={dict} />}
+          <BikesTeaserSection lang={lang} dict={dict} />
           <PricingSection dict={dict} />
           <MapSection dict={dict} />
         </SectionStack>

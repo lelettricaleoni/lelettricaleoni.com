@@ -6,12 +6,10 @@ import { getDictionary, hasLocale, type Locale } from '../dictionaries'
 import { Navbar } from '@/components/navbar'
 import { Footer } from '@/components/footer'
 import { PricingSection } from '@/components/pricing-section'
-import { getFlags } from '@/lib/flags'
 import { buildSocialMetadata } from '@/lib/metadata'
 import { findServiceKeyBySlug, servicePageDictKey, servicePageSlug } from '@/lib/service-pages'
 
-// Same Cache Components opt-out as app/[lang]/privacy/page.tsx, for the same
-// reason: getFlags() reads headers() internally via @flags-sdk/vercel.
+// Same Cache Components opt-out as app/[lang]/privacy/page.tsx.
 // TODO: Cache Components adoption. Refactor this route so this opt-out can be removed.
 export const instant = false
 
@@ -63,7 +61,7 @@ export default async function ServicePage({
 
   return (
     <>
-      <Navbar lang={lang} dict={dict} showRoutes={(await getFlags()).routes} showBikes={(await getFlags()).bikes} />
+      <Navbar lang={lang} dict={dict} />
       <div className="min-h-screen bg-white pt-16">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 py-16">
           <h1 className="text-3xl sm:text-4xl font-bold text-foreground mb-6">{content.h1}</h1>

@@ -106,17 +106,9 @@
 
 ## Scartato
 
-- **`getFlags()` dentro una funzione `"use cache"`** — pensato per cache-are DB e flag
-  insieme sulle pagine percorsi (2026-09-14). `@flags-sdk/vercel` legge `headers()`
-  internamente, vietato in uno scope `"use cache"` anche indirettamente: la build fallisce
-  con un errore esplicito. I flag restano fuori dalla cache, letti dinamicamente e preceduti
-  da `connection()`; solo il lavoro DB/R2 è cache-ato.
-- **Precomputation dei feature flag** — pensata per pagine statiche servite dalla CDN. Qui
-  non serve: tutte le rotte sono già dinamiche, quindi porterebbe fino a 32 varianti di
-  pagina senza alcun guadagno.
-- **Variabili d'ambiente come sorgente dei feature flag** — sostituite da Vercel Flags il
-  2026-09-09. Sono legate al singolo deployment, quindi spegnere una sezione costava una
-  build. Sopravvivono solo come override di sviluppo.
+- **Feature flag (Vercel Flags)** — sei interruttori per spegnere una sezione senza un deploy; tolti il 2026-10-05
+  perché Kevin non li usava mai e con il passaggio dal server non avrebbero più il loro servizio. Se servisse di
+  nuovo un interruttore d'emergenza: una tabella nel database con una pagina nel pannello, non un servizio esterno.
 - **Conversione geoide→ellissoide per la traccia 3D** — avrebbe corretto lo scarto
   sistematico di −46 m ma non la dispersione di ±29 m dovuta al DEM, lasciando la traccia
   sepolta a tratti. Ancorare al terreno risolve entrambi.
