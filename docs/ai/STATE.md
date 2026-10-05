@@ -61,6 +61,11 @@ con due bici libere: lo coprono `request_key` e l'avviso di doppione. Una bici s
 sito pubblico conta le bici con `inGarage()`, in SQL perché gira dentro `'use cache'`. Il campanello
 Realtime parte da un trigger e non porta dati personali; il canale è pubblico, quindi i ricaricamenti
 sono limitati (`lib/coalesce.ts`). Dettagli: spec e piano in `docs/superpowers/`.
+**RLS e funzione `rls_auto_enable()`** (chiusi gli avvisi di Supabase, 2026-10-05): sia produzione sia sviluppo/Preview hanno
+RLS su ogni tabella di `public` e l'event trigger `ensure_rls` (le tabelle nuove nascono chiuse; l'app si collega come
+`postgres` e l'RLS non la tocca); la funzione non è eseguibile da `anon` né da `authenticated`, e l'event trigger scatta lo
+stesso (provato su produzione con una tabella creata e annullata). Gli avvisi `rls_enabled_no_policy` (livello INFO) che
+restano sono voluti: nessuna policy = tabella chiusa all'API.
 **Clienti e importi.** `customers`: una riga per persona, nome e cognome obbligatori, cellulare (E.164, letto
 nel paese scelto accanto al campo: `libphonenumber-js`) ed email facoltativi; stesso cellulare o stessa email
 = stessa persona (indici unici), due omonimi con contatti diversi sono due clienti. Il noleggio punta al
