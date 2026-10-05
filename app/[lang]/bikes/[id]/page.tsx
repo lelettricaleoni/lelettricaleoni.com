@@ -10,9 +10,7 @@ import { Badge } from '@/components/ui/badge'
 import { MediaGallery } from '@/components/media-gallery'
 import { BikeViewTracker } from '@/components/bike-view-tracker'
 import { BikeContactButtons } from '@/components/bike-contact-buttons'
-import { FlagsExplorer } from '@/components/flags-explorer'
 import { photoShareUrl } from '@/lib/media-client'
-import { getFlags } from '@/lib/flags'
 import { getBikeModelDetailData } from '@/lib/bikes-data'
 import { getSuggestedRoutesForBike } from '@/lib/routes-data'
 import { BikeSuggestedRoutes } from '@/components/bike-suggested-routes'
@@ -29,8 +27,6 @@ export async function generateMetadata({
   const { lang, id } = await params
   if (!hasLocale(lang)) return {}
   await connection()
-  const flags = await getFlags()
-  if (!flags.bikes) return {}
 
   const data = await getBikeModelDetailData(lang as 'it' | 'en' | 'de', id)
   if (!data) return {}
@@ -68,8 +64,6 @@ export default async function BikeDetailPage({
   if (!hasLocale(lang)) notFound()
 
   await connection()
-  const flags = await getFlags()
-  if (!flags.bikes) notFound()
 
   const dict = await getDictionary(lang)
   const d = dict.bikes
@@ -81,10 +75,8 @@ export default async function BikeDetailPage({
   const coverPhoto = allMedia.find((m) => m.mediaType === 'photo')
   const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://www.lelettricaleoni.com').replace(/\/$/, '')
 
-  // A bike whose category has no terrain group (e.g. the classic city bike)
-  // has nothing to suggest; and with the routes section switched off, a link
-  // into it would lead to a 404.
-  const suggestedRoutes = routeCategory && flags.routes
+  // A bike whose category has no terrain group (e.g. the classic city bike) has nothing to suggest.
+  const suggestedRoutes = routeCategory
     ? await getSuggestedRoutesForBike(lang as 'it' | 'en' | 'de', routeCategory.name)
     : []
 
@@ -116,10 +108,9 @@ export default async function BikeDetailPage({
 
   return (
     <>
-      <FlagsExplorer flags={flags} />
       <BikeViewTracker bikeModelId={model.id} category={category.name} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-      <Navbar lang={lang} dict={dict} showRoutes={flags.routes} showBikes={flags.bikes} />
+      <Navbar lang={lang} dict={dict} />
       <main className="w-full pt-24 pb-8">
         <div className="max-w-6xl mx-auto px-12 sm:px-20 space-y-8">
           <Link href={`/${lang}/bikes`} className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-[#366DA1]">

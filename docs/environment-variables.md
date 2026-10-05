@@ -63,9 +63,8 @@ a Preview e Production) non è usato: lo sviluppo locale legge `.env.local`, non
 | `NEXT_PUBLIC_MAPS_EMBED_URL` | Iframe di Google Maps nella sezione contatti | Google Maps → condividi la posizione → "Incorpora una mappa" → copia l'URL dell'`src`. |
 | `NEXT_PUBLIC_SITE_URL` | Base per URL assoluti (metadata, sitemap, robots) | Fisso: `https://www.lelettricaleoni.com` in produzione; può restare assente altrove, il codice ha quel valore come fallback. |
 | `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` | Cache di lettura (`lib/cache.ts`) e stato del worker video | Console Upstash → il database → REST API. **Condivisa fra tutti gli ambienti** di proposito: la cache è già scoped per chiave di storage, non serve separarla. |
-| `FLAGS_SECRET` | Verifica le richieste all'endpoint di discovery dei feature flag | Generata automaticamente da Vercel quando si attiva Flags: non si copia da nessuna parte, non si ruota a mano. |
 | `VERCEL_AUTOMATION_BYPASS_SECRET` | Solo nei secret del repository GitHub, non nelle variabili Vercel dell'app: dà ai test browser accesso alle preview protette | Vercel → Project Settings → Deployment Protection → "Protection Bypass for Automation". Mostrato una sola volta alla creazione. |
-| `VERCEL_OIDC_TOKEN` | Valuta i feature flag veri in locale | `vercel env pull` **fuori dal progetto**, poi copiare solo questa riga in `.env.development.local`. Scade dopo circa 12 ore. Mai lanciare `vercel env pull .env.local`: sovrascrive il file e cancella tutte le chiavi sopra. |
+
 
 ## Impostarle
 

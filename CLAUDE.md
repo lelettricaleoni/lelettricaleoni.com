@@ -20,8 +20,8 @@ importato qui sopra. Non duplicarli in questo file.
   per promuovere i fatti stabili in `STATE.md` e le idee in `ROADMAP.md`.
 
 ## Verifica — regole nate da errori veri
-- **Non usare il codice HTTP per stabilire se una pagina funziona.** Qui una sezione spenta
-  risponde 200 (streaming + `notFound()`). Guarda il **contenuto**.
+- **Non usare il codice HTTP per stabilire se una pagina funziona.** Qui una pagina che chiama
+  `notFound()` dopo lo streaming risponde 200. Guarda il **contenuto**.
 - **Misura prima di dichiarare finito.** Una migrazione "verificata" ha reso la home 40
   volte più lenta perché la verifica guardava solo la correttezza. Se tocchi qualcosa che
   sta sul percorso di ogni richiesta, misura i tempi prima e dopo.

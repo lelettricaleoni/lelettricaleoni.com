@@ -9,9 +9,7 @@ import { BikeFilters } from '@/components/bike-filters'
 import { BikeCardMediaAsync } from '@/components/bike-card-media-async'
 import { SectionViewTracker } from '@/components/section-view-tracker'
 import { Skeleton } from '@/components/ui/skeleton'
-import { FlagsExplorer } from '@/components/flags-explorer'
 import { shortId } from '@/lib/utils'
-import { getFlags } from '@/lib/flags'
 import { getBikeModelsListData } from '@/lib/bikes-data'
 import { buildSocialMetadata } from '@/lib/metadata'
 
@@ -25,8 +23,6 @@ export async function generateMetadata({
   const { lang } = await params
   if (!hasLocale(lang)) return {}
   await connection()
-  const flags = await getFlags()
-  if (!flags.bikes) return {}
   const dict = await getDictionary(lang)
   const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://www.lelettricaleoni.com').replace(/\/$/, '')
   return {
@@ -54,8 +50,6 @@ export default async function BikesPage({
   if (!hasLocale(lang)) notFound()
 
   await connection()
-  const flags = await getFlags()
-  if (!flags.bikes) notFound()
 
   const modelsWithTranslations = await getBikeModelsListData(lang as 'it' | 'en' | 'de')
   const dict = await getDictionary(lang)
@@ -91,9 +85,8 @@ export default async function BikesPage({
 
   return (
     <>
-      <FlagsExplorer flags={flags} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-      <Navbar lang={lang} dict={dict} showRoutes={flags.routes} showBikes={flags.bikes} />
+      <Navbar lang={lang} dict={dict} />
       <main className="w-full pt-24 pb-16">
         <div className="max-w-6xl mx-auto px-12 sm:px-20 space-y-8">
           <div>

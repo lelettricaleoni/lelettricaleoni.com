@@ -6,7 +6,6 @@ import { getDictionary, hasLocale } from '../dictionaries'
 import { Navbar } from '@/components/navbar'
 import { Footer } from '@/components/footer'
 import { Separator } from '@/components/ui/separator'
-import { getFlags } from '@/lib/flags'
 import { buildSocialMetadata } from '@/lib/metadata'
 
 // TODO: Cache Components adoption. Refactor this route so this opt-out can be removed.
@@ -48,7 +47,7 @@ export default async function PrivacyPage({
 
   return (
     <>
-      <Navbar lang={lang} dict={dict} showRoutes={(await getFlags()).routes} showBikes={(await getFlags()).bikes} />
+      <Navbar lang={lang} dict={dict} />
       <div className="min-h-screen bg-white pt-16">
         <div className="max-w-2xl mx-auto px-4 sm:px-6 py-16">
           <Link

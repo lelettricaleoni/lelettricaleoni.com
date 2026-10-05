@@ -15,9 +15,7 @@ import { RouteGpxModal } from '@/components/route-gpx-modal'
 import { RouteShareModal } from '@/components/route-share-modal'
 import { RouteExternalLinks } from '@/components/route-external-links'
 import { RouteViewTracker } from '@/components/route-view-tracker'
-import { FlagsExplorer } from '@/components/flags-explorer'
 import { photoShareUrl } from '@/lib/media-client'
-import { getFlags } from '@/lib/flags'
 import { getRouteDetailData } from '@/lib/routes-data'
 import { buildSocialMetadata } from '@/lib/metadata'
 import { buildRouteDescription } from '@/lib/route-seo'
@@ -27,9 +25,7 @@ import { RouteSuggestedBikes } from '@/components/route-suggested-bikes'
 // TODO: Cache Components adoption. Refactor this route so this opt-out can be removed.
 // See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
 //
-// getFlags() can't move into a "use cache" function (see lib/routes-data.ts),
-// so this route stays request-bound from Cache Components' point of view —
-// the caching win is entirely inside getRouteDetailData's "use cache" scope.
+// The caching win is entirely inside getRouteDetailData's "use cache" scope.
 // No `generateStaticParams` here either: route ids aren't enumerated at
 // build time, on purpose — see 2026-09-11's incident in docs/ai/STATE.md,
 // which this same headers()-removal fixes the root cause of, but adding
@@ -41,18 +37,9 @@ export async function generateMetadata({
 }: { params: Promise<{ lang: string; id: string }> }): Promise<Metadata> {
   const { lang, id } = await params
   if (!hasLocale(lang)) return {}
-  // Without this the 404 would still carry the route's title and canonical.
-  // connection() first: see the page component below for why — without it,
-  // the flag's build-time value gets baked into the static shell forever.
   await connection()
-  const flags = await getFlags()
-  if (!flags.routes) return {}
 
-  const data = await getRouteDetailData(lang as 'it' | 'en' | 'de', id, {
-    routeVideos: flags.routeVideos,
-    routePhotos: flags.routePhotos,
-    routeFlyover: flags.routeFlyover,
-  })
+  const data = await getRouteDetailData(lang as 'it' | 'en' | 'de', id)
   if (!data) return {}
   const { route, translation, allMedia } = data
 
@@ -96,25 +83,14 @@ export default async function RouteDetailPage({
   const { lang, id } = await params
   if (!hasLocale(lang)) notFound()
 
-  // Without this, the build's own prerender pass has no real request, so
-  // headers() (read internally by the flags SDK) hangs and rejects, gets
-  // caught by getFlags()'s fail-open handling, and the resulting "on" value
-  // gets baked into the static shell forever — the kill switch would only
-  // ever take effect on the next deploy. connection() forces genuine
-  // per-request evaluation instead. Found live: toggling the routes flag
-  // off on a deployed preview did nothing until this was added.
+  // Rendered on every request, not prerendered at build: the build has no database. What these pages read is
+  // cached by the "use cache" functions behind them (profile `catalog`), so a request stays cheap.
   await connection()
-  const flags = await getFlags()
-  if (!flags.routes) notFound()
 
   const dict = await getDictionary(lang)
   const d = dict.routes
 
-  const data = await getRouteDetailData(lang as 'it' | 'en' | 'de', id, {
-    routeVideos: flags.routeVideos,
-    routePhotos: flags.routePhotos,
-    routeFlyover: flags.routeFlyover,
-  })
+  const data = await getRouteDetailData(lang as 'it' | 'en' | 'de', id)
   if (!data) notFound()
   const { route, translation, allMedia, gpxPoints } = data
 
@@ -137,10 +113,9 @@ export default async function RouteDetailPage({
 
   return (
     <>
-      <FlagsExplorer flags={flags} />
       <RouteViewTracker routeId={id} difficulty={route.difficulty} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-      <Navbar lang={lang} dict={dict} showRoutes={flags.routes} showBikes={flags.bikes} />
+      <Navbar lang={lang} dict={dict} />
       <main className="w-full pt-24 pb-8">
       <div className="max-w-6xl mx-auto px-12 sm:px-20 space-y-8">
         {/* Back */}
@@ -244,7 +219,7 @@ export default async function RouteDetailPage({
             openStrava={d.open_strava}
             openKomoot={d.open_komoot}
           />
-          {flags.routeGpxDownload && route.gpxKey && (
+          {route.gpxKey && (
             <RouteGpxModal
               shortId={id}
               routeName={translation?.name ?? id}

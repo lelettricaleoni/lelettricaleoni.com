@@ -23,7 +23,6 @@ con GPX, foto, video e mappa 3D, alimentata da un pannello di amministrazione pr
 | Cloudflare R2 | Foto, GPX, sorgenti e flussi video (HLS) |
 | hls.js | Player video adattivo lato client |
 | Cesium | Terreno 3D per il flyover dei percorsi, self-hosted in `public/cesium/` |
-| Vercel Flags | Feature flag per sezione, letti da `lib/flags.ts` |
 | Upstash Redis | Cache di lettura + stato del worker video |
 | Azure Translator | Traduzione automatica IT→EN/DE dei percorsi |
 
@@ -40,8 +39,6 @@ aperte — parla solo verso R2, Upstash e GHCR.
   download GPX con watermark iniettato al volo
 - **Video** — upload, transcodifica adattiva in quattro rendition HLS (1080/720/480/360p),
   player che parte sempre dalla qualità più bassa disponibile
-- **Feature flag** — ogni sezione dei percorsi si può spegnere dalla dashboard di Vercel senza
-  un nuovo deploy
 - **Pannello admin** (`/manage`) — CRUD percorsi, gestione utenti, e una pagina diagnostica
   (`/manage/dev`, dietro un permesso dedicato) con lo stato del worker, di Redis e del database
 
@@ -54,8 +51,7 @@ aperte — parla solo verso R2, Upstash e GHCR.
   esadecimali** derivato dall'UUID, non lo slug: `/it/routes/aa7da601`. Statistiche, galleria
   con lightbox, link Strava/Komoot, download GPX, flyover 3D su terreno reale
 - **Cache** — il lavoro su database e R2 è cache-ato con Cache Components
-  (`lib/routes-data.ts`); i feature flag restano fuori dalla cache e si leggono a ogni
-  richiesta
+  (`lib/routes-data.ts`)
 - **GPX watermark** — il file originale su R2 resta intatto; il watermark con i dati di
   Lelettrica viene iniettato al volo al download, via `/api/routes/[id]/gpx`
 
@@ -115,7 +111,6 @@ app/
     routes/[id]/gpx/         # GPX con watermark iniettato al volo
     map-tile/[z]/[x]/[y]/    # Proxy dei tile della mappa
     upload/
-  .well-known/vercel/flags/  # Discovery endpoint dei feature flag
   sitemap.ts / robots.ts
 
 components/
@@ -136,7 +131,6 @@ lib/
   video-jobs.ts               # Stato per-job del worker (da Upstash)
   worker-heartbeat.ts          # Stato aggregato del worker (da Upstash)
   dev-stats.ts                # Statistiche Redis/Postgres/R2 per /manage/dev
-  flags.ts                    # Feature flag, cache e fallback
   cache.ts                    # Cache di lettura su Upstash
   terrain.ts, route-gpx.ts, gpx.ts
   r2.ts
