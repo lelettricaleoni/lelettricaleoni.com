@@ -4,6 +4,7 @@ import type { DateRange } from 'react-day-picker'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Calendar } from '@/components/ui/calendar'
+import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { CustomerPicker } from '@/components/admin/customer-picker'
@@ -15,8 +16,9 @@ import {
 import { createRentalAction } from '@/lib/actions/reservations'
 import { fullName } from '@/lib/customer'
 import { daysBetween, inclusiveEnd, isoDay } from '@/lib/dates'
+import { formatEuros, toCents } from '@/lib/money'
 import { rentalFeedback } from '@/lib/reservation-feedback'
-import { onlyChoice, sizesOf, versionsOf, type RentalOption } from '@/lib/rental-options'
+import { listPrice, onlyChoice, sizesOf, versionsOf, type RentalOption } from '@/lib/rental-options'
 import type { CustomerSummary } from '@/lib/customers'
 import type { ReservationSummary } from '@/lib/reservations'
 
@@ -36,6 +38,8 @@ export function RentalForm({ models, onCreated }: { models: RentalOption[]; onCr
   const [versionId, setVersionId] = useState('')
   const [range, setRange] = useState<DateRange | undefined>()
   const [customer, setCustomer] = useState<CustomerSummary | null>(null)
+  // The amount follows the list price until the person types one: then it is theirs (a discount, an extra).
+  const [typedAmount, setTypedAmount] = useState<string | null>(null)
   // One key per form opening: a repeated submit (double click, network retry, back and resend)
   // finds the rental already saved instead of creating a second one.
   const [requestKey, setRequestKey] = useState(() => crypto.randomUUID())
@@ -47,7 +51,15 @@ export function RentalForm({ models, onCreated }: { models: RentalOption[]; onCr
   )
   const sizes = sizesOf(models, modelId)
   const versions = versionsOf(models, modelId, sizeId)
-  const ready = Boolean(modelId && sizeId && versionId && range?.from && customer)
+  const firstDay = range?.from ? isoDay(range.from) : null
+  const lastDay = range?.from ? isoDay(range.to ?? range.from) : null
+  const dayCount = firstDay && lastDay ? daysBetween(firstDay, lastDay) + 1 : 0
+  const suggested = listPrice(models, modelId, dayCount)
+  const amountText = typedAmount ?? (suggested === null ? '' : String(suggested))
+  // The browser hands a type="number" field a plain decimal ("12.5"), whatever the locale shows.
+  const amount = amountText.trim() === '' ? null : Number(amountText)
+  const amountValid = amount !== null && Number.isFinite(amount) && amount >= 0
+  const ready = Boolean(modelId && sizeId && versionId && range?.from && customer && amountValid)
 
   function chooseModel(id: string) {
     const nextSize = onlyChoice(sizesOf(models, id))
@@ -62,19 +74,19 @@ export function RentalForm({ models, onCreated }: { models: RentalOption[]; onCr
   }
 
   function reset() {
-    setModelId(''); setSizeId(''); setVersionId(''); setRange(undefined); setCustomer(null)
+    setModelId(''); setSizeId(''); setVersionId(''); setRange(undefined); setCustomer(null); setTypedAmount(null)
     setDuplicate(null)
     setRequestKey(crypto.randomUUID())
   }
 
   function submit(confirmDuplicate: boolean) {
     const first = range?.from
-    if (!first || !customer) return
+    if (!first || !customer || amount === null || !amountValid) return
     startTransition(async () => {
       const result = await createRentalAction({
         requestKey, bikeModelId: modelId, bikeSizeId: sizeId, bikeVersionId: versionId,
         firstDay: isoDay(first), lastDay: isoDay(range.to ?? first),
-        customerId: customer.id, confirmDuplicate,
+        customerId: customer.id, amount, confirmDuplicate,
       })
       const feedback = rentalFeedback(result)
       if (feedback.tone === 'confirm-duplicate') {
@@ -95,9 +107,6 @@ export function RentalForm({ models, onCreated }: { models: RentalOption[]; onCr
     return <p className="text-sm text-muted-foreground">There are no bikes in the shop yet. Add them in Shop first.</p>
   }
 
-  const firstDay = range?.from ? isoDay(range.from) : null
-  const lastDay = range?.from ? isoDay(range.to ?? range.from) : null
-  const dayCount = firstDay && lastDay ? daysBetween(firstDay, lastDay) + 1 : 0
   const modelName = models.find((model) => model.modelId === modelId)?.modelName
   const sizeName = sizes.find((size) => size.id === sizeId)?.name
   const versionName = versions.find((version) => version.id === versionId)?.name
@@ -153,6 +162,22 @@ export function RentalForm({ models, onCreated }: { models: RentalOption[]; onCr
           <CustomerPicker value={customer} onChange={setCustomer} />
         </div>
 
+        <div className="space-y-1">
+          <Label htmlFor="rental-amount">Amount (€) *</Label>
+          <Input
+            id="rental-amount" type="number" inputMode="decimal" min={0} step="0.01"
+            value={amountText} onChange={(event) => setTypedAmount(event.target.value)}
+          />
+          <p className="text-xs text-muted-foreground">
+            {dayCount === 0 && 'Pick the bike and the days to see the list price.'}
+            {dayCount > 0 && suggested !== null && `List price for ${dayCount} ${dayCount === 1 ? 'day' : 'days'}: ${formatEuros(toCents(suggested))}.`}
+            {dayCount > 0 && suggested === null && 'The list has no price for these days: type the amount.'}
+            {typedAmount !== null && suggested !== null && toCents(Number(typedAmount)) !== toCents(suggested) && (
+              <>{' '}<button type="button" className="underline" onClick={() => setTypedAmount(null)}>Use the list price</button></>
+            )}
+          </p>
+        </div>
+
         <div className="space-y-1 rounded-md bg-muted/50 p-3 text-sm" aria-live="polite">
           <p className="font-medium">Summary</p>
           <p className="text-muted-foreground">
@@ -165,6 +190,9 @@ export function RentalForm({ models, onCreated }: { models: RentalOption[]; onCr
           </p>
           <p className="text-muted-foreground">
             {customer ? fullName(customer.firstName, customer.lastName) : 'No customer chosen yet'}
+          </p>
+          <p className="text-muted-foreground">
+            {amountValid ? formatEuros(toCents(amount)) : 'No amount yet'}
           </p>
         </div>
 

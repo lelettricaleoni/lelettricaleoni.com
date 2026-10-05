@@ -15,6 +15,8 @@ export const createRentalSchema = z.object({
   firstDay: day,
   lastDay: day,
   customerId: id,
+  // In euros, as typed; the action turns it into cents. Zero is a free rental.
+  amount: z.number().min(0, 'The amount cannot be negative').max(100000, 'The amount is too high'),
   confirmDuplicate: z.boolean().default(false),
 })
 

@@ -15,6 +15,7 @@ import {
 } from '@/lib/actions/reservations'
 import { occupiedDayRanges } from '@/lib/booking-grid'
 import { dayToDate, inclusiveEnd, isoDay, type DayRange } from '@/lib/dates'
+import { formatEuros } from '@/lib/money'
 import { cancelFeedback, maintenanceUpdateFeedback, moveFeedback, type Feedback } from '@/lib/reservation-feedback'
 import type { CustomerSummary } from '@/lib/customers'
 import type { GridReservation, GridUnit, MoveCandidate } from '@/lib/reservations'
@@ -71,6 +72,9 @@ function Body({ unit, reservation, onClose }: { unit: GridUnit; reservation: Gri
       </DialogHeader>
 
       {reservation.customer && <CustomerDetails customer={reservation.customer} />}
+      {reservation.amountCents !== null && (
+        <p className="text-sm">Amount: <span className="font-medium">{formatEuros(reservation.amountCents)}</span></p>
+      )}
 
       {mode === 'view' && (
         <div className="flex flex-wrap gap-2">

@@ -1,5 +1,6 @@
 import { and, asc, eq } from 'drizzle-orm'
-import { db, bikeModelTranslations, bikeSizes, bikeUnits, bikeVersions } from '@/lib/db'
+import { db, bikeCategories, bikeModels, bikeModelTranslations, bikeSizes, bikeUnits, bikeVersions } from '@/lib/db'
+import { priceForDay } from '@/lib/bike-pricing'
 import { inGarage } from '@/lib/in-garage'
 import type { RentalOption, RentalSize } from '@/lib/rental-options'
 
@@ -14,6 +15,7 @@ export async function getRentalOptions(): Promise<RentalOption[]> {
     .selectDistinct({
       modelId: bikeUnits.bikeModelId,
       modelName: bikeModelTranslations.name,
+      category: bikeCategories,
       sizeId: bikeSizes.id,
       sizeName: bikeSizes.name,
       sizeOrder: bikeSizes.displayOrder,
@@ -22,6 +24,8 @@ export async function getRentalOptions(): Promise<RentalOption[]> {
       versionOrder: bikeVersions.displayOrder,
     })
     .from(bikeUnits)
+    .innerJoin(bikeModels, eq(bikeModels.id, bikeUnits.bikeModelId))
+    .innerJoin(bikeCategories, eq(bikeCategories.id, bikeModels.categoryId))
     .leftJoin(
       bikeModelTranslations,
       and(eq(bikeModelTranslations.bikeModelId, bikeUnits.bikeModelId), eq(bikeModelTranslations.locale, 'it')),
@@ -39,7 +43,8 @@ export async function getRentalOptions(): Promise<RentalOption[]> {
   for (const row of rows) {
     let model = models.get(row.modelId)
     if (!model) {
-      model = { option: { modelId: row.modelId, modelName: row.modelName ?? 'Untitled', sizes: [] }, sizes: new Map() }
+      const priceByDays = Array.from({ length: row.category.maxRentalDays }, (_, index) => priceForDay(row.category, index + 1))
+      model = { option: { modelId: row.modelId, modelName: row.modelName ?? 'Untitled', priceByDays, sizes: [] }, sizes: new Map() }
       models.set(row.modelId, model)
     }
     let size = model.sizes.get(row.sizeId)

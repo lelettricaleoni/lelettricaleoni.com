@@ -7,7 +7,7 @@ import {
 const id = () => crypto.randomUUID()
 const rental = () => ({
   requestKey: id(), bikeModelId: id(), bikeSizeId: id(), bikeVersionId: id(),
-  firstDay: '2026-07-10', lastDay: '2026-07-12', customerId: id(),
+  firstDay: '2026-07-10', lastDay: '2026-07-12', customerId: id(), amount: 45,
 })
 
 describe('createRentalSchema', () => {
@@ -17,9 +17,18 @@ describe('createRentalSchema', () => {
   })
 
   it('needs the customer, as a uuid: who rents is chosen or created first', () => {
-    const { customerId: _omitted, ...withoutCustomer } = rental()
-    expect(createRentalSchema.safeParse(withoutCustomer).success).toBe(false)
+    expect(createRentalSchema.safeParse({ ...rental(), customerId: undefined }).success).toBe(false)
     expect(createRentalSchema.safeParse({ ...rental(), customerId: 'Mario Rossi' }).success).toBe(false)
+  })
+
+  it('needs the amount, in euros: zero is allowed (a free rental), a negative or absurd one is not', () => {
+    expect(createRentalSchema.safeParse({ ...rental(), amount: undefined }).success).toBe(false)
+    expect(createRentalSchema.parse({ ...rental(), amount: 0 }).amount).toBe(0)
+    expect(createRentalSchema.parse({ ...rental(), amount: 12.5 }).amount).toBe(12.5)
+    expect(createRentalSchema.safeParse({ ...rental(), amount: -1 }).success).toBe(false)
+    expect(createRentalSchema.safeParse({ ...rental(), amount: 100001 }).success).toBe(false)
+    expect(createRentalSchema.safeParse({ ...rental(), amount: Number.NaN }).success).toBe(false)
+    expect(createRentalSchema.safeParse({ ...rental(), amount: '45' }).success).toBe(false)
   })
 
   it('rejects impossible days and ids that are not uuids', () => {
