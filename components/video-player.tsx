@@ -33,7 +33,7 @@ function PlaybackErrorWatcher({ onError }: { onError?: () => void }) {
  * Video.js v10 player for the route videos.
  *
  * v10 is a ground-up rewrite of Video.js, published as @videojs/react and
- * currently at 10.0.0-rc.4 (2026-09-26) — a release candidate, not a stable release. The
+ * stable since 10.0.0 (it was a release candidate until 2026-10-05). The
  * player is composed rather than configured: a player shell, a skin, and a
  * media provider. HLS comes from @videojs/hlsjs-video via the HlsJsVideo
  * component.
