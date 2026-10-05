@@ -1,11 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('@/lib/supabase/server', () => ({ getAdminUser: vi.fn() }))
-vi.mock('@/lib/customers', () => ({ createCustomer: vi.fn(), searchCustomers: vi.fn() }))
+vi.mock('@/lib/customers', () => ({ createCustomer: vi.fn(), searchCustomers: vi.fn(), updateCustomer: vi.fn() }))
+vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }))
 
 import { getAdminUser } from '@/lib/supabase/server'
 import * as customers from '@/lib/customers'
-import { createCustomerAction, searchCustomersAction } from './customers'
+import { revalidatePath } from 'next/cache'
+import { createCustomerAction, searchCustomersAction, updateCustomerAction } from './customers'
 
 const person = { firstName: 'Mario', lastName: 'Rossi', phone: '347 123 4567' }
 
@@ -49,5 +51,37 @@ describe('searchCustomersAction', () => {
     await searchCustomersAction({ query: '  mario ' })
     expect(customers.searchCustomers).toHaveBeenCalledWith('mario')
     expect(await searchCustomersAction({ query: 42 })).toEqual([])
+  })
+})
+
+describe('updateCustomerAction', () => {
+  const id = crypto.randomUUID()
+
+  it('refuses anyone who is not an admin', async () => {
+    vi.mocked(getAdminUser).mockResolvedValue(null as never)
+    await expect(updateCustomerAction(id, person)).rejects.toThrow('Unauthorized')
+    expect(customers.updateCustomer).not.toHaveBeenCalled()
+  })
+
+  it('says what is wrong, for the id as for the details, without touching the database', async () => {
+    expect(await updateCustomerAction('not-a-uuid', person)).toEqual({ status: 'invalid', message: 'Invalid customer' })
+    expect(await updateCustomerAction(id, { ...person, phone: '123' })).toEqual({ status: 'invalid', message: 'Phone number is not valid' })
+    expect(customers.updateCustomer).not.toHaveBeenCalled()
+  })
+
+  it('saves the normalised details, refreshes the pages that show them and returns the outcome', async () => {
+    const updated = { status: 'updated', customer: { id } } as never
+    vi.mocked(customers.updateCustomer).mockResolvedValue(updated)
+    expect(await updateCustomerAction(id, { ...person, email: ' Mario@Example.com ' })).toBe(updated)
+    expect(customers.updateCustomer).toHaveBeenCalledWith(
+      id, expect.objectContaining({ phone: '+393471234567', email: 'mario@example.com' }),
+    )
+    expect(revalidatePath).toHaveBeenCalledWith('/manage/customers', 'layout')
+  })
+
+  it('does not refresh anything when the update did not happen', async () => {
+    vi.mocked(customers.updateCustomer).mockResolvedValue({ status: 'not_found' })
+    await updateCustomerAction(id, person)
+    expect(revalidatePath).not.toHaveBeenCalled()
   })
 })
