@@ -7,6 +7,7 @@ import { getIntegrationDefinition } from '@/lib/integrations/registry'
 import { canEnable } from '@/lib/integrations/status'
 import * as store from '@/lib/integrations/store'
 import { createCalendarApi, testConnection } from '@/lib/integrations/google-calendar/client'
+import { syncNow } from '@/lib/integrations/google-calendar/sync'
 import { parseServiceAccountKey, type ServiceAccountKey } from '@/lib/integrations/google-calendar/key'
 
 /*
@@ -147,4 +148,17 @@ export async function removeCredentialsAction(id: string): Promise<SimpleResult>
   await store.saveConfig(id, { serviceAccountEmail: null, connectionOk: false, testedCalendarId: null }, adminId)
   refresh()
   return { status: 'ok' }
+}
+
+export type SyncNowActionResult =
+  | { status: 'off' }
+  | { status: 'done'; upserted: number; removed: number; failed: number; firstError: string | null }
+
+/** The whole calendar brought in line with the bookings (from yesterday to a year ahead). */
+export async function syncNowAction(): Promise<SyncNowActionResult> {
+  await requireAdmin()
+  const result = await syncNow()
+  refresh()
+  if (result.status === 'off') return { status: 'off' }
+  return { status: 'done', ...result.report }
 }

@@ -80,3 +80,8 @@ export async function removeSecret(id: string, by: string): Promise<void> {
 export async function recordCheck(id: string, error: string | null): Promise<void> {
   await db.update(integrations).set({ lastCheckedAt: new Date(), lastError: error }).where(eq(integrations.id, id))
 }
+
+/** The outcome of the last synchronisation: when it ran, and the error if it failed (null clears an old one). */
+export async function recordSync(id: string, error: string | null): Promise<void> {
+  await db.update(integrations).set({ lastSyncAt: new Date(), lastError: error }).where(eq(integrations.id, id))
+}

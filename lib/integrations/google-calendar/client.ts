@@ -1,5 +1,6 @@
 import { auth as googleAuth, calendar as createCalendar } from '@googleapis/calendar'
-import { exclusiveEnd, todayInRome } from '@/lib/dates'
+import { addDaysTo, exclusiveEnd, todayInRome } from '@/lib/dates'
+import type { SyncApi } from './engine'
 import type { ServiceAccountKey } from './key'
 
 /*
@@ -16,13 +17,17 @@ export interface CalendarApi {
   deleteEvent(calendarId: string, eventId: string): Promise<void>
 }
 
-export function createCalendarApi(key: ServiceAccountKey): CalendarApi {
+function calendarClient(key: ServiceAccountKey) {
   const auth = new googleAuth.JWT({
     email: key.client_email,
     key: key.private_key,
     scopes: ['https://www.googleapis.com/auth/calendar.events'],
   })
-  const calendar = createCalendar({ version: 'v3', auth })
+  return createCalendar({ version: 'v3', auth })
+}
+
+export function createCalendarApi(key: ServiceAccountKey): CalendarApi {
+  const calendar = calendarClient(key)
 
   return {
     async readEvents(calendarId) {
@@ -126,4 +131,70 @@ export async function testConnection(api: CalendarApi, calendarId: string, servi
     }
   }
   return { ok: true }
+}
+
+function httpStatus(error: unknown): number | undefined {
+  const details = error as { response?: { status?: unknown }; status?: unknown; code?: unknown }
+  return [details?.response?.status, details?.status, details?.code].find((value): value is number => typeof value === 'number')
+}
+
+/**
+ * The real calendar for the sync. Behaviour checked against Google itself (2026-10-05): updating an event that
+ * never existed answers 404; removing one twice answers 410; inserting an id that was deleted answers 409;
+ * but UPDATING a deleted event with `status: confirmed` brings it back. So "update, and insert on 404".
+ */
+export function createSyncApi(key: ServiceAccountKey): SyncApi {
+  const calendar = calendarClient(key)
+
+  return {
+    async upsertEvent(calendarId, eventId, event) {
+      try {
+        await calendar.events.update({ calendarId, eventId, requestBody: { ...event, status: 'confirmed' } })
+        return 'updated'
+      } catch (error) {
+        if (httpStatus(error) !== 404) throw error
+      }
+      try {
+        await calendar.events.insert({ calendarId, requestBody: { ...event, id: eventId } })
+        return 'created'
+      } catch (error) {
+        // Someone created it between our two calls: it exists now, so update it.
+        if (httpStatus(error) !== 409) throw error
+        await calendar.events.update({ calendarId, eventId, requestBody: { ...event, status: 'confirmed' } })
+        return 'updated'
+      }
+    },
+
+    async removeEvent(calendarId, eventId) {
+      try {
+        await calendar.events.delete({ calendarId, eventId })
+        return 'removed'
+      } catch (error) {
+        const status = httpStatus(error)
+        if (status === 404 || status === 410) return 'absent'
+        throw error
+      }
+    },
+
+    async listManagedEventIds(calendarId, from, to) {
+      const ids: string[] = []
+      let pageToken: string | undefined
+      do {
+        const { data } = await calendar.events.list({
+          calendarId,
+          // A day of slack on each side: the times are only a net, the days are what matters.
+          timeMin: `${addDaysTo(from, -1)}T00:00:00Z`,
+          timeMax: `${addDaysTo(to, 1)}T00:00:00Z`,
+          privateExtendedProperty: ['lelettricaManaged=true'],
+          singleEvents: true,
+          showDeleted: false,
+          maxResults: 250,
+          pageToken,
+        })
+        for (const item of data.items ?? []) if (item.id) ids.push(item.id)
+        pageToken = data.nextPageToken ?? undefined
+      } while (pageToken)
+      return ids
+    },
+  }
 }

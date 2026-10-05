@@ -4,7 +4,7 @@ import { eq, like } from 'drizzle-orm'
 import { db, integrations } from '@/lib/db'
 import {
   getDecryptedSecret, getIntegrationState, listIntegrationStates, recordCheck, removeSecret, saveConfig, saveSecret,
-  setEnabled,
+  recordSync, setEnabled,
 } from '@/lib/integrations/store'
 
 /** Every row these tests make has this prefix, so cleanup cannot touch a real integration. */
@@ -84,6 +84,14 @@ describe('the settings and the state', () => {
   it('writes down who changed it last and when', async () => {
     await saveConfig(id('a'), { x: 1 }, ADMIN)
     expect(await getIntegrationState(id('a'))).toMatchObject({ updatedBy: ADMIN, updatedAt: expect.any(Date) })
+  })
+
+  it('records a synchronisation: when it ran, and its error until the next one succeeds', async () => {
+    await saveConfig(id('a'), {}, ADMIN)
+    await recordSync(id('a'), 'Google answered with an error (HTTP 500)')
+    expect(await getIntegrationState(id('a'))).toMatchObject({ lastError: 'Google answered with an error (HTTP 500)', lastSyncAt: expect.any(Date) })
+    await recordSync(id('a'), null)
+    expect(await getIntegrationState(id('a'))).toMatchObject({ lastError: null, lastSyncAt: expect.any(Date) })
   })
 
   it('records the result of a check: the error, then its disappearance', async () => {
