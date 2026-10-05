@@ -1,6 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('@/lib/supabase/server', () => ({ getAdminUser: vi.fn() }))
+// `after` runs once the response is sent: here it only collects what was scheduled, so a test can see that the
+// action itself did not wait for Google, and then run it.
+const scheduled: Array<() => unknown> = []
+vi.mock('next/server', () => ({ after: (work: () => unknown) => { scheduled.push(work) } }))
+vi.mock('@/lib/integrations/google-calendar/sync', () => ({ syncReservation: vi.fn() }))
 vi.mock('@/lib/reservations', () => ({
   createCounterRental: vi.fn(),
   cancelReservation: vi.fn(),
@@ -13,6 +18,7 @@ vi.mock('@/lib/reservations', () => ({
 
 import { getAdminUser } from '@/lib/supabase/server'
 import * as reservations from '@/lib/reservations'
+import { syncReservation } from '@/lib/integrations/google-calendar/sync'
 import * as actions from './reservations'
 import {
   cancelReservationAction, createRentalAction, getMoveCandidatesAction, getOccupiedRangesAction,
@@ -28,6 +34,7 @@ const rentalInput = () => ({
 
 beforeEach(() => {
   vi.resetAllMocks()
+  scheduled.length = 0
   vi.mocked(getAdminUser).mockResolvedValue({ id: 'admin' } as never)
 })
 
@@ -105,5 +112,66 @@ describe('every action refuses anyone who is not an admin', () => {
     vi.mocked(getAdminUser).mockResolvedValue(null as never)
     await expect(calls[name]()).rejects.toThrow('Unauthorized')
     for (const fn of Object.values(reservations)) expect(fn).not.toHaveBeenCalled()
+  })
+})
+
+describe('the Google Calendar sync after a booking changes', () => {
+  const runScheduled = async () => { for (const work of scheduled.splice(0)) await work() }
+
+  it('is scheduled after a rental is created, and is not waited for by the action', async () => {
+    const reservationId = id()
+    vi.mocked(reservations.createCounterRental).mockResolvedValue({ status: 'created', reservationId, bikeUnitId: id(), replayed: false })
+    await createRentalAction(rentalInput())
+    expect(scheduled).toHaveLength(1)
+    expect(syncReservation).not.toHaveBeenCalled()
+    await runScheduled()
+    expect(syncReservation).toHaveBeenCalledWith(reservationId)
+  })
+
+  it('is not scheduled when nothing was created', async () => {
+    vi.mocked(reservations.createCounterRental).mockResolvedValue({ status: 'no_bike_free' })
+    await createRentalAction(rentalInput())
+    expect(scheduled).toHaveLength(0)
+  })
+
+  it('is scheduled after a cancellation, so the event goes', async () => {
+    const reservationId = id()
+    vi.mocked(reservations.cancelReservation).mockResolvedValue({ status: 'cancelled' })
+    await cancelReservationAction({ id: reservationId })
+    await runScheduled()
+    expect(syncReservation).toHaveBeenCalledWith(reservationId)
+  })
+
+  it('is not scheduled for a cancellation that did not happen', async () => {
+    vi.mocked(reservations.cancelReservation).mockResolvedValue({ status: 'not_found' })
+    await cancelReservationAction({ id: id() })
+    expect(scheduled).toHaveLength(0)
+  })
+
+  it('is scheduled after a move (the bike is in the title), not after a refused one', async () => {
+    const reservationId = id()
+    vi.mocked(reservations.moveReservation).mockResolvedValue({ status: 'moved' })
+    await moveReservationAction({ id: reservationId, bikeUnitId: id() })
+    await runScheduled()
+    expect(syncReservation).toHaveBeenCalledWith(reservationId)
+
+    vi.mocked(reservations.moveReservation).mockResolvedValue({ status: 'conflict' })
+    await moveReservationAction({ id: reservationId, bikeUnitId: id() })
+    expect(scheduled).toHaveLength(0)
+  })
+
+  it('is scheduled after a maintenance is planned or its days change, not after a conflict', async () => {
+    const reservationId = id()
+    vi.mocked(reservations.planMaintenance).mockResolvedValue({ status: 'planned', reservationId, replayed: false })
+    await planMaintenanceAction({ requestKey: id(), bikeUnitId: id(), firstDay: '2026-07-10', lastDay: '2026-07-12' })
+    vi.mocked(reservations.updateMaintenance).mockResolvedValue({ status: 'updated' })
+    const otherId = id()
+    await updateMaintenanceAction({ id: otherId, firstDay: '2026-07-10', lastDay: '2026-07-12' })
+    await runScheduled()
+    expect(vi.mocked(syncReservation).mock.calls.map(([argument]) => argument)).toEqual([reservationId, otherId])
+
+    vi.mocked(reservations.planMaintenance).mockResolvedValue({ status: 'conflict', conflicts: [] })
+    await planMaintenanceAction({ requestKey: id(), bikeUnitId: id(), firstDay: '2026-07-10', lastDay: '2026-07-12' })
+    expect(scheduled).toHaveLength(0)
   })
 })

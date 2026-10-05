@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 vi.mock('@/lib/supabase/server', () => ({ getAdminUser: vi.fn() }))
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }))
 vi.mock('@/lib/integrations/crypto', () => ({ isEncryptionConfigured: vi.fn() }))
+vi.mock('@/lib/integrations/google-calendar/sync', () => ({ syncNow: vi.fn() }))
 vi.mock('@/lib/integrations/store', () => ({
   getIntegrationState: vi.fn(), getDecryptedSecret: vi.fn(), saveSecret: vi.fn(), saveConfig: vi.fn(),
   setEnabled: vi.fn(), removeSecret: vi.fn(), recordCheck: vi.fn(),
@@ -16,9 +17,10 @@ import { getAdminUser } from '@/lib/supabase/server'
 import { isEncryptionConfigured } from '@/lib/integrations/crypto'
 import * as store from '@/lib/integrations/store'
 import { createCalendarApi } from '@/lib/integrations/google-calendar/client'
+import { syncNow } from '@/lib/integrations/google-calendar/sync'
 import {
   disableIntegrationAction, enableIntegrationAction, removeCredentialsAction, saveGoogleCalendarKeyAction,
-  saveGoogleCalendarSettingsAction, testGoogleCalendarAction,
+  saveGoogleCalendarSettingsAction, syncNowAction, testGoogleCalendarAction,
 } from './integrations'
 
 const PEM = '-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASC\n-----END PRIVATE KEY-----\n'
@@ -48,6 +50,8 @@ describe('every integration action', () => {
     await expect(saveGoogleCalendarKeyAction(formWith({ keyText: keyFile() }))).rejects.toThrow('Unauthorized')
     await expect(saveGoogleCalendarSettingsAction({ calendarId: 'x' })).rejects.toThrow('Unauthorized')
     await expect(testGoogleCalendarAction()).rejects.toThrow('Unauthorized')
+    await expect(syncNowAction()).rejects.toThrow('Unauthorized')
+    expect(syncNow).not.toHaveBeenCalled()
     await expect(enableIntegrationAction('google-calendar')).rejects.toThrow('Unauthorized')
     await expect(disableIntegrationAction('google-calendar')).rejects.toThrow('Unauthorized')
     await expect(removeCredentialsAction('google-calendar')).rejects.toThrow('Unauthorized')
@@ -209,5 +213,17 @@ describe('enable, disable and remove', () => {
     expect(await removeCredentialsAction('google-calendar')).toEqual({ status: 'ok' })
     expect(store.removeSecret).toHaveBeenCalledWith('google-calendar', 'admin-1')
     expect(store.saveConfig).toHaveBeenCalledWith('google-calendar', { serviceAccountEmail: null, connectionOk: false, testedCalendarId: null }, 'admin-1')
+  })
+})
+
+describe('syncNowAction', () => {
+  it('says the integration is off when it is', async () => {
+    vi.mocked(syncNow).mockResolvedValue({ status: 'off' })
+    expect(await syncNowAction()).toEqual({ status: 'off' })
+  })
+
+  it('gives back the numbers and the first problem, nothing else', async () => {
+    vi.mocked(syncNow).mockResolvedValue({ status: 'done', report: { upserted: 5, removed: 2, failed: 1, firstError: 'Could not reach Google.' } })
+    expect(await syncNowAction()).toEqual({ status: 'done', upserted: 5, removed: 2, failed: 1, firstError: 'Could not reach Google.' })
   })
 })

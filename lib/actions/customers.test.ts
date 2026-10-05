@@ -3,16 +3,21 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 vi.mock('@/lib/supabase/server', () => ({ getAdminUser: vi.fn() }))
 vi.mock('@/lib/customers', () => ({ createCustomer: vi.fn(), searchCustomers: vi.fn(), updateCustomer: vi.fn() }))
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }))
+const scheduled: Array<() => unknown> = []
+vi.mock('next/server', () => ({ after: (work: () => unknown) => { scheduled.push(work) } }))
+vi.mock('@/lib/integrations/google-calendar/sync', () => ({ syncCustomerReservations: vi.fn() }))
 
 import { getAdminUser } from '@/lib/supabase/server'
 import * as customers from '@/lib/customers'
 import { revalidatePath } from 'next/cache'
+import { syncCustomerReservations } from '@/lib/integrations/google-calendar/sync'
 import { createCustomerAction, searchCustomersAction, updateCustomerAction } from './customers'
 
 const person = { firstName: 'Mario', lastName: 'Rossi', phone: '347 123 4567' }
 
 beforeEach(() => {
   vi.resetAllMocks()
+  scheduled.length = 0
   vi.mocked(getAdminUser).mockResolvedValue({ id: 'admin' } as never)
 })
 
@@ -77,6 +82,15 @@ describe('updateCustomerAction', () => {
       id, expect.objectContaining({ phone: '+393471234567', email: 'mario@example.com' }),
     )
     expect(revalidatePath).toHaveBeenCalledWith('/manage/customers', 'layout')
+  })
+
+  it('sends the customer\'s coming bookings to the calendar again, after the response: their name and phone are in the events', async () => {
+    vi.mocked(customers.updateCustomer).mockResolvedValue({ status: 'updated', customer: { id } } as never)
+    await updateCustomerAction(id, person)
+    expect(scheduled).toHaveLength(1)
+    expect(syncCustomerReservations).not.toHaveBeenCalled()
+    await scheduled[0]()
+    expect(syncCustomerReservations).toHaveBeenCalledWith(id)
   })
 
   it('does not refresh anything when the update did not happen', async () => {

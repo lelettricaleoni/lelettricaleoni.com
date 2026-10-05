@@ -1,5 +1,8 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "crons": [
+    { "path": "/api/cron/google-calendar", "schedule": "0 3 * * *" }
+  ],
   "functions": {
     "app/**/*": {
       "maxDuration": 30,

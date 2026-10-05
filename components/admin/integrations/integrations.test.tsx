@@ -4,7 +4,7 @@ import { renderToStaticMarkup } from 'react-dom/server'
 
 // The pages call Server Actions that talk to the database and to Google: none of that runs in a static render.
 vi.mock('@/lib/actions/integrations', () => ({
-  enableIntegrationAction: vi.fn(), disableIntegrationAction: vi.fn(), removeCredentialsAction: vi.fn(),
+  enableIntegrationAction: vi.fn(), disableIntegrationAction: vi.fn(), removeCredentialsAction: vi.fn(), syncNowAction: vi.fn(),
   saveGoogleCalendarKeyAction: vi.fn(), saveGoogleCalendarSettingsAction: vi.fn(), testGoogleCalendarAction: vi.fn(),
 }))
 
@@ -12,6 +12,7 @@ import { IntegrationsCatalog } from './catalog'
 import { IntegrationPage } from './integration-page'
 import { GoogleCalendarSettings } from './google-calendar-settings'
 import { GuideSteps } from './guide-steps'
+import { IntegrationActivity } from './activity'
 import { INTEGRATIONS } from '@/lib/integrations/registry'
 import { GUIDE_STEPS } from '@/lib/integrations/google-calendar/guide'
 import type { IntegrationView } from '@/lib/integrations/view'
@@ -118,5 +119,33 @@ describe('the guide', () => {
     const html = renderToStaticMarkup(createElement(GuideSteps, { completed: [] }))
     expect(html).toContain('target="_blank"')
     expect(html).toContain('rel="noreferrer noopener"')
+  })
+})
+
+describe('the activity tab', () => {
+  const activity = (v: IntegrationView) => renderToStaticMarkup(createElement(IntegrationActivity, { view: v }))
+
+  it('shows the status, the last test, the last synchronisation and the last problem', () => {
+    const html = activity(view({ lastCheckedAt: '2026-10-04T22:30:00.000Z', lastSyncAt: '2026-10-05T08:00:00.000Z', lastError: 'Google cannot find this calendar.' }))
+    expect(html).toContain('5 Oct 2026, 00:30')
+    expect(html).toContain('5 Oct 2026, 10:00')
+    expect(html).toContain('Google cannot find this calendar.')
+  })
+
+  it('says "Not yet" before any synchronisation and "None" without problems', () => {
+    const html = activity(view())
+    expect(html).toContain('Not yet')
+    expect(html).toContain('None')
+  })
+
+  it('offers Sync now only when the integration is on', () => {
+    expect(activity(view())).not.toContain('Sync now')
+    expect(activity(view({ enabled: true, status: 'enabled' }))).toContain('Sync now')
+  })
+
+  it('says what Sync now does and what it never touches', () => {
+    const html = activity(view({ enabled: true, status: 'enabled' }))
+    expect(html).toContain('never touched')
+    expect(html).toContain('once a day')
   })
 })

@@ -69,6 +69,15 @@ integrazione: impostazioni non segrete in `config`, il segreto in `secret_encryp
 Google Calendar usa un **account di servizio** (la chiave non scade; un accesso OAuth sì, e si ferma in silenzio). Si abilita solo dopo un
 *Test connection* riuscito per il calendario salvato (`canEnable`). Staging e Preview usano lo stesso database dello sviluppo, quindi la
 stessa riga e la stessa chiave di cifratura. Spec e piano in `docs/superpowers/`.
+**Sincronizzazione con Google Calendar** (una direzione, pannello → Google): dopo ogni azione che cambia una prenotazione
+(`createRentalAction`, annulla, sposta, manutenzione) e dopo la modifica di un cliente, `after()` di Next manda l'evento
+**dopo** la risposta (`lib/integrations/google-calendar/sync.ts`, mai un'eccezione: se Google non risponde la prenotazione
+si salva lo stesso e l'errore va in *Activity*). L'id dell'evento è l'UUID della prenotazione senza trattini: rifare l'invio non
+crea doppioni. Comportamento di Google misurato dal vivo (2026-10-05): `update` su un id che non esiste dà 404 (allora `insert`);
+cancellare due volte dà 410; `insert` su un id già cancellato dà 409; **`update` con `status: confirmed` su un evento cancellato lo
+ripristina**. Gli eventi nostri hanno `extendedProperties.private.lelettricaManaged`, così il controllo (*Sync now* e il cron
+giornaliero, finestra da ieri a un anno) non tocca mai quelli messi a mano. `lib/integrations/google-calendar/live.test.ts` prova
+tutto contro il calendario vero (`LIVE_GOOGLE_CALENDAR=1`, saltato altrimenti). Nell'evento non entrano mai importo né note.
 **RLS e funzione `rls_auto_enable()`** (chiusi gli avvisi di Supabase, 2026-10-05): sia produzione sia sviluppo/Preview hanno
 RLS su ogni tabella di `public` e l'event trigger `ensure_rls` (le tabelle nuove nascono chiuse; l'app si collega come
 `postgres` e l'RLS non la tocca); la funzione non è eseguibile da `anon` né da `authenticated`, e l'event trigger scatta lo

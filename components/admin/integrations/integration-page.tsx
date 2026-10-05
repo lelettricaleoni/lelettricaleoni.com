@@ -5,13 +5,13 @@ import { ChevronLeft } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { IntegrationActivity } from '@/components/admin/integrations/activity'
 import { GoogleCalendarSettings } from '@/components/admin/integrations/google-calendar-settings'
 import { GuideSteps } from '@/components/admin/integrations/guide-steps'
 import { IntegrationIconBox } from '@/components/admin/integrations/icon'
 import { StatusBadge } from '@/components/admin/integrations/status-badge'
 import { disableIntegrationAction, enableIntegrationAction } from '@/lib/actions/integrations'
 import { completedSteps } from '@/lib/integrations/google-calendar/guide'
-import { formatWhen } from '@/lib/integrations/format'
 import type { IntegrationDefinition } from '@/lib/integrations/registry'
 import type { IntegrationView } from '@/lib/integrations/view'
 
@@ -118,25 +118,9 @@ export function IntegrationPage({
         </TabsContent>
 
         <TabsContent value="activity" className="mt-6 max-w-2xl">
-          <dl className="divide-y rounded-lg border text-sm">
-            <Row label="Status"><StatusBadge status={view.status} /></Row>
-            <Row label="Last connection test">{formatWhen(view.lastCheckedAt)}</Row>
-            <Row label="Last synchronisation">{formatWhen(view.lastSyncAt, 'Not yet')}</Row>
-            <Row label="Last problem">
-              {view.lastError ? <span className="text-destructive">{view.lastError}</span> : <span className="text-muted-foreground">None</span>}
-            </Row>
-          </dl>
+          <IntegrationActivity view={view} />
         </TabsContent>
       </Tabs>
-    </div>
-  )
-}
-
-function Row({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="flex flex-wrap items-center justify-between gap-2 p-3">
-      <dt className="text-muted-foreground">{label}</dt>
-      <dd className="font-medium">{children}</dd>
     </div>
   )
 }
