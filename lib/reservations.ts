@@ -80,6 +80,8 @@ export interface CreateRentalInput {
   startsOn: IsoDate
   endsOn: IsoDate
   customerId: string
+  /** What the rental costs, in cents. */
+  amountCents: number
   confirmDuplicate: boolean
 }
 
@@ -131,9 +133,9 @@ export async function createCounterRental(input: CreateRentalInput): Promise<Cre
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
     try {
       const rows = await db.execute<{ id: string; bike_unit_id: string }>(sql`
-        insert into bike_reservations (bike_unit_id, kind, status, starts_on, ends_on, customer_id, request_key)
+        insert into bike_reservations (bike_unit_id, kind, status, starts_on, ends_on, customer_id, amount_cents, request_key)
         select u.id, 'counter_rental'::reservation_kind, 'confirmed'::reservation_status,
-               ${input.startsOn}::date, ${input.endsOn}::date, ${input.customerId}::uuid, ${input.requestKey}::uuid
+               ${input.startsOn}::date, ${input.endsOn}::date, ${input.customerId}::uuid, ${input.amountCents}::int, ${input.requestKey}::uuid
         from bike_units u
         where u.bike_model_id = ${input.bikeModelId}::uuid
           and u.bike_size_id = ${input.bikeSizeId}::uuid
@@ -354,6 +356,8 @@ export interface GridReservation {
   label: string | null
   /** Who rents, with the contacts: null for a maintenance. */
   customer: CustomerSummary | null
+  /** The price of the rental in cents: null for a maintenance. */
+  amountCents: number | null
 }
 
 export interface GridUnit {
@@ -403,7 +407,7 @@ export async function getGrid(month: IsoMonth): Promise<GridUnit[]> {
     const list = byUnit.get(row.bikeUnitId) ?? []
     list.push({
       id: row.id, kind: row.kind, startsOn: row.startsOn, endsOn: row.endsOn,
-      label: caption(row, customer), customer: customer ? summarize(customer) : null,
+      label: caption(row, customer), customer: customer ? summarize(customer) : null, amountCents: row.amountCents,
     })
     byUnit.set(row.bikeUnitId, list)
   }

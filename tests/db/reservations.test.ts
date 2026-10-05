@@ -13,7 +13,7 @@ const RANGE = { startsOn: '2031-07-10', endsOn: '2031-07-13' }
 function rental(fx: Fixture, overrides: Partial<CreateRentalInput> = {}): CreateRentalInput {
   return {
     requestKey: crypto.randomUUID(), bikeModelId: fx.modelId, bikeSizeId: fx.sizeId,
-    bikeVersionId: fx.versionId, ...RANGE, customerId: fx.customerId, confirmDuplicate: true, ...overrides,
+    bikeVersionId: fx.versionId, ...RANGE, customerId: fx.customerId, amountCents: 4500, confirmDuplicate: true, ...overrides,
   }
 }
 
@@ -69,6 +69,17 @@ describe('createCounterRental', () => {
     extraCustomers.push(other.id)
     expect((await createCounterRental(duplicate({ customerId: other.id }))).status).toBe('created')
     expect((await createCounterRental(duplicate({ startsOn: '2031-08-01', endsOn: '2031-08-03' }))).status).toBe('created')
+  })
+
+  it('stores the amount, in cents, and shows it on the calendar', async () => {
+    const { reservationId } = created(await createCounterRental(rental(fx, { amountCents: 4550 })))
+    const [row] = await db.select().from(bikeReservations).where(eq(bikeReservations.id, reservationId))
+    expect(row.amountCents).toBe(4550)
+  })
+
+  it('accepts a free rental, refuses a negative amount', async () => {
+    created(await createCounterRental(rental(fx, { amountCents: 0 })))
+    await expect(createCounterRental(rental(fx, { amountCents: -1 }))).rejects.toThrow()
   })
 
   it('does not accept a customer that does not exist', async () => {
@@ -291,8 +302,9 @@ describe('getGrid', () => {
     const rentalBlock = grid.flatMap((u) => u.reservations).find((r) => r.kind === 'counter_rental')!
     expect(rentalBlock.label).toMatch(/^db-test /)
     expect(rentalBlock.customer).toMatchObject({ id: fx.customerId, firstName: 'db-test' })
+    expect(rentalBlock.amountCents).toBe(4500)
     const maintenanceBlock = grid.flatMap((u) => u.reservations).find((r) => r.kind === 'maintenance')!
-    expect(maintenanceBlock).toMatchObject({ label: 'chain', customer: null })
+    expect(maintenanceBlock).toMatchObject({ label: 'chain', customer: null, amountCents: null })
   })
 
   it('labels the bike with its short id', async () => {

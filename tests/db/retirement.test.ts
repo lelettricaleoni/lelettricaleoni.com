@@ -12,7 +12,7 @@ const RANGE = { startsOn: '2031-07-10', endsOn: '2031-07-13' }
 function rental(fx: Fixture, overrides: Partial<CreateRentalInput> = {}): CreateRentalInput {
   return {
     requestKey: crypto.randomUUID(), bikeModelId: fx.modelId, bikeSizeId: fx.sizeId,
-    bikeVersionId: fx.versionId, ...RANGE, customerId: fx.customerId, confirmDuplicate: true, ...overrides,
+    bikeVersionId: fx.versionId, ...RANGE, customerId: fx.customerId, amountCents: 4500, confirmDuplicate: true, ...overrides,
   }
 }
 

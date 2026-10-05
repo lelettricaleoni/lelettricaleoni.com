@@ -99,6 +99,13 @@
       "when": 1790947275856,
       "tag": "0013_customers",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1791183987869,
+      "tag": "0014_rental_amount",
+      "breakpoints": true
     }
   ]
 }

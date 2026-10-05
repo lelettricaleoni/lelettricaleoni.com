@@ -212,6 +212,8 @@ export const bikeReservations = pgTable('bike_reservations', {
   // `label` is only the reason of a maintenance. A rental points at its customer.
   label:       text('label'),
   customerId:  uuid('customer_id').references(() => customers.id),
+  // What the rental was paid, in whole cents (lib/money.ts); null for a maintenance.
+  amountCents: integer('amount_cents'),
   requestKey:  uuid('request_key').notNull().unique(),
   createdAt:   timestamp('created_at').notNull().defaultNow(),
 }, (t) => [

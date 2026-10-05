@@ -60,6 +60,12 @@ describe('getRentalOptions', () => {
     }
   })
 
+  it('carries the list price for 1 to maxRentalDays days, null where the category sets none', async () => {
+    const option = await mine()
+    // The fixture category: 7 days at most, 10 euros for one day, no other price set.
+    expect(option!.priceByDays).toEqual([10, null, null, null, null, null, null])
+  })
+
   it('names the model, and includes one that is not published', async () => {
     const option = await mine()
     expect(option!.modelName).toBe('Untitled') // the fixture has no translation

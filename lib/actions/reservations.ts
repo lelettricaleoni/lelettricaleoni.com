@@ -1,6 +1,7 @@
 'use server'
 import { getAdminUser } from '@/lib/supabase/server'
 import { buildRange, type DayRange } from '@/lib/dates'
+import { toCents } from '@/lib/money'
 import {
   createRentalSchema, moveReservationSchema, occupiedRangesSchema, planMaintenanceSchema,
   reservationIdSchema, updateMaintenanceSchema, type ActionInvalid,
@@ -36,6 +37,7 @@ export async function createRentalAction(input: unknown): Promise<reservations.C
     startsOn: range.startsOn,
     endsOn: range.endsOn,
     customerId: parsed.data.customerId,
+    amountCents: toCents(parsed.data.amount),
     confirmDuplicate: parsed.data.confirmDuplicate,
   })
 }
