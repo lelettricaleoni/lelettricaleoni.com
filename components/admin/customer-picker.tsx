@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useState, useTransition } from 'react'
+import { UserPlus } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -80,10 +81,15 @@ function Search({
 
   return (
     <div className="space-y-2">
-      <Input
-        value={query} onChange={(event) => onQuery(event.target.value)} maxLength={100}
-        placeholder="Search by name, phone or email" aria-label="Search customers" autoComplete="off"
-      />
+      <div className="flex gap-2">
+        <Input
+          value={query} onChange={(event) => onQuery(event.target.value)} maxLength={100}
+          placeholder="Name, phone or email" aria-label="Search customers" autoComplete="off"
+        />
+        <Button type="button" variant="outline" className="shrink-0" onClick={onAdd}>
+          <UserPlus size={16} className="mr-1" />New customer
+        </Button>
+      </div>
       {text && list === null && <p className="text-sm text-muted-foreground">Searching…</p>}
       {list?.length === 0 && <p className="text-sm text-muted-foreground">Nobody with that name, phone or email.</p>}
       {list && list.length > 0 && (
@@ -101,7 +107,6 @@ function Search({
           ))}
         </ul>
       )}
-      <Button type="button" variant="outline" size="sm" onClick={onAdd}>New customer</Button>
     </div>
   )
 }
