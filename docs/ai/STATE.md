@@ -4,7 +4,7 @@
 > componenti si ricava con `ls`; il motivo per cui i tile CARTO passano dal server no.
 > Se questo file supera le ~150 righe, qualcosa è entrato che non doveva.
 >
-> Ultimo allineamento: 2026-10-02.
+> Ultimo allineamento: 2026-10-05.
 
 ## Prodotto
 
@@ -19,7 +19,7 @@ pannello di amministrazione privato.
 |---|---|
 | Produzione | `main` → https://www.lelettricaleoni.com, deploy automatico Vercel |
 | Progetto Vercel | `lelettricaleoni`, team `lelettrica` |
-| Branch `staging` | ricreato il 2026-10-02 da `main` (cancellato per errore un'ora prima) per il lavoro sulle prenotazioni: nulla di quel lavoro va in produzione finché non è pronto (Kevin). I suoi deploy usano l'ambiente Preview (database e bucket propri) su `staging.lelettricaleoni.com`, con `noindex`. PR verso `staging`; in produzione una sola PR `staging → main`, e solo allora la migrazione sul database vero. Protezione: `verify` e `browser`, admin inclusi; `CodeQL` da aggiungere dopo averlo visto girare qui |
+| Branch `staging` | ricreato il 2026-10-02 da `main` (cancellato per errore un'ora prima) per il lavoro sulle prenotazioni: la fetta 1 (con clienti e importi) è in produzione dal 2026-10-05, il resto (fette 2-5) resta qui finché non è pronto (Kevin). I suoi deploy usano l'ambiente Preview (database e bucket propri) su `staging.lelettricaleoni.com`, con `noindex`. PR verso `staging`; in produzione una sola PR `staging → main`, e solo allora la migrazione sul database vero. Protezione: `verify` e `browser`, admin inclusi; `CodeQL` da aggiungere dopo averlo visto girare qui |
 | Merge | solo via PR: `verify`, `browser` e `CodeQL` devono passare, **nessuna esenzione admin** dal 2026-09-16 — chiude la falla che aveva permesso due push diretti su `main` |
 | CI | `verify` (lint, tipi, unit), `browser` (Playwright contro il preview), CodeQL in default setup, suite `extended` |
 
@@ -53,7 +53,7 @@ Suspense separato apposta, per non bloccare il resto della pagina.
 già analizzati, che non cambiano mai. Senza credenziali è un no-op, e ogni lettura fallisce
 aperta entro 250 ms. Lo stesso Upstash tiene lo stato di transcodifica del worker.
 
-**Prenotazioni (fetta 1, in `staging`, non ancora in produzione).** `bike_reservations`: una riga per
+**Prenotazioni (fetta 1, in produzione dal 2026-10-05).** `bike_reservations`: una riga per
 bici e periodo, `ends_on` esclusivo, `EXCLUDE` su `during` per le sole righe `confirmed`, `request_key`
 come chiave di idempotenza, RLS esplicito. Il vincolo non vede lo stesso noleggio inserito due volte
 con due bici libere: lo coprono `request_key` e l'avviso di doppione. Una bici si ritira con
@@ -61,6 +61,14 @@ con due bici libere: lo coprono `request_key` e l'avviso di doppione. Una bici s
 sito pubblico conta le bici con `inGarage()`, in SQL perché gira dentro `'use cache'`. Il campanello
 Realtime parte da un trigger e non porta dati personali; il canale è pubblico, quindi i ricaricamenti
 sono limitati (`lib/coalesce.ts`). Dettagli: spec e piano in `docs/superpowers/`.
+**Clienti e importi.** `customers`: una riga per persona, nome e cognome obbligatori, cellulare (E.164, letto
+nel paese scelto accanto al campo: `libphonenumber-js`) ed email facoltativi; stesso cellulare o stessa email
+= stessa persona (indici unici), due omonimi con contatti diversi sono due clienti. Il noleggio punta al
+cliente (`customer_id`, CHECK) e ha `amount_cents` (centesimi, mai float), precompilato dal listino
+(`priceForDay`) e correggibile. L'incasso di un cliente è la somma dei noleggi **confermati**: annullati e
+manutenzioni non contano. **L'account cliente (fetta 2) mostrerà solo le prenotazioni online**, mai quelle
+inserite dal pannello (`kind` ≠ `counter_rental`), anche per la stessa persona (Kevin, 2026-10-02). Un cliente
+con noleggi non si cancella.
 
 ## Infrastruttura dei media
 
@@ -237,6 +245,15 @@ l'errore** (lo spinner lo inghiotte). Risincronizzato su dev (2026-09-24) e su p
 `DATABASE_DIRECT_URL` del database giusto — dev da `.env.local`, produzione passando la
 variabile a mano. **Non usare `apply_migration` (MCP) per lo schema**; se lo si fa comunque,
 registrare a mano la riga nel tracking.
+
+**Le scrollbar globali usano i pezzi `::-webkit-scrollbar`** (sottili, senza frecce, `app/globals.css`):
+`scrollbar-width`/`scrollbar-color` standard su un elemento fanno ignorare quei pezzi a Chrome 121+ e
+rimettono le frecce, quindi stanno solo in `@supports not selector(::-webkit-scrollbar)` per Firefox
+(guardia: `lib/scrollbar-css.test.ts`). **`SUPABASE_SERVICE_ROLE_KEY` di Preview** era sbagliata: `/manage/users` su
+staging dava `AuthApiError: User not allowed` (403 `not_admin`) fino al 2026-10-05; rimessa con la chiave dello
+sviluppo via CLI senza stamparla, vale solo per i deploy nuovi. **Le migrazioni 0010-0014 in produzione** sono
+state applicate con `execute_sql` (la connessione diretta non è sul PC): il SQL del file più la riga in
+`drizzle.__drizzle_migrations` con `hash` = sha256 del file e `created_at` = `when` del journal.
 
 **Ogni sezione di `/manage` ha bisogno del suo `layout.tsx` con `AdminShell`**: è l'unico posto con il
 `Toaster`, e senza ogni `toast.*` sparisce in silenzio (`/manage/bookings` è uscita così;

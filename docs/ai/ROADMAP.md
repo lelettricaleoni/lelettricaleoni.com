@@ -23,14 +23,16 @@
   Stripe Checkout). **Provato il 2026-10-02** con richieste concorrenti vere sul pooler (spike,
   15/15 controlli): il vincolo regge, ma il codice deve ritentare su `23P01`; rilascio dei
   posti scaduti e assegnazione sono istruzioni separate, senza transazioni (`max_pipeline: 0`).
-  **Fetta 1 (calendario e stato delle bici nel pannello): codice finito e in `staging`** (PR #227-#231,
-  revisione dell'intero ramo fatta), **non ancora in produzione**. Restano: la prova a mano su
-  `staging` con il login admin (due schede, tempo reale), le migrazioni `0010`-`0012` sul database di
-  produzione e la PR `staging → main` con merge commit. Spec in
+  **Fetta 1 (calendario e stato delle bici nel pannello): in produzione dal 2026-10-05**, con i clienti
+  (anagrafica, ricerca nel modale, pagina Customers con storico e incasso) e l'importo del noleggio
+  (PR #227-#251, migrazioni `0010`-`0014`). **Restano a Kevin**: in dashboard Supabase di produzione,
+  Realtime → Settings → «Allow public access» (senza, il calendario si aggiorna solo ricaricando) e la
+  prova a mano in produzione. Spec in
   `docs/superpowers/specs/2026-10-02-booking-slice1-admin-calendar-design.md`, piano in
   `docs/superpowers/plans/2026-10-02-booking-slice1-admin-calendar.md`. Griglia su `date-fns` e CSS:
   gli scheduler con vista a risorse sono a pagamento o non adatti (confronto nella spec). Le fette 2-5
-  sono da disegnare.
+  sono da disegnare. Per l'account cliente: collegare chi si registra a `customers` per email (`user_id`) e
+  mostrargli solo le prenotazioni online; gli account non admin oggi sono tutti di Kevin.
   Il calendario di Kevin sta in `C:\AzureDevOps\firebase` (`app/rent/`, da portare ricollegandolo
   ai dati veri); il resto di quel repo (Firestore, Stripe di prova) non si riusa.
   **Date**: colonne `date`/`daterange` e stringhe `YYYY-MM-DD` (mai `Date` per un giorno di
