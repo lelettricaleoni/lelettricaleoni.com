@@ -3,6 +3,7 @@ import { Geist } from 'next/font/google'
 import Script from 'next/script'
 import { CookieConsentInit } from '@/components/cookie-consent'
 import { hasLocale } from './dictionaries'
+import { isProduction } from '@/lib/app-env'
 import { notFound } from 'next/navigation'
 import '../globals.css'
 
@@ -261,10 +262,10 @@ export default async function LangLayout({
   if (!hasLocale(lang)) notFound()
 
   // Preview shares production's GA4 property, so every pull request's
-  // Playwright run would otherwise send it real events. VERCEL_ENV is unset
+  // Playwright run would otherwise send it real events. APP_ENV (or VERCEL_ENV on Vercel) is unset
   // locally, so 'production' here means the actual deployment, not
   // NODE_ENV=production on a laptop.
-  const gaId = process.env.VERCEL_ENV === 'production' ? process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID : undefined
+  const gaId = isProduction() ? process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID : undefined
 
   return (
     <html lang={lang} className={`${geist.variable} antialiased`}>
