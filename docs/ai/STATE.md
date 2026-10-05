@@ -263,9 +263,10 @@ sincronizzazione `main → staging` si fa da un ramo copia, con **merge commit**
 
 ## Debito noto
 
-- **Video.js v10 è ancora Release Candidate** (`rc.4`; la 8.x ha un'API diversa, non è un
-  aggiornamento). `components/video-player.tsx` legge `selectError` da `@videojs/core/dom`,
-  un dettaglio interno: ricontrollarlo a ogni RC (manifest 404 e HLS vero).
+- **Video.js v10 è stabile dal 2026-10-05** (10.0.1; era RC). `components/video-player.tsx` legge `selectError` da
+  `@videojs/core/dom`, un dettaglio interno: ricontrollarlo a ogni aggiornamento, con un video vero (`playlist.m3u8`
+  di un percorso) e con un manifest 404. Da `localhost` il dominio dei media non risponde (CORS ammette solo `www`):
+  per provarlo in locale si intercetta la risposta aggiungendo `access-control-allow-origin`.
 
 ## Decisioni passate ancora rilevanti
 
