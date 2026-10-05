@@ -1,6 +1,9 @@
 import type { NextConfig } from "next"
 
 const nextConfig: NextConfig = {
+  // Only the Docker build asks for it (NEXT_OUTPUT=standalone): a self-contained server in .next/standalone, the
+  // image's whole runtime. Vercel's own build never sets it, so nothing changes there.
+  output: process.env.NEXT_OUTPUT === 'standalone' ? 'standalone' : undefined,
   cacheComponents: true,
   experimental: {
     globalNotFound: true,
