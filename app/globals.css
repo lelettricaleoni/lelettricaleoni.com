@@ -59,6 +59,10 @@
 @layer base {
   * {
     border-color: hsl(var(--border));
+    /* Thin and quiet scrollbars everywhere (the standard properties, no per-browser hacks): the
+       default ones are thick, grey and always on top of the content. */
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--muted-foreground) / 0.45) transparent;
   }
   body {
     background-color: hsl(var(--background));
