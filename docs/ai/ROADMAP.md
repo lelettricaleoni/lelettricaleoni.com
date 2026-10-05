@@ -74,40 +74,9 @@
   (vedi Scartato), e con lei cade la decisione 1 (credenziali di Google su Vercel).
   **Restano**: la decisione 2 (Google Business Profile) e rileggere Search Console a fine ottobre
   (punto di partenza: `/it/routes/bdd7a446`, 294 impressioni e CTR 2,7%).
-- **Avvisi di sicurezza di Supabase** (portati da Kevin il 2026-10-02, da risolvere dopo; letti
-  con gli advisor, sola lettura, nulla è stato modificato):
-  - **Produzione** (`hhfnhzdourgkinwlqvtc`): `public.rls_auto_enable()` è `SECURITY DEFINER` ed
-    eseguibile da `anon` e da `authenticated` via `/rest/v1/rpc/rls_auto_enable` (due avvisi). È la
-    funzione dell'event trigger `ensure_rls`, che abilita l'RLS su ogni tabella nuova in `public`;
-    ritorna `event_trigger`, quindi chiamata da fuori non fa nulla, ma l'avviso resta. Rimedio:
-    `REVOKE EXECUTE ON FUNCTION public.rls_auto_enable() FROM PUBLIC, anon, authenticated;`
-    (l'event trigger continua a scattare, gira come `postgres`).
-  - **Password trapelate** (HaveIBeenPwned): protezione disattivata su entrambi i progetti. È
-    un'impostazione di Auth nella dashboard; da verificare se il piano la consente.
-  - **Sviluppo e Preview** (`wvyruunbxdqquiarhknt`): tutte e 12 le tabelle di `public` sono
-    **senza RLS** (avviso di livello ERRORE), quindi raggiungibili con la chiave anon via
-    PostgREST. Su quel database non c'è né `ensure_rls` né la funzione: le tabelle nuove
-    nascono aperte, mentre in produzione nascono con RLS attivo e nessuna policy (chiuse). L'app
-    non ne risente, perché Drizzle si collega come `postgres`, che aggira l'RLS. Rimedio:
-    `ENABLE ROW LEVEL SECURITY` sulle 12 tabelle, e replicare `ensure_rls` perché i due ambienti
-    non divergano.
-  - Le tabelle e le funzioni nuove delle prenotazioni nascono già a posto in ogni ambiente (RLS
-    esplicito, `REVOKE` sulla funzione del trigger): vedi il piano della fetta 1.
-- **Sintassi Tailwind v3 nei componenti shadcn già presenti** (scoperta il 2026-10-02 cercando il
-  difetto del calendario, che era uguale e che è già corretto: #233). Il progetto è su Tailwind v4,
-  dove una classe con una variabile CSS si scrive `h-(--x)` e non `h-[--x]`: la forma vecchia non
-  produce nulla. Restano da correggere, **uno per uno e guardandoli in un browser vero**:
-  - `components/ui/select.tsx`: `max-h-[--radix-select-content-available-height]`, quindi il menu a
-    tendina potrebbe non limitarsi all'altezza disponibile (moduli del pannello, con liste lunghe) e
-    uscire dallo schermo; `origin-[--radix-select-content-transform-origin]` è solo animazione.
-  - `components/ui/chart.tsx`: `border-[--color-border]` e `bg-[--color-bg]`: i pallini colorati del
-    suggerimento del grafico altimetrico (**sito pubblico**, flyover) potrebbero aver perso il colore.
-  - `components/ui/dropdown-menu.tsx` e `popover.tsx`: `origin-[--radix-…]`, solo l'origine
-    dell'animazione (cosmetico).
-  Prima di cominciare: `grep -rnE "[a-zA-Z:-]+-\[--[a-zA-Z-]+\]" components app lib` per l'elenco
-  aggiornato; `lib/calendar-tailwind.test.ts` fa già da guardia per il solo calendario e si può
-  estendere a tutta `components/ui/` quando gli altri sono a posto. Ogni nuovo componente che
-  `npx shadcn@latest add` genera va guardato con lo stesso occhio.
+- **Password trapelate (HaveIBeenPwned)**: protezione disattivata su entrambi i progetti Supabase. È un'impostazione
+  di Auth nella dashboard, da verificare se il piano la consente (resta a Kevin). Gli altri avvisi di sicurezza
+  portati da Kevin il 2026-10-02 sono chiusi il 2026-10-05: vedi STATE.
 
 ## Un giorno
 
