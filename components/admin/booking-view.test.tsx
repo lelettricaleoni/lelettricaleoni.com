@@ -11,8 +11,10 @@ import type { GridUnit } from '@/lib/reservations'
 
 const unit = (
   id: string, modelName: string, reservations: GridUnit['reservations'] = [], retiredOn: string | null = null,
+  categoryName = 'E-bike',
 ): GridUnit => ({
-  id, shortId: id.slice(0, 8), modelName, sizeName: 'M', versionName: 'Alu', retiredOn, reservations,
+  id, shortId: id.slice(0, 8), categoryId: `cat-${categoryName}`, categoryName, modelId: `model-${modelName}`, modelName,
+  sizeId: 'size-m', sizeName: 'M', versionId: 'version-alu', versionName: 'Alu', retiredOn, reservations,
 })
 
 const rental = { id: 'r1', kind: 'counter_rental' as const, startsOn: '2031-07-10', endsOn: '2031-07-13', label: 'Mario Rossi', customer: { id: 'c1', firstName: 'Mario', lastName: 'Rossi', email: null, phone: null, notes: null }, amountCents: 4500 }
@@ -81,6 +83,29 @@ describe('BookingView', () => {
     // `sticky left-0` on the heading's text it scrolled away and nobody knew which bike a row was.
     const html = render([unit('aaaaaaaa-0001', 'Mondraker'), unit('bbbbbbbb-0003', 'Flyer')])
     expect(html.match(/<span class="sticky left-0 inline-block[^"]*">(Mondraker|Flyer)<\/span>/g)).toHaveLength(2)
+  })
+
+  it('groups the bikes under their category, and the models under it', () => {
+    const html = render([
+      unit('aaaaaaaa-0001', 'Mondraker', [], null, 'E-bike'),
+      unit('bbbbbbbb-0002', 'Flyer', [], null, 'E-bike'),
+      unit('cccccccc-0003', 'Classica', [], null, 'City bike'),
+    ])
+    expect(html.match(/<span class="sticky left-0 inline-block[^"]*">(E-bike|City bike)<\/span>/g)).toHaveLength(2)
+    expect(html.indexOf('>E-bike<')).toBeLessThan(html.indexOf('>Mondraker<'))
+    expect(html.indexOf('>Flyer<')).toBeLessThan(html.indexOf('>City bike<'))
+    expect(html.indexOf('>City bike<')).toBeLessThan(html.indexOf('>Classica<'))
+  })
+
+  it('has a button to add a rental on every bike, next to the one for maintenance', () => {
+    const html = render([unit('aaaaaaaa-0001', 'Mondraker'), unit('aaaaaaaa-0002', 'Mondraker')])
+    expect(html.split('aria-label="Add rental"')).toHaveLength(3)
+    expect(html.split('aria-label="Plan maintenance"')).toHaveLength(3)
+  })
+
+  it('does not offer to rent a bike that is already retired', () => {
+    const html = render([unit('aaaaaaaa-0001', 'Mondraker', [], '2031-07-10'), unit('aaaaaaaa-0002', 'Mondraker', [], '2031-09-01')], '2031-07-15')
+    expect(html.split('aria-label="Add rental"')).toHaveLength(2) // only the bike retired in September
   })
 
   it('has a button to add a rental, also when the calendar is empty', () => {

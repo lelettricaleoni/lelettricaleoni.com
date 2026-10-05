@@ -31,11 +31,19 @@ const CHOSEN = 'data-[state=on]:bg-[#366DA1] data-[state=on]:text-white data-[st
  * the shop (not the ones a model is allowed to have on paper): each choice narrows the next, and a
  * choice with a single possibility is made for the person.
  */
-export function RentalForm({ models, onCreated }: { models: RentalOption[]; onCreated: () => void }) {
+export interface FixedBike { unitId: string; modelId: string; sizeId: string; versionId: string; label: string }
+
+/**
+ * With `bike` the rental is for that very bike (opened from its own row in the calendar): the model,
+ * size and version are not asked, and no other bike of the kind will be given.
+ */
+export function RentalForm({
+  models, bike = null, onCreated,
+}: { models: RentalOption[]; bike?: FixedBike | null; onCreated: () => void }) {
   const [isPending, startTransition] = useTransition()
-  const [modelId, setModelId] = useState('')
-  const [sizeId, setSizeId] = useState('')
-  const [versionId, setVersionId] = useState('')
+  const [modelId, setModelId] = useState(bike?.modelId ?? '')
+  const [sizeId, setSizeId] = useState(bike?.sizeId ?? '')
+  const [versionId, setVersionId] = useState(bike?.versionId ?? '')
   const [range, setRange] = useState<DateRange | undefined>()
   const [customer, setCustomer] = useState<CustomerSummary | null>(null)
   // The amount follows the list price until the person types one: then it is theirs (a discount, an extra).
@@ -74,7 +82,8 @@ export function RentalForm({ models, onCreated }: { models: RentalOption[]; onCr
   }
 
   function reset() {
-    setModelId(''); setSizeId(''); setVersionId(''); setRange(undefined); setCustomer(null); setTypedAmount(null)
+    setModelId(bike?.modelId ?? ''); setSizeId(bike?.sizeId ?? ''); setVersionId(bike?.versionId ?? '')
+    setRange(undefined); setCustomer(null); setTypedAmount(null)
     setDuplicate(null)
     setRequestKey(crypto.randomUUID())
   }
@@ -86,9 +95,9 @@ export function RentalForm({ models, onCreated }: { models: RentalOption[]; onCr
       const result = await createRentalAction({
         requestKey, bikeModelId: modelId, bikeSizeId: sizeId, bikeVersionId: versionId,
         firstDay: isoDay(first), lastDay: isoDay(range.to ?? first),
-        customerId: customer.id, amount, confirmDuplicate,
+        customerId: customer.id, bikeUnitId: bike?.unitId, amount, confirmDuplicate,
       })
-      const feedback = rentalFeedback(result)
+      const feedback = rentalFeedback(result, { specificBike: bike !== null })
       if (feedback.tone === 'confirm-duplicate') {
         setDuplicate(feedback.existing)
         return
@@ -117,37 +126,46 @@ export function RentalForm({ models, onCreated }: { models: RentalOption[]; onCr
       className="grid gap-6 md:grid-cols-2"
     >
       <div className="space-y-5">
-        <div className="space-y-1">
-          <Label htmlFor="rental-model">Model *</Label>
-          <SearchSelect
-            id="rental-model" options={modelOptions} value={modelId} onChange={chooseModel}
-            placeholder="Choose a model" searchPlaceholder="Search model" emptyText="No model found."
-            className="w-full"
-          />
-        </div>
-
-        {modelId && (
+        {bike ? (
           <div className="space-y-1">
-            <Label id="rental-size-label">Size *</Label>
-            <ToggleGroup
-              type="single" variant="outline" value={sizeId} aria-labelledby="rental-size-label"
-              onValueChange={(id) => { if (id) chooseSize(id) }} className="flex-wrap justify-start"
-            >
-              {sizes.map((size) => <ToggleGroupItem key={size.id} value={size.id} className={CHOSEN}>{size.name}</ToggleGroupItem>)}
-            </ToggleGroup>
+            <Label>Bike</Label>
+            <p className="rounded-md border bg-muted/40 p-3 text-sm font-medium">{bike.label}</p>
           </div>
-        )}
-
-        {sizeId && (
+        ) : (
+          <>
           <div className="space-y-1">
-            <Label id="rental-version-label">Version *</Label>
-            <ToggleGroup
-              type="single" variant="outline" value={versionId} aria-labelledby="rental-version-label"
-              onValueChange={(id) => { if (id) setVersionId(id) }} className="flex-wrap justify-start"
-            >
-              {versions.map((version) => <ToggleGroupItem key={version.id} value={version.id} className={CHOSEN}>{version.name}</ToggleGroupItem>)}
-            </ToggleGroup>
+            <Label htmlFor="rental-model">Model *</Label>
+            <SearchSelect
+              id="rental-model" options={modelOptions} value={modelId} onChange={chooseModel}
+              placeholder="Choose a model" searchPlaceholder="Search model" emptyText="No model found."
+              className="w-full"
+            />
           </div>
+
+          {modelId && (
+            <div className="space-y-1">
+              <Label id="rental-size-label">Size *</Label>
+              <ToggleGroup
+                type="single" variant="outline" value={sizeId} aria-labelledby="rental-size-label"
+                onValueChange={(id) => { if (id) chooseSize(id) }} className="flex-wrap justify-start"
+              >
+                {sizes.map((size) => <ToggleGroupItem key={size.id} value={size.id} className={CHOSEN}>{size.name}</ToggleGroupItem>)}
+              </ToggleGroup>
+            </div>
+          )}
+
+          {sizeId && (
+            <div className="space-y-1">
+              <Label id="rental-version-label">Version *</Label>
+              <ToggleGroup
+                type="single" variant="outline" value={versionId} aria-labelledby="rental-version-label"
+                onValueChange={(id) => { if (id) setVersionId(id) }} className="flex-wrap justify-start"
+              >
+                {versions.map((version) => <ToggleGroupItem key={version.id} value={version.id} className={CHOSEN}>{version.name}</ToggleGroupItem>)}
+              </ToggleGroup>
+            </div>
+          )}
+          </>
         )}
 
         <div className="space-y-1">
@@ -169,7 +187,7 @@ export function RentalForm({ models, onCreated }: { models: RentalOption[]; onCr
             value={amountText} onChange={(event) => setTypedAmount(event.target.value)}
           />
           <p className="text-xs text-muted-foreground">
-            {dayCount === 0 && 'Pick the bike and the days to see the list price.'}
+            {dayCount === 0 && (bike ? 'Pick the days to see the list price.' : 'Pick the bike and the days to see the list price.')}
             {dayCount > 0 && suggested !== null && `List price for ${dayCount} ${dayCount === 1 ? 'day' : 'days'}: ${formatEuros(toCents(suggested))}.`}
             {dayCount > 0 && suggested === null && 'The list has no price for these days: type the amount.'}
             {typedAmount !== null && suggested !== null && toCents(Number(typedAmount)) !== toCents(suggested) && (

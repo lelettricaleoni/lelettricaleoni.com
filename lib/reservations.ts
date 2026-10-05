@@ -1,6 +1,6 @@
 import { and, asc, eq, gt, lt, ne, sql, type SQL } from 'drizzle-orm'
 import {
-  db, bikeReservations, bikeUnits, bikeModelTranslations, bikeSizes, bikeVersions, customers,
+  db, bikeCategories, bikeModels, bikeReservations, bikeUnits, bikeModelTranslations, bikeSizes, bikeVersions, customers,
   type BikeReservation, type Customer,
 } from '@/lib/db'
 import { fullName } from '@/lib/customer'
@@ -80,6 +80,8 @@ export interface CreateRentalInput {
   startsOn: IsoDate
   endsOn: IsoDate
   customerId: string
+  /** Book this very bike (it must be of the model, size and version asked for); otherwise any free one. */
+  bikeUnitId?: string
   /** What the rental costs, in cents. */
   amountCents: number
   confirmDuplicate: boolean
@@ -140,6 +142,7 @@ export async function createCounterRental(input: CreateRentalInput): Promise<Cre
         where u.bike_model_id = ${input.bikeModelId}::uuid
           and u.bike_size_id = ${input.bikeSizeId}::uuid
           and u.bike_version_id = ${input.bikeVersionId}::uuid
+          and (${input.bikeUnitId ?? null}::uuid is null or u.id = ${input.bikeUnitId ?? null}::uuid)
           and (u.retired_on is null or ${input.endsOn}::date <= u.retired_on)
           and not exists (
             select 1 from bike_reservations r
@@ -363,8 +366,13 @@ export interface GridReservation {
 export interface GridUnit {
   id: string
   shortId: string
+  categoryId: string
+  categoryName: string
+  modelId: string
   modelName: string
+  sizeId: string
   sizeName: string
+  versionId: string
   versionName: string
   /** The first day the bike is no longer offered, or null while it is in service. */
   retiredOn: IsoDate | null
@@ -379,17 +387,23 @@ export async function getGrid(month: IsoMonth): Promise<GridUnit[]> {
 
   const [units, reservations] = await Promise.all([
     db.select({
-      id: bikeUnits.id, modelName: bikeModelTranslations.name,
-      sizeName: bikeSizes.name, versionName: bikeVersions.name, retiredOn: bikeUnits.retiredOn,
+      id: bikeUnits.id, categoryId: bikeCategories.id, categoryName: bikeCategories.name,
+      modelId: bikeUnits.bikeModelId, modelName: bikeModelTranslations.name,
+      sizeId: bikeSizes.id, sizeName: bikeSizes.name, versionId: bikeVersions.id, versionName: bikeVersions.name,
+      retiredOn: bikeUnits.retiredOn,
     })
       .from(bikeUnits)
+      .innerJoin(bikeModels, eq(bikeModels.id, bikeUnits.bikeModelId))
+      .innerJoin(bikeCategories, eq(bikeCategories.id, bikeModels.categoryId))
       .leftJoin(bikeModelTranslations, and(
         eq(bikeModelTranslations.bikeModelId, bikeUnits.bikeModelId), eq(bikeModelTranslations.locale, 'it'),
       ))
       .innerJoin(bikeSizes, eq(bikeSizes.id, bikeUnits.bikeSizeId))
       .innerJoin(bikeVersions, eq(bikeVersions.id, bikeUnits.bikeVersionId))
       .orderBy(
-        asc(bikeModelTranslations.name), asc(bikeSizes.displayOrder), asc(bikeVersions.displayOrder),
+        asc(bikeCategories.displayOrder), asc(bikeCategories.name), asc(bikeCategories.id),
+        asc(bikeModelTranslations.name), asc(bikeUnits.bikeModelId),
+        asc(bikeSizes.displayOrder), asc(bikeVersions.displayOrder),
         asc(bikeUnits.createdAt), asc(bikeUnits.id),
       ),
     db.select({ reservation: bikeReservations, customer: customers })
@@ -419,8 +433,13 @@ export async function getGrid(month: IsoMonth): Promise<GridUnit[]> {
     .map((unit) => ({
       id: unit.id,
       shortId: unit.id.slice(0, 8),
+      categoryId: unit.categoryId,
+      categoryName: unit.categoryName,
+      modelId: unit.modelId,
       modelName: unit.modelName ?? 'Untitled',
+      sizeId: unit.sizeId,
       sizeName: unit.sizeName,
+      versionId: unit.versionId,
       versionName: unit.versionName,
       retiredOn: unit.retiredOn,
       reservations: byUnit.get(unit.id) ?? [],

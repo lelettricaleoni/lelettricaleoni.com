@@ -31,6 +31,12 @@ describe('createRentalSchema', () => {
     expect(createRentalSchema.safeParse({ ...rental(), amount: '45' }).success).toBe(false)
   })
 
+  it('can name one bike to book, which must be a uuid', () => {
+    expect(createRentalSchema.parse({ ...rental(), bikeUnitId: id() }).bikeUnitId).toBeDefined()
+    expect(createRentalSchema.parse(rental()).bikeUnitId).toBeUndefined()
+    expect(createRentalSchema.safeParse({ ...rental(), bikeUnitId: 'aaaaaaaa' }).success).toBe(false)
+  })
+
   it('rejects impossible days and ids that are not uuids', () => {
     expect(createRentalSchema.safeParse({ ...rental(), firstDay: '2026-02-30' }).success).toBe(false)
     expect(createRentalSchema.safeParse({ ...rental(), lastDay: '10/07/2026' }).success).toBe(false)

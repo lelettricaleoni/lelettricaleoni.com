@@ -82,6 +82,33 @@ describe('createCounterRental', () => {
     await expect(createCounterRental(rental(fx, { amountCents: -1 }))).rejects.toThrow()
   })
 
+  describe('for one specific bike', () => {
+    it('books that bike, not just any free one of the same kind', async () => {
+      const target = fx.unitIds[2]
+      const result = created(await createCounterRental(rental(fx, { bikeUnitId: target })))
+      expect(result.bikeUnitId).toBe(target)
+    })
+
+    it('says no_bike_free when that bike is taken, even though the others are free', async () => {
+      const target = fx.unitIds[1]
+      created(await createCounterRental(rental(fx, { bikeUnitId: target })))
+      const second = await createCounterRental(rental(fx, { bikeUnitId: target }))
+      expect(second.status).toBe('no_bike_free')
+      // ...while the same dates for "any bike of the kind" still find one.
+      expect((await createCounterRental(rental(fx))).status).toBe('created')
+    })
+
+    it('does not book a bike that is not of the model, size and version asked for', async () => {
+      const other = await createFixture(1)
+      try {
+        const result = await createCounterRental(rental(fx, { bikeUnitId: other.unitIds[0] }))
+        expect(result.status).toBe('no_bike_free')
+      } finally {
+        await other.cleanup()
+      }
+    })
+  })
+
   it('does not accept a customer that does not exist', async () => {
     await expect(createCounterRental(rental(fx, { customerId: crypto.randomUUID() }))).rejects.toThrow()
   })
@@ -305,6 +332,13 @@ describe('getGrid', () => {
     expect(rentalBlock.amountCents).toBe(4500)
     const maintenanceBlock = grid.flatMap((u) => u.reservations).find((r) => r.kind === 'maintenance')!
     expect(maintenanceBlock).toMatchObject({ label: 'chain', customer: null, amountCents: null })
+  })
+
+  it('tells which model, size, version and category each bike is, for the calendar to group and to book it', async () => {
+    const unit = await mine('2031-07')
+    expect(unit).toMatchObject({ modelId: fx.modelId, sizeId: fx.sizeId, versionId: fx.versionId })
+    expect(unit.categoryId).toEqual(expect.any(String))
+    expect(unit.categoryName).toMatch(/^db-test-/)
   })
 
   it('labels the bike with its short id', async () => {
