@@ -1,6 +1,7 @@
 # Integrazioni nel pannello e Google Calendar — disegno
 
-> Stato: **bozza da rivedere** (Kevin, 2026-10-05). Nessun codice scritto. Prima fetta del lavoro sulle
+> Stato: **bozza da rivedere** (Kevin, 2026-10-05; aggiornata lo stesso giorno: tutto in inglese e guida sempre nel
+> pannello). Nessun codice scritto. Prima fetta del lavoro sulle
 > integrazioni; la fetta 2 delle prenotazioni (account cliente, login con Google) ci passa dopo.
 
 ## Obiettivo
@@ -38,7 +39,7 @@ Intestazione con icona, nome e stato, e il pulsante **Enable** / **Disable**. So
 |---|---|
 | **Overview** | Cosa fa, quali dati partono verso il servizio esterno, cosa non fa. Il pulsante **Enable** la avvia. |
 | **Setup guide** | Il tutorial passo passo (sotto), con i link giusti e «cosa dovresti vedere» a ogni passo. |
-| **Settings** | Il modulo di configurazione: credenziali, impostazioni, **Test connection**. |
+| **Settings** | Il modulo di configurazione (credenziali, impostazioni, **Test connection**) **con la guida accanto**: vedi sotto. |
 | **Activity** | Ultima sincronizzazione, ultimo errore, **Sync now**. |
 
 **Cosa vuol dire «abilitare».** *Enable* porta alla guida e al modulo delle credenziali; l'integrazione risulta
@@ -60,6 +61,18 @@ Tabella `integrations` (una riga per integrazione, RLS esplicito, nessuna policy
 | `last_error` text | l'ultimo errore, **mai** con pezzi del segreto |
 | `updated_at`, `updated_by` | chi ha toccato per ultimo |
 
+## Lingua e posizione della guida (deciso da Kevin, 2026-10-05)
+
+- **Tutto in inglese**, guida compresa: è il pannello, e il pannello non si traduce mai (regola del progetto).
+- **La guida vive nel pannello**, mai in un documento o in una pagina esterna, e **non sta solo in una scheda a parte**:
+  nella scheda *Settings* è **accanto al modulo** (a sinistra i passi, a destra i campi; su telefono sopra i campi, in
+  fisarmonica). Così si segue il passo e si compila il campo che gli corrisponde senza cambiare pagina.
+- Ogni passo della guida ha un titolo, cosa fare, il link esatto in Google, e *«what you should see»*. I passi che
+  corrispondono a un campo del modulo (carica la chiave, incolla l'ID del calendario) lo evidenziano; il passo si segna
+  fatto da solo quando il campo è compilato e valido. L'ultimo passo è *Test connection*.
+- Anche il modulo è in inglese: etichette, aiuti sotto ai campi, errori («The key file is not a service account key»,
+  «The calendar is not shared with this service account», …).
+
 ## Cifratura
 
 - **Libreria `jose`** (JWE, `alg: dir`, `enc: A256GCM`): cifratura autenticata fatta da una libreria collaudata, niente
@@ -76,7 +89,7 @@ Tabella `integrations` (una riga per integrazione, RLS esplicito, nessuna policy
 
 ## Google Calendar
 
-**Guida passo passo** (scheda *Setup guide*, nella lingua scelta, vedi domande):
+**Guida passo passo** (in inglese, nel pannello: scheda *Setup guide* e accanto al modulo in *Settings*):
 1. Crea un progetto su Google Cloud (o usa uno esistente).
 2. Abilita la *Google Calendar API*.
 3. Crea un **account di servizio** (nessun ruolo necessario).
@@ -128,10 +141,11 @@ bici · motivo`), descrizione con il telefono se l'opzione è accesa. **Mai** im
 **Prove:** cifratura e validazione con test unitari; tabella e sincronizzazione con test sul database; Google dietro
 un'interfaccia sostituibile nei test; il collaudo con le tue credenziali vere a fine PR 2 e 3.
 
-## Domande aperte (con la mia proposta)
+## Decisioni prese
 
-1. **Lingua della guida e del pannello.** La regola del progetto è pannello in inglese. Proposta: guida in **italiano**
-   (è un manuale per te, non l'interfaccia), resto del pannello in inglese.
-2. **Chi vede le integrazioni.** Proposta: tutti gli admin.
-3. **Catalogo.** Proposta: solo le integrazioni esistenti, senza schede «Coming soon».
-4. **Manutenzioni** nel calendario Google: proposta sì, con opzione per spegnerle.
+1. **Lingua:** tutto in inglese, guida e modulo compresi; la guida sempre nel pannello, accanto al modulo (Kevin).
+2. **Chi vede le integrazioni:** tutti gli admin.
+3. **Catalogo:** solo le integrazioni esistenti, senza schede «Coming soon».
+4. **Manutenzioni** nel calendario Google: sì, con l'opzione per spegnerle.
+
+Le ultime tre sono le mie proposte, non contestate da Kevin: da confermare con la revisione del documento.
