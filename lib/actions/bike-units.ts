@@ -1,7 +1,7 @@
 'use server'
-import { eq, and, desc } from 'drizzle-orm'
+import { eq, and, asc, desc } from 'drizzle-orm'
 import {
-  db, bikeUnits, bikeModels, bikeModelTranslations, bikeModelSizes, bikeModelVersions,
+  db, bikeCategories, bikeUnits, bikeModels, bikeModelTranslations, bikeModelSizes, bikeModelVersions,
   bikeSizes, bikeVersions,
 } from '@/lib/db'
 import { getAdminUser } from '@/lib/supabase/server'
@@ -19,18 +19,27 @@ export async function getBikeUnitsForAdmin() {
   return db
     .select({
       unit: bikeUnits,
+      categoryId: bikeCategories.id,
+      categoryName: bikeCategories.name,
+      modelId: bikeUnits.bikeModelId,
       modelName: bikeModelTranslations.name,
       sizeName: bikeSizes.name,
       versionName: bikeVersions.name,
     })
     .from(bikeUnits)
+    .innerJoin(bikeModels, eq(bikeModels.id, bikeUnits.bikeModelId))
+    .innerJoin(bikeCategories, eq(bikeCategories.id, bikeModels.categoryId))
     .leftJoin(
       bikeModelTranslations,
       and(eq(bikeModelTranslations.bikeModelId, bikeUnits.bikeModelId), eq(bikeModelTranslations.locale, 'it'))
     )
     .innerJoin(bikeSizes, eq(bikeSizes.id, bikeUnits.bikeSizeId))
     .innerJoin(bikeVersions, eq(bikeVersions.id, bikeUnits.bikeVersionId))
-    .orderBy(desc(bikeUnits.createdAt))
+    // Category, then model: the list groups neighbours (lib/bike-groups.ts); within a model the newest bike first.
+    .orderBy(
+      asc(bikeCategories.displayOrder), asc(bikeCategories.name), asc(bikeCategories.id),
+      asc(bikeModelTranslations.name), asc(bikeUnits.bikeModelId), desc(bikeUnits.createdAt),
+    )
 }
 
 /**

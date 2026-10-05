@@ -15,7 +15,9 @@ import {
 } from '@/lib/actions/reservations'
 import { occupiedDayRanges } from '@/lib/booking-grid'
 import { dayToDate, inclusiveEnd, isoDay, type DayRange } from '@/lib/dates'
+import { formatEuros } from '@/lib/money'
 import { cancelFeedback, maintenanceUpdateFeedback, moveFeedback, type Feedback } from '@/lib/reservation-feedback'
+import type { CustomerSummary } from '@/lib/customers'
 import type { GridReservation, GridUnit, MoveCandidate } from '@/lib/reservations'
 
 type Mode = 'view' | 'move' | 'edit'
@@ -69,6 +71,11 @@ function Body({ unit, reservation, onClose }: { unit: GridUnit; reservation: Gri
         </DialogDescription>
       </DialogHeader>
 
+      {reservation.customer && <CustomerDetails customer={reservation.customer} />}
+      {reservation.amountCents !== null && (
+        <p className="text-sm">Amount: <span className="font-medium">{formatEuros(reservation.amountCents)}</span></p>
+      )}
+
       {mode === 'view' && (
         <div className="flex flex-wrap gap-2">
           {isMaintenance
@@ -99,6 +106,18 @@ function Body({ unit, reservation, onClose }: { unit: GridUnit; reservation: Gri
         </AlertDialogContent>
       </AlertDialog>
     </>
+  )
+}
+
+/** The person who rents: a tap on the phone or the email opens the call or the mail. */
+function CustomerDetails({ customer }: { customer: CustomerSummary }) {
+  if (!customer.phone && !customer.email && !customer.notes) return null
+  return (
+    <div className="space-y-1 rounded-md border p-3 text-sm">
+      {customer.phone && <p><a className="text-[#366DA1] underline" href={`tel:${customer.phone}`}>{customer.phone}</a></p>}
+      {customer.email && <p><a className="text-[#366DA1] underline" href={`mailto:${customer.email}`}>{customer.email}</a></p>}
+      {customer.notes && <p className="whitespace-pre-line text-muted-foreground">{customer.notes}</p>}
+    </div>
   )
 }
 

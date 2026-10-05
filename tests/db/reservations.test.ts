@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { and, eq } from 'drizzle-orm'
-import { db, bikeReservations, bikeUnits } from '@/lib/db'
+import { and, eq, inArray } from 'drizzle-orm'
+import { db, bikeReservations, bikeUnits, customers } from '@/lib/db'
 import {
   cancelReservation, createCounterRental, deleteBikeUnitUnlessReserved, getGrid, getMaintenanceByUnit,
   getMoveCandidates, getOccupiedRanges, moveReservation, planMaintenance, updateMaintenance,
@@ -13,7 +13,7 @@ const RANGE = { startsOn: '2031-07-10', endsOn: '2031-07-13' }
 function rental(fx: Fixture, overrides: Partial<CreateRentalInput> = {}): CreateRentalInput {
   return {
     requestKey: crypto.randomUUID(), bikeModelId: fx.modelId, bikeSizeId: fx.sizeId,
-    bikeVersionId: fx.versionId, ...RANGE, label: 'Rossi', confirmDuplicate: false, ...overrides,
+    bikeVersionId: fx.versionId, ...RANGE, customerId: fx.customerId, amountCents: 4500, confirmDuplicate: true, ...overrides,
   }
 }
 
@@ -24,8 +24,13 @@ function created(result: Awaited<ReturnType<typeof createCounterRental>>) {
 
 describe('createCounterRental', () => {
   let fx: Fixture
+  const extraCustomers: string[] = []
   beforeEach(async () => { fx = await createFixture(3) })
-  afterEach(async () => { await fx.cleanup() })
+  afterEach(async () => {
+    await fx.cleanup()
+    if (extraCustomers.length) await db.delete(customers).where(inArray(customers.id, extraCustomers))
+    extraCustomers.length = 0
+  })
 
   it('assigns a free bike of the requested model, size and version', async () => {
     const result = created(await createCounterRental(rental(fx)))
@@ -43,33 +48,74 @@ describe('createCounterRental', () => {
     expect(rows).toHaveLength(1)
   })
 
-  it('warns about a possible duplicate: same name, model, size and overlapping days', async () => {
-    created(await createCounterRental(rental(fx, { label: 'Rossi' })))
-    const result = await createCounterRental(rental(fx, { label: '  rossi ', startsOn: '2031-07-11', endsOn: '2031-07-14' }))
-    expect(result.status).toBe('possible_duplicate')
-  })
+  const duplicate = (overrides: Partial<CreateRentalInput> = {}) => rental(fx, { confirmDuplicate: false, ...overrides })
 
-  it('compares names without caring for case or accents on the capital', async () => {
-    created(await createCounterRental(rental(fx, { label: 'Élodie' })))
-    const result = await createCounterRental(rental(fx, { label: 'élodie ' }))
+  it('warns about a possible duplicate: same customer, model, size and overlapping days', async () => {
+    created(await createCounterRental(duplicate()))
+    const result = await createCounterRental(duplicate({ startsOn: '2031-07-11', endsOn: '2031-07-14' }))
     expect(result.status).toBe('possible_duplicate')
+    if (result.status === 'possible_duplicate') expect(result.existing.label).toMatch(/^db-test /)
   })
 
   it('creates the second rental when the duplicate is confirmed, on another bike', async () => {
-    const first = created(await createCounterRental(rental(fx, { label: 'Rossi' })))
-    const second = created(await createCounterRental(rental(fx, { label: 'Rossi', confirmDuplicate: true })))
+    const first = created(await createCounterRental(duplicate()))
+    const second = created(await createCounterRental(duplicate({ confirmDuplicate: true })))
     expect(second.bikeUnitId).not.toBe(first.bikeUnitId)
   })
 
-  it('does not warn for a different name, or for the same name on other days', async () => {
-    created(await createCounterRental(rental(fx, { label: 'Rossi' })))
-    expect((await createCounterRental(rental(fx, { label: 'Bianchi' }))).status).toBe('created')
-    expect((await createCounterRental(rental(fx, { label: 'Rossi', startsOn: '2031-08-01', endsOn: '2031-08-03' }))).status).toBe('created')
+  it('does not warn for another customer, or for the same customer on other days', async () => {
+    created(await createCounterRental(duplicate()))
+    const [other] = await db.insert(customers).values({ firstName: 'db-test', lastName: `${fx.versionId}-other` }).returning()
+    extraCustomers.push(other.id)
+    expect((await createCounterRental(duplicate({ customerId: other.id }))).status).toBe('created')
+    expect((await createCounterRental(duplicate({ startsOn: '2031-08-01', endsOn: '2031-08-03' }))).status).toBe('created')
+  })
+
+  it('stores the amount, in cents, and shows it on the calendar', async () => {
+    const { reservationId } = created(await createCounterRental(rental(fx, { amountCents: 4550 })))
+    const [row] = await db.select().from(bikeReservations).where(eq(bikeReservations.id, reservationId))
+    expect(row.amountCents).toBe(4550)
+  })
+
+  it('accepts a free rental, refuses a negative amount', async () => {
+    created(await createCounterRental(rental(fx, { amountCents: 0 })))
+    await expect(createCounterRental(rental(fx, { amountCents: -1 }))).rejects.toThrow()
+  })
+
+  describe('for one specific bike', () => {
+    it('books that bike, not just any free one of the same kind', async () => {
+      const target = fx.unitIds[2]
+      const result = created(await createCounterRental(rental(fx, { bikeUnitId: target })))
+      expect(result.bikeUnitId).toBe(target)
+    })
+
+    it('says no_bike_free when that bike is taken, even though the others are free', async () => {
+      const target = fx.unitIds[1]
+      created(await createCounterRental(rental(fx, { bikeUnitId: target })))
+      const second = await createCounterRental(rental(fx, { bikeUnitId: target }))
+      expect(second.status).toBe('no_bike_free')
+      // ...while the same dates for "any bike of the kind" still find one.
+      expect((await createCounterRental(rental(fx))).status).toBe('created')
+    })
+
+    it('does not book a bike that is not of the model, size and version asked for', async () => {
+      const other = await createFixture(1)
+      try {
+        const result = await createCounterRental(rental(fx, { bikeUnitId: other.unitIds[0] }))
+        expect(result.status).toBe('no_bike_free')
+      } finally {
+        await other.cleanup()
+      }
+    })
+  })
+
+  it('does not accept a customer that does not exist', async () => {
+    await expect(createCounterRental(rental(fx, { customerId: crypto.randomUUID() }))).rejects.toThrow()
   })
 
   it('answers no_bike_free when every bike is taken', async () => {
-    for (const name of ['A', 'B', 'C']) created(await createCounterRental(rental(fx, { label: name })))
-    expect((await createCounterRental(rental(fx, { label: 'D' }))).status).toBe('no_bike_free')
+    for (let i = 0; i < 3; i++) created(await createCounterRental(rental(fx)))
+    expect((await createCounterRental(rental(fx))).status).toBe('no_bike_free')
   })
 
   it('answers no_bike_free for a model with no bikes at all', async () => {
@@ -85,16 +131,16 @@ describe('createCounterRental', () => {
     for (const unitId of fx.unitIds.slice(0, 2)) {
       await planMaintenance({ requestKey: crypto.randomUUID(), bikeUnitId: unitId, ...RANGE, label: null })
     }
-    const result = created(await createCounterRental(rental(fx, { label: 'A' })))
+    const result = created(await createCounterRental(rental(fx)))
     expect(result.bikeUnitId).toBe(fx.unitIds[2])
-    expect((await createCounterRental(rental(fx, { label: 'B' }))).status).toBe('no_bike_free')
+    expect((await createCounterRental(rental(fx))).status).toBe('no_bike_free')
   })
 
   it('lets the same bike be rented the day after a rental ends', async () => {
     const single = await createFixture(1)
     try {
-      const first = created(await createCounterRental(rental(single, { label: 'A' })))
-      const second = created(await createCounterRental(rental(single, { label: 'B', startsOn: '2031-07-13', endsOn: '2031-07-15' })))
+      const first = created(await createCounterRental(rental(single)))
+      const second = created(await createCounterRental(rental(single, { startsOn: '2031-07-13', endsOn: '2031-07-15' })))
       expect(second.bikeUnitId).toBe(first.bikeUnitId)
     } finally {
       await single.cleanup()
@@ -103,7 +149,7 @@ describe('createCounterRental', () => {
 
   it('gives each of many simultaneous requests its own bike, and no more bikes than exist', async () => {
     const results = await Promise.all(
-      Array.from({ length: 20 }, (_, i) => createCounterRental(rental(fx, { label: `cliente-${i}` }))),
+      Array.from({ length: 20 }, (_, i) => createCounterRental(rental(fx))),
     )
     const winners = results.filter((r) => r.status === 'created')
     expect(winners).toHaveLength(3)
@@ -127,9 +173,9 @@ describe('cancelReservation and moveReservation', () => {
   it('frees the days when cancelled', async () => {
     const single = await createFixture(1)
     try {
-      const { reservationId } = created(await createCounterRental(rental(single, { label: 'A' })))
+      const { reservationId } = created(await createCounterRental(rental(single)))
       await cancelReservation(reservationId)
-      expect((await createCounterRental(rental(single, { label: 'B' }))).status).toBe('created')
+      expect((await createCounterRental(rental(single))).status).toBe('created')
     } finally {
       await single.cleanup()
     }
@@ -144,8 +190,8 @@ describe('cancelReservation and moveReservation', () => {
   })
 
   it('refuses to move onto a bike that is taken in those days', async () => {
-    const a = created(await createCounterRental(rental(fx, { label: 'A' })))
-    const b = created(await createCounterRental(rental(fx, { label: 'B' })))
+    const a = created(await createCounterRental(rental(fx)))
+    const b = created(await createCounterRental(rental(fx)))
     expect(await moveReservation(a.reservationId, b.bikeUnitId)).toEqual({ status: 'conflict' })
   })
 
@@ -195,12 +241,12 @@ describe('maintenance', () => {
   it('refuses days that are already rented, and lists the rentals in the way', async () => {
     const single = await createFixture(1)
     try {
-      created(await createCounterRental(rental(single, { label: 'Rossi' })))
+      created(await createCounterRental(rental(single)))
       const result = await plan(single.unitIds[0], '2031-07-11', '2031-07-20')
       expect(result.status).toBe('conflict')
       if (result.status === 'conflict') {
         expect(result.conflicts).toHaveLength(1)
-        expect(result.conflicts[0]).toMatchObject({ label: 'Rossi', startsOn: '2031-07-10', endsOn: '2031-07-13' })
+        expect(result.conflicts[0]).toMatchObject({ label: expect.stringMatching(/^db-test /), startsOn: '2031-07-10', endsOn: '2031-07-13' })
       }
     } finally {
       await single.cleanup()
@@ -214,7 +260,7 @@ describe('maintenance', () => {
   it('updates the dates, refuses to grow into a rental, and can be cancelled', async () => {
     const single = await createFixture(1)
     try {
-      created(await createCounterRental(rental(single, { label: 'Rossi', startsOn: '2031-07-20', endsOn: '2031-07-23' })))
+      created(await createCounterRental(rental(single, { startsOn: '2031-07-20', endsOn: '2031-07-23' })))
       const planned = await plan(single.unitIds[0], '2031-07-10', '2031-07-13')
       if (planned.status !== 'planned') throw new Error('expected planned')
       expect(await updateMaintenance(planned.reservationId, '2031-07-10', '2031-07-15')).toEqual({ status: 'updated' })
@@ -229,7 +275,7 @@ describe('maintenance', () => {
   it('reports occupied ranges of a bike, leaving out the one being edited', async () => {
     const single = await createFixture(1)
     try {
-      created(await createCounterRental(rental(single, { label: 'A' })))
+      created(await createCounterRental(rental(single)))
       const planned = await plan(single.unitIds[0], '2031-08-01', '2031-08-05')
       if (planned.status !== 'planned') throw new Error('expected planned')
       expect(await getOccupiedRanges(single.unitIds[0])).toHaveLength(2)
@@ -265,8 +311,8 @@ describe('getGrid', () => {
   })
 
   it('does not show a reservation that ends the day the month starts, or starts the day it ends', async () => {
-    created(await createCounterRental(rental(fx, { label: 'A', startsOn: '2031-06-28', endsOn: '2031-07-01' })))
-    created(await createCounterRental(rental(fx, { label: 'B', startsOn: '2031-08-01', endsOn: '2031-08-03' })))
+    created(await createCounterRental(rental(fx, { startsOn: '2031-06-28', endsOn: '2031-07-01' })))
+    created(await createCounterRental(rental(fx, { startsOn: '2031-08-01', endsOn: '2031-08-03' })))
     expect((await mine('2031-07')).reservations).toHaveLength(0)
   })
 
@@ -274,6 +320,25 @@ describe('getGrid', () => {
     const { reservationId } = created(await createCounterRental(rental(fx)))
     await cancelReservation(reservationId)
     expect((await mine('2031-07')).reservations).toHaveLength(0)
+  })
+
+  it('captions a rental with the customer name and carries the customer, while a maintenance has the reason', async () => {
+    created(await createCounterRental(rental(fx)))
+    await planMaintenance({ requestKey: crypto.randomUUID(), bikeUnitId: fx.unitIds[0], startsOn: '2031-07-20', endsOn: '2031-07-22', label: 'chain' })
+    const grid = await getGrid('2031-07')
+    const rentalBlock = grid.flatMap((u) => u.reservations).find((r) => r.kind === 'counter_rental')!
+    expect(rentalBlock.label).toMatch(/^db-test /)
+    expect(rentalBlock.customer).toMatchObject({ id: fx.customerId, firstName: 'db-test' })
+    expect(rentalBlock.amountCents).toBe(4500)
+    const maintenanceBlock = grid.flatMap((u) => u.reservations).find((r) => r.kind === 'maintenance')!
+    expect(maintenanceBlock).toMatchObject({ label: 'chain', customer: null, amountCents: null })
+  })
+
+  it('tells which model, size, version and category each bike is, for the calendar to group and to book it', async () => {
+    const unit = await mine('2031-07')
+    expect(unit).toMatchObject({ modelId: fx.modelId, sizeId: fx.sizeId, versionId: fx.versionId })
+    expect(unit.categoryId).toEqual(expect.any(String))
+    expect(unit.categoryName).toMatch(/^db-test-/)
   })
 
   it('labels the bike with its short id', async () => {

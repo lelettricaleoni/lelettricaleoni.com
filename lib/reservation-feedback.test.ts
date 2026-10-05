@@ -20,6 +20,7 @@ describe('rentalFeedback', () => {
 
   it('explains why nothing was created', () => {
     expect(rentalFeedback({ status: 'no_bike_free' })).toEqual({ tone: 'error', message: 'No bike of this kind is free on these days' })
+    expect(rentalFeedback({ status: 'no_bike_free' }, { specificBike: true })).toEqual({ tone: 'error', message: 'This bike is not free on these days' })
     expect(rentalFeedback({ status: 'try_again' })).toEqual({ tone: 'error', message: 'Too many requests at once. Try again' })
     expect(rentalFeedback({ status: 'invalid', message: 'Name is required' })).toEqual({ tone: 'error', message: 'Name is required' })
   })

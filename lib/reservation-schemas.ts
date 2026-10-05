@@ -14,7 +14,11 @@ export const createRentalSchema = z.object({
   bikeVersionId: id,
   firstDay: day,
   lastDay: day,
-  label: z.string().trim().min(1, 'Name is required').max(120, 'Name is too long'),
+  customerId: id,
+  // Set when the rental is booked from a bike's own row: that bike and no other.
+  bikeUnitId: id.optional(),
+  // In euros, as typed; the action turns it into cents. Zero is a free rental.
+  amount: z.number().min(0, 'The amount cannot be negative').max(100000, 'The amount is too high'),
   confirmDuplicate: z.boolean().default(false),
 })
 
@@ -32,3 +36,5 @@ export const moveReservationSchema = z.object({ id, bikeUnitId: id })
 export const occupiedRangesSchema = z.object({ bikeUnitId: id, excludeId: id.optional() })
 export const retireBikeSchema = z.object({ id, retiredOn: day })
 export const bikeUnitIdSchema = z.object({ id })
+
+export const searchCustomersSchema = z.object({ query: z.string().trim().max(100) })
