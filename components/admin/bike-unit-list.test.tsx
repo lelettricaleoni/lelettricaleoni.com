@@ -8,8 +8,9 @@ vi.mock('@/lib/actions/bike-units', () => ({ deleteBikeUnitAction: vi.fn() }))
 import { BikeUnitList } from './bike-unit-list'
 import type { BikeUnit } from '@/lib/db'
 
-const row = (id: string, modelName: string, retiredOn: string | null = null) => ({
-  unit: { id, retiredOn } as BikeUnit, modelName, sizeName: 'M', versionName: 'Alu',
+const row = (id: string, modelName: string, retiredOn: string | null = null, categoryName = 'E-bike') => ({
+  unit: { id, retiredOn } as BikeUnit, categoryId: `cat-${categoryName}`, categoryName,
+  modelId: `model-${modelName}`, modelName, sizeName: 'M', versionName: 'Alu',
 })
 
 function render(
@@ -38,6 +39,18 @@ describe('BikeUnitList', () => {
     const html = render({ 'bbbbbbbb-0002': { startsOn: '2031-07-10', endsOn: '2031-07-13', active: true } })
     expect(html.split('Maintenance until')).toHaveLength(2)
     expect(html.indexOf('Flyer')).toBeLessThan(html.indexOf('Maintenance until'))
+  })
+
+  it('groups the bikes under their category and model, each heading once', () => {
+    const html = render({}, [
+      row('aaaaaaaa-0001', 'Mondraker'), row('aaaaaaaa-0002', 'Mondraker'),
+      row('bbbbbbbb-0003', 'Flyer'), row('cccccccc-0004', 'Classica', null, 'City bike'),
+    ])
+    expect(html.split('>E-bike<')).toHaveLength(2)
+    expect(html.split('>City bike<')).toHaveLength(2)
+    expect(html.split('>Mondraker<')).toHaveLength(2)   // two bikes, one heading
+    expect(html.indexOf('>E-bike<')).toBeLessThan(html.indexOf('>Mondraker<'))
+    expect(html.indexOf('>Flyer<')).toBeLessThan(html.indexOf('>City bike<'))
   })
 
   it('offers to retire a bike in service, and says when a retired one stops being offered', () => {

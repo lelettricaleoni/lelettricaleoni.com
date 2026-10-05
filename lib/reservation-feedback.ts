@@ -18,14 +18,14 @@ export type Feedback =
 
 const STALE = 'This was already changed or removed'
 
-export function rentalFeedback(result: CreateRentalResult | ActionInvalid): Feedback {
+export function rentalFeedback(result: CreateRentalResult | ActionInvalid, { specificBike = false } = {}): Feedback {
   switch (result.status) {
     case 'created':
       return { tone: 'success', message: result.replayed ? 'This rental was already saved' : 'Rental added' }
     case 'possible_duplicate':
       return { tone: 'confirm-duplicate', existing: result.existing }
     case 'no_bike_free':
-      return { tone: 'error', message: 'No bike of this kind is free on these days' }
+      return { tone: 'error', message: specificBike ? 'This bike is not free on these days' : 'No bike of this kind is free on these days' }
     case 'try_again':
       return { tone: 'error', message: 'Too many requests at once. Try again' }
     case 'invalid':

@@ -2,10 +2,11 @@
 import { Fragment, useEffect, useMemo, useState, useTransition } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { ChevronLeft, ChevronRight, Plus, Wrench } from 'lucide-react'
+import { CalendarPlus, ChevronLeft, ChevronRight, Plus, Wrench } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { cn } from '@/lib/utils'
+import { groupByCategoryAndModel } from '@/lib/bike-groups'
 import { layoutBlocks } from '@/lib/booking-grid'
 import { coalesce } from '@/lib/coalesce'
 import {
@@ -33,7 +34,8 @@ const LABEL_COLUMN = `minmax(${LABEL_MIN}, 14rem)`
 export function BookingView({ month, today, units, models }: BookingViewProps) {
   const router = useRouter()
   const [, startTransition] = useTransition()
-  const [rentalOpen, setRentalOpen] = useState(false)
+  // Open with no bike (any free one of the kind chosen) or for one bike, from its own row.
+  const [rental, setRental] = useState<{ unit: GridUnit | null } | null>(null)
   const [selected, setSelected] = useState<{ unit: GridUnit; reservation: GridReservation } | null>(null)
   const [maintenanceUnit, setMaintenanceUnit] = useState<GridUnit | null>(null)
   const days = monthDays(month)
@@ -56,7 +58,7 @@ export function BookingView({ month, today, units, models }: BookingViewProps) {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-bold text-[#1e3a5f]">Bookings</h1>
         <div className="flex items-center gap-2">
-          <Button onClick={() => setRentalOpen(true)}><Plus size={16} className="mr-1" />New rental</Button>
+          <Button onClick={() => setRental({ unit: null })}><Plus size={16} className="mr-1" />New rental</Button>
           <Button asChild variant="outline" size="icon" aria-label="Previous month">
             <Link href={`/manage/bookings?month=${shiftMonth(month, -1)}`}><ChevronLeft size={16} /></Link>
           </Button>
@@ -90,29 +92,50 @@ export function BookingView({ month, today, units, models }: BookingViewProps) {
               </div>
             ))}
 
-            {units.map((unit, index) => (
-              <Fragment key={unit.id}>
-                {(index === 0 || units[index - 1].modelName !== unit.modelName) && (
-                  <div className="col-span-full border-b bg-muted/40 py-1 text-xs font-semibold text-[#1e3a5f]">
-                    {/* Sticky: the row labels only say size and version, the model must stay in view while scrolling. */}
-                    <span className="sticky left-0 inline-block px-2">{unit.modelName}</span>
-                  </div>
-                )}
-                <UnitRow
-                  unit={unit} month={month} days={days} today={today}
-                  onSelect={(reservation) => setSelected({ unit, reservation })}
-                  onPlanMaintenance={() => setMaintenanceUnit(unit)}
-                />
+            {groupByCategoryAndModel(units).map((category) => (
+              <Fragment key={category.categoryId}>
+                <div className="col-span-full border-b bg-[#1e3a5f]/10 py-1 text-xs font-bold uppercase tracking-wide text-[#1e3a5f]">
+                  {/* Sticky, like the model heading below: the rows only say size and version. */}
+                  <span className="sticky left-0 inline-block px-2">{category.categoryName}</span>
+                </div>
+                {category.models.map((model) => (
+                  <Fragment key={model.modelId}>
+                    <div className="col-span-full border-b bg-muted/40 py-1 text-xs font-semibold text-[#1e3a5f]">
+                      <span className="sticky left-0 inline-block px-2">{model.modelName}</span>
+                    </div>
+                    {model.items.map((unit) => (
+                      <UnitRow
+                        key={unit.id}
+                        unit={unit} month={month} days={days} today={today}
+                        onSelect={(reservation) => setSelected({ unit, reservation })}
+                        onPlanMaintenance={() => setMaintenanceUnit(unit)}
+                        onAddRental={() => setRental({ unit })}
+                      />
+                    ))}
+                  </Fragment>
+                ))}
               </Fragment>
             ))}
           </div>
         </div>
       )}
 
-      <Dialog open={rentalOpen} onOpenChange={setRentalOpen}>
+      <Dialog open={rental !== null} onOpenChange={(open) => { if (!open) setRental(null) }}>
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
           <DialogHeader><DialogTitle>New rental</DialogTitle></DialogHeader>
-          <RentalForm models={models} onCreated={() => { setRentalOpen(false); reload() }} />
+          {rental && (
+            <RentalForm
+              // A new form for each bike, so nothing typed for one carries over to the next.
+              key={rental.unit?.id ?? 'any'}
+              models={models}
+              bike={rental.unit && {
+                unitId: rental.unit.id, modelId: rental.unit.modelId, sizeId: rental.unit.sizeId,
+                versionId: rental.unit.versionId,
+                label: `${rental.unit.modelName} · ${rental.unit.sizeName} · ${rental.unit.versionName} · ${rental.unit.shortId}`,
+              }}
+              onCreated={() => { setRental(null); reload() }}
+            />
+          )}
         </DialogContent>
       </Dialog>
 
@@ -148,9 +171,10 @@ interface UnitRowProps {
   today: IsoDate
   onSelect: (reservation: GridReservation) => void
   onPlanMaintenance: () => void
+  onAddRental: () => void
 }
 
-function UnitRow({ unit, month, days, today, onSelect, onPlanMaintenance }: UnitRowProps) {
+function UnitRow({ unit, month, days, today, onSelect, onPlanMaintenance, onAddRental }: UnitRowProps) {
   const blocks = layoutBlocks(month, unit.reservations)
   const byId = new Map(unit.reservations.map((reservation) => [reservation.id, reservation]))
 
@@ -162,9 +186,17 @@ function UnitRow({ unit, month, days, today, onSelect, onPlanMaintenance }: Unit
           <span className="text-xs">{unit.sizeName} · {unit.versionName}</span>
           {unit.retiredOn && <span className="text-[10px] font-medium text-amber-700">Retired from {unit.retiredOn}</span>}
         </div>
-        <Button variant="ghost" size="icon" className="size-7" aria-label="Plan maintenance" onClick={onPlanMaintenance}>
-          <Wrench size={14} />
-        </Button>
+        <div className="flex">
+          {/* A bike already retired cannot be rented any more: only one retiring later still can. */}
+          {!(unit.retiredOn && unit.retiredOn <= today) && (
+            <Button variant="ghost" size="icon" className="size-7" aria-label="Add rental" title="Add rental" onClick={onAddRental}>
+              <CalendarPlus size={14} />
+            </Button>
+          )}
+          <Button variant="ghost" size="icon" className="size-7" aria-label="Plan maintenance" title="Plan maintenance" onClick={onPlanMaintenance}>
+            <Wrench size={14} />
+          </Button>
+        </div>
       </div>
       <div
         className="relative grid min-h-10 border-b"
