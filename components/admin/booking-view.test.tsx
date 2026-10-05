@@ -67,6 +67,22 @@ describe('BookingView', () => {
     expect(render(units, '2031-09-15').split('bg-[#366DA1]/15')).toHaveLength(1)
   })
 
+  it('does not size the grid by its content: a long name in a one-day block must not widen every day', () => {
+    // `min-w-max` made the grid as wide as its widest text, and with 1fr columns that widened ALL
+    // the days at once (a long customer name turned each day into ~170px of horizontal scroll).
+    // The grid fills the space and has a fixed least width: label column plus a least width per day.
+    const html = render([unit('aaaaaaaa-0000', 'Mondraker', [rental])])
+    expect(html).not.toContain('min-w-max')
+    expect(html).toContain('min-width:calc(11rem + 31 * 2rem)')
+  })
+
+  it('keeps the model name in view while the grid scrolls sideways: the row labels do not say it', () => {
+    // The row label is only "size · version"; the model is the heading above its bikes. Without
+    // `sticky left-0` on the heading's text it scrolled away and nobody knew which bike a row was.
+    const html = render([unit('aaaaaaaa-0001', 'Mondraker'), unit('bbbbbbbb-0003', 'Flyer')])
+    expect(html.match(/<span class="sticky left-0 inline-block[^"]*">(Mondraker|Flyer)<\/span>/g)).toHaveLength(2)
+  })
+
   it('has a button to add a rental, also when the calendar is empty', () => {
     expect(render([unit('aaaaaaaa-0000', 'Mondraker')])).toContain('New rental')
     expect(render([])).toContain('New rental')
