@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { readFileSync } from 'node:fs'
+import { readdirSync, readFileSync } from 'node:fs'
 
 /**
  * This project is on Tailwind v4, where a class that takes a CSS variable is written with
@@ -22,5 +22,24 @@ describe('components/ui/calendar.tsx', () => {
     const source = readFileSync('components/ui/calendar.tsx', 'utf8')
     expect(source).toContain('[--cell-size:')
     expect(source).toContain('(--cell-size)')
+  })
+})
+
+/**
+ * The same trap in every component `npx shadcn@latest add` has generated: the v3 spelling of a class that
+ * takes a CSS variable produces nothing in Tailwind v4 (the select menu then ignored the height the
+ * browser leaves it, the chart's colour dots lost their colour). Found 2026-10-02, fixed 2026-10-05.
+ * A component added later with the old spelling fails here: rewrite `-[--x]` as `-(--x)`.
+ */
+describe('components/ui', () => {
+  const files = readdirSync('components/ui').filter((name) => name.endsWith('.tsx'))
+
+  it('finds the components', () => {
+    expect(files.length).toBeGreaterThan(10)
+  })
+
+  it.each(files)('%s writes variable classes the Tailwind v4 way', (name) => {
+    const source = readFileSync(`components/ui/${name}`, 'utf8')
+    expect(source.match(V3_VARIABLE_CLASS) ?? []).toEqual([])
   })
 })
