@@ -61,6 +61,14 @@ con due bici libere: lo coprono `request_key` e l'avviso di doppione. Una bici s
 sito pubblico conta le bici con `inGarage()`, in SQL perché gira dentro `'use cache'`. Il campanello
 Realtime parte da un trigger e non porta dati personali; il canale è pubblico, quindi i ricaricamenti
 sono limitati (`lib/coalesce.ts`). Dettagli: spec e piano in `docs/superpowers/`.
+**Integrazioni (`/manage/integrations`, 2026-10-05).** Un registro nel codice (`lib/integrations/registry.ts`), un catalogo e una pagina per
+integrazione (Overview, Setup guide, Settings con la guida accanto al modulo, Activity), tutto in inglese. La tabella `integrations` ha una riga per
+integrazione: impostazioni non segrete in `config`, il segreto in `secret_encrypted`, **cifrato con `jose` (A256GCM)** con la chiave di
+`INTEGRATIONS_ENCRYPTION_KEY`, che sta nei segreti di Vercel e mai nel database. Il segreto si decifra solo sul server
+(`lib/integrations/store.ts`) e non arriva mai al browser: la pagina riceve una vista a lista bianca (`lib/integrations/view.ts`).
+Google Calendar usa un **account di servizio** (la chiave non scade; un accesso OAuth sì, e si ferma in silenzio). Si abilita solo dopo un
+*Test connection* riuscito per il calendario salvato (`canEnable`). Staging e Preview usano lo stesso database dello sviluppo, quindi la
+stessa riga e la stessa chiave di cifratura. Spec e piano in `docs/superpowers/`.
 **RLS e funzione `rls_auto_enable()`** (chiusi gli avvisi di Supabase, 2026-10-05): sia produzione sia sviluppo/Preview hanno
 RLS su ogni tabella di `public` e l'event trigger `ensure_rls` (le tabelle nuove nascono chiuse; l'app si collega come
 `postgres` e l'RLS non la tocca); la funzione non è eseguibile da `anon` né da `authenticated`, e l'event trigger scatta lo

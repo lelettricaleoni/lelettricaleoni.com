@@ -8,7 +8,13 @@ import path from 'node:path'
  * They insert and delete rows, so tests/db/setup.ts refuses to run against production.
  */
 export default defineConfig({
-  resolve: { alias: { '@': path.resolve(__dirname) } },
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname),
+      // See tests/server-only-stub.ts.
+      'server-only': path.resolve(__dirname, 'tests/server-only-stub.ts'),
+    },
+  },
   test: {
     include: ['tests/db/**/*.test.ts'],
     setupFiles: ['tests/db/setup.ts'],
