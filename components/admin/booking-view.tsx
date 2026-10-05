@@ -25,7 +25,10 @@ interface BookingViewProps {
   models: RentalOption[]
 }
 
-const LABEL_COLUMN = 'minmax(11rem, 14rem)'
+const LABEL_MIN = '11rem'
+// Wide enough for a one-day block to show "Name Surname" without cutting it.
+const DAY_MIN = '5.5rem'
+const LABEL_COLUMN = `minmax(${LABEL_MIN}, 14rem)`
 
 export function BookingView({ month, today, units, models }: BookingViewProps) {
   const router = useRouter()
@@ -46,7 +49,7 @@ export function BookingView({ month, today, units, models }: BookingViewProps) {
   useEffect(() => () => reload.cancel(), [reload])
   useReservationsRealtime(reload)
 
-  const columns = `${LABEL_COLUMN} repeat(${days.length}, minmax(2rem, 1fr))`
+  const columns = `${LABEL_COLUMN} repeat(${days.length}, minmax(${DAY_MIN}, 1fr))`
 
   return (
     <div className="space-y-4">
@@ -70,7 +73,8 @@ export function BookingView({ month, today, units, models }: BookingViewProps) {
         <p className="text-sm text-muted-foreground">No bikes in the shop yet. Add them in Shop first.</p>
       ) : (
         <div className="overflow-x-auto rounded-lg border bg-card">
-          <div className="grid min-w-max" style={{ gridTemplateColumns: columns }}>
+          {/* A fixed least width, not `min-w-max`: sizing by content let one long name widen every 1fr day. */}
+          <div className="grid" style={{ gridTemplateColumns: columns, minWidth: `calc(${LABEL_MIN} + ${days.length} * ${DAY_MIN})` }}>
             <div className="sticky left-0 z-10 border-b bg-card p-2 text-xs font-medium text-muted-foreground">Bike</div>
             {days.map((day) => (
               <div
@@ -89,8 +93,9 @@ export function BookingView({ month, today, units, models }: BookingViewProps) {
             {units.map((unit, index) => (
               <Fragment key={unit.id}>
                 {(index === 0 || units[index - 1].modelName !== unit.modelName) && (
-                  <div className="col-span-full border-b bg-muted/40 px-2 py-1 text-xs font-semibold text-[#1e3a5f]">
-                    {unit.modelName}
+                  <div className="col-span-full border-b bg-muted/40 py-1 text-xs font-semibold text-[#1e3a5f]">
+                    {/* Sticky: the row labels only say size and version, the model must stay in view while scrolling. */}
+                    <span className="sticky left-0 inline-block px-2">{unit.modelName}</span>
                   </div>
                 )}
                 <UnitRow
@@ -163,7 +168,7 @@ function UnitRow({ unit, month, days, today, onSelect, onPlanMaintenance }: Unit
       </div>
       <div
         className="relative grid min-h-10 border-b"
-        style={{ gridColumn: `2 / span ${days.length}`, gridTemplateColumns: `repeat(${days.length}, minmax(2rem, 1fr))` }}
+        style={{ gridColumn: `2 / span ${days.length}`, gridTemplateColumns: `repeat(${days.length}, minmax(${DAY_MIN}, 1fr))` }}
       >
         {days.map((day, i) => (
           <div
