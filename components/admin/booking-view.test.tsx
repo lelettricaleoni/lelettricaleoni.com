@@ -73,7 +73,7 @@ describe('BookingView', () => {
     // The grid fills the space and has a fixed least width: label column plus a least width per day.
     const html = render([unit('aaaaaaaa-0000', 'Mondraker', [rental])])
     expect(html).not.toContain('min-w-max')
-    expect(html).toContain('min-width:calc(11rem + 31 * 2rem)')
+    expect(html).toContain('min-width:calc(11rem + 31 * 5.5rem)')
   })
 
   it('keeps the model name in view while the grid scrolls sideways: the row labels do not say it', () => {

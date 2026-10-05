@@ -26,7 +26,8 @@ interface BookingViewProps {
 }
 
 const LABEL_MIN = '11rem'
-const DAY_MIN = '2rem'
+// Wide enough for a one-day block to show "Name Surname" without cutting it.
+const DAY_MIN = '5.5rem'
 const LABEL_COLUMN = `minmax(${LABEL_MIN}, 14rem)`
 
 export function BookingView({ month, today, units, models }: BookingViewProps) {
