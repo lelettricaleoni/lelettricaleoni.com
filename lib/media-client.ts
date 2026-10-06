@@ -3,7 +3,6 @@ import {
   HLS_MANIFESTS,
   PHOTO_SOURCE_EXTENSIONS,
   deriveHlsPrefix,
-  isStagedPhotoKey,
   photoPublicKey,
   photoShareKey,
   type PhotoSourceExtension,
