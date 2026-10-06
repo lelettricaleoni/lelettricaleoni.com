@@ -37,18 +37,28 @@ export function extensionOf(key: string): string {
   return dot === -1 ? '' : name.slice(dot + 1).toLowerCase()
 }
 
+/** A `.` or `..` segment: a key that climbs out of its folder wherever it is turned into a path. Real keys have none. */
+function hasDotSegment(key: string): boolean {
+  return key.split('/').some((segment) => segment === '.' || segment === '..')
+}
+
 export function isStagedPhotoKey(key: string): boolean {
   return PHOTO_STAGING_PREFIXES.some((prefix) => key.startsWith(prefix))
 }
 
 /** A staged photo the worker should turn into a master: the right prefix and a format it can decode. */
 export function isPhotoSourceKey(key: string): boolean {
-  return isStagedPhotoKey(key) && (PHOTO_SOURCE_EXTENSIONS as readonly string[]).includes(extensionOf(key))
+  return (
+    isStagedPhotoKey(key) &&
+    !hasDotSegment(key) &&
+    (PHOTO_SOURCE_EXTENSIONS as readonly string[]).includes(extensionOf(key))
+  )
 }
 
 export function isVideoSourceKey(key: string): boolean {
   return (
     VIDEO_STAGING_PREFIXES.some((prefix) => key.startsWith(prefix)) &&
+    !hasDotSegment(key) &&
     (VIDEO_SOURCE_EXTENSIONS as readonly string[]).includes(extensionOf(key))
   )
 }
@@ -85,6 +95,7 @@ const RENDITION_SUFFIX = /\.w\d+\.avif$/
 export function isMasterKey(key: string): boolean {
   return (
     PHOTO_PUBLIC_PREFIXES.some((prefix) => key.startsWith(prefix)) &&
+    !hasDotSegment(key) &&
     key.endsWith('.avif') &&
     !RENDITION_SUFFIX.test(key)
   )

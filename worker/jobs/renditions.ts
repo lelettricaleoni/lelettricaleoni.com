@@ -2,9 +2,9 @@
 import { mkdir, rm } from 'node:fs/promises'
 import { join } from 'node:path'
 import { RENDITION_WIDTHS, isMasterKey, photoRenditionKey } from '@/lib/media/keys'
-import { MediaJobData } from '@/lib/queues/schemas'
 import { cutRenditions } from '../imaging'
 import { MASTER_CACHE_CONTROL } from './photo'
+import { jobTarget } from './target'
 import type { JobDeps, MediaJob } from './types'
 
 /**
@@ -14,9 +14,8 @@ import type { JobDeps, MediaJob } from './types'
  */
 export function createRenditionsHandler({ store, config, log }: JobDeps) {
   return async function renderRenditions(job: MediaJob): Promise<{ width: number; height: number }> {
-    const { bucket, key } = MediaJobData.parse(job.data)
     // Checked before anything is read or written, whatever ends up in this queue.
-    if (!isMasterKey(key)) throw new Error(`not a master: ${key}`)
+    const { bucket, key } = jobTarget(job, config, 'a master', isMasterKey)
 
     const workdir = join(config.workdirBase, bucket, key.replaceAll('/', '_'))
     const master = join(workdir, 'master.avif')

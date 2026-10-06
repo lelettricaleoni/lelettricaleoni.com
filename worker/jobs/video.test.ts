@@ -2,11 +2,13 @@
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import pino from 'pino'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { loadConfig } from '../config'
 import { dirStore } from '../testing/dir-store'
 import {
   INPUT_FORMATS, MASTER_MANIFEST, RENDITIONS, SEGMENT_SECONDS, buildFfmpegArgs, ffmpegCommand, parseOutTimeUs, uploadTree,
-  withInputWhitelist,
+  createVideoHandler, withInputWhitelist,
 } from './video'
 
 describe('the ladder', () => {
@@ -114,5 +116,43 @@ describe('uploadTree', () => {
     expect(type('.ts')).toBe('video/mp2t')
     expect(type('master.m3u8')).toBe('application/vnd.apple.mpegurl')
     expect(type('360p/playlist.m3u8')).toBe('application/vnd.apple.mpegurl')
+  })
+})
+
+describe('what the video handler agrees to work on', () => {
+  const config = (workdirBase: string) =>
+    loadConfig({
+      APP_ENV: 'staging', REDIS_URL: 'redis://x', R2_ACCOUNT_ID: 'a', R2_ACCESS_KEY_ID: 'k', R2_SECRET_ACCESS_KEY: 's',
+      R2_BUCKETS: 'b', WORKDIR_BASE: workdirBase,
+    })
+  const jobOf = (bucket: string, key: string) => ({
+    data: { bucket, key }, attemptsMade: 0, opts: {}, updateProgress: async () => {},
+  })
+
+  it('refuses a bucket it was not configured for, before touching the disk or the store', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'v-root-'))
+    const work = await mkdtemp(join(tmpdir(), 'v-work-'))
+    try {
+      const store = dirStore(root)
+      const handler = createVideoHandler({ store, config: config(work), log: pino({ level: 'silent' }) })
+      await expect(handler(jobOf('../../elsewhere', 'private/route-videos/r1/u1.mp4'))).rejects.toThrow(/bucket/)
+      await expect(handler(jobOf('other-bucket', 'private/route-videos/r1/u1.mp4'))).rejects.toThrow(/bucket/)
+      expect(store.removed).toEqual([])
+    } finally {
+      await rm(root, { recursive: true, force: true })
+      await rm(work, { recursive: true, force: true })
+    }
+  })
+
+  it('refuses a key that is not a video source', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'v-root-'))
+    try {
+      const handler = createVideoHandler({ store: dirStore(root), config: config(root), log: pino({ level: 'silent' }) })
+      for (const key of ['private/route-videos/../../x.mp4', 'private/route-photos/r1/u.jpg', '..']) {
+        await expect(handler(jobOf('b', key))).rejects.toThrow(/not a video source/)
+      }
+    } finally {
+      await rm(root, { recursive: true, force: true })
+    }
   })
 })

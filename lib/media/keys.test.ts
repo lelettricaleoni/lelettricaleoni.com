@@ -141,3 +141,25 @@ describe('extensionOf', () => {
     expect(extensionOf('a/b/c.d.e')).toBe('e')
   })
 })
+
+describe('keys that climb out of their folder', () => {
+  it.each([
+    'private/route-photos/../../etc/u.jpg',
+    'private/route-photos/r1/./u.jpg',
+    'private/route-photos/r1/../u.jpg',
+  ])('%s is not a photo source', (key) => {
+    expect(isPhotoSourceKey(key)).toBe(false)
+  })
+
+  it('is not a video source either', () => {
+    expect(isVideoSourceKey('private/route-videos/../../x.mp4')).toBe(false)
+  })
+
+  it('is not a master', () => {
+    expect(isMasterKey('public/route-photos/../x.avif')).toBe(false)
+  })
+
+  it('still accepts a name that merely contains dots', () => {
+    expect(isPhotoSourceKey('private/bike-model-photos/m1/u..2.tiff')).toBe(true)
+  })
+})

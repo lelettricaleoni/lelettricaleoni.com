@@ -1,13 +1,15 @@
 // worker/jobs/photo.ts
 import { mkdir, readFile, rm } from 'node:fs/promises'
 import { extname, join } from 'node:path'
-import { RENDITION_WIDTHS, photoMasterKeyFor, photoRenditionKey, photoShareKey } from '@/lib/media/keys'
-import { MediaJobData } from '@/lib/queues/schemas'
+import {
+  RENDITION_WIDTHS, isPhotoSourceKey, photoMasterKeyFor, photoRenditionKey, photoShareKey,
+} from '@/lib/media/keys'
 import { sha256OfFile } from '../hash'
 import { decodeHeic, isHeicKey } from '../heic'
 import { renderPhoto, type PhotoOutputs } from '../imaging'
 import { progressReporter } from '../progress'
 import { MissingObjectError } from '../storage'
+import { jobTarget } from './target'
 import type { JobDeps, MediaJob } from './types'
 
 /**
@@ -31,7 +33,7 @@ export interface PhotoResult {
  */
 export function createPhotoHandler({ store, config, log }: JobDeps) {
   return async function processPhoto(job: MediaJob): Promise<PhotoResult> {
-    const { bucket, key } = MediaJobData.parse(job.data)
+    const { bucket, key } = jobTarget(job, config, 'a photo source', isPhotoSourceKey)
     const attempt = job.attemptsMade + 1
     const report = progressReporter(job, attempt)
     const masterKey = photoMasterKeyFor(key)

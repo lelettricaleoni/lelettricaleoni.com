@@ -4,11 +4,11 @@ import { mkdir, readdir, rm } from 'node:fs/promises'
 import { extname, join } from 'node:path'
 import { createInterface } from 'node:readline'
 import pLimit from 'p-limit'
-import { HLS_MANIFESTS, deriveHlsPrefix } from '@/lib/media/keys'
-import { MediaJobData } from '@/lib/queues/schemas'
+import { HLS_MANIFESTS, deriveHlsPrefix, isVideoSourceKey } from '@/lib/media/keys'
 import { sha256OfFile } from '../hash'
 import { progressReporter } from '../progress'
 import { MissingObjectError, type ObjectStore } from '../storage'
+import { jobTarget } from './target'
 import type { JobDeps, MediaJob } from './types'
 
 /**
@@ -215,7 +215,7 @@ export function createVideoHandler({ store, config, log }: JobDeps) {
   return async function transcodeVideo(
     job: MediaJob,
   ): Promise<{ files?: number; sha256?: string; skipped?: boolean }> {
-    const { bucket, key } = MediaJobData.parse(job.data)
+    const { bucket, key } = jobTarget(job, config, 'a video source', isVideoSourceKey)
     const attempt = job.attemptsMade + 1
     const report = progressReporter(job, attempt)
     const prefix = deriveHlsPrefix(key)

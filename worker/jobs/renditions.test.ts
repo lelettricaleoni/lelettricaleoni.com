@@ -49,6 +49,11 @@ describe('the renditions handler', () => {
     expect(store.removed).toEqual([]) // it only ever adds objects
   })
 
+  it('refuses a bucket it was not configured for', async () => {
+    const job: MediaJob = { data: { bucket: '../../elsewhere', key: 'public/route-photos/r1/u1.avif' }, attemptsMade: 0, opts: {}, updateProgress: async () => {} }
+    await expect(createRenditionsHandler({ store: dirStore(root), config: config(), log: quiet })(job)).rejects.toThrow(/bucket/)
+  })
+
   it('refuses anything that is not a master, whatever ends up in its queue', async () => {
     for (const key of ['public/route-photos/r1/u1.w480.avif', 'public/route-photos/r1/u1.share.jpg', 'private/route-photos/r1/u1.jpg']) {
       await expect(createRenditionsHandler({ store: dirStore(root), config: config(), log: quiet })(jobFor(key))).rejects.toThrow(/not a master/)

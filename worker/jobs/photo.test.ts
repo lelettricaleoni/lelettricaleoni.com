@@ -118,6 +118,14 @@ describe('the photo handler', () => {
     expect(await readdir(join(workdir, 'b')).catch(() => [])).toEqual([])
   })
 
+  it('refuses a bucket it was not configured for, and a key that is not a photo source', async () => {
+    const handler = createPhotoHandler({ store: dirStore(root), config: config(), log: quiet })
+    const jobOf = (bucket: string, key: string): MediaJob => ({ data: { bucket, key }, attemptsMade: 0, opts: {}, updateProgress: async () => {} })
+    await expect(handler(jobOf('../../elsewhere', KEY))).rejects.toThrow(/bucket/)
+    await expect(handler(jobOf('b', 'private/route-photos/../../x.jpg'))).rejects.toThrow(/not a photo source/)
+    await expect(handler(jobOf('b', 'private/route-videos/r1/u1.mp4'))).rejects.toThrow(/not a photo source/)
+  })
+
   it('refuses a job whose data is not a bucket and a key', async () => {
     const job: MediaJob = { data: { nope: 1 }, attemptsMade: 0, opts: {}, updateProgress: async () => {} }
     await expect(createPhotoHandler({ store: dirStore(root), config: config(), log: quiet })(job)).rejects.toThrow()
