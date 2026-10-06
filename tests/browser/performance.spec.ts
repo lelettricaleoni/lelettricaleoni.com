@@ -130,8 +130,6 @@ async function measure(browser: Browser, path: string): Promise<Sample> {
 
   const response = await page.goto(path, { waitUntil: 'domcontentloaded' })
   expect(response?.status(), `${path} non risponde`).toBeLessThan(400)
-  expect(page.url(), 'reindirizzato al login: manca VERCEL_AUTOMATION_BYPASS_SECRET')
-    .not.toContain('vercel.com/login')
 
   // Not 'networkidle': the cards stream HLS from R2 for as long as the page is
   // open, so the network never goes quiet and every load paid the full

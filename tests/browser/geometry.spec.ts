@@ -103,12 +103,6 @@ for (const path of PAGES) {
     // Not the assertion — just enough to tell a broken deploy from a layout bug.
     expect(response?.status(), `${path} non risponde`).toBeLessThan(400)
 
-    // A protected preview answers with Vercel's own login page, which has a
-    // perfectly good layout and would let every assertion below pass while
-    // measuring nothing. Fail loudly instead.
-    expect(page.url(), 'reindirizzato al login: manca VERCEL_AUTOMATION_BYPASS_SECRET')
-      .not.toContain('vercel.com/login')
-
     const overflows = await overflowsOn(page)
     expect(overflows, `${path}: ${overflows.length} elementi fuori dal contenitore`).toEqual([])
   })

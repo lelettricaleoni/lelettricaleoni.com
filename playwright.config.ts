@@ -1,23 +1,20 @@
 import { defineConfig, devices } from '@playwright/test'
 
 /**
- * Browser tests, run against a real deployment rather than a local build.
+ * Browser tests, run against a real running copy of the site rather than the unit-test environment.
  *
- * The preview Vercel builds for every pull request is already a true
- * environment with the real services behind it, so nothing here needs the fake
- * ones the earlier spec planned. Protected previews are reached with the
- * automation bypass token, which is what Vercel publishes it for.
+ * In CI the job builds the site image, starts it with the development services behind it and points BASE_URL at
+ * localhost (see .github/workflows/browser.yml), so nothing here needs fake services.
  *
- * BASE_URL decides the target: a preview URL in CI, and anything you like when
- * chasing something by hand — localhost:3000, or production.
+ * BASE_URL decides the target: localhost in CI, and anything you like when chasing something by hand —
+ * localhost:3000, staging, or production.
  */
 
 const baseURL = process.env.BASE_URL ?? 'http://localhost:3000'
-const bypass = process.env.VERCEL_AUTOMATION_BYPASS_SECRET
 
 export default defineConfig({
   testDir: './tests/browser',
-  // These talk to a deployment over the network: one flaky retry is worth more
+  // These talk to a running site over HTTP: one flaky retry is worth more
   // than a red build, but two would hide a genuine intermittent fault.
   retries: process.env.CI ? 1 : 0,
   workers: process.env.CI ? 2 : undefined,
@@ -29,14 +26,6 @@ export default defineConfig({
     baseURL,
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
-    ...(bypass
-      ? {
-          extraHTTPHeaders: {
-            'x-vercel-protection-bypass': bypass,
-            'x-vercel-set-bypass-cookie': 'true',
-          },
-        }
-      : {}),
   },
 
   // The width is part of the test, not a detail: the card overflow that

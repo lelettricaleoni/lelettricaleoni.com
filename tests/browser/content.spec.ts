@@ -20,10 +20,6 @@ async function visit(page: Page, path: string) {
   const response = await page.goto(path, { waitUntil: 'domcontentloaded' })
 
   expect(response?.status(), `${path} non risponde`).toBeLessThan(400)
-  // A protected preview answers with Vercel's login page, which would satisfy
-  // nothing below while looking perfectly healthy.
-  expect(page.url(), 'reindirizzato al login: manca VERCEL_AUTOMATION_BYPASS_SECRET')
-    .not.toContain('vercel.com/login')
   return response
 }
 
@@ -249,16 +245,10 @@ test('la radice manda alla lingua con un redirect temporaneo, che dipende da Acc
   // Era un 301: la lingua viene dal browser di chi chiede, quindi lo stesso URL
   // porta a /de per uno e a /it per l'altro, e un redirect permanente dice a
   // browser e Google che "/" vale sempre una lingua sola.
-  //
-  // Su un'anteprima protetta la configurazione dei test manda
-  // x-vercel-set-bypass-cookie: Vercel risponde alla prima richiesta con un
-  // SUO 307 verso la stessa URL, per impostare il cookie, e la nostra risposta
-  // non si vedrebbe mai. Qui il cookie non serve: il bypass via header basta.
-  const senzaCookie = { 'x-vercel-set-bypass-cookie': 'false' }
   for (const [lingua, atteso] of [['de', '/de'], ['it', '/it'], ['en', '/en']] as const) {
     const res = await request.get('/', {
       maxRedirects: 0,
-      headers: { ...senzaCookie, 'accept-language': lingua },
+      headers: { 'accept-language': lingua },
     })
     expect(res.status(), `/ con Accept-Language ${lingua}`).toBe(307)
     expect(res.headers()['location'], `nessun Location con Accept-Language ${lingua}`).toBeTruthy()
@@ -267,6 +257,6 @@ test('la radice manda alla lingua con un redirect temporaneo, che dipende da Acc
   }
 
   // Chi non manda l'header (un crawler) finisce sull'italiano.
-  const senza = await request.get('/', { maxRedirects: 0, headers: { ...senzaCookie, 'accept-language': '' } })
+  const senza = await request.get('/', { maxRedirects: 0, headers: { 'accept-language': '' } })
   expect(new URL(senza.headers()['location'], 'https://x.test').pathname).toBe('/it')
 })
