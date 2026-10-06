@@ -1,6 +1,6 @@
 // worker/jobs/video.integration.test.ts
 // Needs ffmpeg and ffprobe. Skipped where they are not installed; CI installs them.
-import { mkdir, mkdtemp, readFile, rm } from 'node:fs/promises'
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import pino from 'pino'
@@ -61,9 +61,28 @@ describe.skipIf(!hasFfmpeg())('the video handler, with the real ffmpeg', () => {
     }, 180_000)
   }
 
+  it('refuses a playlist disguised as a video instead of fetching what it points at', async () => {
+    // ffmpeg picks a demuxer by content, not by extension: an HLS playlist named .mp4 would make it read the files the
+    // playlist names, off the worker's own disk or from any address it can reach.
+    const outside = join(root, 'outside', 'clip.mp4')
+    await mkdir(join(root, 'outside'), { recursive: true })
+    await makeClip(outside)
+    const key = 'private/route-videos/r1/evil.mp4'
+    await mkdir(join(root, 'b', 'private', 'route-videos', 'r1'), { recursive: true })
+    await writeFile(
+      join(root, 'b', ...key.split('/')),
+      ['#EXTM3U', '#EXT-X-TARGETDURATION:2', '#EXTINF:2,', `file:///${outside.replaceAll('\\', '/')}`, '#EXT-X-ENDLIST', ''].join('\n'),
+    )
+    const store = dirStore(root)
+    const job: MediaJob = { data: { bucket: 'b', key }, attemptsMade: 0, opts: {}, updateProgress: async () => {} }
+
+    await expect(createVideoHandler({ store, config: config(), log: quiet })(job)).rejects.toThrow()
+    expect(store.uploads).toEqual([])
+    expect(await store.exists('b', key)).toBe(true)
+  }, 120_000)
+
   it('treats a video whose source is already gone but whose stream is there as done', async () => {
     await mkdir(join(root, 'b', 'public', 'route-videos', 'r1', 'u1'), { recursive: true })
-    const { writeFile } = await import('node:fs/promises')
     await writeFile(join(root, 'b', 'public', 'route-videos', 'r1', 'u1', 'master.m3u8'), '#EXTM3U')
     const job: MediaJob = { data: { bucket: 'b', key: 'private/route-videos/r1/u1.mp4' }, attemptsMade: 0, opts: {}, updateProgress: async () => {} }
 

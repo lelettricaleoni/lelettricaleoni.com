@@ -89,6 +89,20 @@ export function buildFfmpegArgs(src: string, hlsDir: string, { audio = true }: {
   return args
 }
 
+/**
+ * The demuxers an uploaded file may be read by. ffmpeg chooses one by looking at the content, not at the extension, and
+ * some of them (hls, concat, sdp…) follow addresses written inside the file: a file that only calls itself an .mp4 must
+ * not make the worker read its own disk or reach into the network. Current ffmpeg already refuses an HLS playlist under
+ * a non-standard extension; this keeps the others out too, and costs nothing for a real video.
+ */
+export const INPUT_FORMATS = 'mov,mp4,matroska,webm,avi'
+
+/** Put the demuxer whitelist ahead of the input, leaving every other argument where it was. */
+export function withInputWhitelist(args: string[]): string[] {
+  const at = args.indexOf('-i')
+  return [...args.slice(0, at), '-format_whitelist', INPUT_FORMATS, ...args.slice(at)]
+}
+
 const OUT_TIME = /^out_time_us=(\d+)$/
 
 /** Microseconds of video done, from one line of ffmpeg's progress output, or null for any other line. */
@@ -105,7 +119,7 @@ export function ffmpegCommand(args: string[], platform: NodeJS.Platform = proces
 }
 
 export async function probeDuration(path: string): Promise<number> {
-  const child = spawn('ffprobe', ['-v', 'error', '-show_entries', 'format=duration', '-of', 'default=noprint_wrappers=1:nokey=1', path], {
+  const child = spawn('ffprobe', ['-v', 'error', '-format_whitelist', INPUT_FORMATS, '-show_entries', 'format=duration', '-of', 'default=noprint_wrappers=1:nokey=1', path], {
     stdio: ['ignore', 'pipe', 'ignore'],
   })
   let out = ''
@@ -117,7 +131,7 @@ export async function probeDuration(path: string): Promise<number> {
 
 /** Whether the source has a sound track. */
 export async function probeHasAudio(path: string): Promise<boolean> {
-  const child = spawn('ffprobe', ['-v', 'error', '-select_streams', 'a', '-show_entries', 'stream=index', '-of', 'csv=p=0', path], {
+  const child = spawn('ffprobe', ['-v', 'error', '-format_whitelist', INPUT_FORMATS, '-select_streams', 'a', '-show_entries', 'stream=index', '-of', 'csv=p=0', path], {
     stdio: ['ignore', 'pipe', 'ignore'],
   })
   let out = ''
@@ -237,7 +251,7 @@ export function createVideoHandler({ store, config, log }: JobDeps) {
       const audio = await probeHasAudio(source)
       await report('transcoding', { percent: 0 })
       log.info({ bucket, key, durationS: duration, audio, rungs: RENDITIONS.length }, 'video: transcoding')
-      await runFfmpeg(buildFfmpegArgs(source, hlsDir, { audio }), duration, (percent) => report('transcoding', { percent }))
+      await runFfmpeg(withInputWhitelist(buildFfmpegArgs(source, hlsDir, { audio })), duration, (percent) => report('transcoding', { percent }))
 
       await report('uploading', { percent: 99 })
       const files = await uploadTree(store, bucket, prefix, hlsDir)

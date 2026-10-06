@@ -4,7 +4,10 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { dirStore } from '../testing/dir-store'
-import { MASTER_MANIFEST, RENDITIONS, SEGMENT_SECONDS, buildFfmpegArgs, ffmpegCommand, parseOutTimeUs, uploadTree } from './video'
+import {
+  INPUT_FORMATS, MASTER_MANIFEST, RENDITIONS, SEGMENT_SECONDS, buildFfmpegArgs, ffmpegCommand, parseOutTimeUs, uploadTree,
+  withInputWhitelist,
+} from './video'
 
 describe('the ladder', () => {
   it('is the one that was measured, rung for rung', () => {
@@ -34,6 +37,23 @@ describe('buildFfmpegArgs', () => {
     expect(args).not.toContain('0:a?')
     expect(args.some((arg) => arg.startsWith('-c:a:'))).toBe(false)
     expect(args[args.indexOf('-var_stream_map') + 1]).toBe('v:0,name:1080p v:1,name:720p v:2,name:480p v:3,name:360p')
+  })
+})
+
+describe('withInputWhitelist', () => {
+  it('limits the demuxers to the containers the accepted extensions need, ahead of the input', () => {
+    const args = withInputWhitelist(buildFfmpegArgs('in.mp4', 'out'))
+    const at = args.indexOf('-format_whitelist')
+    expect(args.slice(at, at + 3)).toEqual(['-format_whitelist', INPUT_FORMATS, '-i'])
+    expect(args.indexOf('-i')).toBe(at + 2)
+    // Nothing else moves: the rest is the golden call.
+    expect(args.filter((_arg: string, i: number) => i !== at && i !== at + 1)).toEqual(buildFfmpegArgs('in.mp4', 'out'))
+  })
+
+  it('names no container that can point at other files or addresses', () => {
+    for (const unwanted of ['hls', 'concat', 'sdp', 'rtsp', 'image2', 'data']) {
+      expect(INPUT_FORMATS.split(',')).not.toContain(unwanted)
+    }
   })
 })
 
