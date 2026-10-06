@@ -20,7 +20,7 @@ export default defineConfig({
     },
   },
   test: {
-    include: ['lib/**/*.test.ts', 'lib/**/*.test.tsx', 'components/**/*.test.tsx'],
+    include: ['lib/**/*.test.ts', 'lib/**/*.test.tsx', 'components/**/*.test.tsx', 'worker/**/*.test.ts'],
     exclude: ['node_modules', '.next', 'tests/browser/**'],
   },
 })
