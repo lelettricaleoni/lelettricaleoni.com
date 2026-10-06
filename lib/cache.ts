@@ -1,22 +1,21 @@
-import { Redis } from '@upstash/redis'
+import type { Redis } from 'ioredis'
+import { getCacheRedis } from '@/lib/redis'
+import { settle } from '@/lib/settle'
 
 /**
- * Read-through cache on Upstash Redis.
+ * Read-through cache on the VM's Redis.
  *
- * Every page here renders on demand, so work that could be done once per video
- * or per GPX file is currently redone on every request. This caches the results
- * that never change once produced.
+ * Every page here renders on demand, so work that could be done once per video or per GPX file would otherwise be redone
+ * on every request. This caches the results that never change once produced.
  *
- * Three rules, all of them consequences of the same incident: a feature-flag
- * migration put an external service on the critical path of every request with
- * no bound, and made the home page forty times slower.
+ * Three rules, all of them consequences of the same incident: a feature-flag migration put an external service on the
+ * critical path of every request with no bound, and made the home page forty times slower.
  *
- * 1. **Unconfigured is fine.** With no credentials the cache is a no-op and the
- *    caller does its normal work. Local development and CI need no Redis.
- * 2. **Fail open.** A cache error, or a slow one, never fails a request and
- *    never propagates — the caller falls through to the real source.
- * 3. **Bounded.** No cache call may hold a request for longer than
- *    CACHE_TIMEOUT_MS, whatever Upstash is doing.
+ * 1. **Unconfigured is fine.** With no REDIS_URL the cache is a no-op and the caller does its normal work. Local
+ *    development and CI need no Redis.
+ * 2. **Fail open.** A cache error, or a slow one, never fails a request and never propagates — the caller falls through
+ *    to the real source.
+ * 3. **Bounded.** No cache call may hold a request for longer than CACHE_TIMEOUT_MS, whatever Redis is doing.
  */
 
 /** No visitor waits longer than this for a cache lookup. */
@@ -29,10 +28,10 @@ export interface CacheStore {
 }
 
 /**
- * A CacheStore over an ioredis connection. Values go in as JSON and come back parsed, as the Upstash client used to do
- * on its own; a value that is not JSON makes `get` reject, which readThrough treats as a miss.
+ * A CacheStore over an ioredis connection. Values go in as JSON and come back parsed; a value that is not JSON makes
+ * `get` reject, which readThrough treats as a miss.
  */
-export function redisCacheStore(redis: Pick<import('ioredis').Redis, 'get' | 'set'>): CacheStore {
+export function redisCacheStore(redis: Pick<Redis, 'get' | 'set'>): CacheStore {
   return {
     async get<T>(key: string): Promise<T | null> {
       const raw = await redis.get(key)
@@ -44,52 +43,29 @@ export function redisCacheStore(redis: Pick<import('ioredis').Redis, 'get' | 'se
 
 let resolved: CacheStore | null | undefined
 
-/** The configured store, or null when there are no credentials. */
+/** The configured store, or null when there is no Redis. */
 export function getStore(): CacheStore | null {
   if (resolved !== undefined) return resolved
-  const url = process.env.UPSTASH_REDIS_REST_URL
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN
-  resolved = url && token ? (new Redis({ url, token }) as unknown as CacheStore) : null
-  if (!resolved) {
-    console.info('[cache] UPSTASH_REDIS_REST_URL/TOKEN not set — caching disabled')
-  }
+  const redis = getCacheRedis()
+  resolved = redis ? redisCacheStore(redis) : null
+  if (!resolved) console.info('[cache] REDIS_URL not set — caching disabled')
   return resolved
 }
 
-/** Resolve with null instead of hanging or throwing. */
-async function settle<T>(work: Promise<T>, ms: number): Promise<T | null> {
-  let timer: ReturnType<typeof setTimeout> | undefined
-  try {
-    return await Promise.race([
-      work,
-      new Promise<null>((resolve) => {
-        timer = setTimeout(() => resolve(null), ms)
-      }),
-    ])
-  } catch {
-    return null
-  } finally {
-    clearTimeout(timer)
-  }
-}
-
 /**
- * Return the cached value for `key`, or run `produce` and cache what it
- * returns.
+ * Return the cached value for `key`, or run `produce` and cache what it returns.
  *
- * `ttlSeconds` may depend on the produced value — a video that is still
- * transcoding should be re-checked in seconds, while one that is ready never
- * changes again.
+ * `ttlSeconds` may depend on the produced value — a video that is still transcoding should be re-checked in seconds,
+ * while one that is ready never changes again.
  *
- * A produced value of `null` or `undefined` is never cached: callers use it to
- * mean "nothing here yet", and remembering that for a week would hide a video
- * for a week.
+ * A produced value of `null` or `undefined` is never cached: callers use it to mean "nothing here yet", and remembering
+ * that for a week would hide a video for a week.
  */
 export async function readThrough<T>(
   key: string,
   produce: () => Promise<T>,
   ttlSeconds: number | ((value: T) => number),
-  store: CacheStore | null = getStore()
+  store: CacheStore | null = getStore(),
 ): Promise<T> {
   if (store) {
     const hit = await settle(store.get<T>(key), CACHE_TIMEOUT_MS)

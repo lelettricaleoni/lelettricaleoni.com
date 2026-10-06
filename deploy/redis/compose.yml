@@ -1,0 +1,33 @@
+# deploy/redis/compose.yml
+# The one Redis of the machine: the queues of the media worker and the site's read cache. It publishes no port and sits
+# on an internal network (no route out) that the site and the worker join. Persistence is an append-only file; the queues
+# must never be evicted, and the cache keys all have an expiry.
+#
+# Needs users.acl (see render-acl.sh) next to this file.
+
+services:
+  redis:
+    image: redis:7.4-alpine
+    container_name: redis
+    command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
+    volumes:
+      - ./redis.conf:/usr/local/etc/redis/redis.conf:ro
+      - ./users.acl:/usr/local/etc/redis/users.acl:ro
+      - redis-data:/data
+    networks:
+      - internal
+    healthcheck:
+      # The `probe` user may only PING, with any password.
+      test: ["CMD", "redis-cli", "--user", "probe", "--pass", "probe", "--no-auth-warning", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  redis-data:
+
+networks:
+  internal:
+    name: internal
+    internal: true

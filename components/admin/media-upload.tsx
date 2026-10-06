@@ -15,7 +15,7 @@ import Image from 'next/image'
 import { toast } from 'sonner'
 import { photoUrl, isStagedPhotoKey } from '@/lib/media-client'
 import { photoLoader } from '@/lib/photo-loader'
-import { getMediaJobStatuses } from '@/lib/actions/media-jobs'
+import { confirmMediaUpload, getMediaJobStatuses } from '@/lib/actions/media-jobs'
 import { recordMediaHashAction, findDuplicateMediaAction } from '@/lib/actions/media-hash'
 import { sha256HexOfFile, BROWSER_HASH_MAX_BYTES } from '@/lib/hash-client'
 import type { VideoJobStatus } from '@/lib/video-jobs'
@@ -385,6 +385,10 @@ export function MediaUpload({
         xhr.onerror = () => reject(new Error('Network error'))
         xhr.send(file)
       })
+
+      // Tell the server the file is in place, so the worker starts now instead of at its next scan. A failure here is
+      // not an upload failure: the scan finds the file within minutes.
+      void confirmMediaUpload(key).catch((err) => console.error(err))
 
       // From here the bar belongs to the worker's status.
       patch({ upload: undefined })

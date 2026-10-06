@@ -26,7 +26,8 @@ const url = process.env.REDIS_URL
 const quiet = pino({ level: 'silent' })
 
 describe.skipIf(!url)('enqueue → worker → status, with a real Redis', () => {
-  const prefix = `bullmq-test-${randomUUID().slice(0, 8)}`
+  // TEST_QUEUE_PREFIX lets the same test run as a restricted Redis user (see deploy/redis), whose keys all start with `bullmq-<env>`.
+  const prefix = process.env.TEST_QUEUE_PREFIX ?? `bullmq-test-${randomUUID().slice(0, 8)}`
   let root: string
   let workdir: string
   let connection: Redis

@@ -80,17 +80,15 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
-          UPSTASH_REDIS_REST_TOKEN: ${{ secrets.UPSTASH_REDIS_REST_TOKEN }}
           CARTO_API_KEY: ${{ secrets.CARTO_API_KEY }}
           R2_ACCOUNT_ID: ${{ vars.R2_ACCOUNT_ID }}
           R2_BUCKET_NAME: ${{ vars.R2_BUCKET_NAME }}
-          UPSTASH_REDIS_REST_URL: ${{ vars.UPSTASH_REDIS_REST_URL }}
           NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ vars.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
         run: |
           env_file="$RUNNER_TEMP/web.env"
-          for name in DATABASE_URL R2_ACCESS_KEY_ID R2_SECRET_ACCESS_KEY UPSTASH_REDIS_REST_TOKEN CARTO_API_KEY \
-                      R2_ACCOUNT_ID R2_BUCKET_NAME UPSTASH_REDIS_REST_URL NEXT_PUBLIC_SUPABASE_URL NEXT_PUBLIC_SUPABASE_ANON_KEY; do
+          for name in DATABASE_URL R2_ACCESS_KEY_ID R2_SECRET_ACCESS_KEY CARTO_API_KEY \
+                      R2_ACCOUNT_ID R2_BUCKET_NAME NEXT_PUBLIC_SUPABASE_URL NEXT_PUBLIC_SUPABASE_ANON_KEY; do
             printf '%s=%s\n' "$name" "${!name}" >> "$env_file"
           done
           docker run -d --name web --env-file "$env_file" -e APP_ENV=ci -p 3000:3000 web-ci
