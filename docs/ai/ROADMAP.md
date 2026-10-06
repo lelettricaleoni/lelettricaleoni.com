@@ -56,8 +56,10 @@
   worker ora stanno sulla stessa rete, quindi Upstash non serve più (resta finché c'è il ripiego su Vercel). Da
   decidere nel disegno: database o prefissi separati per `production` e `staging`; utenti Redis con permessi
   limitati (oggi il token del worker può solo scrivere `videojob:*`); i container web nella rete del Redis, senza
-  porte pubblicate; `ioredis` (lo vuole BullMQ) anche nel sito al posto del client REST. Parte con una fase di
-  disegno (spec in `docs/superpowers/specs/`).
+  porte pubblicate; `ioredis` (lo vuole BullMQ) anche nel sito al posto del client REST. **Spec scritta il
+  2026-10-06**: `docs/superpowers/specs/2026-10-06-node-worker-design.md` (fetta A: worker, Redis unico, passaggio per
+  ambiente; fetta B, spec a parte: pagina dei lavori, riprova, pausa, rielabora delle sole foto). **Kevin ha scartato
+  del tutto di tenere gli originali** (silo, bucket privato, MinIO): il sorgente si cancella come oggi, non riproporlo.
 - **Mettere a punto Google Search Console e Analytics**, dopo il giro di implementazioni in
   corso (chiesto da Kevin il 2026-09-25). Su Analytics: costruire qualche dashboard. Su
   Search Console: oggi è in disordine ("un bel casino") — prima un inventario di cosa c'è
