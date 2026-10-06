@@ -29,5 +29,5 @@ ENV NODE_ENV=production
 USER node
 # The worker renews this file every 15 s while Redis answers; a file older than a minute means unhealthy.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
-  CMD node -e "const s=require('fs').statSync('/tmp/healthy'); process.exit(Date.now()-s.mtimeMs<60000?0:1)"
+  CMD node -e "const s=require('fs').statSync(require('os').homedir()+'/healthy'); process.exit(Date.now()-s.mtimeMs<60000?0:1)"
 CMD ["node", "--enable-source-maps", "worker.mjs"]
