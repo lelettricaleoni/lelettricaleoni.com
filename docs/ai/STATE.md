@@ -4,7 +4,7 @@
 > componenti si ricava con `ls`; il motivo per cui i tile CARTO passano dal server no.
 > Se questo file supera le ~150 righe, qualcosa è entrato che non doveva.
 >
-> Ultimo allineamento: 2026-10-05.
+> Ultimo allineamento: 2026-10-06.
 
 ## Prodotto
 
@@ -17,11 +17,36 @@ pannello di amministrazione privato.
 
 | | |
 |---|---|
-| Produzione | `main` → https://www.lelettricaleoni.com, deploy automatico Vercel |
-| Progetto Vercel | `lelettricaleoni`, team `lelettrica` |
-| Branch `staging` | ricreato il 2026-10-02 da `main` (cancellato per errore un'ora prima) per il lavoro sulle prenotazioni: la fetta 1 (con clienti e importi) è in produzione dal 2026-10-05, il resto (fette 2-5) resta qui finché non è pronto (Kevin). I suoi deploy usano l'ambiente Preview (database e bucket propri) su `staging.lelettricaleoni.com`, con `noindex`. PR verso `staging`; in produzione una sola PR `staging → main`, e solo allora la migrazione sul database vero. Protezione: `verify` e `browser`, admin inclusi; `CodeQL` da aggiungere dopo averlo visto girare qui |
+| Produzione | `main` → https://www.lelettricaleoni.com, **sulla VM Oracle dal 2026-10-06**, deploy automatico da GitHub Actions (vedi «Server») |
+| Progetto Vercel | `lelettricaleoni`, team `lelettrica`, **in pausa dal 2026-10-06** (`vercel api /v1/projects/<id>/pause`, si riattiva con `/unpause`): non serve più nulla e non costruisce più. Da cancellare dopo qualche settimana tranquilla |
+| Branch `staging` | ricreato il 2026-10-02 da `main` (cancellato per errore un'ora prima) per il lavoro sulle prenotazioni: la fetta 1 (con clienti e importi) è in produzione dal 2026-10-05, il resto (fette 2-5) resta qui finché non è pronto (Kevin). I suoi deploy vanno sulla VM (stack `staging`, database e bucket di sviluppo) su `staging.lelettricaleoni.com`, con `noindex`. PR verso `staging`; in produzione una sola PR `staging → main`, e solo allora la migrazione sul database vero. Protezione: `verify` e `browser`, admin inclusi; `CodeQL` da aggiungere dopo averlo visto girare qui |
 | Merge | solo via PR: `verify`, `browser` e `CodeQL` devono passare, **nessuna esenzione admin** dal 2026-09-16 — chiude la falla che aveva permesso due push diretti su `main` |
-| CI | `verify` (lint, tipi, unit), `browser` (Playwright contro il preview), CodeQL in default setup, suite `extended` |
+| CI | `verify` (lint, tipi, unit), `browser` (costruisce l'immagine nel job e lancia Playwright su `localhost`, ambiente GitHub `ci`), CodeQL in default setup, suite `extended` |
+
+## Server (VM Oracle, dal 2026-10-06)
+
+`clustrenode1` (ARM64, 2 CPU, 11 GB) ospita sito e worker. **Nessuna porta aperta**: l'unico ingresso è un
+**Cloudflare Tunnel** (`lelettrica-vm`, `~/docker/edge`); quale nome va a quale container si configura da Cloudflare
+(tunnel gestito da remoto), non da un file. `www`, apex, `staging`, `rent` e `shop` sono dietro il tunnel; apex,
+`rent` e `shop` sono **redirect 308 a `www` fatti da una regola Cloudflare** (non dal sito), e HTTPS è forzato dalla zona.
+Due container web, `web-production` e `web-staging` (alias di rete `web-<env>`), con i segreti in
+`~/docker/web/<env>.env` (600, mai in git, modello `deploy/web/env.template`). Dove stanno i valori:
+`docs/environment-variables.md`.
+
+**Deploy**: push a `staging` o `main` → `.github/workflows/deploy.yml` costruisce l'immagine ARM64 (azioni fissate per
+SHA) e chiama `deploy/web/deploy.sh` con una chiave SSH a comando forzato. Il container nuovo parte **accanto** al
+vecchio (stesso alias), il vecchio si ferma solo quando il nuovo è `healthy` e `/api/health?deep=1` risponde; il
+precedente resta fermo per `deploy.sh rollback <env>`. Produzione si accende con la variabile `DEPLOY_PRODUCTION=true`.
+**Cron**: il controllo di Google Calendar è un timer systemd (`google-calendar-check.timer`, 03:00 UTC) che chiama
+`run-cron.sh` dentro il container.
+
+**Capacità**: un processo Node per ambiente, quindi una CPU. Misurato il 2026-10-06 con 25 richieste in parallelo:
+43 req/s sulla home, 6 sulle bici, 4 sui percorsi; da solo i tempi sono uguali a Vercel (232 contro 242 ms di primo
+byte sulla home), e ffmpeg a pieno regime non li cambia. Il picco di Analytics in 90 giorni è ~0,04 req/s. Se servisse:
+`pm2` in cluster (2 processi) o la cache di Cloudflare davanti alle pagine pubbliche, non altro hardware.
+**Ritorno a Vercel**: riattivare il progetto, rimettere i record `www` e apex a
+`CNAME 572d7e0917595668.vercel-dns-017.com` senza proxy (TTL 600) e **fermare il cron di Vercel**, che ha un'altra
+chiave di cifratura. Il bucket di produzione ammette nel CORS solo `www` e `staging`.
 
 ## Superfici
 
@@ -177,6 +202,19 @@ Toblino), non ad Arco/Riva: `docs/ai/ideas/search-strategy.md`.
 (percorsi, foto, video, flyover, GPX, bici), tutti accesi in produzione: spegnere una sezione ora è una modifica del codice.
 
 ## Trappole
+
+**Un'immagine costruita senza database prepara in build tutto ciò che non legge dati dinamici.** La sitemap aveva
+39 URL invece di 90 (senza percorsi né bici) finché non ha fatto `await connection()`: i `catch {}` vuoti nascondevano
+la lettura fallita e il risultato restava in cache un'ora. Ogni pagina o route che legge il database deve essere
+per richiesta, e un errore non va mai ingoiato dentro una funzione `"use cache"`. **Dopo ogni spostamento confronta il
+contenuto con la versione precedente** (sitemap, titoli, link a bici e percorsi, riferimenti ai media), non il
+codice HTTP: la differenza è venuta da lì. **Un nome di prova non ha il CORS dei media**: i video «spariscono» solo nel
+browser, l'HTML è identico (vedi `docs/environment-variables.md`).
+
+**Su Windows con Git Bash**: `ssh-keyscan` non regge lo scambio di chiavi della VM (l'impronta si legge da
+`/etc/ssh/ssh_host_ed25519_key.pub` via ssh) e un argomento che inizia con `/` viene convertito in un percorso di Git:
+`MSYS_NO_PATHCONV=1`. Un commento di un record DNS di Cloudflare non può superare 100 caratteri.
+
 
 **Una pagina spenta risponde 200, non 404.** Le pagine percorsi hanno un `loading.tsx`,
 quindi Next le trasmette in streaming e lo stato non è più modificabile quando `notFound()`
