@@ -56,6 +56,7 @@
     "framer-motion": "^13.5.1",
     "hls.js": "^1.7.3",
     "jose": "^5.10.0",
+    "libheif-js": "^1.23.5",
     "libphonenumber-js": "^1.13.14",
     "lucide-react": "^1.52.0",
     "negotiator": "^1.1.0",
