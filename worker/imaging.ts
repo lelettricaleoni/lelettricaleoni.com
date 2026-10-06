@@ -29,10 +29,18 @@ export interface PhotoOutputs {
 
 function open(source: string | RawImage): Sharp {
   if (typeof source === 'string') return sharp(source, { limitInputPixels: PIXEL_LIMIT, failOn: 'error' })
-  return sharp(source.data, {
+  const image = sharp(source.data, {
     raw: { width: source.width, height: source.height, channels: 4 },
     limitInputPixels: PIXEL_LIMIT,
   })
+  // libheif always hands over RGBA, opaque for a phone photo. Keeping that alpha would put a transparency plane in every
+  // master (about a fifth heavier on a small photo) for nothing.
+  return isOpaque(source.data) ? image.removeAlpha() : image
+}
+
+function isOpaque(rgba: Buffer): boolean {
+  for (let i = 3; i < rgba.length; i += 4) if (rgba[i] !== 255) return false
+  return true
 }
 
 export async function renderPhoto(

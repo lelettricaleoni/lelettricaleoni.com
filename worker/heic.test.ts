@@ -54,6 +54,8 @@ describe('a HEIC photo through renderPhoto', () => {
       }
       expect(await renderPhoto(raw, out, testImagingConfig)).toEqual({ width: 640, height: 480 })
       expect(await sharp(out.master).metadata()).toMatchObject({ width: 640, height: 480 })
+      // A phone photo has no transparency: the master must not carry an alpha plane for libheif's always-opaque one.
+      expect((await sharp(out.master).metadata()).hasAlpha).toBe(false)
     } finally {
       await rm(dir, { recursive: true, force: true })
     }

@@ -95,6 +95,7 @@
     "esbuild": "^0.28.2",
     "eslint": "^9.39.5",
     "eslint-config-next": "16.3.8",
+    "ssim.js": "^3.5.0",
     "tailwindcss": "^4.3.3",
     "typescript": "^5",
     "vitest": "^5.0.1"
