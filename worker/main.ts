@@ -3,7 +3,7 @@ import { writeFile } from 'node:fs/promises'
 import { Redis } from 'ioredis'
 import { QUEUE_KINDS, queuePrefix } from '@/lib/queues/names'
 import { loadConfig } from './config'
-import { runHealthBeat } from './health'
+import { healthFilePath, runHealthBeat } from './health'
 import { createPhotoHandler } from './jobs/photo'
 import { createRenditionsHandler } from './jobs/renditions'
 import { createVideoHandler } from './jobs/video'
@@ -14,7 +14,7 @@ import { selfCheck } from './selfcheck'
 import { s3Store } from './storage'
 
 /** Docker's health check reads the age of this file. */
-const HEALTH_FILE = '/tmp/healthy'
+const HEALTH_FILE = healthFilePath()
 const HEALTH_INTERVAL_MS = 15_000
 
 const message = (err: unknown) => (err instanceof Error ? err.message : String(err))

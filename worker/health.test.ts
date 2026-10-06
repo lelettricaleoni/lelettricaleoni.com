@@ -1,6 +1,7 @@
 // worker/health.test.ts
 import { describe, expect, it, vi } from 'vitest'
-import { runHealthBeat } from './health'
+import { tmpdir } from 'node:os'
+import { healthFilePath, runHealthBeat } from './health'
 
 function run(ping: () => Promise<boolean>, beats: number) {
   const controller = new AbortController()
@@ -30,5 +31,18 @@ describe('runHealthBeat', () => {
     const ping = async () => { if (++calls === 2) controller.abort(); throw new Error('down') }
     await runHealthBeat({ ping, write: async () => {}, intervalMs: 5, signal: controller.signal })
     expect(calls).toBe(2)
+  })
+})
+
+describe('healthFilePath', () => {
+  it('is in the home folder of the user running the worker, not in a folder every user can write to', () => {
+    const path = healthFilePath({})
+    expect(path.endsWith('healthy')).toBe(true)
+    expect(path.startsWith(tmpdir())).toBe(false)
+    expect(path.startsWith('/tmp')).toBe(false)
+  })
+
+  it('can be moved with HEALTH_FILE', () => {
+    expect(healthFilePath({ HEALTH_FILE: '/run/worker/ok' })).toBe('/run/worker/ok')
   })
 })
