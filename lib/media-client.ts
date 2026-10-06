@@ -1,16 +1,34 @@
 import type { Media } from './db'
-import { RENDITION_WIDTHS } from './photo-loader'
+import {
+  HLS_MANIFESTS,
+  PHOTO_SOURCE_EXTENSIONS,
+  deriveHlsPrefix,
+  isStagedPhotoKey,
+  photoPublicKey,
+  photoShareKey,
+  type PhotoSourceExtension,
+} from './media/keys'
 
 /**
  * Media URL helpers safe to import from client components.
  *
- * Everything here is a pure string transform over the public bucket URL, so it
- * carries no credentials and no AWS SDK. The server-side counterparts — the
- * ones that actually talk to R2 — live in `./r2`.
- *
- * Videos moved from MinIO to R2 on 2026-09-10, which is why photos, GPX files
- * and HLS streams now share one bucket and one public origin.
+ * Everything here is a pure string transform over the public bucket URL, so it carries no credentials and no AWS SDK.
+ * The key rules themselves (what a photo's master is called, where a video's stream lives) are in `./media/keys`, which
+ * the media worker imports too; they are re-exported here so existing imports keep working. The server-side
+ * counterparts, the ones that actually talk to R2, live in `./r2`.
  */
+
+export {
+  HLS_MANIFESTS,
+  PHOTO_SOURCE_EXTENSIONS,
+  PHOTO_STAGING_PREFIXES,
+  deriveHlsPrefix,
+  isStagedPhotoKey,
+  photoPublicKey,
+  photoRenditionKeys,
+  photoShareKey,
+  type PhotoSourceExtension,
+} from './media/keys'
 
 export const MEDIA_PUBLIC_URL = (process.env.NEXT_PUBLIC_R2_PUBLIC_URL ?? '').replace(/\/$/, '')
 
@@ -18,46 +36,19 @@ export function mediaPublicUrl(key: string): string {
   return `${MEDIA_PUBLIC_URL}/${key}`
 }
 
-export function deriveHlsPrefix(privateKey: string): string {
-  // private/route-videos/{routeId}/{uuid}.ext → public/route-videos/{routeId}/{uuid}/
-  return privateKey.replace(/^private\//, 'public/').replace(/\.[^.]+$/, '') + '/'
-}
-
-/**
- * Manifest names the worker may have produced, most capable first.
- *
- * The transcoding worker (lelettricaleoni/videoStream-bucketWorker) originally
- * emitted a single rendition as `playlist.m3u8` in the prefix root. Since its
- * commit 55cc594 (2026-06-10) it emits adaptive bitrate: `master.m3u8` in the
- * root plus `1080p|720p|480p/playlist.m3u8` beneath it. Videos transcoded
- * before that change still only have the flat playlist, so both have to be
- * accepted — checking for the old name alone would make every new upload look
- * like it was still processing, forever and without an error anywhere.
- */
-export const HLS_MANIFESTS = ['master.m3u8', 'playlist.m3u8'] as const
-
 /** Public URL of one manifest for a stored video. */
 export function hlsUrl(privateKey: string, manifest: string = HLS_MANIFESTS[1]): string {
   return mediaPublicUrl(deriveHlsPrefix(privateKey) + manifest)
 }
 
-/**
- * Photos are uploaded to a staging prefix and the worker
- * (lelettricaleoni/videoStream-bucketWorker, imaging.py) turns each one into an
- * AVIF master under the matching `public/` key. **The key mapping and the
- * extension list below are a contract with that file**: change one side and you
- * must change the other; both test suites pin the same pairs.
- *
- * A photo uploaded before the worker handled photos sits directly at its public
- * key. It is recognised by *not* being staged, and served exactly as before —
- * no data migration, and nothing to backfill.
- */
-export const PHOTO_STAGING_PREFIXES = ['private/route-photos/', 'private/bike-model-photos/'] as const
+/** Public URL of a photo as it will be served once ready. Says nothing about whether it is ready. */
+export function photoUrl(storageKey: string): string {
+  return mediaPublicUrl(photoPublicKey(storageKey))
+}
 
-/** Formats the worker can decode; anything else would sit in staging forever. */
-export const PHOTO_SOURCE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp', 'tif', 'tiff', 'heic', 'heif'] as const
-
-export type PhotoSourceExtension = (typeof PHOTO_SOURCE_EXTENSIONS)[number]
+export function photoShareUrl(storageKey: string): string {
+  return mediaPublicUrl(photoShareKey(storageKey))
+}
 
 const PHOTO_CONTENT_TYPES: Record<PhotoSourceExtension, string> = {
   jpg: 'image/jpeg',
@@ -70,48 +61,6 @@ const PHOTO_CONTENT_TYPES: Record<PhotoSourceExtension, string> = {
   heif: 'image/heif',
 }
 
-export function isStagedPhotoKey(storageKey: string): boolean {
-  return PHOTO_STAGING_PREFIXES.some((prefix) => storageKey.startsWith(prefix))
-}
-
-/** private/route-photos/{owner}/{uuid}.jpg → public/route-photos/{owner}/{uuid}.avif; any other key is already public. */
-export function photoPublicKey(storageKey: string): string {
-  if (!isStagedPhotoKey(storageKey)) return storageKey
-  const dot = storageKey.lastIndexOf('.')
-  const stem = dot > storageKey.lastIndexOf('/') ? storageKey.slice(0, dot) : storageKey
-  return 'public/' + stem.slice('private/'.length) + '.avif'
-}
-
-/** Public URL of a photo as it will be served once ready. Says nothing about whether it is ready. */
-export function photoUrl(storageKey: string): string {
-  return mediaPublicUrl(photoPublicKey(storageKey))
-}
-
-/**
- * The small JPEG the worker writes beside a staged photo's master, for link
- * previews only: WhatsApp, Facebook and LinkedIn do not read AVIF. A photo that
- * predates the worker is already a JPEG, PNG or WebP and stands in for itself.
- */
-export function photoShareKey(storageKey: string): string {
-  const key = photoPublicKey(storageKey)
-  return isStagedPhotoKey(storageKey) ? key.replace(/\.avif$/, '.share.jpg') : key
-}
-
-export function photoShareUrl(storageKey: string): string {
-  return mediaPublicUrl(photoShareKey(storageKey))
-}
-
-/**
- * The renditions the worker cuts beside a staged photo's master (see
- * lib/photo-loader.ts), as keys — so that deleting a photo can take them along.
- * Photos from before the worker have none.
- */
-export function photoRenditionKeys(storageKey: string): string[] {
-  if (!isStagedPhotoKey(storageKey)) return []
-  const master = photoPublicKey(storageKey)
-  return RENDITION_WIDTHS.map((w) => master.replace(/\.avif$/, `.w${w}.avif`))
-}
-
 /** Lower-cased extension of an uploaded file if the worker can decode it, otherwise null. */
 export function photoSourceExtension(fileName: string): PhotoSourceExtension | null {
   const dot = fileName.lastIndexOf('.')
@@ -121,9 +70,8 @@ export function photoSourceExtension(fileName: string): PhotoSourceExtension | n
 }
 
 /**
- * Derived from the extension, not the browser's `file.type`: Chrome on Windows
- * reports an empty type for a HEIC file, and the type is signed into the upload
- * URL, so both sides have to agree on exactly one value.
+ * Derived from the extension, not the browser's `file.type`: Chrome on Windows reports an empty type for a HEIC file,
+ * and the type is signed into the upload URL, so both sides have to agree on exactly one value.
  */
 export function photoContentType(ext: PhotoSourceExtension): string {
   return PHOTO_CONTENT_TYPES[ext]
@@ -132,20 +80,17 @@ export function photoContentType(ext: PhotoSourceExtension): string {
 /**
  * A media row with its HLS manifest already resolved on the server.
  *
- * Which manifest exists depends on when the worker processed the video, and
- * only the server can check. Resolving it once server-side keeps the client
- * from guessing — and from silently showing nothing when it guesses wrong.
+ * Which manifest exists depends on when the worker processed the video, and only the server can check. Resolving it
+ * once server-side keeps the client from guessing — and from silently showing nothing when it guesses wrong.
  */
 export type MediaWithHls = Media & { hlsUrl?: string }
 
 /**
  * Index of the lowest-bitrate rendition in an hls.js `levels` array.
  *
- * Not index 0: the worker's manifest lists renditions highest-bitrate
- * first (confirmed by reading a real master.m3u8, not assumed), so the
- * lowest rung is whichever entry actually has the smallest `bitrate` —
- * picking by position would start these silent, looping previews at
- * 1080p, the opposite of the point.
+ * Not index 0: the worker's manifest lists renditions highest-bitrate first (confirmed by reading a real master.m3u8,
+ * not assumed), so the lowest rung is whichever entry actually has the smallest `bitrate` — picking by position would
+ * start these silent, looping previews at 1080p, the opposite of the point.
  */
 export function lowestBitrateLevel(levels: { bitrate: number }[]): number {
   return levels.reduce((min, level, i, all) => (level.bitrate < all[min].bitrate ? i : min), 0)

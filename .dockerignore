@@ -16,3 +16,5 @@ test-results
 *.md
 !README.md
 public/cesium
+
+dist

@@ -10,19 +10,20 @@
  * every master, and this loader chooses among them without going through Vercel at
  * all.
  *
- * The naming is a contract with the worker (imaging.rendition_key_for in the
- * videoStream-bucketWorker repo): `public/…/<uuid>.avif` is the master, and
+ * The naming is defined in lib/media/keys.ts, which the media worker imports too:
+ * `public/…/<uuid>.avif` is the master, and
  * `public/…/<uuid>.w480.avif`, `.w960.avif`, `.w1600.avif` are its renditions. All
  * three always exist for every master (a small master gets same-size copies), so
- * nothing here needs to know the master's own size. Pinned by the same pairs in
- * the worker's tests and in lib/photo-loader.test.ts.
+ * nothing here needs to know the master's own size. Pinned in lib/media/keys.test.ts
+ * and in lib/photo-loader.test.ts.
  *
  * Photos from before the worker are JPEG, PNG or WebP, not masters: they go through
  * Next's optimizer as they always did, which resizes them fine.
  */
 
-/** Must match RENDITION_WIDTHS in the worker's imaging.py. */
-export const RENDITION_WIDTHS = [480, 960, 1600] as const
+// The widths live in lib/media/keys.ts, where the worker reads the same list.
+import { RENDITION_WIDTHS } from './media/keys'
+export { RENDITION_WIDTHS }
 
 const MASTER_PATH = /^\/public\/(?:route-photos|bike-model-photos)\/.+\.avif$/
 const IS_RENDITION = /\.w\d+\.avif$/
