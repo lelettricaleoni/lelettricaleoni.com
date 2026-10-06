@@ -1,0 +1,32 @@
+# syntax=docker/dockerfile:1
+#
+# The media worker: transcodes videos to HLS and turns photos into AVIF. No port: it only talks outward (to R2 and to
+# Redis). Built from the same repository as the site, and shipped separately so that a site deploy never interrupts a
+# transcode in progress.
+
+FROM node:24-bookworm-slim AS build
+WORKDIR /app
+# Build tooling only: nothing from this stage but dist/worker is shipped.
+COPY package.json package-lock.json ./
+RUN npm ci --ignore-scripts
+COPY tsconfig.json ./
+COPY lib ./lib
+COPY worker ./worker
+COPY scripts/build-worker.mjs ./scripts/build-worker.mjs
+RUN node scripts/build-worker.mjs
+
+FROM node:24-bookworm-slim AS runner
+# ffmpeg carries ffprobe, which reads the duration the progress percentage needs.
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends ffmpeg \
+  && rm -rf /var/lib/apt/lists/*
+WORKDIR /app
+COPY --from=build /app/dist/worker/ ./
+# Just sharp and libheif-js (see scripts/build-worker.mjs).
+RUN npm install --omit=dev --no-audit --no-fund
+ENV NODE_ENV=production
+USER node
+# The worker renews this file every 15 s while Redis answers; a file older than a minute means unhealthy.
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
+  CMD node -e "const s=require('fs').statSync('/tmp/healthy'); process.exit(Date.now()-s.mtimeMs<60000?0:1)"
+CMD ["node", "--enable-source-maps", "worker.mjs"]
