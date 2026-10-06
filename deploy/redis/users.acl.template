@@ -1,0 +1,7 @@
+# deploy/redis/users.acl.template
+# Rendered into users.acl by render-acl.sh, which puts the hash of a fresh password in place of each placeholder.
+# Nobody logs in as `default`. The site and the worker get only what BullMQ and the cache need, and only their own keys.
+user default off
+user probe on nopass -@all +ping
+user web on #__WEB_HASH__ ~bullmq-* ~cache:* +@all -@dangerous +info +config|get +client|list +client|id +client|setname +client|getname +client|setinfo
+user worker on #__WORKER_HASH__ ~bullmq-* +@all -@dangerous +info +config|get +client|list +client|id +client|setname +client|getname +client|setinfo
