@@ -7,7 +7,7 @@ ENV_NAME="${1:?usage: make-env.sh <staging|production>}"
 case "$ENV_NAME" in staging | production) ;; *) echo "unknown environment" >&2; exit 2 ;; esac
 
 WEB_ENV="$HOME/docker/web/$ENV_NAME.env"
-REDIS_URL_FILE="$HOME/docker/redis/worker.redis-url"
+REDIS_URL_FILE="$HOME/docker/redis/worker-$ENV_NAME.redis-url"
 OUT="$HOME/docker/media-worker/$ENV_NAME.env"
 [ -f "$WEB_ENV" ] || { echo "missing $WEB_ENV" >&2; exit 1; }
 [ -f "$REDIS_URL_FILE" ] || { echo "missing $REDIS_URL_FILE (run render-acl.sh first)" >&2; exit 1; }
