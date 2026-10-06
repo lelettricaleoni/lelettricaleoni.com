@@ -1,0 +1,9 @@
+[Unit]
+Description=Daily Google Calendar reconciliation of the production site
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+User=ubuntu
+ExecStart=/home/ubuntu/docker/web/run-cron.sh production /api/cron/google-calendar

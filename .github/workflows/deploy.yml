@@ -1,0 +1,88 @@
+name: deploy
+
+# Builds the site image and puts it on the Oracle VM: `staging` goes to the staging stack, `main` to production.
+# The image is built natively for ARM64 (the VM's architecture) and holds no secret: only the public NEXT_PUBLIC_*
+# values are passed in, from the environment's variables. The server's own secrets live in the VM's env files.
+#
+# The last step runs deploy/web/deploy.sh on the VM through a key that can do nothing else (forced command in
+# authorized_keys). It starts the new container beside the old one, switches only when the new one is healthy, and
+# leaves the old one untouched otherwise.
+#
+# Production is switched on with the repository variable DEPLOY_PRODUCTION=true, so merging to main does not touch the
+# VM before the cutover.
+
+on:
+  push:
+    branches: [main, staging]
+    paths-ignore:
+      - 'docs/**'
+      - '**/*.md'
+  workflow_dispatch:
+
+# Never two deploys of the same environment at once, and never cancel one that is half way through.
+concurrency:
+  group: deploy-${{ github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: deploy
+    runs-on: ubuntu-24.04-arm
+    if: github.ref_name == 'staging' || vars.DEPLOY_PRODUCTION == 'true'
+    environment: ${{ github.ref_name == 'main' && 'production' || 'staging' }}
+
+    permissions:
+      contents: read
+      packages: write
+
+    env:
+      IMAGE: ghcr.io/${{ github.repository_owner }}/lelettricaleoni-web
+      TARGET: ${{ github.ref_name == 'main' && 'production' || 'staging' }}
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          platforms: linux/arm64
+          tags: |
+            ${{ env.IMAGE }}:${{ env.TARGET }}
+            ${{ env.IMAGE }}:${{ github.sha }}
+          build-args: |
+            APP_VERSION=${{ github.sha }}
+            NEXT_PUBLIC_SITE_URL=${{ vars.NEXT_PUBLIC_SITE_URL }}
+            NEXT_PUBLIC_SUPABASE_URL=${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
+            NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ vars.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+            NEXT_PUBLIC_R2_PUBLIC_URL=${{ vars.NEXT_PUBLIC_R2_PUBLIC_URL }}
+            NEXT_PUBLIC_MAPS_EMBED_URL=${{ vars.NEXT_PUBLIC_MAPS_EMBED_URL }}
+            NEXT_PUBLIC_GA_MEASUREMENT_ID=${{ vars.NEXT_PUBLIC_GA_MEASUREMENT_ID }}
+            NEXT_PUBLIC_CESIUM_TOKEN=${{ vars.NEXT_PUBLIC_CESIUM_TOKEN }}
+          cache-from: type=gha,scope=web-${{ env.TARGET }}
+          cache-to: type=gha,mode=max,scope=web-${{ env.TARGET }}
+
+      - name: Deploy on the VM
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
+          DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
+          DEPLOY_HOST_KEY: ${{ vars.DEPLOY_HOST_KEY }}
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          # The host key is pinned (a variable, not ssh-keyscan at run time): a key that changes must fail the run.
+          printf '%s %s\n' "$DEPLOY_HOST" "$DEPLOY_HOST_KEY" > ~/.ssh/known_hosts
+          ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
+            ubuntu@"$DEPLOY_HOST" "deploy $TARGET ${DIGEST#sha256:}"

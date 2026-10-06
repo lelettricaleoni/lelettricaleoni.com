@@ -1,0 +1,22 @@
+# The only way in from the internet: a Cloudflare Tunnel. cloudflared dials out to Cloudflare, so the VM
+# publishes no port and needs no certificate. Which hostname goes to which container is configured in the
+# Cloudflare dashboard (remotely managed tunnel), not in a file here.
+#
+# The web containers join the same `edge` network and are reached by their alias (web-production, web-staging).
+#
+# Needs TUNNEL_TOKEN in ./.env (mode 600).
+
+services:
+  cloudflared:
+    image: cloudflare/cloudflared:2026.9.3
+    container_name: cloudflared
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN:?set TUNNEL_TOKEN in .env}
+    networks:
+      - edge
+    restart: unless-stopped
+
+networks:
+  edge:
+    name: edge
