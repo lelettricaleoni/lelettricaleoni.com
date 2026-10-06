@@ -1,6 +1,6 @@
 import {
   pgTable, text, integer, numeric, boolean,
-  timestamp, uuid, pgEnum, index, unique, uniqueIndex, date
+  timestamp, uuid, pgEnum, index, unique, uniqueIndex, date, jsonb
 } from 'drizzle-orm/pg-core'
 
 export const difficultyEnum = pgEnum('difficulty', ['easy', 'medium', 'hard', 'expert'])
@@ -249,3 +249,21 @@ export const media = pgTable('media', {
 
 export type Media = typeof media.$inferSelect
 export type NewMedia = typeof media.$inferInsert
+
+// Integrations with outside services (Google Calendar first), switched on and configured from the panel. One
+// row per integration, keyed by its id in lib/integrations/registry.ts. The secret (a service account key) is
+// stored ENCRYPTED (lib/integrations/crypto.ts) and is never read back by the panel: `config` holds only what
+// is safe to show.
+export const integrations = pgTable('integrations', {
+  id:              text('id').primaryKey(),
+  enabled:         boolean('enabled').notNull().default(false),
+  config:          jsonb('config').$type<Record<string, unknown>>().notNull().default({}),
+  secretEncrypted: text('secret_encrypted'),
+  lastCheckedAt:   timestamp('last_checked_at'),
+  lastSyncAt:      timestamp('last_sync_at'),
+  lastError:       text('last_error'),
+  updatedAt:       timestamp('updated_at').notNull().defaultNow(),
+  updatedBy:       uuid('updated_by'),
+})
+
+export type Integration = typeof integrations.$inferSelect

@@ -1,0 +1,10 @@
+[Unit]
+Description=Run the Google Calendar reconciliation every day at 03:00 UTC (what vercel.json used to schedule)
+
+[Timer]
+OnCalendar=*-*-* 03:00:00 UTC
+Persistent=true
+RandomizedDelaySec=120
+
+[Install]
+WantedBy=timers.target

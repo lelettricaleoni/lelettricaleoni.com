@@ -47,6 +47,8 @@ a Preview e Production) non è usato: lo sviluppo locale legge `.env.local`, non
 | `NEXT_PUBLIC_SUPABASE_URL` | URL del progetto Supabase | Dashboard del progetto → Project Settings → API. Non si ruota, identifica il progetto. |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Chiave pubblica lato client | Stessa pagina. Rigenerarla in "API Keys" invalida le sessioni client esistenti. |
 | `SUPABASE_SERVICE_ROLE_KEY` | Bypassa le RLS: usata dall'API admin (inviti, ruoli) | Stessa pagina, "Reset service_role secret" — **rigenerarla revoca subito quella vecchia**, coordinarsi prima di farlo in produzione. |
+| `INTEGRATIONS_ENCRYPTION_KEY` | Cifra i segreti delle integrazioni salvati nel database (la chiave JSON dell'account di servizio di Google, `lib/integrations/crypto.ts`) | **32 byte in base64**, generata a caso (`node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`). **Preview e sviluppo locale devono avere la stessa**: usano lo stesso database, quindi la stessa riga cifrata. La produzione ne ha una sua. **Se si perde, i segreti già salvati non si leggono più** (si ricaricano dal pannello): conservarla. Non è mai nel database. Senza questa variabile il pannello rifiuta di salvare le chiavi. |
+| `CRON_SECRET` | Autentica il controllo giornaliero di Google Calendar (`/api/cron/google-calendar`, `vercel.json`): Vercel lo manda come `Authorization: Bearer …` | Una stringa casuale (24 byte in esadecimale), **solo in produzione**: i cron di Vercel girano solo lì. Senza, la rotta rifiuta ogni richiesta. Si ruota rigenerandola e rifacendo il deploy. |
 | `DATABASE_URL` | Connessione runtime, dal pooler Supabase in **transaction mode** (porta 6543) | Project Settings → Database → Connection string. La password si ruota da lì; `lib/db/pooler.ts` corregge la porta anche se qui finisse la 5432. |
 | `DATABASE_DIRECT_URL` | Connessione diretta (porta 5432), usata solo da `drizzle-kit` per le migrazioni | Stessa pagina, variante "Direct connection". |
 | `CLOUDFLARE_API_TOKEN` | Statistiche di storage in `/manage/dev` (oggetti, dimensione bucket) — non serve per leggere/scrivere i file | Dashboard Cloudflare → My Profile → API Tokens → crea un token con solo "Account Analytics: Read". Diverso da `R2_ACCESS_KEY_ID`/`R2_SECRET_ACCESS_KEY`: quello è S3, questo è l'API GraphQL di Cloudflare. |
@@ -62,9 +64,8 @@ a Preview e Production) non è usato: lo sviluppo locale legge `.env.local`, non
 | `NEXT_PUBLIC_MAPS_EMBED_URL` | Iframe di Google Maps nella sezione contatti | Google Maps → condividi la posizione → "Incorpora una mappa" → copia l'URL dell'`src`. |
 | `NEXT_PUBLIC_SITE_URL` | Base per URL assoluti (metadata, sitemap, robots) | Fisso: `https://www.lelettricaleoni.com` in produzione; può restare assente altrove, il codice ha quel valore come fallback. |
 | `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` | Cache di lettura (`lib/cache.ts`) e stato del worker video | Console Upstash → il database → REST API. **Condivisa fra tutti gli ambienti** di proposito: la cache è già scoped per chiave di storage, non serve separarla. |
-| `FLAGS_SECRET` | Verifica le richieste all'endpoint di discovery dei feature flag | Generata automaticamente da Vercel quando si attiva Flags: non si copia da nessuna parte, non si ruota a mano. |
 | `VERCEL_AUTOMATION_BYPASS_SECRET` | Solo nei secret del repository GitHub, non nelle variabili Vercel dell'app: dà ai test browser accesso alle preview protette | Vercel → Project Settings → Deployment Protection → "Protection Bypass for Automation". Mostrato una sola volta alla creazione. |
-| `VERCEL_OIDC_TOKEN` | Valuta i feature flag veri in locale | `vercel env pull` **fuori dal progetto**, poi copiare solo questa riga in `.env.development.local`. Scade dopo circa 12 ore. Mai lanciare `vercel env pull .env.local`: sovrascrive il file e cancella tutte le chiavi sopra. |
+
 
 ## Impostarle
 

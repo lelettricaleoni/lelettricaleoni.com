@@ -1,6 +1,9 @@
 import type { NextConfig } from "next"
 
 const nextConfig: NextConfig = {
+  // Only the Docker build asks for it (NEXT_OUTPUT=standalone): a self-contained server in .next/standalone, the
+  // image's whole runtime. Vercel's own build never sets it, so nothing changes there.
+  output: process.env.NEXT_OUTPUT === 'standalone' ? 'standalone' : undefined,
   cacheComponents: true,
   experimental: {
     globalNotFound: true,
@@ -64,15 +67,6 @@ const nextConfig: NextConfig = {
         '**/.next/**',
         '**/.playwright-mcp/**',
       ],
-    }
-    // @vercel/flags-core imports @vercel/flags-definitions, which it has never
-    // published — the name 404s on npm. Production builds drop the branch, but
-    // dev retries the resolution on every compile and logs the failure each
-    // time. `false` tells webpack the module resolves to nothing, which is what
-    // it already effectively is.
-    config.resolve = {
-      ...config.resolve,
-      alias: { ...config.resolve?.alias, '@vercel/flags-definitions': false },
     }
     return config
   },

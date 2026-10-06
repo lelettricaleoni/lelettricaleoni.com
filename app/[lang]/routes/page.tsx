@@ -9,19 +9,15 @@ import { RouteFilters } from '@/components/route-filters'
 import { RouteCardMediaAsync } from '@/components/route-card-media-async'
 import { SectionViewTracker } from '@/components/section-view-tracker'
 import { Skeleton } from '@/components/ui/skeleton'
-import { FlagsExplorer } from '@/components/flags-explorer'
 import { shortId } from '@/lib/utils'
-import { getFlags } from '@/lib/flags'
 import { getRoutesListData, getRouteBikeCategoryNames } from '@/lib/routes-data'
 import { buildSocialMetadata } from '@/lib/metadata'
 
 // TODO: Cache Components adoption. Refactor this route so this opt-out can be removed.
 // See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
 //
-// getFlags() can't move into a "use cache" function (see lib/routes-data.ts),
-// so this route stays request-bound from Cache Components' point of view —
-// the caching win is entirely inside getRoutesListData's "use cache" scope,
-// not from this page becoming a prerendered shell.
+// The caching win is entirely inside getRoutesListData's "use cache" scope, not from this page becoming a
+// prerendered shell: the page stays request-bound.
 export const instant = false;
 
 export async function generateMetadata({
@@ -29,12 +25,7 @@ export async function generateMetadata({
 }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const { lang } = await params
   if (!hasLocale(lang)) return {}
-  // Without this the 404 would still carry the section's title and canonical.
-  // connection() first: see the page component below for why — without it,
-  // the flag's build-time value gets baked into the static shell forever.
   await connection()
-  const flags = await getFlags()
-  if (!flags.routes) return {}
   const dict = await getDictionary(lang)
   const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://www.lelettricaleoni.com').replace(/\/$/, '')
   return {
@@ -61,18 +52,9 @@ export default async function RoutesPage({
   const { lang } = await params
   if (!hasLocale(lang)) notFound()
 
-  // Without this, the build's own prerender pass has no real request, so
-  // headers() (read internally by the flags SDK) hangs and rejects, gets
-  // caught by getFlags()'s fail-open handling, and the resulting "on" value
-  // gets baked into the static shell forever — the kill switch would only
-  // ever take effect on the next deploy. connection() forces genuine
-  // per-request evaluation instead. Found live: toggling the routes flag
-  // off on a deployed preview did nothing until this was added.
+  // Rendered on every request, not prerendered at build: the build has no database. What these pages read is
+  // cached by the "use cache" functions behind them (profile `catalog`), so a request stays cheap.
   await connection()
-
-  // Switched off the section behaves as if it were never built, not as an error
-  const flags = await getFlags()
-  if (!flags.routes) notFound()
 
   const routesWithTranslations = await getRoutesListData(lang)
   const bikeTypeOptions = await getRouteBikeCategoryNames()
@@ -110,9 +92,8 @@ export default async function RoutesPage({
 
   return (
     <>
-      <FlagsExplorer flags={flags} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-      <Navbar lang={lang} dict={dict} showRoutes={flags.routes} showBikes={flags.bikes} />
+      <Navbar lang={lang} dict={dict} />
       <main className="w-full pt-24 pb-16">
         <div className="max-w-6xl mx-auto px-12 sm:px-20 space-y-8">
           <div>

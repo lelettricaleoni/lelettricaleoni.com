@@ -25,15 +25,10 @@ risolto dalla directory di questo file) — è la regola in `AGENTS.md`, non rip
   `cacheTag('<tag>')`. I profili di `cacheLife` sono dichiarati in `next.config.ts` — un nome
   non dichiarato è un errore di tipo a build time, non a runtime.
 - **`headers()`/`cookies()` sono vietati dentro uno scope `"use cache"`, anche indirettamente.**
-  `@flags-sdk/vercel` (i feature flag) legge `headers()` internamente: per questo `getFlags()`
-  non entra mai in una funzione `"use cache"` — vedi `lib/routes-data.ts`, che separa
-  deliberatamente il lavoro DB/R2 (cache-abile) dai flag (letti dynamic, fuori dalla cache).
-  Tentare di unirli fa fallire la build con un errore esplicito, non un warning.
-- Una pagina che chiama `getFlags()` (o qualsiasi dynamic API) deve precederla con
-  `await connection()` — altrimenti, durante il prerender in build, `headers()` va in timeout,
-  il fallback fail-open del chiamante intercetta l'errore, e quel valore resta congelato nello
-  shell statico finché non c'è un nuovo deploy. È già successo in produzione: un kill-switch
-  smetteva di funzionare senza che la build lo segnalasse.
+  Tentare di leggerli lì fa fallire la build con un errore esplicito, non un warning.
+- Una pagina che legge dati da database o R2 (home, percorsi, bici) ha `await connection()`: si
+  renderizza a ogni richiesta e non nella build, che non ha un database. Il lavoro cache-abile
+  sta nelle funzioni `"use cache"` (`lib/routes-data.ts`, `lib/bikes-data.ts`).
 - Invalidazione: `updateTag('nome-tag')` nelle Server Action che cambiano i dati, non
   `revalidatePath`. Cerca gli usi esistenti in `lib/actions/routes.ts` prima di aggiungerne
   uno nuovo — ogni mutazione che tocca `routes` aggiorna sia `routes-list` che
@@ -45,10 +40,10 @@ risolto dalla directory di questo file) — è la regola in `AGENTS.md`, non rip
 
 ## Trappole verificate dal vivo
 
-- **Una pagina "spenta" da un feature flag risponde 200, non 404.** Le pagine con
+- **Una pagina che chiama `notFound()` dopo lo streaming risponde 200, non 404.** Le pagine con
   `loading.tsx` vengono trasmesse in streaming, e lo stato HTTP non è più modificabile quando
   `notFound()` scatta più tardi. Next inietta `<meta name="robots" content="noindex">` per
-  compensare lato SEO. Non usare mai il codice HTTP per verificare se una sezione è accesa —
+  compensare lato SEO. Non usare mai il codice HTTP per verificare se una pagina esiste —
   guarda il contenuto della risposta.
 - `--webpack` sempre, mai Turbopack, per `dev` e `build`: `next.config.ts` mappa `cesium` su
   `window.Cesium` per evitare che SWC analizzi shader GLSL con sequenze di escape ottali.
