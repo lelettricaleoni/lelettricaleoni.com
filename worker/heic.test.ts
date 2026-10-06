@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import sharp from 'sharp'
-import { decodeHeic, isHeicKey } from './heic'
+import { assertWithinPixelLimit, decodeHeic, isHeicKey } from './heic'
 import { renderPhoto } from './imaging'
 import { testImagingConfig } from './testing/images'
 
@@ -17,6 +17,16 @@ describe('isHeicKey', () => {
     '%s is not',
     (key) => expect(isHeicKey(key)).toBe(false),
   )
+})
+
+describe('assertWithinPixelLimit', () => {
+  it('lets through an image up to the limit the other formats have', () => {
+    expect(() => assertWithinPixelLimit(20_000, 15_000)).not.toThrow()
+  })
+
+  it('refuses a decompression bomb before any pixel buffer is allocated', () => {
+    expect(() => assertWithinPixelLimit(40_000, 40_000)).toThrow(/too many pixels/)
+  })
 })
 
 describe('decodeHeic', () => {
