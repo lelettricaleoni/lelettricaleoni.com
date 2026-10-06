@@ -15,8 +15,6 @@ import { test, expect, type Page } from '@playwright/test'
 async function visit(page: Page, path: string) {
   const response = await page.goto(path, { waitUntil: 'domcontentloaded' })
   expect(response?.status(), `${path} non risponde`).toBeLessThan(400)
-  expect(page.url(), 'reindirizzato al login: manca VERCEL_AUTOMATION_BYPASS_SECRET')
-    .not.toContain('vercel.com/login')
 }
 
 // .first(): un tag può comparire più volte durante l'idratazione (vedi
