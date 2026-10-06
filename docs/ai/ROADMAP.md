@@ -50,6 +50,14 @@
 
 ## Prossimo
 
+- **Il worker in Node.js dentro questo repository** (Kevin, 2026-10-06): riscrivere il worker video/foto di Python in
+  Node, con le tecniche moderne del resto del progetto (TypeScript, `zod`, tipi e chiavi condivisi col sito),
+  e portarlo qui dal repository privato `videoStream-bucketWorker`. **Un Redis solo, quello della VM**: sito e
+  worker ora stanno sulla stessa rete, quindi Upstash non serve più (resta finché c'è il ripiego su Vercel). Da
+  decidere nel disegno: database o prefissi separati per `production` e `staging`; utenti Redis con permessi
+  limitati (oggi il token del worker può solo scrivere `videojob:*`); i container web nella rete del Redis, senza
+  porte pubblicate; `ioredis` (lo vuole BullMQ) anche nel sito al posto del client REST. Parte con una fase di
+  disegno (spec in `docs/superpowers/specs/`).
 - **Mettere a punto Google Search Console e Analytics**, dopo il giro di implementazioni in
   corso (chiesto da Kevin il 2026-09-25). Su Analytics: costruire qualche dashboard. Su
   Search Console: oggi è in disordine ("un bel casino") — prima un inventario di cosa c'è
@@ -78,6 +86,14 @@
 
 ## Un giorno
 
+- **Pulizia di Vercel**, dopo qualche settimana tranquilla dal passaggio del 2026-10-06: cancellare il progetto,
+  togliere `vercel.json` e le variabili, il segreto `VERCEL_AUTOMATION_BYPASS_SECRET` e gli ambienti GitHub
+  «Preview» e «Production» creati dall'integrazione; **ruotare** la password del database di produzione e il
+  token del tunnel (comparsi in una trascrizione), togliere il CORS e i record DNS che servivano al ripiego.
+- **Più capacità del sito, solo se i picchi la chiedono**: oggi un processo Node per ambiente (una CPU di due)
+  regge 4-6 req/s sulle pagine pesanti contro un picco reale di ~0,04. Il primo passo sarebbe la cache di
+  Cloudflare davanti alle pagine pubbliche (la durata sarebbe quella del profilo `catalog`, 10-30 s), il secondo
+  `pm2` in cluster con 2 processi (cache in memoria per processo, come le istanze di Vercel).
 - **Studiare come usare il viola del logo** (`#795F91`, token `brand-purple`, oggi
   inutilizzato). Kevin lo vuole nel sito ma non "blu dappertutto": l'idea è usarlo nelle
   sezioni di **prenotazione e appuntamenti**, quando ci saranno, con uno studio più
@@ -106,6 +122,9 @@
 
 ## Scartato
 
+- **Un'anteprima per ogni pull request sulla VM** (2026-10-06) — richiederebbe un reverse proxy davanti al tunnel
+  e porterebbe CPU a un server con due soli core già contesi dal worker. Il controllo `browser` costruisce invece
+  l'immagine nel job e la prova su `localhost`, con i dati di sviluppo.
 - **Feature flag (Vercel Flags)** — sei interruttori per spegnere una sezione senza un deploy; tolti il 2026-10-05
   perché Kevin non li usava mai e con il passaggio dal server non avrebbero più il loro servizio. Se servisse di
   nuovo un interruttore d'emergenza: una tabella nel database con una pagina nel pannello, non un servizio esterno.

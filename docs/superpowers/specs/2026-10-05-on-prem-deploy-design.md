@@ -121,3 +121,19 @@ deploy/      docker-compose.yml (prod e staging), deploy.sh, configurazione dell
 5. **Flag:** si verifica prima se Vercel Flags risponde da fuori; se no, flag nel database?
 6. **Giorno del passaggio:** quanta instabilità è accettabile, e a che ora?
 7. **Anteprime per PR:** va bene perderle, tenendo solo staging?
+
+## Esito (2026-10-06)
+
+Fatto, con queste differenze dal disegno:
+
+- **Ingresso**: Cloudflare Tunnel, deciso con Kevin (nessuna porta aperta, nessun certificato da gestire).
+- **Deploy**: non un file Compose per il sito ma `deploy/web/deploy.sh`, che avvia il container nuovo accanto al vecchio
+  con lo stesso alias di rete e ferma il vecchio solo a nuovo sano (nessuna interruzione), con `rollback`.
+- **Segreti**: sulla VM, non su GitHub; su GitHub solo la chiave di deploy e i valori pubblici `NEXT_PUBLIC_*`
+  (cotti nell'immagine in build). `next-runtime-env` valutato e scartato: dichiara compatibilità solo con Next 14.
+- **`browser` in CI**: costruisce l'immagine nel job e prova `localhost` (ambiente `ci`), invece dell'anteprima di
+  Vercel.
+- **Trovato confrontando con Vercel**: la sitemap preparata in build senza database (39 URL contro 90).
+- **Vercel**: in pausa dal 2026-10-06, non cancellato.
+- **Non ancora fatto**: il worker non è stato spostato in questo repository (e sarà riscritto in Node, vedi ROADMAP);
+  Upstash resta finché c'è il ripiego.
