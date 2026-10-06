@@ -28,6 +28,20 @@ export interface CacheStore {
   set(key: string, value: unknown, opts: { ex: number }): Promise<unknown>
 }
 
+/**
+ * A CacheStore over an ioredis connection. Values go in as JSON and come back parsed, as the Upstash client used to do
+ * on its own; a value that is not JSON makes `get` reject, which readThrough treats as a miss.
+ */
+export function redisCacheStore(redis: Pick<import('ioredis').Redis, 'get' | 'set'>): CacheStore {
+  return {
+    async get<T>(key: string): Promise<T | null> {
+      const raw = await redis.get(key)
+      return raw === null ? null : (JSON.parse(raw) as T)
+    },
+    set: (key, value, { ex }) => redis.set(key, JSON.stringify(value), 'EX', ex),
+  }
+}
+
 let resolved: CacheStore | null | undefined
 
 /** The configured store, or null when there are no credentials. */
