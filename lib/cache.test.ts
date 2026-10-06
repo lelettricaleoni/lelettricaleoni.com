@@ -57,7 +57,7 @@ describe('readThrough', () => {
   describe('fail open', () => {
     it('falls through to the producer when the read throws', async () => {
       const store: CacheStore = {
-        get: async () => { throw new Error('Upstash giù') },
+        get: async () => { throw new Error('Redis giù') },
         set: async () => 'OK',
       }
       expect(await readThrough('k', async () => 'fresco', 60, store)).toBe('fresco')

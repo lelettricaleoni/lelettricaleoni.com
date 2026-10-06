@@ -98,7 +98,7 @@ export async function getRouteDetailData(lang: Locale, id: string) {
   // Exclude what the worker hasn't finished — videos and photos alike — and
   // carry the resolved manifest URL down so the client doesn't have to guess
   // which one exists. resolveReadyMedia and loadGpxPoints already have their own
-  // durable, near-permanent Upstash cache (lib/cache.ts) — this "use cache"
+  // durable, near-permanent Redis cache (lib/cache.ts) — this "use cache"
   // wrapper is a thin, short-lived layer on top, not a replacement for it. It
   // is also why a photo that has just finished appears within its 30-120
   // seconds, without anything invalidating the tag.
