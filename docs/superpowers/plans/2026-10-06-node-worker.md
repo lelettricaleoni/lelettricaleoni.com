@@ -5519,12 +5519,12 @@ ssh clustrenode1 'chmod 755 ~/docker/deploy-entry.sh ~/docker/media-worker/deplo
 ```bash
 ssh clustrenode1 'cd ~/docker/redis && ./render-acl.sh && docker compose up -d && sleep 6 && docker compose ps'
 ```
-Atteso: `redis` è `healthy`; i file `users.acl`, `web.redis-url` e `worker.redis-url` esistono (`ls -l`), i due `.redis-url` con permessi 600.
+Atteso: `redis` è `healthy`; i file `users.acl` e i quattro `*.redis-url` (`web-staging`, `web-production`, `worker-staging`, `worker-production`) esistono (`ls -l`), questi ultimi con permessi 600.
 
 - [ ] **Passo 3: i file delle variabili, senza stampare segreti**
 
 ```bash
-ssh clustrenode1 'printf "REDIS_URL=%s\n" "$(cat ~/docker/redis/web.redis-url)" >> ~/docker/web/staging.env && ~/docker/media-worker/make-env.sh staging && awk -F= "/^REDIS_URL=/{print \"web staging.env: REDIS_URL presente\"}" ~/docker/web/staging.env && grep -c "" ~/docker/media-worker/staging.env && grep -E "^(R2_BUCKETS)=" ~/docker/media-worker/staging.env'
+ssh clustrenode1 'printf "REDIS_URL=%s\n" "$(cat ~/docker/redis/web-staging.redis-url)" >> ~/docker/web/staging.env && ~/docker/media-worker/make-env.sh staging && awk -F= "/^REDIS_URL=/{print \"web staging.env: REDIS_URL presente\"}" ~/docker/web/staging.env && grep -c "" ~/docker/media-worker/staging.env && grep -E "^(R2_BUCKETS)=" ~/docker/media-worker/staging.env'
 ```
 Atteso: `R2_BUCKETS=dev-lelettrica-trails` (il bucket di sviluppo), 5 righe nel file del worker.
 
@@ -5646,7 +5646,7 @@ Atteso: tutti zero. Se no, aspettare. Inoltre Kevin conferma di non avere carica
 - [ ] **Passo 2: preparare produzione, senza accendere niente**
 
 ```bash
-ssh clustrenode1 'printf "REDIS_URL=%s\n" "$(cat ~/docker/redis/web.redis-url)" >> ~/docker/web/production.env && ~/docker/media-worker/make-env.sh production && grep -E "^R2_BUCKETS=" ~/docker/media-worker/production.env'
+ssh clustrenode1 'printf "REDIS_URL=%s\n" "$(cat ~/docker/redis/web-production.redis-url)" >> ~/docker/web/production.env && ~/docker/media-worker/make-env.sh production && grep -E "^R2_BUCKETS=" ~/docker/media-worker/production.env'
 ```
 Atteso: `R2_BUCKETS=lelettrica-trails`. (Il vecchio codice del sito ignora `REDIS_URL`: è innocuo finché il rilascio non arriva.)
 
@@ -5686,7 +5686,7 @@ Il Python torna a servire il bucket di produzione (la scansione ritrova i sorgen
 
 Aggiornare:
 - `docs/ai/STATE.md`: sostituire la sezione «**Il worker** (`lelettricaleoni/videoStream-bucketWorker`) sta in `~/docker/worker`…» (con la tabella e il paragrafo del deploy automatico del worker Python) con la descrizione del worker nuovo (`worker/`, immagine `Dockerfile.worker`, container `media-worker-<ambiente>`, coda `bullmq-<ambiente>`, un lavoro alla volta, scansione ogni 10 minuti, stato letto dalla coda, avvio dal sito con `confirmMediaUpload`, chiavi in `lib/media/keys.ts`); sostituire il paragrafo «**Cache di lettura su Upstash Redis**» con «Cache di lettura sul Redis della VM» (utenti `web` e `worker` con permessi limitati, `noeviction`, rete `internal`, nessuna porta); nella tabella «Ambienti» e nella sezione «Server» aggiungere Redis e il worker; togliere dal testo i riferimenti al token Upstash del worker.
-- `docs/environment-variables.md`: sostituire le righe `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` con `REDIS_URL` (utente `web` per il sito, `worker` per il worker, file `~/docker/redis/*.redis-url`), aggiungere le variabili del worker (`deploy/worker/env.template`) e l'ambiente `ci`.
+- `docs/environment-variables.md`: sostituire le righe `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` con `REDIS_URL` (un utente per ruolo e per ambiente: `web-staging`, `web-production`, `worker-staging`, `worker-production`, file `~/docker/redis/*.redis-url`), aggiungere le variabili del worker (`deploy/worker/env.template`) e l'ambiente `ci`.
 - `docs/ai/ROADMAP.md`: spostare il worker in Node da «Prossimo» a fatto (con la data); aggiungere la **fetta B** (pagina dei lavori, riprova, pausa, rielabora delle sole foto) come prossima voce, con il riferimento alla spec che andrà scritta; in «Pulizia di Vercel» aggiungere «cancellare il database Upstash e le variabili `UPSTASH_*`»; aggiungere in «Scartato» «**Conservare gli originali** (silo sulla VM, bucket privato, MinIO) — scartato da Kevin il 2026-10-06».
 - `.claude/skills/media-storage/SKILL.md`: se descrive il worker Python, aggiornarla (chiavi in `lib/media/keys.ts`, lavori in `worker/jobs/`).
 
