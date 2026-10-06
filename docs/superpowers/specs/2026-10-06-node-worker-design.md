@@ -151,3 +151,19 @@ bucket**.
 La **fetta B**, con la sua spec: pagina dell'elenco dei lavori con avanzamento, riprova di un lavoro fallito (possibile perché il
 sorgente resta su R2 fino al successo), pausa e ripresa delle code, e rielabora delle sole foto dal master. Costruisce su
 `getJobStatus()` e sulle code di questa fetta.
+
+## Raffinamenti emersi scrivendo il piano
+
+Leggendo il codice per scrivere il piano (`docs/superpowers/plans/2026-10-06-node-worker.md`) sono emerse tre cose che la
+spec dava per scontate o non vedeva:
+
+1. **Non esiste un «fine caricamento» lato server.** Il browser carica *direttamente su R2* con un URL presigned e la riga
+   `media` si scrive solo quando si salva il modulo del percorso. L'accodamento immediato passa quindi da una Server Action,
+   `confirmMediaUpload(storageKey)`, che il browser chiama dopo il `PUT` riuscito (`components/admin/media-upload.tsx`).
+   Non fallisce mai il caricamento: con la coda spenta, la scansione trova il file entro dieci minuti.
+2. **Le code hanno un prefisso per ambiente** (`bullmq-staging`, `bullmq-production`). Un Redis solo serve entrambi gli
+   ambienti e un worker non deve prendere i lavori dell'altro, che non hanno il suo bucket. Ne segue un worker (container)
+   per ambiente, come per il sito: durante il passaggio, quello di `staging` serve solo il bucket di sviluppo.
+3. **Un video senza audio** fa rifiutare a `ffmpeg` la mappa dei flussi che nomina `a:0`: il worker Python nominava sempre
+   la traccia audio, quindi quel caso non era coperto. Il worker Node controlla se la sorgente ha un'audio e, se non ce l'ha,
+   non la nomina; gli argomenti con audio restano identici a quelli di Python (provato con un file «golden»).
