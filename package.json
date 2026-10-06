@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "node scripts/copy-cesium.mjs && next dev --webpack",
     "build": "node scripts/copy-cesium.mjs && next build --webpack",
+    "build:worker": "node scripts/build-worker.mjs",
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
