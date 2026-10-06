@@ -1,5 +1,6 @@
 import type { MetadataRoute } from 'next'
 import { cacheLife, cacheTag } from 'next/cache'
+import { connection } from 'next/server'
 import { eq, and } from 'drizzle-orm'
 import { db, routes, bikeModels, bikeUnits } from '@/lib/db'
 import { shortId } from '@/lib/utils'
@@ -13,7 +14,16 @@ const LAST_MODIFIED = new Date('2026-04-20')
 
 // What is listed here does not depend on anything dynamic: a route that is not published tells crawlers not to index
 // it on its own page, so there is nothing to decide per request and the sitemap is cached.
+//
+// `connection()` keeps Next from preparing it at build time: the image is built without a database, and a sitemap
+// prepared there would hold only the static pages (39 URLs instead of 90) until the first revalidation. The caching
+// itself is the inner function's "use cache".
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  await connection()
+  return buildSitemap()
+}
+
+async function buildSitemap(): Promise<MetadataRoute.Sitemap> {
   'use cache'
   cacheLife('sitemap')
   cacheTag('sitemap')
@@ -57,8 +67,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }))
   )
 
+  // No try/catch on purpose: an error here is not cached, so the next request tries again. Swallowing it would cache
+  // a sitemap without routes and bikes for an hour.
   let dynamicEntries: MetadataRoute.Sitemap = []
-  try {
+  {
     const publishedRoutes = await db
       .select({ id: routes.id, updatedAt: routes.updatedAt })
       .from(routes)
@@ -79,9 +91,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         },
       }))
     })
-  } catch {}
+  }
 
-  try {
+  {
     // selectDistinct per lo stesso motivo della lista pubblica bici: un
     // modello con più unità in bike_units non deve ripetersi.
     const publishedModelsWithUnits = await db
@@ -105,7 +117,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         },
       }))
     }))
-  } catch {}
+  }
 
   return [...staticEntries, ...serviceEntries, ...dynamicEntries]
 }
