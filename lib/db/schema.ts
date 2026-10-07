@@ -109,7 +109,13 @@ export type NewBikeCategory = typeof bikeCategories.$inferInsert
 export const bikeModels = pgTable('bike_models', {
   id:             uuid('id').primaryKey().defaultRandom(),
   categoryId:     uuid('category_id').notNull().references(() => bikeCategories.id),
+  // Deprecated: an absolute amount in euros that no price ever read, so it never did anything
+  // (found 2026-10-07). Replaced by priceAdjustmentPercent. Kept only so the next migration
+  // does not generate a DROP COLUMN by itself: drop it in a migration of its own, on purpose.
   priceSurcharge: numeric('price_surcharge'),
+  // The model's own percentage over its category's prices: +10 is a surcharge on every price of the
+  // category, -10 a discount. 0 is "the category's prices as they are". See lib/bike-pricing.ts.
+  priceAdjustmentPercent: numeric('price_adjustment_percent', { precision: 5, scale: 2 }).notNull().default('0'),
   batteryRange:   text('battery_range'),
   motor:          text('motor'),
   gearCount:      text('gear_count'),

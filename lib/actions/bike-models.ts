@@ -66,7 +66,7 @@ function parseBikeModelForm(formData: FormData) {
     nameIt:         formData.get('nameIt'),
     descriptionIt:  formData.get('descriptionIt'),
     categoryId:     formData.get('categoryId'),
-    priceSurcharge: formData.get('priceSurcharge') || undefined,
+    priceAdjustmentPercent: formData.get('priceAdjustmentPercent') || undefined,
     batteryRange:   formData.get('batteryRange') || undefined,
     motor:          formData.get('motor') || undefined,
     gearCount:      formData.get('gearCount') || undefined,
@@ -122,7 +122,7 @@ export async function createBikeModelAction(
   try {
     const [newModel] = await db.insert(bikeModels).values({
       categoryId:     modelData.categoryId,
-      priceSurcharge: modelData.priceSurcharge?.toString(),
+      priceAdjustmentPercent: modelData.priceAdjustmentPercent.toString(),
       batteryRange:   modelData.batteryRange || null,
       motor:          modelData.motor || null,
       gearCount:      modelData.gearCount || null,
@@ -186,7 +186,7 @@ export async function updateBikeModelAction(
   try {
     await db.update(bikeModels).set({
       categoryId:     modelData.categoryId,
-      priceSurcharge: modelData.priceSurcharge?.toString(),
+      priceAdjustmentPercent: modelData.priceAdjustmentPercent.toString(),
       batteryRange:   modelData.batteryRange || null,
       motor:          modelData.motor || null,
       gearCount:      modelData.gearCount || null,
