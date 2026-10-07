@@ -1,4 +1,5 @@
 import { AdminSidebar } from '@/components/admin/admin-sidebar'
+import { StaleActionGuard } from '@/components/admin/stale-action-guard'
 import { Toaster } from '@/components/ui/sonner'
 import { getAdminUser } from '@/lib/supabase/server'
 import { hasDevAccess } from '@/lib/admin-users'
@@ -26,6 +27,7 @@ export async function AdminShell({ children }: { children: React.ReactNode }) {
         {children}
       </main>
       <Toaster richColors />
+      <StaleActionGuard />
     </div>
   )
 }
