@@ -6,6 +6,7 @@ import { BikeTypeIcon, bikeTypeBadgeClass } from '@/components/bike-type-icon'
 import { DifficultyBadge } from '@/components/difficulty-badge'
 import { CardTagRow } from '@/components/card-tag-row'
 import { shortId } from '@/lib/utils'
+import { formatRouteKm } from '@/lib/route-format'
 import type { Route, RouteTranslation } from '@/lib/db'
 
 interface RouteCardProps {
@@ -36,7 +37,9 @@ export function RouteCard({ route, translation, media, lang, dict }: RouteCardPr
   // and breaks that alignment, so a missing value shows "-" instead of
   // disappearing.
   const stats = [
-    { key: 'distance', icon: Ruler, value: route.distanceKm ? `${route.distanceKm} km` : '-', label: d.stat_distance_label },
+    // Whole kilometres: with decimals the label rarely fits in a third of the card.
+    // The route page shows them.
+    { key: 'distance', icon: Ruler, value: route.distanceKm ? `${formatRouteKm(route.distanceKm, lang, 'whole')} km` : '-', label: d.stat_distance_label },
     { key: 'elevation', icon: TrendingUp, value: route.elevationM != null ? `${route.elevationM} m` : '-', label: d.stat_elevation_label },
     {
       key: 'duration',
