@@ -64,11 +64,6 @@
 
 ## Prossimo
 
-- **Non contattare Google prima del consenso** (misurato il 2026-10-07 sul sito vero, da visitatore nuovo: nessun cookie, ma il browser chiede già `gtag.js` a
-  `googletagmanager.com`, quindi Google riceve l'indirizzo IP). Scelta più prudente: caricare `gtag.js` solo dopo «Accetta» (`onConsent`/`onChange` del banner),
-  tenendo `dataLayer` e `gtag` come coda che non contatta nessuno, e cancellare i cookie `_ga*` alla revoca (`autoClear`). Costo: niente più «ping senza cookie»
-  da chi rifiuta, cioè qualche dato in meno (32 sessioni a settimana, oggi). Decisione di Kevin; dettagli e prova in `.claude/skills/cookie-consent/`.
-
 - **Fetta B del worker: una pagina dei lavori nel pannello** (Kevin, 2026-10-06): elenco dei lavori, «Riprova» per i
   falliti, pausa e ripresa di una coda, «Rielabora» per le sole foto (i video non si possono rielaborare: l'originale non si
   conserva, scelta di Kevin). Ora che la coda è BullMQ e il sito la legge (`lib/queues/`), serve una spec e un piano a parte
@@ -145,6 +140,10 @@
 
 ## Scartato
 
+- **Caricare `gtag.js` solo dopo il consenso (Consent Mode «di base»)** — valutato e scartato da Kevin il 2026-10-07: si tiene la modalità **avanzata**, che Google
+  documenta e raccomanda. Prima di ogni scelta Google riceve un ping senza cookie (data e ora, browser, referrer, un numero casuale, lo stato del consenso, più l'indirizzo IP
+  di ogni richiesta), e Oracle e Cloudflare ricevono comunque l'IP per consegnare il sito. L'informativa lo dichiara (`privacy.cookies_body` e `legal_basis_body`, con un test).
+  Resta una domanda per chi rivede i testi; se la risposta fosse no, la modifica è piccola (vedi `.claude/skills/cookie-consent/`). Non riproporlo senza quel parere.
 - **Conservare gli originali delle foto e dei video** (silo sulla VM, bucket privato, MinIO — Kevin, 2026-10-06): il
   sorgente si cancella dopo l'elaborazione, come sempre. Costerebbe storage a pagamento e un secondo posto fragile per
   un file che nessuno rilegge; chi vuole l'originale lo tiene sul proprio computer. Non riproporlo. Ne segue che

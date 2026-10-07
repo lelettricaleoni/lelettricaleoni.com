@@ -54,9 +54,13 @@ Non basta leggere il codice: l'errore tipico (una richiesta a Google prima del c
 
 - **Cookie: nessuno**; banner visibile. ✅
 - **Richieste a terzi: una**, `www.googletagmanager.com` (lo script `gtag.js`), caricato `afterInteractive` per **tutti**, anche prima del consenso. Con Consent Mode in
-  `denied` non imposta cookie, ma **Google riceve l'indirizzo IP** del visitatore. È la domanda 8 di `privacy-cookies`. **Scelta più prudente, da decidere con Kevin**:
-  caricare `gtag.js` solo dopo il consenso (`onConsent`/`onChange`), tenendo `dataLayer` e `gtag` come coda che non contatta nessuno. Costo: niente più
-  «ping senza cookie» da chi rifiuta, cioè qualche dato in meno (il traffico è già poco: 32 sessioni in una settimana). Non è ancora fatto.
+  `denied` non imposta cookie, ma **Google riceve un «ping senza cookie»** (data e ora, user agent, referrer, un numero casuale, lo stato del consenso, più l'indirizzo IP che
+  ogni richiesta porta) anche da chi rifiuta. È la **modalità avanzata** di Consent Mode, documentata da Google come valida (l'altra, «di base», non carica nulla prima del consenso).
+- **Deciso da Kevin il 2026-10-07: si tiene la modalità avanzata.** Motivi: Google la raccomanda per avere stime più complete; l'indirizzo IP, prima di ogni scelta, lo ricevono comunque
+  Oracle (il server) e Cloudflare (la rete davanti), perché senza non si consegna il sito; il traffico è poco e un dato in più conta. **Di conseguenza l'informativa lo dice**
+  (`cookies_body` e `legal_basis_body`: ping minimo senza cookie, base il legittimo interesse), e un test lo tiene (`lib/privacy-text.test.ts`). **Resta una domanda per chi
+  rivede i testi** (la 8 di `privacy-cookies`): se quei ping sono accettabili senza consenso. Se la risposta fosse no, la modifica è piccola: caricare `gtag.js` solo in
+  `onConsent`/`onChange`, e togliere dall'informativa le due frasi.
 
 ## Trappole
 

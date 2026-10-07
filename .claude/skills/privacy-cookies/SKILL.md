@@ -128,4 +128,5 @@ Da portare a chi rivede i testi, finché non hanno risposta:
    Il testo nella pagina «Dati e privacy» rimanda all'informativa.
 6. Base giuridica dei dati dell'account (esecuzione del contratto di noleggio) e dell'email di servizio.
 7. Cesium ion e Esri ricevono l'IP senza consenso: va bene dichiararli nell'informativa, o servono dietro il banner?
-8. Lo script di Google Analytics si carica prima del consenso (anche con Consent Mode negato): è accettabile?
+8. Google Analytics gira in modalità avanzata di Consent Mode (scelta di Kevin, 2026-10-07): lo script si carica prima del consenso e Google riceve un ping senza cookie anche da chi
+   rifiuta; l'informativa lo dichiara, con il legittimo interesse come base. È accettabile senza consenso?
