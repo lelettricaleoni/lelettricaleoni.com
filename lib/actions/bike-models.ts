@@ -1,33 +1,26 @@
 'use server'
 import { updateTag, revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
-import { z } from 'zod'
 import { eq, and, asc } from 'drizzle-orm'
 import {
   db, bikeModels, bikeModelTranslations, bikeModelSizes, bikeModelVersions, media,
 } from '@/lib/db'
 import { getAdminUser } from '@/lib/supabase/server'
-import { translateFromItalian } from './translate'
 import { getVideoPresignedUploadUrl, getPhotoPresignedUploadUrl, deleteMediaFiles } from '@/lib/media'
 import { photoSourceExtension, photoContentType } from '@/lib/media-client'
 import { needsRetranslation } from '@/lib/translations'
-
-const BikeModelSchema = z.object({
-  nameIt:          z.string().min(2).max(200),
-  descriptionIt:   z.string().min(10),
-  categoryId:      z.string().uuid(),
-  priceSurcharge:  z.coerce.number().nonnegative().optional(),
-  batteryRange:    z.string().optional(),
-  motor:           z.string().optional(),
-  gearCount:       z.string().optional(),
-  sizeIds:         z.array(z.string().uuid()).min(1, 'Select at least one size'),
-  versionIds:      z.array(z.string().uuid()).min(1, 'Select at least one version'),
-})
+import { BikeModelSchema, type BikeModelInput } from '@/lib/bike-model-schema'
+import { translateNameAndDescription } from '@/lib/translate-text'
+import { syncModelSizesAndVersions, replaceModelMedia, type ModelMediaItem } from '@/lib/bike-model-sync'
 
 export type BikeModelFormState = {
-  errors?: Partial<Record<keyof z.infer<typeof BikeModelSchema>, string[]>>
+  errors?: Partial<Record<keyof BikeModelInput, string[]>>
   message?: string
 }
+
+const NOT_SAVED = 'The model could not be saved, and nothing was created. Try again.'
+const PARTLY_SAVED = 'The changes could not be saved completely. Reload the page and check the model before trying again.'
+const MEDIA_UNREADABLE = 'The photos and videos could not be read from the form. Reload the page and try again.'
 
 async function requireAdmin() {
   const user = await getAdminUser()
@@ -79,31 +72,28 @@ function parseBikeModelForm(formData: FormData) {
   })
 }
 
-async function syncMediaItems(bikeModelId: string, formData: FormData) {
-  const mediaItemsRaw = formData.get('mediaItems') as string | null
-  const mediaItems: { key: string; type: 'photo' | 'video'; sha256?: string }[] = mediaItemsRaw ? JSON.parse(mediaItemsRaw) : []
-
-  const existing = await db.select().from(media).where(eq(media.bikeModelId, bikeModelId))
-  const newKeys = new Set(mediaItems.map((i) => i.key))
-  const removed = existing.filter((m) => !newKeys.has(m.storageKey))
-  await Promise.all(removed.map(deleteMediaFiles))
-
-  await db.delete(media).where(eq(media.bikeModelId, bikeModelId))
-  if (mediaItems.length > 0) {
-    await db.insert(media).values(
-      mediaItems.map(({ key, type, sha256 }, displayOrder) => ({
-        bikeModelId, storageKey: key, mediaType: type, displayOrder, sha256: sha256 ?? null,
-      }))
-    )
+/**
+ * The media list the form carries, or null when it cannot be read. A field that
+ * is missing means "no media"; one that is there but broken must not be taken
+ * for an empty list, which would delete every picture of the model.
+ */
+function readMediaItems(formData: FormData): ModelMediaItem[] | null {
+  const raw = formData.get('mediaItems')
+  if (typeof raw !== 'string' || raw === '') return []
+  try {
+    const parsed: unknown = JSON.parse(raw)
+    return Array.isArray(parsed) ? (parsed as ModelMediaItem[]) : null
+  } catch {
+    return null
   }
 }
 
-async function syncSizesAndVersions(bikeModelId: string, sizeIds: string[], versionIds: string[]) {
-  await db.delete(bikeModelSizes).where(eq(bikeModelSizes.bikeModelId, bikeModelId))
-  await db.insert(bikeModelSizes).values(sizeIds.map((bikeSizeId) => ({ bikeModelId, bikeSizeId })))
-
-  await db.delete(bikeModelVersions).where(eq(bikeModelVersions.bikeModelId, bikeModelId))
-  await db.insert(bikeModelVersions).values(versionIds.map((bikeVersionId) => ({ bikeModelId, bikeVersionId })))
+/** The files of media rows that are gone. Runs AFTER the database is right: a failure here only leaves a stray file. */
+async function deleteRemovedMediaFiles(removed: Awaited<ReturnType<typeof replaceModelMedia>>) {
+  const results = await Promise.allSettled(removed.map(deleteMediaFiles))
+  for (const result of results) {
+    if (result.status === 'rejected') console.error('[bike-models] could not delete a removed file:', String(result.reason).replace(/[\r\n]/g, ' '))
+  }
 }
 
 export async function createBikeModelAction(
@@ -117,27 +107,39 @@ export async function createBikeModelAction(
 
   const { nameIt, descriptionIt, sizeIds, versionIds, ...modelData } = parsed.data
 
-  const [newModel] = await db.insert(bikeModels).values({
-    categoryId:     modelData.categoryId,
-    priceSurcharge: modelData.priceSurcharge?.toString(),
-    batteryRange:   modelData.batteryRange || null,
-    motor:          modelData.motor || null,
-    gearCount:      modelData.gearCount || null,
-  }).returning()
+  const mediaItems = readMediaItems(formData)
+  if (!mediaItems) return { message: MEDIA_UNREADABLE }
 
-  const [nameTranslations, descTranslations] = await Promise.all([
-    translateFromItalian(nameIt),
-    translateFromItalian(descriptionIt),
-  ])
+  // Translate BEFORE writing anything: the row used to be inserted first, so a failed
+  // translation left a model with no name behind, and every retry left another.
+  const translated = await translateNameAndDescription(nameIt, descriptionIt)
+  if (!translated.ok) return { message: translated.message }
 
-  await db.insert(bikeModelTranslations).values([
-    { bikeModelId: newModel.id, locale: 'it', name: nameIt, description: descriptionIt, isAutoTranslated: false },
-    { bikeModelId: newModel.id, locale: 'en', name: nameTranslations.en, description: descTranslations.en, isAutoTranslated: true },
-    { bikeModelId: newModel.id, locale: 'de', name: nameTranslations.de, description: descTranslations.de, isAutoTranslated: true },
-  ])
+  let newModelId: string | undefined
+  try {
+    const [newModel] = await db.insert(bikeModels).values({
+      categoryId:     modelData.categoryId,
+      priceSurcharge: modelData.priceSurcharge?.toString(),
+      batteryRange:   modelData.batteryRange || null,
+      motor:          modelData.motor || null,
+      gearCount:      modelData.gearCount || null,
+    }).returning()
+    newModelId = newModel.id
 
-  await syncSizesAndVersions(newModel.id, sizeIds, versionIds)
-  await syncMediaItems(newModel.id, formData)
+    await db.insert(bikeModelTranslations).values([
+      { bikeModelId: newModel.id, locale: 'it', name: nameIt, description: descriptionIt, isAutoTranslated: false },
+      { bikeModelId: newModel.id, locale: 'en', name: translated.name.en, description: translated.description.en, isAutoTranslated: true },
+      { bikeModelId: newModel.id, locale: 'de', name: translated.name.de, description: translated.description.de, isAutoTranslated: true },
+    ])
+    await syncModelSizesAndVersions(newModel.id, sizeIds, versionIds)
+    await replaceModelMedia(newModel.id, mediaItems)
+  } catch (error) {
+    console.error('[bike-models] create failed:', String(error).replace(/[\r\n]/g, ' '))
+    // No transaction is available (see lib/bike-model-sync.ts), so undo by hand: translations,
+    // sizes, versions and media go with the model (ON DELETE CASCADE).
+    if (newModelId) await db.delete(bikeModels).where(eq(bikeModels.id, newModelId)).catch(() => {})
+    return { message: NOT_SAVED }
+  }
 
   updateTag('bike-models')
   revalidatePath('/manage/bikes') // the admin list, see deleteBikeModelAction
@@ -156,15 +158,11 @@ export async function updateBikeModelAction(
 
   const { nameIt, descriptionIt, sizeIds, versionIds, ...modelData } = parsed.data
 
-  await db.update(bikeModels).set({
-    categoryId:     modelData.categoryId,
-    priceSurcharge: modelData.priceSurcharge?.toString(),
-    batteryRange:   modelData.batteryRange || null,
-    motor:          modelData.motor || null,
-    gearCount:      modelData.gearCount || null,
-    updatedAt:      new Date(),
-  }).where(eq(bikeModels.id, id))
+  const mediaItems = readMediaItems(formData)
+  if (!mediaItems) return { message: MEDIA_UNREADABLE }
 
+  // Everything that can refuse comes first. The model row used to be updated before the
+  // translation was tried, so a translation that failed left the changes half applied.
   const [currentIt] = await db.select().from(bikeModelTranslations).where(
     and(eq(bikeModelTranslations.bikeModelId, id), eq(bikeModelTranslations.locale, 'it'))
   )
@@ -173,30 +171,49 @@ export async function updateBikeModelAction(
     { name: nameIt, description: descriptionIt },
     formData.get('retranslate') === 'true'
   )
+  let translated: Awaited<ReturnType<typeof translateNameAndDescription>> | null = null
   if (reTranslate) {
-    const [nameT, descT] = await Promise.all([
-      translateFromItalian(nameIt),
-      translateFromItalian(descriptionIt),
-    ])
-    for (const [locale, name, desc, isAuto] of [
-      ['it', nameIt, descriptionIt, false],
-      ['en', nameT.en, descT.en, true],
-      ['de', nameT.de, descT.de, true],
-    ] as const) {
-      await db
-        .update(bikeModelTranslations)
-        .set({ name, description: desc, isAutoTranslated: isAuto })
-        .where(and(eq(bikeModelTranslations.bikeModelId, id), eq(bikeModelTranslations.locale, locale)))
-    }
-  } else {
-    await db
-      .update(bikeModelTranslations)
-      .set({ name: nameIt, description: descriptionIt })
-      .where(and(eq(bikeModelTranslations.bikeModelId, id), eq(bikeModelTranslations.locale, 'it')))
+    translated = await translateNameAndDescription(nameIt, descriptionIt)
+    if (!translated.ok) return { message: translated.message }
   }
 
-  await syncSizesAndVersions(id, sizeIds, versionIds)
-  await syncMediaItems(id, formData)
+  let removedMedia: Awaited<ReturnType<typeof replaceModelMedia>>
+  try {
+    await db.update(bikeModels).set({
+      categoryId:     modelData.categoryId,
+      priceSurcharge: modelData.priceSurcharge?.toString(),
+      batteryRange:   modelData.batteryRange || null,
+      motor:          modelData.motor || null,
+      gearCount:      modelData.gearCount || null,
+      updatedAt:      new Date(),
+    }).where(eq(bikeModels.id, id))
+
+    if (translated?.ok) {
+      for (const [locale, name, desc, isAuto] of [
+        ['it', nameIt, descriptionIt, false],
+        ['en', translated.name.en, translated.description.en, true],
+        ['de', translated.name.de, translated.description.de, true],
+      ] as const) {
+        await db
+          .update(bikeModelTranslations)
+          .set({ name, description: desc, isAutoTranslated: isAuto })
+          .where(and(eq(bikeModelTranslations.bikeModelId, id), eq(bikeModelTranslations.locale, locale)))
+      }
+    } else {
+      await db
+        .update(bikeModelTranslations)
+        .set({ name: nameIt, description: descriptionIt })
+        .where(and(eq(bikeModelTranslations.bikeModelId, id), eq(bikeModelTranslations.locale, 'it')))
+    }
+
+    await syncModelSizesAndVersions(id, sizeIds, versionIds)
+    removedMedia = await replaceModelMedia(id, mediaItems)
+  } catch (error) {
+    console.error('[bike-models] update failed:', String(error).replace(/[\r\n]/g, ' '))
+    return { message: PARTLY_SAVED }
+  }
+  // Only now, with the database right, are the files of removed pictures deleted.
+  await deleteRemovedMediaFiles(removedMedia)
 
   updateTag('bike-models')
   updateTag(`bike-model-${id}`)
