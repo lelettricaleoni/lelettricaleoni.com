@@ -1,3 +1,5 @@
+import { unstable_isUnrecognizedActionError } from 'next/navigation'
+
 /**
  * A page that was opened before a deploy calls Server Actions by ids that the new
  * build no longer has. Vercel used to hide that (skew protection); on the VM nothing
@@ -40,4 +42,14 @@ export function reloadForStaleAction(): boolean {
   }
   window.location.reload()
   return true
+}
+
+/**
+ * For a `catch` that turns every failure into a toast: lets the "this page is from before
+ * the update" error through, so the guard or the error boundary can reload the page. Caught
+ * and shown as "still used by a model", it sent the visitor looking for a problem that was
+ * not there (a model with no bikes reported as having some, 2026-10-07).
+ */
+export function rethrowIfStaleAction(error: unknown): void {
+  if (unstable_isUnrecognizedActionError(error)) throw error
 }
