@@ -14,7 +14,7 @@ import { photoShareUrl } from '@/lib/media-client'
 import { getBikeModelDetailData } from '@/lib/bikes-data'
 import { getSuggestedRoutesForBike } from '@/lib/routes-data'
 import { BikeSuggestedRoutes } from '@/components/bike-suggested-routes'
-import { priceForDay } from '@/lib/bike-pricing'
+import { priceForDay, afternoonPriceFor } from '@/lib/bike-pricing'
 import { buildSocialMetadata } from '@/lib/metadata'
 
 // TODO: Cache Components adoption. Refactor this route so this opt-out can be removed.
@@ -80,6 +80,10 @@ export default async function BikeDetailPage({
     ? await getSuggestedRoutesForBike(lang as 'it' | 'en' | 'de', routeCategory.name)
     : []
 
+  // The model's own percentage over its category's prices, applied to every price shown here (lib/bike-pricing.ts).
+  const adjustment = Number(model.priceAdjustmentPercent)
+  const afternoonPrice = afternoonPriceFor(category, adjustment)
+
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Product',
@@ -95,7 +99,7 @@ export default async function BikeDetailPage({
     ],
     offers: {
       '@type': 'Offer',
-      price: priceForDay(category, 1) ?? 0,
+      price: priceForDay(category, 1, adjustment) ?? 0,
       priceCurrency: 'EUR',
       availability: 'https://schema.org/InStock',
     },
@@ -103,7 +107,7 @@ export default async function BikeDetailPage({
   }
 
   const priceDays = Array.from({ length: category.maxRentalDays }, (_, i) => i + 1)
-    .map((day) => ({ day, price: priceForDay(category, day) }))
+    .map((day) => ({ day, price: priceForDay(category, day, adjustment) }))
     .filter((p): p is { day: number; price: number } => p.price !== null)
 
   return (
@@ -164,10 +168,10 @@ export default async function BikeDetailPage({
                   <span className="font-bold text-[#1e3a5f]">€{price}</span>
                 </div>
               ))}
-              {category.afternoonPrice !== null && (
+              {afternoonPrice !== null && (
                 <div className="flex justify-between px-4 py-2 text-sm">
                   <span>{d.price_afternoon}</span>
-                  <span className="font-bold text-[#1e3a5f]">€{Number(category.afternoonPrice)}</span>
+                  <span className="font-bold text-[#1e3a5f]">€{afternoonPrice}</span>
                 </div>
               )}
             </div>
