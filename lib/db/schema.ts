@@ -202,6 +202,36 @@ export const customers = pgTable('customers', {
 
 export type Customer = typeof customers.$inferSelect
 
+export const bookingStatusEnum = pgEnum('booking_status', ['pending', 'confirmed', 'cancelled', 'expired', 'failed_refunded'])
+
+// One payment: the bikes of one cart, with the same days. `pending` while the bikes are held and the
+// payment is on its way, `confirmed` once paid, `expired` when the hold ran out (or was given up),
+// `cancelled` when every bike has been cancelled, `failed_refunded` when a payment arrived for bikes
+// that were no longer ours and was given back in full (docs/superpowers/specs/2026-10-07-booking-slice3-*).
+export const bookings = pgTable('bookings', {
+  id:                    uuid('id').primaryKey().defaultRandom(),
+  customerId:            uuid('customer_id').notNull().references(() => customers.id),
+  // The idempotency key of the whole booking: asking twice with it finds the same booking.
+  requestKey:            uuid('request_key').notNull().unique(),
+  status:                bookingStatusEnum('status').notNull().default('pending'),
+  startsOn:              date('starts_on', { mode: 'string' }).notNull(),
+  endsOn:                date('ends_on', { mode: 'string' }).notNull(),
+  totalCents:            integer('total_cents').notNull(),
+  // The language of the page the person booked from.
+  language:              text('language').notNull().default('it'),
+  stripeSessionId:       text('stripe_session_id').unique(),
+  stripePaymentIntentId: text('stripe_payment_intent_id'),
+  holdExpiresAt:         timestamp('hold_expires_at', { withTimezone: true }).notNull(),
+  createdAt:             timestamp('created_at').notNull().defaultNow(),
+  confirmedAt:           timestamp('confirmed_at'),
+}, (t) => [
+  index('bookings_customer_idx').on(t.customerId),
+  index('bookings_status_expires_idx').on(t.status, t.holdExpiresAt),
+])
+
+export type Booking = typeof bookings.$inferSelect
+export type NewBooking = typeof bookings.$inferInsert
+
 // One row per bike and period: a rental at the counter, or a maintenance block. The rule that
 // two `confirmed` rows on the same bike cannot overlap lives in the database (an EXCLUDE
 // constraint on `during`), added by hand in migration 0010 because Drizzle generates neither
@@ -221,6 +251,8 @@ export const bikeReservations = pgTable('bike_reservations', {
   // `label` is only the reason of a maintenance. A rental points at its customer.
   label:       text('label'),
   customerId:  uuid('customer_id').references(() => customers.id),
+  // The booking an online rental belongs to (null for the counter and for maintenance).
+  bookingId:   uuid('booking_id').references(() => bookings.id),
   // What the rental was paid, in whole cents (lib/money.ts); null for a maintenance.
   amountCents: integer('amount_cents'),
   requestKey:  uuid('request_key').notNull().unique(),
@@ -228,6 +260,7 @@ export const bikeReservations = pgTable('bike_reservations', {
 }, (t) => [
   index('bike_reservations_unit_starts_idx').on(t.bikeUnitId, t.startsOn),
   index('bike_reservations_customer_idx').on(t.customerId),
+  index('bike_reservations_booking_idx').on(t.bookingId),
 ])
 
 export type BikeReservation = typeof bikeReservations.$inferSelect

@@ -1,8 +1,9 @@
-import { eq, inArray } from 'drizzle-orm'
+import { eq, inArray, sql } from 'drizzle-orm'
 import {
-  db, bikeCategories, customers, bikeModels, bikeSizes, bikeVersions, bikeUnits, bikeReservations,
+  db, bikeCategories, customers, bikeModels, bikeSizes, bikeVersions, bikeUnits, bikeReservations, bookings,
   type NewBikeReservation,
 } from '@/lib/db'
+import type { DayRange } from '@/lib/dates'
 
 export interface Fixture {
   modelId: string
@@ -44,6 +45,7 @@ export async function createFixture(unitCount: number): Promise<Fixture> {
         await db.delete(bikeUnits).where(inArray(bikeUnits.id, unitIds))
       }
       await db.delete(bikeReservations).where(eq(bikeReservations.customerId, customer.id))
+      await db.delete(bookings).where(eq(bookings.customerId, customer.id))
       await db.delete(customers).where(eq(customers.id, customer.id))
       await db.delete(bikeModels).where(eq(bikeModels.id, model.id))
       await db.delete(bikeSizes).where(eq(bikeSizes.id, size.id))
@@ -61,4 +63,36 @@ export function reservationValues(
     bikeUnitId, kind: 'maintenance', status: 'confirmed', startsOn, endsOn,
     requestKey: crypto.randomUUID(), ...overrides,
   }
+}
+
+export type LineStatus = 'held' | 'confirmed' | 'expired' | 'cancelled'
+
+/** A booking of `customerId` for the range; pending, holding for 30 minutes, unless told otherwise. */
+export async function insertBooking(
+  customerId: string,
+  range: DayRange,
+  options: { status?: 'pending' | 'confirmed' | 'expired' | 'cancelled'; holdMinutes?: number; createdMinutesAgo?: number } = {},
+): Promise<string> {
+  const [row] = await db.insert(bookings).values({
+    customerId,
+    requestKey: crypto.randomUUID(),
+    status: options.status ?? 'pending',
+    startsOn: range.startsOn,
+    endsOn: range.endsOn,
+    totalCents: 4500,
+    holdExpiresAt: sql`now() + make_interval(mins => ${options.holdMinutes ?? 30})`,
+    createdAt: sql`now() - make_interval(mins => ${options.createdMinutesAgo ?? 0})`,
+  }).returning({ id: bookings.id })
+  return row.id
+}
+
+/** One bike of an online booking, in the given state. */
+export async function insertOnlineLine(
+  bookingId: string, customerId: string, bikeUnitId: string, range: DayRange, status: LineStatus,
+): Promise<string> {
+  const [row] = await db.insert(bikeReservations).values({
+    bikeUnitId, kind: 'online_rental', status, startsOn: range.startsOn, endsOn: range.endsOn,
+    customerId, bookingId, amountCents: 4500, requestKey: crypto.randomUUID(),
+  }).returning({ id: bikeReservations.id })
+  return row.id
 }
