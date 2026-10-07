@@ -19,6 +19,7 @@ import { photoShareUrl } from '@/lib/media-client'
 import { getRouteDetailData } from '@/lib/routes-data'
 import { buildSocialMetadata } from '@/lib/metadata'
 import { buildRouteDescription } from '@/lib/route-seo'
+import { formatRouteKm } from '@/lib/route-format'
 import { getSuggestedBikesForRoute } from '@/lib/bikes-data'
 import { RouteSuggestedBikes } from '@/components/route-suggested-bikes'
 
@@ -167,7 +168,7 @@ export default async function RouteDetailPage({
             <div className="flex flex-col items-center gap-2 rounded-2xl border bg-white p-4 shadow-sm">
               <Ruler size={20} className="text-[#366DA1]" />
               <p className="text-2xl font-bold text-[#1e3a5f] leading-none">
-                {route.distanceKm}<span className="text-sm font-normal ml-0.5">km</span>
+                {formatRouteKm(route.distanceKm, lang, 'detail')}<span className="text-sm font-normal ml-0.5">km</span>
               </p>
               <p className="text-xs text-muted-foreground uppercase tracking-wide text-center">{d.stat_distance_label}</p>
             </div>
