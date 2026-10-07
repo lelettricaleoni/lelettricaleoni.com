@@ -27,10 +27,7 @@ export interface UserMenuLabels {
 // The site's own Button, so the bar follows the same rules as every other button (docs/design-rules, skill
 // `design-system`): a small button with rounded corners, the language one next to it in the same style. The one
 // filled button of the bar is the sign-in, in the Button's default colour (`primary`), because it is the one thing a visitor who is not signed in may want to do.
-const signInClass = cn(
-  buttonVariants({ variant: 'outline', size: 'sm' }),
-  'bg-transparent border-primary font-semibold text-primary hover:bg-primary hover:text-primary-foreground',
-)
+const signInClass = buttonVariants({ size: 'sm', className: 'font-semibold' })
 // bg-transparent: the bar is translucent, and the outline button's own white fill showed as a box on it.
 const accountClass = cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'bg-transparent gap-2 pl-1.5 pr-2.5 font-medium')
 
