@@ -31,7 +31,10 @@ export async function enqueueMediaJob(storageKey: string, options: EnqueueOption
     await addMediaJob(queue, kind, bucket, storageKey)
     return 'queued'
   } catch (err) {
-    console.error('[queue] could not enqueue', storageKey, err instanceof Error ? err.message : err)
+    // The key comes from the browser (confirmMediaUpload): without this, a line break in it
+    // would let a caller write a log line of their own.
+    const loggedKey = storageKey.replace(/[\r\n]/g, ' ')
+    console.error('[queue] could not enqueue', loggedKey, err instanceof Error ? err.message : err)
     return 'unavailable'
   }
 }
