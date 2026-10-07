@@ -240,7 +240,14 @@ export function RouteFlyover({
           { duration: 1.5, offset: new Cesium.HeadingPitchRange(0, Cesium.Math.toRadians(-40), 0) }
         )
 
-        viewer.resolutionScale = window.devicePixelRatio
+        // Render at the screen's real pixel ratio, and keep following it. Cesium's default
+        // (`useBrowserRecommendedResolution`) draws at 1 pixel per CSS pixel times
+        // `resolutionScale`; this used to set `resolutionScale = devicePixelRatio` ONCE,
+        // so after a browser zoom (or moving the window to another screen) the canvas kept
+        // its old pixel count and was stretched: the track line, a thin glowing
+        // polyline, came out jagged. With the default off, Cesium uses
+        // `window.devicePixelRatio` itself and redraws the canvas whenever it changes.
+        viewer.useBrowserRecommendedResolution = false
         viewerRef.current = viewer
         requestAnimationFrame(() => {
           if (!destroyed) {
