@@ -67,7 +67,7 @@ export default async function PrivacyPage({
               <h2 className="text-lg font-semibold mb-3">{p.controller_title}</h2>
               <p className="text-muted-foreground leading-relaxed">
                 Leoni Gabriele, Via Roma 90, 38074 Dro (TN), Italia<br />
-                info@lelettricaleoni.com
+                privacy@lelettricaleoni.com
               </p>
             </section>
 
@@ -100,8 +100,8 @@ export default async function PrivacyPage({
               <h2 className="text-lg font-semibold mb-3">{p.rights_title}</h2>
               <p className="text-muted-foreground leading-relaxed">
                 {p.rights_body}{' '}
-                <a href="mailto:info@lelettricaleoni.com" className="text-primary hover:underline">
-                  info@lelettricaleoni.com
+                <a href="mailto:privacy@lelettricaleoni.com" className="text-primary hover:underline">
+                  privacy@lelettricaleoni.com
                 </a>
               </p>
             </section>
