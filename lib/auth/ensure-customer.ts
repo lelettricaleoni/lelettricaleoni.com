@@ -1,5 +1,6 @@
 import type { User } from '@supabase/supabase-js'
 import { hasAdminRole } from '@/lib/admin-users'
+import { safeErrorSummary } from '@/lib/safe-error'
 import { linkCustomerToAccount, syncCustomerEmail } from './customer-link'
 import { namesFromAccount } from './identity'
 import { parseLanguage } from './language'
@@ -31,6 +32,6 @@ export async function ensureCustomerFor(user: User, offered: { phone?: string | 
     // An email changed in the account settings arrives here, the first time the person comes back confirmed.
     if (user.email_confirmed_at) await syncCustomerEmail(user.id, user.email)
   } catch (error) {
-    console.error('[auth] could not link the account to a customer:', String(error).replace(/[\r\n]/g, ' '))
+    console.error('[auth] could not link the account to a customer:', safeErrorSummary(error))
   }
 }

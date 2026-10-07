@@ -2,6 +2,7 @@
 import { updateTag, revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { eq, and, asc } from 'drizzle-orm'
+import { safeErrorSummary } from '@/lib/safe-error'
 import {
   db, bikeModels, bikeModelTranslations, bikeModelSizes, bikeModelVersions, media,
 } from '@/lib/db'
@@ -137,7 +138,7 @@ export async function createBikeModelAction(
     await syncModelSizesAndVersions(newModel.id, sizeIds, versionIds)
     await replaceModelMedia(newModel.id, mediaItems)
   } catch (error) {
-    console.error('[bike-models] create failed:', String(error).replace(/[\r\n]/g, ' '))
+    console.error('[bike-models] create failed:', safeErrorSummary(error))
     // No transaction is available (see lib/bike-model-sync.ts), so undo by hand: translations,
     // sizes, versions and media go with the model (ON DELETE CASCADE).
     if (newModelId) await db.delete(bikeModels).where(eq(bikeModels.id, newModelId)).catch(() => {})
@@ -210,7 +211,7 @@ export async function updateBikeModelAction(
     await syncModelSizesAndVersions(id, sizeIds, versionIds)
     removedMedia = await replaceModelMedia(id, mediaItems)
   } catch (error) {
-    console.error('[bike-models] update failed:', String(error).replace(/[\r\n]/g, ' '))
+    console.error('[bike-models] update failed:', safeErrorSummary(error))
     return { message: PARTLY_SAVED }
   }
   // Only now, with the database right, are the files of removed pictures deleted.

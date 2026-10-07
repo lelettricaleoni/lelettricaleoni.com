@@ -14,6 +14,7 @@ import { buildAccountExport, releaseCustomerOfAccount } from '@/lib/auth/account
 import { languageOf, parseLanguage } from '@/lib/auth/language'
 import { callbackUrl, isRateLimit, loginUrl } from '@/lib/auth/urls'
 import { UNIQUE_VIOLATION, pgErrorCode } from '@/lib/pg-errors'
+import { safeErrorSummary } from '@/lib/safe-error'
 
 /**
  * The person's own account, from the settings pages. Every action reads who is asking from the session, never from
@@ -140,7 +141,7 @@ export async function deleteAccountAction(formData: FormData) {
     const { error } = await createSupabaseAdminClient().auth.admin.deleteUser(user.id)
     if (error) throw error
   } catch (error) {
-    console.error('[account] could not delete the account:', String(error).replace(/[\r\n]/g, ' '))
+    console.error('[account] could not delete the account:', safeErrorSummary(error))
     return back('error=delete_failed')
   }
 
@@ -163,7 +164,7 @@ export async function exportAccountDataAction(): Promise<{ filename: string; jso
     const data = await buildAccountExport(user)
     return { filename: `lelettrica-data-${new Date().toISOString().slice(0, 10)}.json`, json: JSON.stringify(data, null, 2) }
   } catch (error) {
-    console.error('[account] could not export the data:', String(error).replace(/[\r\n]/g, ' '))
+    console.error('[account] could not export the data:', safeErrorSummary(error))
     return { error: true }
   }
 }
