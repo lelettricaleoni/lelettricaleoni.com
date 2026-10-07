@@ -50,16 +50,20 @@
 
 ## Prossimo
 
-- **Il worker in Node.js dentro questo repository** (Kevin, 2026-10-06): riscrivere il worker video/foto di Python in
-  Node, con le tecniche moderne del resto del progetto (TypeScript, `zod`, tipi e chiavi condivisi col sito),
-  e portarlo qui dal repository privato `videoStream-bucketWorker`. **Un Redis solo, quello della VM**: sito e
-  worker ora stanno sulla stessa rete, quindi Upstash non serve più (resta finché c'è il ripiego su Vercel). Da
-  decidere nel disegno: database o prefissi separati per `production` e `staging`; utenti Redis con permessi
-  limitati (oggi il token del worker può solo scrivere `videojob:*`); i container web nella rete del Redis, senza
-  porte pubblicate; `ioredis` (lo vuole BullMQ) anche nel sito al posto del client REST. **Spec scritta il
-  2026-10-06**: `docs/superpowers/specs/2026-10-06-node-worker-design.md` (fetta A: worker, Redis unico, passaggio per
-  ambiente; fetta B, spec a parte: pagina dei lavori, riprova, pausa, rielabora delle sole foto). **Kevin ha scartato
-  del tutto di tenere gli originali** (silo, bucket privato, MinIO): il sorgente si cancella come oggi, non riproporlo.
+- **Fetta B del worker: una pagina dei lavori nel pannello** (Kevin, 2026-10-06): elenco dei lavori, «Riprova» per i
+  falliti, pausa e ripresa di una coda, «Rielabora» per le sole foto (i video non si possono rielaborare: l'originale non si
+  conserva, scelta di Kevin). Ora che la coda è BullMQ e il sito la legge (`lib/queues/`), serve una spec e un piano a parte
+  (prossimo passo: brainstorming). Il worker in Node è in produzione dal 2026-10-07; spec e piano della fetta A in
+  `docs/superpowers/specs/2026-10-06-node-worker-design.md` e `docs/superpowers/plans/2026-10-06-node-worker.md`.
+- **Chiudere la migrazione del worker** (da fare dopo una settimana tranquilla, intorno al 2026-10-14): archiviare (non
+  cancellare) il repo `videoStream-bucketWorker` con `gh repo archive`, `cd ~/docker/worker && docker compose down -v` e togliere
+  la cartella sulla VM (Python e il suo `worker-redis` sono fermi, pronti al ritorno indietro finché non si spengono). Prima:
+  provare dal pannello una **foto HEIC verticale dall'iPhone** (orientamento e profilo colore: il decodificatore HEIC è deciso su
+  velocità e memoria, `docs/ai/ideas/heic-decode-spike.md`). **Da decidere con Kevin: tre sorgenti PNG corrotti nel bucket di
+  produzione** (due in `private/route-photos/bdd7a446-…`, uno in `private/bike-model-photos/963a0f6d-…`): identici, 1.388.040 byte,
+  col primo byte `EF BF BD` al posto di `89`, quindi non sono immagini; il worker (come Python prima) li scarta con
+  «unsupported image format», dopo tre tentativi restano fra i lavori falliti e non si ripetono. Sono con ogni probabilità l'origine
+  dell'errore di caricamento visto su `bdd7a446` il 2026-10-06; vanno cancellati da R2 insieme alle righe `media` che li citano.
 - **Mettere a punto Google Search Console e Analytics**, dopo il giro di implementazioni in
   corso (chiesto da Kevin il 2026-09-25). Su Analytics: costruire qualche dashboard. Su
   Search Console: oggi è in disordine ("un bel casino") — prima un inventario di cosa c'è
@@ -89,6 +93,7 @@
 ## Un giorno
 
 - **Pulizia di Vercel**, dopo qualche settimana tranquilla dal passaggio del 2026-10-06: cancellare il progetto,
+  **cancellare il database Upstash** e togliere le variabili `UPSTASH_*` da Vercel e dalla VM (il sito non le legge più),
   togliere `vercel.json` e le variabili, il segreto `VERCEL_AUTOMATION_BYPASS_SECRET` e gli ambienti GitHub
   «Preview» e «Production» creati dall'integrazione; **ruotare** la password del database di produzione e il
   token del tunnel (comparsi in una trascrizione), togliere il CORS e i record DNS che servivano al ripiego.
@@ -109,8 +114,8 @@
 - **Primi lavori non-video sul worker** — promemoria prenotazioni ed estratti conto. Non
   utile finché non si aggiungono molte altre funzionalità di cui Kevin parlerà in futuro:
   spostato qui da "Prossimo" il 2026-09-16, non è più imminente. L'impalcatura c'è già:
-  `jobs/__init__.py` è il registro, un modulo più una riga in `HANDLERS`, e per i cron una
-  riga in `SCHEDULES` con lo scheduler di BullMQ. Nota: **il piano Vercel è hobby**, quindi i
+  un `createXHandler` in `worker/jobs/`, una coda in `lib/queues/names.ts` e una riga in `worker/main.ts`; per i cron
+  lo scheduler di BullMQ. Nota: **il piano Vercel è hobby**, quindi i
   cron di Vercel (due per progetto, uno al giorno) non sono un'alternativa per lavori più
   frequenti.
 - **Unificare login/cambio password admin con quelli pubblici** — oggi `/manage/login` e
@@ -124,6 +129,10 @@
 
 ## Scartato
 
+- **Conservare gli originali delle foto e dei video** (silo sulla VM, bucket privato, MinIO — Kevin, 2026-10-06): il
+  sorgente si cancella dopo l'elaborazione, come sempre. Costerebbe storage a pagamento e un secondo posto fragile per
+  un file che nessuno rilegge; chi vuole l'originale lo tiene sul proprio computer. Non riproporlo. Ne segue che
+  «Rielabora» (fetta B) vale solo per le foto, dal master.
 - **Un'anteprima per ogni pull request sulla VM** (2026-10-06) — richiederebbe un reverse proxy davanti al tunnel
   e porterebbe CPU a un server con due soli core già contesi dal worker. Il controllo `browser` costruisce invece
   l'immagine nel job e la prova su `localhost`, con i dati di sviluppo.

@@ -37,7 +37,7 @@ jobs:
   deploy:
     name: deploy
     runs-on: ubuntu-24.04-arm
-    if: github.ref_name == 'staging' || vars.DEPLOY_PRODUCTION == 'true'
+    if: github.ref_name == 'staging' || (github.ref_name == 'main' && vars.DEPLOY_PRODUCTION == 'true')
     environment: ${{ github.ref_name == 'main' && 'production' || 'staging' }}
 
     permissions:
