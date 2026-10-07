@@ -33,7 +33,9 @@
   gli scheduler con vista a risorse sono a pagamento o non adatti (confronto nella spec). Le fette 2-5
   sono da disegnare. **Fetta 3: spec scritta il 2026-10-07**, da rivedere (`docs/superpowers/specs/2026-10-07-booking-slice3-online-booking-design.md`):
   carrello con più bici, Stripe Checkout, webhook, posto tenuto 30 minuti, annullamento una bici alla volta, Account rents, termini di noleggio.
-  Chiede a Kevin un account Stripe (chiavi di prova per lo staging) e il contenuto dei termini. Per l'account cliente: collegare chi si registra a `customers` per email (`user_id`) e
+  Chiede a Kevin un account Stripe (chiavi di prova per lo staging) e il contenuto dei termini.
+  **Fetta 3a (dati, disponibilità, posti tenuti): piano in `docs/superpowers/plans/2026-10-07-booking-slice3a-holds.md`, fatta e provata su `staging`.** Stripe per ora fuori:
+  una «porta» per il pagamento con una finta solo fuori produzione, poi Stripe vero. **Solo `staging`; in produzione decide Kevin, e non senza Stripe.** Per l'account cliente: collegare chi si registra a `customers` per email (`user_id`) e
   mostrargli solo le prenotazioni online; gli account non admin oggi sono tutti di Kevin.
   Il calendario di Kevin sta in `C:\AzureDevOps\firebase` (`app/rent/`, da portare ricollegandolo
   ai dati veri); il resto di quel repo (Firestore, Stripe di prova) non si riusa.

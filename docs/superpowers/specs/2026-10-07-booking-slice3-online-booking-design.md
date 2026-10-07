@@ -68,7 +68,7 @@ Una migrazione per passo, perché Postgres non lascia usare un valore di enum ag
 
 ### `bike_reservations`
 Aggiunge `booking_id` (nullo per i noleggi del banco e le manutenzioni). Ogni bici è **una riga** con il suo `amount_cents`, il suo stato e la sua
-`request_key`, derivata in modo deterministico da quella della prenotazione (uuid v5 con l'indice della riga: ripetere la richiesta ritrova le stesse righe).
+`request_key`, **casuale**, una per riga; la ripetizione della richiesta si riconosce dalla `request_key` della **prenotazione** (`bookings.request_key`), che ritrova la testata e le sue righe.
 
 ### `booking_refunds` (un rimborso per riga, al massimo)
 `id`, `reservation_id` (**unico**: una bici non si rimborsa due volte), `booking_id`, `amount_cents`, `status` (`pending`, `succeeded`, `failed`),
@@ -221,8 +221,12 @@ con data precisa) va comunicato: da far confermare a chi rivede i testi. È un t
   e **la revisione di informativa e cookie**. Nessuno dei quattro può mancare.
 - **Prima di cominciare** serve che l'accesso unificato sia unito su `staging` (la PR #309: porta anche `main` nel ramo, quindi la migrazione `0016` e la percentuale dei prezzi)
   e che Kevin abbia un **account Stripe**: chiavi di prova per lo staging; per il rilascio l'attivazione e il soggetto (paese, ragione sociale) che compare nell'informativa.
-- Ordine di costruzione, in pezzi che si provano da soli: **(a)** dati, disponibilità, posto tenuto e scadenza, senza pagamento; **(b)** Stripe, webhook, conferma e riconciliazione;
-  **(c)** Account rents, annullamento e rimborsi, azioni del pannello; **(d)** la pagina `/rent`, il pulsante sulla bici e i termini.
+- **Stripe, per ora, fuori** (Kevin, 2026-10-07: «l'importante è non pubblicare senza che ci sia Stripe; in produzione decido io»). Ordine di costruzione, in pezzi che si provano da soli:
+  **(a)** dati, disponibilità, posto tenuto e scadenza (`docs/superpowers/plans/2026-10-07-booking-slice3a-holds.md`); **(b)** una **porta per il pagamento** (`PaymentGateway`: avviare,
+  confermare, far scadere, rimborsare) con due implementazioni: una **finta, che esiste solo fuori dalla produzione** (`isProduction()`) e fa «pagare» senza soldi, per costruire e provare
+  tutto il percorso su `staging`; e **Stripe**, che si innesta dopo; **(c)** la pagina `/rent`, Account rents, annullamenti e azioni del pannello, provati con la finta; **(d)** Stripe vero,
+  il webhook, `settleHold`, i rimborsi veri. **In produzione la porta, senza Stripe configurato, si rifiuta di partire**, e un test lo fissa: nessun prenotare gratis per sbaglio.
+  Solo `staging`; in produzione decide Kevin, e non senza Stripe.
 
 ## Rischi e cose da sapere
 
