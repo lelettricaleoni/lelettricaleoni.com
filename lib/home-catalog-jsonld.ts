@@ -4,7 +4,7 @@ import { shortId } from '@/lib/utils'
 import { photoShareUrl } from '@/lib/media-client'
 
 interface CatalogModel {
-  model: { id: string }
+  model: { id: string; priceAdjustmentPercent: string }
   translation: { name: string }
   category: BikeCategory
 }
@@ -45,7 +45,7 @@ export function buildHomeCatalogJsonLd({
   covers: Record<string, string>
 }) {
   const products = models.flatMap(({ model, translation, category }) => {
-    const price = priceForDay(category, 1)
+    const price = priceForDay(category, 1, Number(model.priceAdjustmentPercent))
     const cover = covers[model.id]
     if (price === null || !cover) return []
     const url = `${siteUrl}/${lang}/bikes/${shortId(model.id)}`

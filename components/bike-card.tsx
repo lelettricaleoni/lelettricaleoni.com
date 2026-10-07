@@ -27,7 +27,7 @@ export function BikeCard({ model, translation, category, routeCategory, media, l
   // day1Price non è mai null nello schema e il giorno 1 è sempre entro
   // maxRentalDays (che è almeno 1): priceForDay ritorna null solo per un
   // giorno che la categoria non offre, e il giorno 1 non lo è mai.
-  const priceFrom = priceForDay(category, 1) ?? 0
+  const priceFrom = priceForDay(category, 1, Number(model.priceAdjustmentPercent)) ?? 0
 
   return (
     <Link
