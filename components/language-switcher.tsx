@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation'
 import { Check, ChevronDown } from 'lucide-react'
 import ReactCountryFlag from 'react-country-flag'
 import { trackEvent } from '@/lib/analytics'
+import { buttonVariants } from '@/components/ui/button'
 import { switchLocalePath } from '@/lib/service-pages'
 import type { Locale } from '@/app/[lang]/dictionaries'
 import {
@@ -53,11 +54,11 @@ export function LanguageSwitcher({ currentLang }: { currentLang: string }) {
       <DropdownMenuTrigger
         aria-label={current.name}
         title={current.name}
-        className="flex h-9 items-center gap-1.5 rounded-full border border-border/70 px-2.5 text-xs font-semibold text-foreground transition-colors hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#366DA1] cursor-pointer"
+        className={buttonVariants({ variant: 'outline', size: 'sm', className: 'gap-1.5 px-2.5 text-xs font-semibold' })}
       >
         <Flag countryCode={current.countryCode} label={current.label} />
         <span className="hidden sm:inline">{current.label}</span>
-        <ChevronDown className="size-3.5 text-muted-foreground" aria-hidden />
+        <ChevronDown className="text-muted-foreground" aria-hidden />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="min-w-40">
         {locales.map((locale) => (
@@ -71,7 +72,7 @@ export function LanguageSwitcher({ currentLang }: { currentLang: string }) {
             >
               <Flag countryCode={locale.countryCode} label={locale.label} />
               <span className="flex-1">{locale.name}</span>
-              {locale.code === currentLang && <Check className="text-[#366DA1]" aria-hidden />}
+              {locale.code === currentLang && <Check className="text-brand-blue" aria-hidden />}
             </Link>
           </DropdownMenuItem>
         ))}

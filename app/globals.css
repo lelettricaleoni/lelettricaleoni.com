@@ -46,6 +46,8 @@
   --color-input: hsl(var(--input));
   --color-ring: hsl(var(--ring));
   --color-brand-blue: #366DA1;
+  --color-brand-navy: #1E3A5F;
+  --color-brand-navy-dark: #152C4A;
   --color-brand-purple: #795F91;
   --color-brand-dark: #3D3D3B;
   --font-sans: var(--font-geist-sans);

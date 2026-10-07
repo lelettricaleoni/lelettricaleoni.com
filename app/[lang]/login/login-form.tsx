@@ -47,8 +47,8 @@ interface Props {
   next: string
 }
 
-const submitClass = 'w-full bg-[#1e3a5f] hover:bg-[#152c4a]'
-const linkClass = 'text-xs text-[#366DA1] hover:underline cursor-pointer'
+const submitClass = 'w-full bg-brand-navy hover:bg-brand-navy-dark'
+const linkClass = 'text-xs text-brand-blue hover:underline cursor-pointer'
 
 /**
  * The one sign-in page, for customers and admins alike, and for signing up: one card with Google on top and
@@ -84,7 +84,7 @@ export function LoginForm({ lang, d, errorMessage, infoMessage, initialTab, next
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-[#1e3a5f]">{heading.title}</h1>
+        <h1 className="text-2xl font-bold text-brand-navy">{heading.title}</h1>
         <p className="text-sm text-muted-foreground mt-1">{heading.subtitle}</p>
       </div>
 
@@ -121,7 +121,7 @@ export function LoginForm({ lang, d, errorMessage, infoMessage, initialTab, next
                 aria-selected={mode === id}
                 onClick={() => go(id)}
                 className={`py-2.5 transition-colors cursor-pointer ${
-                  mode === id ? 'bg-[#1e3a5f] text-white font-semibold' : 'bg-background text-muted-foreground hover:text-foreground'
+                  mode === id ? 'bg-brand-navy text-white font-semibold' : 'bg-background text-muted-foreground hover:text-foreground'
                 }`}
               >
                 {label}
@@ -180,7 +180,7 @@ export function LoginForm({ lang, d, errorMessage, infoMessage, initialTab, next
             <input type="checkbox" name="consent" required className="mt-0.5" />
             <span>
               {d.consent_label}{' '}
-              <a href={`/${lang}/privacy`} target="_blank" rel="noopener noreferrer" className="text-[#366DA1] underline">{d.privacy_link}</a>.
+              <a href={`/${lang}/privacy`} target="_blank" rel="noopener noreferrer" className="text-brand-blue underline">{d.privacy_link}</a>.
             </span>
           </label>
           <Button type="submit" className={submitClass}>{d.submit_register}</Button>

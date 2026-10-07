@@ -62,7 +62,7 @@ export default async function AccountPage({
       <main className="flex-1 pt-24 pb-16">
         <div className="max-w-2xl mx-auto px-6 space-y-10">
           <div>
-            <h1 className="text-3xl font-bold text-[#1e3a5f]">{d.title}</h1>
+            <h1 className="text-3xl font-bold text-brand-navy">{d.title}</h1>
             <p className="text-muted-foreground mt-1">{d.subtitle}</p>
           </div>
 
@@ -77,7 +77,7 @@ export default async function AccountPage({
           )}
 
           <section className="space-y-4">
-            <h2 className="text-lg font-semibold text-[#1e3a5f]">{d.profile_title}</h2>
+            <h2 className="text-lg font-semibold text-brand-navy">{d.profile_title}</h2>
             <form action={updateAccountAction} className="space-y-4">
               <input type="hidden" name="lang" value={lang} />
               <div className="grid grid-cols-2 gap-4">
@@ -99,19 +99,19 @@ export default async function AccountPage({
                 <Input id="phone" name="phone" type="tel" autoComplete="tel" defaultValue={customer?.phone ?? ''} disabled={isAdmin} />
                 <p className="text-xs text-muted-foreground">{d.phone_hint}</p>
               </div>
-              {!isAdmin && <Button type="submit" className="bg-[#1e3a5f] hover:bg-[#152c4a]">{d.save}</Button>}
+              {!isAdmin && <Button type="submit" className="bg-brand-navy hover:bg-brand-navy-dark">{d.save}</Button>}
             </form>
           </section>
 
           <section className="space-y-3">
-            <h2 className="text-lg font-semibold text-[#1e3a5f]">{d.password_title}</h2>
+            <h2 className="text-lg font-semibold text-brand-navy">{d.password_title}</h2>
             <Button asChild variant="outline">
               <Link href={`/${lang}/update-password`}>{d.change_password}</Link>
             </Button>
           </section>
 
           <section className="space-y-3">
-            <h2 className="text-lg font-semibold text-[#1e3a5f]">{d.bookings_title}</h2>
+            <h2 className="text-lg font-semibold text-brand-navy">{d.bookings_title}</h2>
             <p className="text-sm text-muted-foreground rounded-lg border bg-muted/30 p-4">{d.bookings_empty}</p>
           </section>
 
