@@ -1,7 +1,11 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 
 const getBikeModelsListData = vi.fn()
-vi.mock('@/lib/bikes-data', () => ({ getBikeModelsListData: (...a: unknown[]) => getBikeModelsListData(...a) }))
+const getBikeCoverPhotoKeys = vi.fn()
+vi.mock('@/lib/bikes-data', () => ({
+  getBikeModelsListData: (...a: unknown[]) => getBikeModelsListData(...a),
+  getBikeCoverPhotoKeys: (...a: unknown[]) => getBikeCoverPhotoKeys(...a),
+}))
 
 import { HomeCatalogJsonLd } from './home-catalog-jsonld-script'
 
@@ -20,6 +24,8 @@ const model = {
 beforeEach(() => {
   vi.useFakeTimers()
   getBikeModelsListData.mockReset()
+  getBikeCoverPhotoKeys.mockReset()
+  getBikeCoverPhotoKeys.mockResolvedValue({ [model.model.id]: 'private/bike-model-photos/aa7da601/p1.jpg' })
 })
 afterEach(() => vi.useRealTimers())
 
@@ -34,6 +40,14 @@ describe('HomeCatalogJsonLd never holds the home page hostage', () => {
   it('renders nothing, and does not throw, when the read fails', async () => {
     getBikeModelsListData.mockRejectedValue(new Error('pooler down'))
     expect(await HomeCatalogJsonLd(props)).toBeNull()
+  })
+
+  it('gives up just the same when the photos are what does not answer', async () => {
+    getBikeModelsListData.mockResolvedValue([model])
+    getBikeCoverPhotoKeys.mockReturnValue(new Promise(() => {}))
+    const result = HomeCatalogJsonLd(props)
+    await vi.advanceTimersByTimeAsync(2000)
+    expect(await result).toBeNull()
   })
 
   it('renders the script when the catalogue arrives', async () => {
