@@ -5,8 +5,10 @@ import { usePathname } from 'next/navigation'
 import ReactCountryFlag from 'react-country-flag'
 import { cn } from '@/lib/utils'
 import { trackEvent } from '@/lib/analytics'
+import { switchLocalePath } from '@/lib/service-pages'
+import type { Locale } from '@/app/[lang]/dictionaries'
 
-const locales = [
+const locales: { code: Locale; countryCode: string; label: string }[] = [
   { code: 'it', countryCode: 'IT', label: 'IT' },
   { code: 'en', countryCode: 'GB', label: 'EN' },
   { code: 'de', countryCode: 'DE', label: 'DE' },
@@ -15,10 +17,8 @@ const locales = [
 export function LanguageSwitcher({ currentLang }: { currentLang: string }) {
   const pathname = usePathname()
 
-  function buildHref(targetLang: string): string {
-    const segments = pathname.split('/')
-    segments[1] = targetLang
-    return segments.join('/') || '/'
+  function buildHref(targetLang: Locale): string {
+    return switchLocalePath(pathname, targetLang)
   }
 
   return (

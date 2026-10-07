@@ -80,3 +80,23 @@ export function servicePageDictKey(key: ServiceKey): ServiceDictKey {
 export function findServiceKeyBySlug(lang: Locale, slug: string): ServiceKey | undefined {
   return SERVICE_KEYS.find((key) => SLUGS[key][lang] === slug)
 }
+
+/**
+ * The same page in another language. Routes and bikes keep their id across
+ * languages, so for them only the first segment changes; a service page's slug
+ * is the search term and differs per language, so it must be translated too —
+ * swapping only the language sent visitors to `/it/e-bike-rental-drena`, a page
+ * that does not exist, and Google followed those links.
+ */
+export function switchLocalePath(pathname: string, targetLang: Locale): string {
+  const segments = pathname.split('/')
+  const currentLang = segments[1]
+  // Not `hasLocale` from dictionaries.ts: that module is `server-only`, and the
+  // language switcher, a client component, calls this.
+  if (segments.length === 3 && currentLang in SLUGS.ebikeRental) {
+    const key = findServiceKeyBySlug(currentLang as Locale, segments[2])
+    if (key) segments[2] = servicePageSlug(key, targetLang)
+  }
+  segments[1] = targetLang
+  return segments.join('/') || '/'
+}
