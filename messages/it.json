@@ -274,7 +274,7 @@
     },
     "info": {
       "reset_sent": "Se l’indirizzo è registrato, ti abbiamo inviato il link per reimpostare la password: controlla la tua email.",
-      "signup_sent": "Account quasi pronto: ti abbiamo mandato una email, apri il link per confermare l’indirizzo.",
+      "signup_sent": "Ti abbiamo mandato un’email: apri il link per confermare l’indirizzo e completare la registrazione. Se non arriva entro qualche minuto, controlla lo spam: potresti avere già un account, e allora accedi (anche con Google) oppure usa «Password dimenticata?».",
       "password_updated": "Password aggiornata.",
       "signed_out_everywhere": "Sei uscito da tutti i dispositivi.",
       "account_deleted": "Il tuo account è stato eliminato."

@@ -178,3 +178,20 @@ una volta sola per richiesta (`lib/auth/current-user.ts`).
 - **Esporta**: tutto ciò che riguarda la persona (account, profilo, **note del negozio comprese**, noleggi), senza id interni.
 - **Da decidere con chi rivede i testi** (`privacy-cookies`): cosa il negozio conserva dopo la cancellazione, e per quanto.
 - **In produzione**: la migrazione `0017` si applica al rilascio, insieme alla `staging → main`.
+
+## Un indirizzo, un solo account (aggiunto il 2026-10-07)
+
+Kevin ha provato a registrarsi con l'email di un account fatto con Google: nessuna email di conferma. Non è un guasto: **Supabase non crea mai
+un secondo account per lo stesso indirizzo** e, per non rivelare chi è registrato, risponde «va bene» senza mandare niente (un utente finto,
+con la lista delle identità **vuota**: una prova fatta nello sviluppo il 2026-10-07). Cosa facciamo, senza rivelare nulla sulla pagina:
+
+- **Registrazione con un indirizzo che ha già un account** (`registerAction`): si riconosce dalla lista delle identità vuota e si manda
+  l'email di «password dimenticata». Il link porta alla pagina dove si sceglie la password, e da lì l'account unico si apre sia con Google sia
+  con email e password. Provato nello sviluppo: un account senza password riceve la password dal link di recupero e **resta lo stesso account**
+  (stesso id, un solo account con quell'indirizzo).
+- **Al contrario** (prima email e password, poi Google con lo stesso indirizzo): è il collegamento automatico delle identità di Supabase per le
+  email verificate. **Da provare con un accesso Google vero.**
+- **Il messaggio dopo la registrazione** è lo stesso in tutti i casi e dice cosa fare se l'email non arriva (controllare lo spam, accedere con Google o
+  con «Password dimenticata?»).
+- **L'email che arriva è il modello «Reset Password» di Supabase**: da riscrivere in dashboard (Authentication → Emails) in modo che valga anche per
+  «imposta la tua password» (testo proposto nel messaggio di consegna).

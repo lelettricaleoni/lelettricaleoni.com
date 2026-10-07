@@ -274,7 +274,7 @@
     },
     "info": {
       "reset_sent": "If the address is registered, we have sent you the link to reset the password: check your email.",
-      "signup_sent": "Your account is almost ready: we sent you an email, open the link to confirm the address.",
+      "signup_sent": "We have sent you an email: open the link to confirm your address and finish signing up. If it does not arrive within a few minutes, check your spam folder: you may already have an account, in which case sign in (with Google too) or use “Forgot your password?”.",
       "password_updated": "Password updated.",
       "signed_out_everywhere": "You have been signed out of all devices.",
       "account_deleted": "Your account has been deleted."

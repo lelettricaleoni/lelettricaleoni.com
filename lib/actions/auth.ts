@@ -82,7 +82,7 @@ export async function registerAction(formData: FormData) {
   if (formData.get('consent') !== 'on') return fail('consent_required')
 
   const supabase = await createSupabaseServerClient()
-  const { error } = await supabase.auth.signUp({
+  const { data, error } = await supabase.auth.signUp({
     email: fields.data.email,
     password,
     options: {
@@ -95,7 +95,16 @@ export async function registerAction(formData: FormData) {
   if (error) {
     return fail(isRateLimit(error) ? 'rate_limited' : error.code === 'weak_password' ? 'weak_password' : 'signup_failed')
   }
-  // The same answer whether or not the address already had an account: Supabase does not say.
+  // An address that already has a confirmed account is not signed up a second time: Supabase answers as if it were, with
+  // a user made up on the spot and an EMPTY list of identities, and sends no confirmation (so that nobody can find out
+  // who is registered). That account may have been made with Google, and the person asked for one with a password:
+  // there is one account per address, and what they can have is a password ON it, once they prove the address is theirs.
+  // That is what the reset email does, so it is sent: the link brings them to the page where they choose the password,
+  // and from then on the one account opens with Google or with email and password.
+  // The answer on the page stays the same either way, for the same reason.
+  if ((data.user?.identities?.length ?? 0) === 0) {
+    await supabase.auth.resetPasswordForEmail(fields.data.email, { redirectTo: callbackUrl(lang, `/${lang}/update-password`) })
+  }
   redirect(loginUrl(lang, { info: 'signup_sent', next }))
 }
 
