@@ -69,7 +69,6 @@ export default async function LoginPage({
               infoMessage={infoMessage}
               initialTab={TABS.includes(tab as LoginTab) ? (tab as LoginTab) : 'password'}
               next={safeNextPath(next, '')}
-              googleEnabled={process.env.NEXT_PUBLIC_GOOGLE_LOGIN === 'true'}
             />
           </div>
         </div>

@@ -54,10 +54,10 @@ Tempo: circa mezz'ora, nessuna revisione da parte di Google.
    `https://staging.lelettricaleoni.com/auth/callback` e `http://localhost:3000/auth/callback`
    (in produzione, al rilascio, `https://www.lelettricaleoni.com/auth/callback`). Senza, Supabase rimanda
    alla *Site URL* invece che alla pagina giusta.
-7. **Accendere il pulsante**: imposta `NEXT_PUBLIC_GOOGLE_LOGIN=true` nell'ambiente dello staging (nel file
-   `~/docker/web/staging.env` sulla VM; per provarlo in locale, in `.env.local`) e riavvia. Finché non c'è, il
-   pulsante «Continua con Google» non compare. `NEXT_PUBLIC_` significa che il valore finisce nel pacchetto del
-   browser **al momento della build**: sullo staging va impostato prima del deploy, non basta riavviare il container.
+7. **Il pulsante non ha un interruttore** (Kevin, 2026-10-07: niente file d'ambiente come feature flag). «Continua con
+   Google» compare sempre, e funziona se il provider è **attivo nel progetto Supabase** di quell'ambiente: è quello
+   l'interruttore. Se il provider è spento, Supabase risponde con un errore e la persona torna al login con il messaggio
+   generico. Per questo il provider di produzione si attiva solo al rilascio.
 8. **Pubblica l'app su Google**: nella schermata di consenso, stato di pubblicazione → **«In produzione»**.
    Se resta in «Test», possono accedere solo gli indirizzi che aggiungi a mano come *utenti di test* (massimo 100).
    Con i soli permessi base, passare a «In produzione» **non richiede una revisione**.
@@ -116,8 +116,10 @@ Per i permessi *sensibili* **non serve** la valutazione di sicurezza (la richied
 
 ### Dopo l'approvazione
 1. In Google Cloud, nella sezione *Accesso ai dati*, il permesso `user.phonenumbers.read` è già dichiarato.
-2. Imposta `GOOGLE_LOGIN_PHONE=true` nell'ambiente (lato server, **non** `NEXT_PUBLIC_`). Il codice chiede allora il
-   permesso in più al momento dell'accesso con Google; senza l'interruttore chiede solo i tre permessi base.
+2. In `lib/auth/google-phone.ts` cambia la costante `REQUEST_GOOGLE_PHONE` da `false` a `true`, in un commit
+   (una decisione presa una volta, nel codice: non un valore d'ambiente che può essere diverso da una macchina all'altra).
+   Il codice chiede allora il permesso in più al momento dell'accesso con Google; finché è `false` chiede solo i tre
+   permessi base.
 3. Per usare il permesso nel codice, Supabase passa il token di Google **una sola volta**, al login, e non lo conserva:
    il callback lo legge dalla sessione appena creata, interroga l'API People per il solo campo `phoneNumbers` e lo butta.
    (Se un giorno servisse riusarlo, andrebbe salvato cifrato a nostra cura, e **non è previsto**.)
@@ -132,7 +134,7 @@ Si corregge e si invia di nuovo: non c'è penale. Intanto l'accesso base (Fase 1
 |---|---|
 | `redirect_uri_mismatch` | l'URI di Google non è identico a quello mostrato da Supabase |
 | Dopo Google si torna alla *Site URL* e non alla pagina | l'indirizzo del sito non è nei *Redirect URLs* di Supabase |
-| Il pulsante non compare | `NEXT_PUBLIC_GOOGLE_LOGIN` non era impostato **durante la build** |
+| Dopo «Continua con Google» si torna al login con un errore generico | il provider Google non è attivo (o ID e segreto sono sbagliati) nel progetto Supabase di quell'ambiente |
 | «Accesso bloccato: app non verificata» a persone che non sono utenti di test | l'app è ancora in stato «Test» invece che «In produzione» |
 | Schermata con avviso «app non verificata» | è stato chiesto un permesso sensibile prima della verifica |
 

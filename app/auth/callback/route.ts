@@ -5,7 +5,7 @@ import { cookies } from 'next/headers'
 import { hasAdminRole } from '@/lib/admin-users'
 import { destinationFor } from '@/lib/auth/destination'
 import { ensureCustomerFor } from '@/lib/auth/ensure-customer'
-import { fetchGooglePhone } from '@/lib/auth/google-phone'
+import { fetchGooglePhone, REQUEST_GOOGLE_PHONE } from '@/lib/auth/google-phone'
 
 /** The one-time-token types an email from this site can carry. */
 const OTP_TYPES: EmailOtpType[] = ['invite', 'recovery', 'magiclink', 'signup', 'email', 'email_change']
@@ -53,7 +53,7 @@ export async function GET(request: NextRequest) {
   const verified = code
     ? await (async () => {
         const { data, error } = await supabase.auth.exchangeCodeForSession(code)
-        if (!error && process.env.GOOGLE_LOGIN_PHONE === 'true') googleToken = data.session?.provider_token ?? null
+        if (!error && REQUEST_GOOGLE_PHONE) googleToken = data.session?.provider_token ?? null
         return !error
       })()
     : tokenHash && isOtpType(type)

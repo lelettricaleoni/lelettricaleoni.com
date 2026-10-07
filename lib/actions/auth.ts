@@ -8,7 +8,7 @@ import { destinationFor } from '@/lib/auth/destination'
 import { safeNextPath } from '@/lib/auth/next-path'
 import { ensureCustomerFor } from '@/lib/auth/ensure-customer'
 import { normalisePhone } from '@/lib/auth/phone'
-import { GOOGLE_PHONE_SCOPE } from '@/lib/auth/google-phone'
+import { GOOGLE_PHONE_SCOPE, REQUEST_GOOGLE_PHONE } from '@/lib/auth/google-phone'
 import type { AuthErrorCode, AuthInfoCode } from '@/lib/auth/errors'
 
 /**
@@ -180,17 +180,15 @@ export async function updatePasswordAction(formData: FormData) {
 export async function googleLoginAction(formData: FormData) {
   const lang = langOf(formData)
   const next = nextOf(formData)
-  // Off until Google is set up in Supabase and NEXT_PUBLIC_GOOGLE_LOGIN is "true": see the slice 2 spec, "Rilascio".
-  if (process.env.NEXT_PUBLIC_GOOGLE_LOGIN !== 'true') redirect(loginUrl(lang, { error: 'generic', next }))
-
+  // No switch: whether Google sign-in works is whether the Google provider is enabled in the Supabase project. If it is
+  // not, Supabase answers with an error and the person lands on the sign-in page with the generic message.
   const supabase = await createSupabaseServerClient()
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
     options: {
       redirectTo: callbackUrl(lang, next),
-      // The phone is a sensitive scope: asking for it before Google has verified the app puts a warning in front of
-      // every customer and caps the app at 100 users (docs/google-login-setup.md). Server-side switch, off by default.
-      ...(process.env.GOOGLE_LOGIN_PHONE === 'true' ? { scopes: GOOGLE_PHONE_SCOPE } : {}),
+      // The phone is a sensitive scope: see REQUEST_GOOGLE_PHONE.
+      ...(REQUEST_GOOGLE_PHONE ? { scopes: GOOGLE_PHONE_SCOPE } : {}),
     },
   })
   if (error || !data.url) redirect(loginUrl(lang, { error: 'generic', next }))

@@ -6,7 +6,7 @@ import { normalisePhone } from './phone'
  * Google gives it only to an app that asked for the scope `user.phonenumbers.read`, which is a
  * SENSITIVE scope: until Google has verified the app, everybody who signs in sees a warning screen
  * and the app is capped at 100 users (see the slice 2 spec, "Rilascio"). So the scope is requested
- * only when the switch GOOGLE_LOGIN_PHONE is on (lib/actions/auth.ts).
+ * only once `REQUEST_GOOGLE_PHONE` is true.
  *
  * And even then most accounts have no phone to give: the People API returns nothing when the profile
  * has none, and never returns the recovery or 2-step-verification number. So a missing phone is the
@@ -14,6 +14,13 @@ import { normalisePhone } from './phone'
  *
  * The token is the one Google hands over once, at sign-in. It is used here and not stored.
  */
+/**
+ * Whether to ask Google for the phone. **Leave false until Google has approved the app's verification**
+ * (docs/google-login-setup.md, phase 2), then change it to true in a commit: a decision taken once, in the code,
+ * and not an environment switch that can differ between machines.
+ */
+export const REQUEST_GOOGLE_PHONE = false
+
 /** Added to the three basic scopes Supabase always asks for. */
 export const GOOGLE_PHONE_SCOPE = 'https://www.googleapis.com/auth/user.phonenumbers.read'
 

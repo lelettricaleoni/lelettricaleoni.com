@@ -62,13 +62,15 @@ fetta 3 («account obbligatorio per prenotare», Kevin, 2026-10-02).
 7. **Errori e messaggi per codice, nella lingua dell'URL.** `?error=invalid_credentials` e simili, tradotti da
    `messages/*.json`; niente più frasi italiane nell'indirizzo. Anche `update-password` migra a `messages/*.json`. Le
    azioni conoscono la lingua della persona e la usano nei reindirizzamenti (logout, reset, cambio password).
-8. **Accesso con Google: pronto nel codice, spento finché non serve.** Un pulsante «Continua con Google» (OAuth di Supabase)
-   compare solo con `NEXT_PUBLIC_GOOGLE_LOGIN=true`. Per accenderlo servono due cose che sono tue: un client OAuth in Google
-   Cloud e il provider attivato nel progetto Supabase (passi in «Rilascio»). Un interruttore d'ambiente, non un servizio di
-   flag: i flag sono stati tolti il 2026-10-05.
+8. **Accesso con Google, senza interruttori** (Kevin, 2026-10-07: «non usare il file env come feature flag»). Il pulsante
+   «Continua con Google» (OAuth di Supabase) c'è sempre; funziona se il provider è attivo nel progetto Supabase
+   dell'ambiente, e quello è l'interruttore. Servono due cose che sono tue: un client OAuth in Google Cloud e il provider
+   attivato (passi in «Rilascio»). In produzione il provider si attiva solo al rilascio. I flag erano già stati tolti il
+   2026-10-05.
 9. **Il telefono (deciso da Kevin, 2026-10-07): facoltativo, mai una condizione.** Un campo nella registrazione
    (`user_metadata.customer_phone`, normalizzato con `libphonenumber-js`), e per chi entra con Google il numero del profilo
-   Google, **solo con `GOOGLE_LOGIN_PHONE=true`** (permesso sensibile: serve la verifica di Google, vedi
+   Google, **solo quando la costante `REQUEST_GOOGLE_PHONE` (in `lib/auth/google-phone.ts`) passa a `true`**, dopo
+   l'approvazione di Google (permesso sensibile: serve la verifica di Google, vedi
    `docs/google-login-setup.md`). Entra nel cliente solo dove manca e solo se nessun altro cliente lo ha: ciò che il negozio
    ha scritto non si sovrascrive, e un numero inutilizzabile si scarta senza far fallire l'accesso
    (`lib/auth/customer-link.ts`, 5 test in `tests/db/customer-link.test.ts`).
@@ -127,7 +129,7 @@ allora, in **produzione** (progetto Supabase `hhfnhz…`) serve controllare a ma
 2. **Modelli delle email** (Authentication → Emails): il testo di «Confirm signup» è visibile ai clienti.
 3. **Google** (solo se lo vuoi): in Google Cloud → API e servizi → Credenziali, un «ID client OAuth» di tipo *Web* con
    come URI di reindirizzamento autorizzato quello che Supabase mostra in Authentication → Providers → Google; poi
-   incollare ID e segreto nel provider e impostare `NEXT_PUBLIC_GOOGLE_LOGIN=true` nell'ambiente. **Guida completa, con il
+   incollare ID e segreto nel provider (e attivarlo). **Guida completa, con il
    permesso del telefono e la verifica di Google: `docs/google-login-setup.md`.**
 4. **Informativa privacy e cookie: bloccante per il rilascio.** Aggiungere il dato dell'account (nome, email, telefono,
    storico), il cookie di sessione `sb-*-auth-token` tra i necessari nel banner, Google come fornitore dell'accesso. Elenco dei

@@ -41,7 +41,6 @@ interface Props {
   initialTab: LoginTab
   /** A path of this site to go back to after signing in, or empty. */
   next: string
-  googleEnabled: boolean
 }
 
 const submitClass = 'w-full bg-[#1e3a5f] hover:bg-[#152c4a]'
@@ -51,7 +50,7 @@ const submitClass = 'w-full bg-[#1e3a5f] hover:bg-[#152c4a]'
  * comes back in it, and `next`, so a person stopped on the way to somewhere goes back there.
  * What went wrong arrives as a message already in the page's language (the address carries a code).
  */
-export function LoginForm({ lang, d, errorMessage, infoMessage, initialTab, next, googleEnabled }: Props) {
+export function LoginForm({ lang, d, errorMessage, infoMessage, initialTab, next }: Props) {
   const [mode, setMode] = useState<LoginTab>(initialTab)
 
   const hidden = (
@@ -168,17 +167,13 @@ export function LoginForm({ lang, d, errorMessage, infoMessage, initialTab, next
         </form>
       )}
 
-      {googleEnabled && (
-        <>
-          <div className="flex items-center gap-3 text-xs text-muted-foreground">
-            <span className="h-px flex-1 bg-border" />{d.or}<span className="h-px flex-1 bg-border" />
-          </div>
-          <form action={googleLoginAction}>
-            {hidden}
-            <Button type="submit" variant="outline" className="w-full">{d.google_button}</Button>
-          </form>
-        </>
-      )}
+      <div className="flex items-center gap-3 text-xs text-muted-foreground">
+        <span className="h-px flex-1 bg-border" />{d.or}<span className="h-px flex-1 bg-border" />
+      </div>
+      <form action={googleLoginAction}>
+        {hidden}
+        <Button type="submit" variant="outline" className="w-full">{d.google_button}</Button>
+      </form>
     </div>
   )
 }
