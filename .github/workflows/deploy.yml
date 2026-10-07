@@ -21,6 +21,11 @@ on:
     paths-ignore:
       - 'docs/**'
       - '**/*.md'
+      - 'worker/**'
+      - 'Dockerfile.worker'
+      - 'deploy/worker/**'
+      - 'deploy/redis/**'
+      - 'scripts/build-worker.mjs'
   workflow_dispatch:
 
 # Never two deploys of the same environment at once, and never cancel one that is half way through.

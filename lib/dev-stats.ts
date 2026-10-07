@@ -1,7 +1,10 @@
-import { Redis } from '@upstash/redis'
 import { sql } from 'drizzle-orm'
 import { db, routes, media, routeTranslations } from '@/lib/db'
-import { HEARTBEAT_KEY } from '@/lib/worker-heartbeat'
+import { countJobs } from '@/lib/queues/counts'
+import { QUEUE_KINDS } from '@/lib/queues/names'
+import { getQueue } from '@/lib/queues/queues'
+import { getCacheRedis } from '@/lib/redis'
+import { settle } from '@/lib/settle'
 
 /**
  * A read-only look at the services behind the site, for the dev-tools page.
@@ -15,21 +18,6 @@ import { HEARTBEAT_KEY } from '@/lib/worker-heartbeat'
  * Redis call with no timeout at all until the visitor gave up.
  */
 
-/** Resolve with null instead of hanging forever. */
-async function settle<T>(work: Promise<T>, ms: number): Promise<T | null> {
-  let timer: ReturnType<typeof setTimeout> | undefined
-  try {
-    return await Promise.race([
-      work,
-      new Promise<null>((resolve) => { timer = setTimeout(() => resolve(null), ms) }),
-    ])
-  } catch {
-    return null
-  } finally {
-    clearTimeout(timer)
-  }
-}
-
 /** Generous compared to lib/cache.ts's 250ms: this page is visited on
  *  purpose, not on every request, so it can afford to wait a little longer
  *  for a real answer — but it must still always resolve. */
@@ -37,30 +25,30 @@ const TIMEOUT_MS = 5000
 
 export interface RedisStats {
   totalKeys: number
-  /** Video jobs with a live status entry right now, the heartbeat key aside. */
+  /** Jobs the queues know about right now: waiting, running, delayed and failed. */
   trackedJobs: number
 }
 
 export async function getRedisStats(): Promise<RedisStats | null> {
-  const url = process.env.UPSTASH_REDIS_REST_URL
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN
-  if (!url || !token) return null
+  const redis = getCacheRedis()
+  if (!redis) return null
 
-  const redis = new Redis({ url, token })
   const result = await settle(
-    Promise.all([redis.dbsize(), redis.keys('videojob:v1:*')]),
-    TIMEOUT_MS
+    Promise.all([
+      redis.dbsize(),
+      Promise.all(
+        QUEUE_KINDS.map((kind) => getQueue(kind)?.getJobCounts('waiting', 'active', 'delayed', 'failed') ?? null),
+      ),
+    ]),
+    TIMEOUT_MS,
   )
   if (!result) {
     console.error('[dev-stats] getRedisStats: query timed out or failed')
     return null
   }
 
-  const [totalKeys, jobKeys] = result
-  return {
-    totalKeys,
-    trackedJobs: jobKeys.filter((k) => k !== HEARTBEAT_KEY).length,
-  }
+  const [totalKeys, counts] = result
+  return { totalKeys, trackedJobs: countJobs(counts) }
 }
 
 export interface PostgresStats {

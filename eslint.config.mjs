@@ -22,6 +22,8 @@ const eslintConfig = defineConfig([
     ".next/**",
     "out/**",
     "build/**",
+    // Bundled worker output (npm run build:worker), generated.
+    "dist/**",
     "next-env.d.ts",
     // Static assets, not source. public/cesium/ alone is ~94 generated bundles
     // that produced 200 errors and ~12900 warnings, making `npm run lint` exit 1

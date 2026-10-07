@@ -1,0 +1,10 @@
+# Rendered into users.acl by render-acl.sh, which puts the hash of a fresh password in place of each placeholder.
+# Nobody logs in as `default`. One user per role and per environment: the site and the worker of an environment get only
+# what BullMQ and the cache need, and only that environment's keys (queues are `bullmq-<env>:*`, cache is `cache:<env>:*`),
+# so a compromised staging site or worker cannot read or add to anything of production's.
+user default off
+user probe on nopass -@all +ping
+user web-staging on #__WEB_STAGING_HASH__ ~bullmq-staging:* ~cache:staging:* +@all -@dangerous +info +config|get +client|list +client|id +client|setname +client|getname +client|setinfo
+user web-production on #__WEB_PRODUCTION_HASH__ ~bullmq-production:* ~cache:production:* +@all -@dangerous +info +config|get +client|list +client|id +client|setname +client|getname +client|setinfo
+user worker-staging on #__WORKER_STAGING_HASH__ ~bullmq-staging:* +@all -@dangerous +info +config|get +client|list +client|id +client|setname +client|getname +client|setinfo
+user worker-production on #__WORKER_PRODUCTION_HASH__ ~bullmq-production:* +@all -@dangerous +info +config|get +client|list +client|id +client|setname +client|getname +client|setinfo

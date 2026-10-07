@@ -79,6 +79,11 @@ deploy)
     --restart unless-stopped \
     "$IMAGE" >/dev/null
 
+  # The internal network, where Redis is, exists once Redis has been set up; until then there is nothing to join.
+  if docker network inspect internal >/dev/null 2>&1; then
+    docker network connect internal "$NAME"
+  fi
+
   if ! { wait_healthy "$NAME" && deep_check "$NAME"; }; then
     echo "[deploy] $NAME is not healthy, leaving the running version alone. Last log lines:" >&2
     docker logs --tail 25 "$NAME" >&2 || true

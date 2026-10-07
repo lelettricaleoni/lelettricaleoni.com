@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import { getAdminUser } from '@/lib/supabase/server'
 import { hasDevAccess } from '@/lib/admin-users'
-import { readWorkerHeartbeat, type ActiveJob, type WorkerHeartbeat } from '@/lib/worker-heartbeat'
+import { readWorkerHeartbeat, type ActiveJob, type WorkerHeartbeat } from '@/lib/queues/overview'
 import { getRedisStats, getPostgresStats, getR2Stats } from '@/lib/dev-stats'
 
 // TODO: Cache Components adoption. Refactor this route so this opt-out can be removed.
@@ -87,8 +87,7 @@ export default async function DevToolsPage() {
       <Section title="Video worker">
         {!heartbeat ? (
           <p className="text-sm text-muted-foreground rounded-lg border bg-muted/30 p-4">
-            No data from the worker. It hasn&apos;t published a heartbeat yet, or it&apos;s
-            been down for more than a minute.
+            No worker is connected right now. Uploads wait in line until one starts.
           </p>
         ) : (
           <div className="space-y-4">

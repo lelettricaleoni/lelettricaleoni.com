@@ -5,6 +5,8 @@ const nextConfig: NextConfig = {
   // image's whole runtime. Vercel's own build never sets it, so nothing changes there.
   output: process.env.NEXT_OUTPUT === 'standalone' ? 'standalone' : undefined,
   cacheComponents: true,
+  // Native modules and Node-only clients stay out of the webpack server bundle.
+  serverExternalPackages: ['bullmq', 'ioredis'],
   experimental: {
     globalNotFound: true,
   },

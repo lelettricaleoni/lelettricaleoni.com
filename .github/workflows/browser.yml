@@ -1,16 +1,17 @@
 name: browser
 
-# Layout and content checks, run against the preview Vercel builds for the pull
-# request. That preview is a real environment with the real services behind it,
-# which is why nothing here needs the fake services the September spec planned.
+# Layout, content and speed checks, run against the same image that ships. The job builds the site image on the
+# runner, starts it with the development services behind it (the environment `ci`), and points Playwright at
+# localhost. It used to wait for the preview Vercel built for the pull request; there is no preview now, and a
+# per-pull-request copy on the server would take CPU from the real site.
 #
-# Two things this catches that `verify` cannot. A page here answers 200 even
-# when its section is switched off — streaming plus notFound() — so only the
-# content settles it. And a layout fault can be invisible at one column and
-# obvious at three, so the width is part of the test.
+# Two things this catches that `verify` cannot. A page answers 200 even when it calls notFound() after streaming,
+# so only the content settles it. And a layout fault can be invisible at one column and obvious at three, so the
+# width is part of the test.
 #
-# Skips itself, rather than failing, when the bypass secret is absent: a fork
-# has no access to it, and a check that cannot run must not look broken.
+# It needs the development secrets of the `ci` environment. A pull request from a fork or from Dependabot does not
+# receive them, and there the job says so and passes, as the old one did without its bypass token. For anyone else
+# a missing secret is a failure: a check that silently tests nothing is worse than a red one.
 
 on:
   pull_request:
@@ -23,119 +24,115 @@ jobs:
   browser:
     name: browser
     runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: ci
 
-    # Anything not listed becomes `none`, so this is not decoration: without
-    # `deployments` the wait below cannot read the preview URL, and gh exits
-    # non-zero into a `bash -e` shell, which ends the whole step mid-loop.
     permissions:
       contents: read
-      deployments: read
 
     steps:
       - uses: actions/checkout@v7
 
-      - name: Check for the bypass secret
-        id: secret
+      - name: Check for the development secrets
+        id: secrets
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          FROM_OUTSIDE: ${{ github.event.pull_request.head.repo.full_name != github.repository || github.actor == 'dependabot[bot]' }}
         run: |
-          if [ -n "${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}" ]; then
+          if [ -n "$DATABASE_URL" ]; then
             echo "present=true" >> "$GITHUB_OUTPUT"
-          else
+          elif [ "$FROM_OUTSIDE" = "true" ]; then
             echo "present=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::VERCEL_AUTOMATION_BYPASS_SECRET non impostato: i test browser sono saltati."
+            echo "::notice::This pull request does not receive the secrets of the ci environment: the browser tests are skipped."
+          else
+            echo "::error::The secrets of the ci environment are missing: the browser tests cannot run."
+            exit 1
           fi
 
-      # Vercel is still building when the pull request opens, so the URL has to
-      # be waited for rather than guessed.
-      #
-      # Written out rather than taken from a ready-made action because those
-      # poll the preview without the bypass token: a protected deployment
-      # answers 401, they read that as "not ready", and keep going until they
-      # give up — thirteen minutes, on the first run of this workflow.
-      #
-      # Readiness is confirmed by fetching a page with the token, not by the
-      # deployment being listed as successful: those are not the same thing,
-      # and the second is the one Playwright depends on.
-      - name: Wait for the Vercel preview
-        if: steps.secret.outputs.present == 'true'
-        id: preview
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
+        if: steps.secrets.outputs.present == 'true'
+
+      # The image, exactly as the deploy builds it. Only public values are baked in.
+      - name: Build the site image
+        if: steps.secrets.outputs.present == 'true'
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
+        with:
+          context: .
+          load: true
+          tags: web-ci
+          build-args: |
+            APP_VERSION=ci
+            NEXT_PUBLIC_SITE_URL=${{ vars.NEXT_PUBLIC_SITE_URL }}
+            NEXT_PUBLIC_SUPABASE_URL=${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
+            NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ vars.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+            NEXT_PUBLIC_R2_PUBLIC_URL=${{ vars.NEXT_PUBLIC_R2_PUBLIC_URL }}
+            NEXT_PUBLIC_MAPS_EMBED_URL=${{ vars.NEXT_PUBLIC_MAPS_EMBED_URL }}
+            NEXT_PUBLIC_GA_MEASUREMENT_ID=${{ vars.NEXT_PUBLIC_GA_MEASUREMENT_ID }}
+            NEXT_PUBLIC_CESIUM_TOKEN=${{ vars.NEXT_PUBLIC_CESIUM_TOKEN }}
+          cache-from: type=gha,scope=web-ci
+          cache-to: type=gha,mode=max,scope=web-ci
+
+      # Only what the public pages read: no admin keys, no translation or encryption keys. APP_ENV=ci keeps
+      # Google Analytics off, so the run sends it no events.
+      - name: Start the site
+        if: steps.secrets.outputs.present == 'true'
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          BYPASS: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
-          SHA: ${{ github.event.pull_request.head.sha }}
-          REPO: ${{ github.repository }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          CARTO_API_KEY: ${{ secrets.CARTO_API_KEY }}
+          R2_ACCOUNT_ID: ${{ vars.R2_ACCOUNT_ID }}
+          R2_BUCKET_NAME: ${{ vars.R2_BUCKET_NAME }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ vars.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
         run: |
-          # `|| true` ovunque: una chiamata che fallisce è un tentativo
-          # perso, non una ragione per terminare il passo — cosa che `bash -e`
-          # farebbe altrimenti, come è successo al settimo giro.
-          #
-          # Venti minuti, non dieci: il piano Hobby di Vercel costruisce un
-          # deploy alla volta, e con sei pull request aperte insieme il
-          # preview non era nemmeno in coda allo scadere dei dieci.
-          for attempt in $(seq 1 120); do
-            id=$(gh api "repos/$REPO/deployments?sha=$SHA&environment=Preview" --jq '.[0].id // empty' 2>/dev/null || true)
-
-            if [ -n "$id" ]; then
-              state=$(gh api "repos/$REPO/deployments/$id/statuses" --jq '.[0].state // empty' 2>/dev/null || true)
-              target=$(gh api "repos/$REPO/deployments/$id/statuses" --jq '.[0].environment_url // .[0].target_url // empty' 2>/dev/null || true)
-
-              if [ "$state" = "success" ] && [ -n "$target" ]; then
-                # -L perché il preview reindirizza al proprio URL canonico, e
-                # proxy.ts reindirizza per conto suo. Pretendere un 200 secco
-                # legge un deploy sano come rotto — ed è quello che ha fatto,
-                # per dieci minuti, su tre pull request.
-                code=$(curl -sL -o /dev/null -w '%{http_code}' --max-time 20 \
-                  -H "x-vercel-protection-bypass: $BYPASS" \
-                  -H "x-vercel-set-bypass-cookie: true" \
-                  "$target/it" || true)
-
-                if [ "${code:-0}" -lt 400 ]; then
-                  # L'URL finale, non quello di partenza: se il preview
-                  # reindirizza al proprio nome canonico, è là che Playwright
-                  # deve puntare, altrimenti ogni test paga il salto.
-                  final=$(curl -sL -o /dev/null -w '%{url_effective}' --max-time 20                     -H "x-vercel-protection-bypass: $BYPASS"                     -H "x-vercel-set-bypass-cookie: true"                     "$target/it" || true)
-                  base="${final%/it*}"
-                  echo "url=${base:-$target}" >> "$GITHUB_OUTPUT"
-                  echo "Preview raggiungibile dopo $attempt tentativi: ${base:-$target}"
-                  exit 0
-                fi
-                echo "[$attempt] deploy pronto ma risponde $code"
-              else
-                echo "[$attempt] deploy in stato '${state:-assente}'"
-              fi
-            else
-              echo "[$attempt] nessun deployment ancora registrato"
-            fi
-
-            sleep 10
+          env_file="$RUNNER_TEMP/web.env"
+          for name in DATABASE_URL R2_ACCESS_KEY_ID R2_SECRET_ACCESS_KEY CARTO_API_KEY \
+                      R2_ACCOUNT_ID R2_BUCKET_NAME NEXT_PUBLIC_SUPABASE_URL NEXT_PUBLIC_SUPABASE_ANON_KEY; do
+            printf '%s=%s\n' "$name" "${!name}" >> "$env_file"
           done
+          docker run -d --name web --env-file "$env_file" -e APP_ENV=ci -p 3000:3000 web-ci
+          rm -f "$env_file"
 
-          echo "::error::Il preview non è diventato raggiungibile in venti minuti."
+          # Ready means the database answers too, not only that the process is up.
+          for attempt in $(seq 1 60); do
+            if curl -sf --max-time 5 'http://localhost:3000/api/health?deep=1' > /dev/null; then
+              echo "The site is up after $attempt tries"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "::error::The site did not become healthy in two minutes. Last log lines:"
+          docker logs --tail 40 web
           exit 1
 
       - uses: actions/setup-node@v7
-        if: steps.secret.outputs.present == 'true'
+        if: steps.secrets.outputs.present == 'true'
         with:
           node-version: 24
           cache: npm
 
       - name: Install dependencies
-        if: steps.secret.outputs.present == 'true'
+        if: steps.secrets.outputs.present == 'true'
         run: npm ci
 
       - name: Install Chromium
-        if: steps.secret.outputs.present == 'true'
+        if: steps.secrets.outputs.present == 'true'
         run: npx playwright install --with-deps chromium
 
       - name: Run browser tests
-        if: steps.secret.outputs.present == 'true'
+        if: steps.secrets.outputs.present == 'true'
         run: npm run test:browser
         env:
-          BASE_URL: ${{ steps.preview.outputs.url }}
-          VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+          BASE_URL: http://localhost:3000
+
+      - name: Site log
+        if: failure() && steps.secrets.outputs.present == 'true'
+        run: docker logs --tail 80 web || true
 
       # The trace of a failure is worth more than the log line that reports it.
       - uses: actions/upload-artifact@v7
-        if: failure() && steps.secret.outputs.present == 'true'
+        if: failure() && steps.secrets.outputs.present == 'true'
         with:
           name: playwright-report
           path: |
