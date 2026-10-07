@@ -87,3 +87,17 @@ describe('privacy policy: accounts', () => {
     expect(banner.match(/cc_cookie/g)).toHaveLength(3)
   })
 })
+
+/**
+ * Google Analytics runs in the ADVANCED consent mode (Kevin, 2026-10-07, after weighing it against the basic one): Google receives a
+ * minimal signal without cookies even from a visitor who refuses. The policy used to say that Analytics works only with consent, which
+ * is not what the site does; this keeps the sentence in.
+ */
+describe('privacy policy: the advanced consent mode', () => {
+  for (const lang of ['it', 'en', 'de']) {
+    it(`says that Google gets a minimal signal even from somebody who refuses, in ${lang}`, () => {
+      expect(privacy(lang).cookies_body).toMatch(/Consent Mode/)
+      expect(privacy(lang).legal_basis_body).toMatch(/\(lett\. f\)|\(point \(f\)\)|lit\. f/)
+    })
+  }
+})
