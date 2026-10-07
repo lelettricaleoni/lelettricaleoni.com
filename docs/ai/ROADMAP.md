@@ -140,6 +140,10 @@
 
 ## Scartato
 
+- **Caricare `gtag.js` solo dopo il consenso (Consent Mode «di base»)** — valutato e scartato da Kevin il 2026-10-07: si tiene la modalità **avanzata**, che Google
+  documenta e raccomanda. Prima di ogni scelta Google riceve un ping senza cookie (data e ora, browser, referrer, un numero casuale, lo stato del consenso, più l'indirizzo IP
+  di ogni richiesta), e Oracle e Cloudflare ricevono comunque l'IP per consegnare il sito. L'informativa lo dichiara (`privacy.cookies_body` e `legal_basis_body`, con un test).
+  Resta una domanda per chi rivede i testi; se la risposta fosse no, la modifica è piccola (vedi `.claude/skills/cookie-consent/`). Non riproporlo senza quel parere.
 - **Conservare gli originali delle foto e dei video** (silo sulla VM, bucket privato, MinIO — Kevin, 2026-10-06): il
   sorgente si cancella dopo l'elaborazione, come sempre. Costerebbe storage a pagamento e un secondo posto fragile per
   un file che nessuno rilegge; chi vuole l'originale lo tiene sul proprio computer. Non riproporlo. Ne segue che

@@ -5,6 +5,8 @@ description: "Use when a change collects, stores, shows or sends to a third part
 
 # Privacy e cookie in questo progetto
 
+Questa skill tiene **l'informativa e l'inventario dei dati**; il banner, il consenso e il modo di verificarli con un browser vero stanno in `cookie-consent`: caricale insieme.
+
 **Regola madre (Kevin, 2026-10-07: «bisogna assolutamente modificare le privacy e i cookie»):** un
 cambiamento che tocca dati personali o cookie **non è finito** finché l'informativa e il banner non dicono
 la verità su di lui. Nella stessa PR si aggiornano i testi (o si scrive nella PR cosa resta da fare e perché,
@@ -60,6 +62,20 @@ Aggiornalo quando cambia. È la base per scrivere i testi, non il testo.
 - **Da arrivare**: Stripe (pagamenti: titolare autonomo del dato di pagamento), promemoria dal worker (stesso invio),
   appuntamenti di riparazione.
 
+## Prima di scrivere il codice (Kevin, 2026-10-07: «devi andarci preventivo con la privacy»)
+
+La privacy si decide **a monte**, in cinque domande, e le risposte vanno nella descrizione della PR. Se una risposta è «non so», è una domanda per Kevin o per chi rivede i testi,
+non una scelta da fare in silenzio.
+
+1. **Serve davvero questo dato?** Minimizzare: un dato non raccolto non va protetto, dichiarato né cancellato.
+2. **Chi lo vede, dove va, per quanto resta?** Compreso il caso peggiore: un log, un'email, un'esportazione, un servizio di terzi.
+3. **Come lo cancella o lo scarica la persona?** Le impostazioni dell'account lo fanno già per profilo e noleggi (`settings/privacy`): un dato nuovo ci deve entrare.
+4. **Cosa dice l'informativa oggi su questo?** Se non lo dice, la PR include il testo (tre lingue) e la data.
+5. **Cosa succede prima del consenso?** Cookie, richieste a terzi, eventi: vedi `cookie-consent`.
+
+Due **guardie in CI** tengono il codice onesto con l'informativa (`lib/privacy-surface.test.ts`): scattano per un host nuovo, un cookie o uno storage nuovo, o se l'informativa smette
+di nominare un servizio usato. Non sostituiscono le cinque domande: vedono solo ciò che è scritto con un indirizzo letterale.
+
 ## Checklist quando si aggiunge qualcosa
 
 1. **Un campo con dati di una persona** (nome, contatto, indirizzo, foto): chi lo vede, dove si conserva, per quanto,
@@ -80,6 +96,12 @@ Aggiornalo quando cambia. È la base per scrivere i testi, non il testo.
 7. **Aggiornare «Ultimo aggiornamento»** (`privacy.last_updated`) a ogni modifica.
 
 ## Trappole
+
+- **Il messaggio d'errore di una query di Drizzle contiene tutti i parametri** («Failed query: insert into customers … params: mario@…, +39…», misurato il 2026-10-07).
+  Registrare `String(error)` o `error.message` di una query che tocca una persona copia email, nomi e telefono nei log del server, da cui nessuno può cancellarli. Si usa
+  `safeErrorSummary(error)` (`lib/safe-error.ts`): dice cosa ha detto Postgres (codice, vincolo), senza valori. Un errore **non intercettato** di una Server Action lo
+  scrive Next per conto suo, con tutto: per questo le azioni che toccano dati personali intercettano e rispondono con un codice.
+- **Il controllo con un browser va fatto da un profilo azzerato**: quello di prova ricorda il consenso (vedi `cookie-consent`).
 
 - **Niente feature flag nel file d'ambiente** (Kevin, 2026-10-07). Una scelta che cambia ciò che dice l'informativa (per esempio chiedere
   il telefono a Google) è una costante nel codice, cambiata in un commit insieme al testo, non una variabile che può essere
@@ -106,4 +128,5 @@ Da portare a chi rivede i testi, finché non hanno risposta:
    Il testo nella pagina «Dati e privacy» rimanda all'informativa.
 6. Base giuridica dei dati dell'account (esecuzione del contratto di noleggio) e dell'email di servizio.
 7. Cesium ion e Esri ricevono l'IP senza consenso: va bene dichiararli nell'informativa, o servono dietro il banner?
-8. Lo script di Google Analytics si carica prima del consenso (anche con Consent Mode negato): è accettabile?
+8. Google Analytics gira in modalità avanzata di Consent Mode (scelta di Kevin, 2026-10-07): lo script si carica prima del consenso e Google riceve un ping senza cookie anche da chi
+   rifiuta; l'informativa lo dichiara, con il legittimo interesse come base. È accettabile senza consenso?
