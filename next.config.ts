@@ -5,6 +5,12 @@ const nextConfig: NextConfig = {
   // image's whole runtime. Vercel's own build never sets it, so nothing changes there.
   output: process.env.NEXT_OUTPUT === 'standalone' ? 'standalone' : undefined,
   cacheComponents: true,
+  // The commit this build was made from (the deploy workflow passes it as APP_VERSION, see
+  // the Dockerfile). With an id, a page opened before a deploy notices the new build on its
+  // next navigation and loads it afresh, instead of running old scripts against a server
+  // that no longer has their Server Action ids. Vercel did this for us; on the VM nothing
+  // does. Not set for a local build or the CI image ("dev"): there is nothing to tell apart.
+  deploymentId: process.env.APP_VERSION && process.env.APP_VERSION !== 'dev' ? process.env.APP_VERSION : undefined,
   // Native modules and Node-only clients stay out of the webpack server bundle.
   serverExternalPackages: ['bullmq', 'ioredis'],
   experimental: {

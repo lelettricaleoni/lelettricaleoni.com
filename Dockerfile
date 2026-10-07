@@ -32,6 +32,10 @@ ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL \
     NEXT_PUBLIC_GA_MEASUREMENT_ID=$NEXT_PUBLIC_GA_MEASUREMENT_ID \
     NEXT_PUBLIC_CESIUM_TOKEN=$NEXT_PUBLIC_CESIUM_TOKEN \
     NEXT_OUTPUT=standalone
+# The commit being built: next.config.ts turns it into the deployment id, so it has to be here, at build time
+# (the runner stage below declares it again, for /api/health).
+ARG APP_VERSION=dev
+ENV APP_VERSION=$APP_VERSION
 RUN npm run build
 
 FROM base AS runner
