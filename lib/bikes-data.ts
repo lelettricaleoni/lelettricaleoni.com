@@ -1,4 +1,4 @@
-import { eq, and, asc, sql, inArray } from 'drizzle-orm'
+import { eq, and, asc, sql, inArray, isNotNull } from 'drizzle-orm'
 import { cacheLife, cacheTag } from 'next/cache'
 import {
   db, bikeModels, bikeModelTranslations, bikeCategories, bikeUnits, bikeSizes,
@@ -8,6 +8,29 @@ import { resolveReadyMedia } from '@/lib/media'
 import { inGarage } from '@/lib/in-garage'
 
 type Locale = 'it' | 'en' | 'de'
+
+/**
+ * The first photo that is actually there for every bike model, as
+ * model id → storage key. One query for all models, never one per model (the
+ * N+1 shape that blocked /routes twice, STATE.md). Models with no ready photo
+ * are simply absent. Feeds the `image` of the home page's structured data.
+ */
+export async function getBikeCoverPhotoKeys(): Promise<Record<string, string>> {
+  'use cache'
+  cacheLife('catalog')
+  cacheTag('bike-models')
+
+  const photos = await db.select().from(media)
+    .where(and(eq(media.mediaType, 'photo'), isNotNull(media.bikeModelId)))
+    .orderBy(asc(media.displayOrder))
+  const ready = await resolveReadyMedia(photos)
+
+  const cover: Record<string, string> = {}
+  for (const photo of ready) {
+    if (photo.bikeModelId && !(photo.bikeModelId in cover)) cover[photo.bikeModelId] = photo.storageKey
+  }
+  return cover
+}
 
 function dedupeById<T extends { id: string }>(items: T[]): T[] {
   return [...new Map(items.map((i) => [i.id, i])).values()]
