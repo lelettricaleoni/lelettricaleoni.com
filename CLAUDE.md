@@ -90,8 +90,18 @@ importato qui sopra. Non duplicarli in questo file.
 Next.js 16 (routing, Cache Components, trappole verificate) e i18n (architettura, come
 aggiungere stringhe) sono skill di progetto — `.claude/skills/nextjs-16/`,
 `.claude/skills/i18n/`, `.claude/skills/db-migrations/`, `.claude/skills/media-storage/`,
-`.claude/skills/maps/` — caricate su richiesta invece che sempre, così non pesano quando il
-task non le tocca.
+`.claude/skills/maps/`, `.claude/skills/privacy-cookies/`, `.claude/skills/design-system/` — caricate su richiesta invece che
+sempre, così non pesano quando il task non le tocca.
+
+**Ogni lavoro visivo parte da `design-system`** (Kevin, 2026-10-07): raggi, colori, componenti e misure già decisi dal sito.
+Prima di fare un pulsante, un menu o una card si cerca quello che esiste (`components/ui/`); niente esadecimali nuovi nel
+markup (ci sono i token `brand-*`); un'azione non è mai una pillola. Si guarda uno screenshot prima di dire «finito».
+
+**Privacy e cookie sono parte del lavoro, non un dopo** (Kevin, 2026-10-07). Se una modifica
+raccoglie o mostra dati di una persona, imposta un cookie, chiama un servizio esterno dal browser
+o cambia chi ospita il sito, carica la skill `privacy-cookies` e aggiorna nella stessa PR
+l'informativa (`messages/*.json`) e il banner (`components/cookie-consent.tsx`), oppure scrivi nella
+PR cosa manca e mettilo in ROADMAP come bloccante per il rilascio.
 
 ## shadcn/ui
 - `npx shadcn@latest init` è interattivo — preferire: crea `components.json` manualmente + `npx shadcn@latest add <componenti>`
