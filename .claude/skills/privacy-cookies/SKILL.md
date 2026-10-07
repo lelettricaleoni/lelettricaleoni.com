@@ -44,7 +44,7 @@ Aggiornalo quando cambia. È la base per scrivere i testi, non il testo.
   nella tabella `customers` (nome, cognome, email, telefono facoltativo). **Cookie di sessione, prima parte e necessari**:
   `sb-<progetto>-auth-token` (spezzato in `.0`, `.1` se grande) e `sb-<progetto>-auth-token-code-verifier`, durata 400
   giorni (predefinita di `@supabase/ssr`). Se si attiva Google: Google LLC fornisce l'accesso, e il numero di telefono
-  solo con il permesso sensibile `user.phonenumbers.read` (interruttore `GOOGLE_LOGIN_PHONE`).
+  solo con il permesso sensibile `user.phonenumbers.read` (costante `REQUEST_GOOGLE_PHONE` in `lib/auth/google-phone.ts`, falsa finché Google non approva).
 - **Clienti e noleggi registrati al banco**: tabelle `customers`, `bike_reservations` (nome, contatti, date, importi,
   note). Non passano dal sito pubblico; li inserisce il pannello. Base giuridica e conservazione: **da definire**.
 - **Pannello (solo staff)**: Azure Translator riceve i testi del catalogo (percorsi e modelli), **non** dati dei clienti;
@@ -77,6 +77,9 @@ Aggiornalo quando cambia. È la base per scrivere i testi, non il testo.
 
 ## Trappole
 
+- **Niente feature flag nel file d'ambiente** (Kevin, 2026-10-07). Una scelta che cambia ciò che dice l'informativa (per esempio chiedere
+  il telefono a Google) è una costante nel codice, cambiata in un commit insieme al testo, non una variabile che può essere
+  diversa tra staging e produzione.
 - **Il banner e l'informativa dicono due volte la stessa cosa** (tre lingue ciascuno): cambiarne uno e non l'altro è
   l'errore più facile. Cercare la parola in tutto `messages/` **e** in `components/cookie-consent.tsx`.
 - **`user_metadata` lo scrive l'utente** (nomi dalla registrazione): non è un dato affidabile e non è un permesso
