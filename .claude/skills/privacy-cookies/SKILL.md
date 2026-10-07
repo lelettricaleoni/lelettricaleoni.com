@@ -19,7 +19,7 @@ noto si lascia la domanda aperta (elenco in fondo). Mai un testo definitivo scri
 | Cosa | Dove |
 |---|---|
 | Informativa privacy (le tre lingue) | `messages/{it,en,de}.json`, sezione `privacy` (titoli e corpi); pagina `app/[lang]/privacy/page.tsx` |
-| Titolare, indirizzo, email di contatto della pagina privacy | scritti **a mano** in `app/[lang]/privacy/page.tsx` (vedi `docs/contact-details.md`) |
+| Titolare, indirizzo, email di contatto della pagina privacy | scritti **a mano** in `app/[lang]/privacy/page.tsx` (vedi `docs/contact-details.md`). Le richieste sui dati vanno a **`privacy@lelettricaleoni.com`** (dal 2026-10-07), non a `info@`: lo impone `lib/privacy-text.test.ts` |
 | Banner dei cookie | `components/cookie-consent.tsx` (vanilla-cookieconsent 3). **I testi stanno dentro il componente**, non in `messages/`: sono tre blocchi (it, en, de) da tenere uguali. Categorie: `necessary`, `analytics` |
 | Cookie del banner | `cc_cookie`, 182 giorni (impostazione predefinita della libreria; nessuna modifica nel codice) |
 | Analytics | GA4 con **Consent Mode v2**, tutto negato di partenza (`app/[lang]/layout.tsx`, `gtag('consent','default',…)`); lo script `googletagmanager.com/gtag/js` si carica comunque, prima del consenso |
@@ -50,8 +50,11 @@ Aggiornalo quando cambia. È la base per scrivere i testi, non il testo.
 - **Pannello (solo staff)**: Azure Translator riceve i testi del catalogo (percorsi e modelli), **non** dati dei clienti;
   la sincronizzazione con Google Calendar manda un evento per prenotazione (nome del cliente; il telefono solo se
   l'amministratore lo abilita; mai importi né note).
-- **Da arrivare**: Stripe (pagamenti: titolare autonomo del dato di pagamento), email di servizio e promemoria
-  (fornitore da indicare), appuntamenti di riparazione.
+- **Email di servizio**: l'invio passa da **Resend** (Kevin, 2026-10-07: già configurato, e Supabase lo usa per le email di
+  conferma e reset). Riceve indirizzo del destinatario e testo del messaggio: è un destinatario da nominare nell'informativa
+  (sede, regione dei dati e accordo sul trattamento **da verificare** con Resend).
+- **Da arrivare**: Stripe (pagamenti: titolare autonomo del dato di pagamento), promemoria dal worker (stesso invio),
+  appuntamenti di riparazione.
 
 ## Checklist quando si aggiunge qualcosa
 
@@ -89,7 +92,7 @@ Da portare a chi rivede i testi, finché non hanno risposta:
 
 1. Per quanto tempo si conservano i dati dei clienti del banco e degli account (e dei documenti fiscali)?
 2. Il noleggio al banco ha un'informativa data alla persona (a voce, su carta)? Il sito la richiama?
-3. Contratti con i fornitori (Cloudflare, Oracle, Supabase, Google, il fornitore delle email): accordi sul trattamento
+3. Contratti con i fornitori (Cloudflare, Oracle, Supabase, Google, Resend): accordi sul trattamento
    (art. 28) e trasferimenti fuori dall'UE (Cloudflare e Google negli USA: Data Privacy Framework).
 4. Serve il registro dei trattamenti (art. 30)?
 5. Base giuridica dei dati dell'account (esecuzione del contratto di noleggio) e dell'email di servizio.
