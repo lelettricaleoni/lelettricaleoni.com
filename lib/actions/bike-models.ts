@@ -11,7 +11,10 @@ import { photoSourceExtension, photoContentType } from '@/lib/media-client'
 import { needsRetranslation } from '@/lib/translations'
 import { BikeModelSchema, type BikeModelInput } from '@/lib/bike-model-schema'
 import { translateNameAndDescription } from '@/lib/translate-text'
-import { syncModelSizesAndVersions, replaceModelMedia, type ModelMediaItem } from '@/lib/bike-model-sync'
+import {
+  syncModelSizesAndVersions, replaceModelMedia, replaceModelTranslations, type ModelMediaItem,
+} from '@/lib/bike-model-sync'
+import { FOREIGN_KEY_VIOLATION, pgErrorCode } from '@/lib/pg-errors'
 
 export type BikeModelFormState = {
   errors?: Partial<Record<keyof BikeModelInput, string[]>>
@@ -163,10 +166,12 @@ export async function updateBikeModelAction(
 
   // Everything that can refuse comes first. The model row used to be updated before the
   // translation was tried, so a translation that failed left the changes half applied.
-  const [currentIt] = await db.select().from(bikeModelTranslations).where(
-    and(eq(bikeModelTranslations.bikeModelId, id), eq(bikeModelTranslations.locale, 'it'))
-  )
-  const reTranslate = needsRetranslation(
+  const current = await db.select().from(bikeModelTranslations).where(eq(bikeModelTranslations.bikeModelId, id))
+  const currentIt = current.find((t) => t.locale === 'it')
+  // A model missing a language (a half-created one has none) is translated whatever the
+  // text says: comparing the Italian with itself would never notice.
+  const incomplete = (['it', 'en', 'de'] as const).some((locale) => !current.some((t) => t.locale === locale))
+  const reTranslate = incomplete || needsRetranslation(
     currentIt ? { name: currentIt.name, description: currentIt.description } : undefined,
     { name: nameIt, description: descriptionIt },
     formData.get('retranslate') === 'true'
@@ -189,16 +194,12 @@ export async function updateBikeModelAction(
     }).where(eq(bikeModels.id, id))
 
     if (translated?.ok) {
-      for (const [locale, name, desc, isAuto] of [
-        ['it', nameIt, descriptionIt, false],
-        ['en', translated.name.en, translated.description.en, true],
-        ['de', translated.name.de, translated.description.de, true],
-      ] as const) {
-        await db
-          .update(bikeModelTranslations)
-          .set({ name, description: desc, isAutoTranslated: isAuto })
-          .where(and(eq(bikeModelTranslations.bikeModelId, id), eq(bikeModelTranslations.locale, locale)))
-      }
+      // Rewritten, not updated: an UPDATE of rows that do not exist saves nothing and says so to nobody.
+      await replaceModelTranslations(id, [
+        { locale: 'it', name: nameIt, description: descriptionIt, isAutoTranslated: false },
+        { locale: 'en', name: translated.name.en, description: translated.description.en, isAutoTranslated: true },
+        { locale: 'de', name: translated.name.de, description: translated.description.de, isAutoTranslated: true },
+      ])
     } else {
       await db
         .update(bikeModelTranslations)
@@ -221,20 +222,32 @@ export async function updateBikeModelAction(
   redirect('/manage/bikes')
 }
 
-export async function deleteBikeModelAction(id: string) {
+export type DeleteBikeModelResult = { ok: true } | { ok: false; reason: 'has-bikes' }
+
+export async function deleteBikeModelAction(id: string): Promise<DeleteBikeModelResult> {
   await requireAdmin()
 
   const items = await db.select().from(media).where(eq(media.bikeModelId, id))
-  await Promise.all(items.map(deleteMediaFiles))
 
-  // Fails loudly (thrown error, caught by the caller) if any bike_units row
-  // still references this model — no cascade on that foreign key, by design.
-  await db.delete(bikeModels).where(eq(bikeModels.id, id))
+  // The row goes first, and the files only after: with a bike_units row still pointing at the
+  // model (no cascade on that foreign key, by design) the delete is refused, and the pictures
+  // must still be there. Deleting the files first, as this did, left a model with photos that
+  // no longer existed. Only that refusal is an answer; any other failure is an error and is
+  // thrown, instead of being reported as "bikes in the shop".
+  try {
+    await db.delete(bikeModels).where(eq(bikeModels.id, id))
+  } catch (error) {
+    if (pgErrorCode(error) === FOREIGN_KEY_VIOLATION) return { ok: false, reason: 'has-bikes' }
+    throw error
+  }
+  await deleteRemovedMediaFiles(items)
+
   updateTag('bike-models')
   // The tag above is for the public pages. The admin list reads the database
   // directly, so it is only redone if the page itself is revalidated: without
   // this the row kept its old state until the panel was reloaded.
   revalidatePath('/manage/bikes')
+  return { ok: true }
 }
 
 export async function togglePublishBikeModelAction(id: string, isPublished: boolean) {

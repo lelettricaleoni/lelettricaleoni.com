@@ -11,6 +11,7 @@ import {
   AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
 import { deleteBikeModelAction, togglePublishBikeModelAction } from '@/lib/actions/bike-models'
+import { rethrowIfStaleAction } from '@/lib/stale-action'
 import type { BikeModel } from '@/lib/db'
 
 export function BikeModelListItem({ model, name }: { model: BikeModel; name: string }) {
@@ -19,10 +20,16 @@ export function BikeModelListItem({ model, name }: { model: BikeModel; name: str
   function handleDelete() {
     startTransition(async () => {
       try {
-        await deleteBikeModelAction(model.id)
+        const result = await deleteBikeModelAction(model.id)
+        if (!result.ok) {
+          toast.error('This model still has bikes in the shop — remove those first')
+          return
+        }
         toast.success('Model deleted')
-      } catch {
-        toast.error('This model still has bikes in the shop — remove those first')
+      } catch (error) {
+        // A page from before the last update is reloaded, not reported as a problem with the model.
+        rethrowIfStaleAction(error)
+        toast.error('The model could not be deleted. Reload the page and try again.')
       }
     })
   }
