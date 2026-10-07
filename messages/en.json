@@ -133,7 +133,7 @@
   "privacy": {
     "title": "Privacy Policy",
     "meta_description": "How we handle the data of people who visit the site, in line with GDPR.",
-    "last_updated": "Last updated: April 2026",
+    "last_updated": "Last updated: October 2026",
     "controller_title": "Data Controller",
     "data_title": "Data Collected",
     "data_body": "This website uses Google Analytics (GA4) only after obtaining your consent. GA4 collects anonymous browsing data (pages visited, session duration, device type). No personally identifiable data is collected directly through the website.",
@@ -144,7 +144,7 @@
     "retention_title": "Data Retention",
     "retention_body": "Data collected through Google Analytics is retained for 14 months, as per the default GA4 configuration.",
     "third_parties_title": "Data Recipients",
-    "third_parties_body": "Browsing data is transmitted to Google LLC (1600 Amphitheatre Parkway, Mountain View, CA 94043, USA), acting as a data processor under Art. 28 GDPR. Google LLC participates in the EU-US Data Privacy Framework. More information: policies.google.com/privacy. This website is hosted by Vercel Inc. (440 N Barranca Ave #4133, Covina, CA 91723, USA), which processes network data (IP address, HTTP headers) as part of providing the hosting infrastructure. Vercel Inc. participates in the EU-US Data Privacy Framework. More information: vercel.com/legal/privacy-policy.",
+    "third_parties_body": "Browsing data is transmitted to Google LLC (1600 Amphitheatre Parkway, Mountain View, CA 94043, USA), acting as a data processor under Art. 28 GDPR. Google LLC participates in the EU-US Data Privacy Framework. More information: policies.google.com/privacy. This website is hosted on a server of Oracle Cloud Infrastructure located in Milan (Italy). Traffic goes through Cloudflare, Inc. (101 Townsend St, San Francisco, CA 94107, USA), which processes network data (IP address, HTTP headers) as part of its network and security services (DNS, protection against attacks, temporary storage of files). Cloudflare, Inc. participates in the EU-US Data Privacy Framework. More information: cloudflare.com/privacypolicy.",
     "rights_title": "Your Rights",
     "rights_body": "Under Arts. 15–22 GDPR you have the right to: access your data, request its rectification or erasure, restrict its processing, object to processing, request data portability, and withdraw consent at any time. To exercise these rights, contact us at:",
     "contact_title": "Contact",
