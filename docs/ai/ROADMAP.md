@@ -53,6 +53,13 @@
   flyover; Kevin, 2026-10-07: «bisogna assolutamente modificare le privacy e i cookie»). Fatti, domande aperte per
   un legale e checklist: skill `.claude/skills/privacy-cookies/`. La verifica di Google per il telefono la richiede
   comunque (`docs/google-login-setup.md`).
+  **Bloccante per la fetta 3 (prenotazione e pagamento online): una pagina dei termini e condizioni di noleggio**
+  (Kevin, 2026-10-07). Oggi non esiste (`/it/terms` risponde «Pagina non trovata»). Parte dalle regole già decise:
+  pagamento intero, rimborso intero fino a 48 ore prima, solo giorni interi. **Da decidere con Kevin prima di scriverla:**
+  cauzione (se e quanto), danni, furto e smarrimento, età minima e casco, mancata presentazione, maltempo, orari di ritiro e
+  riconsegna. Il diritto di recesso (servizi del tempo libero con data precisa) va comunicato: **da far confermare** da chi
+  rivede i testi. Bozza sui fatti, nelle tre lingue, rivista insieme all'informativa perché dicano le stesse cose. Quando
+  esiste, si aggiunge il suo link alla schermata di consenso di Google (campo facoltativo, oggi vuoto).
 
 ## Prossimo
 
