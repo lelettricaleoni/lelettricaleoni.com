@@ -1,0 +1,27 @@
+# Lelettrica di Leoni Gabriele
+
+> E-bike rental (Flyer) and bike repairs in Dro, Trentino, on Lake Garda. Walk-in shop at Via Roma 90, 38074 Dro (TN), Italy. The site is available in Italian, English and German.
+
+Prices and availability change over the season: read them on the bike pages, not from this file.
+
+## Bikes for rent
+
+- [Bikes, Italian](https://www.lelettricaleoni.com/it/bikes): Flyer e-bikes and classic bikes, with daily prices
+- [Bikes, English](https://www.lelettricaleoni.com/en/bikes): the same list in English
+- [Bikes, German](https://www.lelettricaleoni.com/de/bikes): the same list in German
+
+## Recommended routes
+
+- [Routes, Italian](https://www.lelettricaleoni.com/it/routes): rides suggested by the shop, each with a GPX track, photos and a 3D map
+- [Routes, English](https://www.lelettricaleoni.com/en/routes): the same routes in English
+- [Routes, German](https://www.lelettricaleoni.com/de/routes): the same routes in German
+
+## About the shop
+
+- [Home, Italian](https://www.lelettricaleoni.com/it): shop, opening hours, contacts and map
+- [Home, English](https://www.lelettricaleoni.com/en): the same in English
+- [Home, German](https://www.lelettricaleoni.com/de): the same in German
+
+## Optional
+
+- [Sitemap](https://www.lelettricaleoni.com/sitemap.xml): every public page, in all three languages
