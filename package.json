@@ -55,6 +55,7 @@
     "dompurify": "^3.4.16",
     "drizzle-orm": "^0.45.3",
     "fast-xml-parser": "^5.11.2",
+    "file-type": "^22.1.1",
     "framer-motion": "^13.5.1",
     "hls.js": "^1.7.3",
     "ioredis": "^5.11.1",

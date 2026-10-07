@@ -61,6 +61,10 @@ distinguono, senza migrazione.
   caricamento non fallisce e la **scansione del worker (all'avvio e ogni 10 minuti)** trova il file.
 - **Il worker rifiuta** un lavoro per un bucket che non serve o con una chiave fuori dalla propria forma (nessun
   segmento `.`/`..`), e passa a ffmpeg solo i contenitori ammessi (`INPUT_FORMATS`).
+- **Prima del PUT il browser legge i primi byte del file** (`lib/media-content.ts`, con `file-type`) e rifiuta ciò che non è
+  davvero una foto o un video: l'estensione e il tipo dichiarato vengono dal nome e non dicono nulla di un file danneggiato
+  (tre PNG col primo byte sovrascritto sono rimasti in produzione fino al 2026-10-07). Un formato che il worker non legge è
+  rifiutato anche sotto un'estensione ammessa.
 - `/api/upload` è solo per il GPX. I duplicati di foto si controllano nel browser
   (`lib/hash-client.ts`).
 
