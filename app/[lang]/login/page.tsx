@@ -12,7 +12,7 @@ import { LoginForm, type LoginTab } from './login-form'
 // See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
 export const instant = false;
 
-const TABS: LoginTab[] = ['password', 'magic', 'reset', 'register']
+const TABS: LoginTab[] = ['password', 'reset', 'register']
 
 export default async function LoginPage({
   params,
@@ -58,10 +58,6 @@ export default async function LoginPage({
         {/* Right panel */}
         <div className="flex-1 flex items-center justify-center p-8 bg-background">
           <div className="w-full max-w-sm space-y-6">
-            <div>
-              <h1 className="text-2xl font-bold text-[#1e3a5f]">{d.title}</h1>
-              <p className="text-sm text-muted-foreground mt-1">{d.subtitle}</p>
-            </div>
             <LoginForm
               lang={lang}
               d={d}

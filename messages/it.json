@@ -2,7 +2,11 @@
   "nav": {
     "services": "Servizi",
     "pricing": "Prezzi",
-    "contact": "Contatti"
+    "contact": "Contatti",
+    "login": "Accedi",
+    "account": "Il mio account",
+    "panel": "Pannello",
+    "logout": "Esci"
   },
   "hero": {
     "open_badge": "Siamo aperti",
@@ -240,19 +244,14 @@
   "login": {
     "title": "Accedi",
     "subtitle": "Bentornato su Lelettrica",
-    "tab_password": "Password",
-    "tab_magic": "Magic link",
-    "tab_reset": "Reset",
     "email_placeholder": "nome@esempio.com",
     "password_placeholder": "••••••••",
-    "magic_hint": "Riceverai un link monouso via email. Nessuna password richiesta.",
     "reset_hint": "Riceverai un link per impostare una nuova password.",
     "submit_password": "Accedi",
-    "submit_magic": "Invia magic link",
     "submit_reset": "Invia link di reset",
     "left_title": "Noleggio e-bike a Dro,\nLago di Garda",
     "left_subtitle": "Prenota il tuo noleggio, gestisci le tue uscite o accedi all'area staff.",
-    "gdpr": "Accesso riservato. Dati trattati nel rispetto del GDPR.",
+    "gdpr": "I tuoi dati sono trattati nel rispetto del GDPR.",
     "tab_register": "Crea account",
     "register_hint": "Con un account puoi prenotare e ritrovare le tue prenotazioni. Ti mandiamo una email per confermare l’indirizzo.",
     "first_name_label": "Nome",
@@ -264,7 +263,6 @@
     "privacy_link": "Privacy Policy",
     "submit_register": "Crea account",
     "google_button": "Continua con Google",
-    "or": "oppure",
     "errors": {
       "invalid_credentials": "Email o password non corrette. Riprova.",
       "invalid_link": "Il link non è valido o è scaduto. Richiedine uno nuovo.",
@@ -278,11 +276,16 @@
       "invalid_phone": "Il numero di telefono non è valido. Controlla il prefisso o lascialo vuoto."
     },
     "info": {
-      "magic_sent": "Se l’indirizzo è registrato, ti abbiamo inviato un link di accesso: controlla la tua email.",
       "reset_sent": "Se l’indirizzo è registrato, ti abbiamo inviato il link per reimpostare la password: controlla la tua email.",
       "signup_sent": "Account quasi pronto: ti abbiamo mandato una email, apri il link per confermare l’indirizzo.",
       "password_updated": "Password aggiornata."
-    }
+    },
+    "tab_signin": "Accedi",
+    "title_register": "Crea il tuo account",
+    "title_reset": "Reimposta la password",
+    "or_email": "oppure con l’email",
+    "forgot_password": "Password dimenticata?",
+    "back_to_signin": "Torna all’accesso"
   },
   "update_password": {
     "title": "Nuova password",

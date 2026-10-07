@@ -2,7 +2,11 @@
   "nav": {
     "services": "Leistungen",
     "pricing": "Preise",
-    "contact": "Kontakt"
+    "contact": "Kontakt",
+    "login": "Anmelden",
+    "account": "Mein Konto",
+    "panel": "Verwaltung",
+    "logout": "Abmelden"
   },
   "hero": {
     "open_badge": "Wir haben geöffnet",
@@ -240,19 +244,14 @@
   "login": {
     "title": "Anmelden",
     "subtitle": "Willkommen zurück bei Lelettrica",
-    "tab_password": "Passwort",
-    "tab_magic": "Magic link",
-    "tab_reset": "Zurücksetzen",
     "email_placeholder": "name@beispiel.com",
     "password_placeholder": "••••••••",
-    "magic_hint": "Du erhältst einen Einmallink per E-Mail. Kein Passwort erforderlich.",
     "reset_hint": "Du erhältst einen Link zum Festlegen eines neuen Passworts.",
     "submit_password": "Anmelden",
-    "submit_magic": "Magic link senden",
     "submit_reset": "Reset-Link senden",
     "left_title": "E-Bike-Verleih in Dro,\nGardasee",
     "left_subtitle": "Buche deinen Verleih, verwalte deine Ausfahrten oder greife auf den Mitarbeiterbereich zu.",
-    "gdpr": "Eingeschränkter Zugang. Daten werden gemäß DSGVO verarbeitet.",
+    "gdpr": "Deine Daten werden gemäß DSGVO verarbeitet.",
     "tab_register": "Konto erstellen",
     "register_hint": "Mit einem Konto kannst du buchen und deine Buchungen wiederfinden. Wir schicken dir eine E-Mail, um die Adresse zu bestätigen.",
     "first_name_label": "Vorname",
@@ -264,7 +263,6 @@
     "privacy_link": "Datenschutzerklärung",
     "submit_register": "Konto erstellen",
     "google_button": "Weiter mit Google",
-    "or": "oder",
     "errors": {
       "invalid_credentials": "E-Mail oder Passwort stimmt nicht. Versuche es erneut.",
       "invalid_link": "Der Link ist ungültig oder abgelaufen. Fordere einen neuen an.",
@@ -278,11 +276,16 @@
       "invalid_phone": "Die Telefonnummer ist ungültig. Prüfe die Vorwahl oder lass das Feld leer."
     },
     "info": {
-      "magic_sent": "Wenn die Adresse registriert ist, haben wir dir einen Anmeldelink geschickt: Prüfe deine E-Mail.",
       "reset_sent": "Wenn die Adresse registriert ist, haben wir dir den Link zum Zurücksetzen des Passworts geschickt: Prüfe deine E-Mail.",
       "signup_sent": "Dein Konto ist fast fertig: Wir haben dir eine E-Mail geschickt, öffne den Link, um die Adresse zu bestätigen.",
       "password_updated": "Passwort aktualisiert."
-    }
+    },
+    "tab_signin": "Anmelden",
+    "title_register": "Konto erstellen",
+    "title_reset": "Passwort zurücksetzen",
+    "or_email": "oder mit E-Mail",
+    "forgot_password": "Passwort vergessen?",
+    "back_to_signin": "Zurück zur Anmeldung"
   },
   "update_password": {
     "title": "Neues Passwort",

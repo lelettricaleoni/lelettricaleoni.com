@@ -2,7 +2,7 @@
  * First and last name of an account, for the customer record it becomes.
  *
  * They come from `user_metadata`: the sign-up form sends `first_name` and `last_name`, Google sends
- * `given_name` and `family_name` (and `full_name`), and an account made with a magic link has none.
+ * `given_name` and `family_name` (and `full_name`), and an account made some other way has none.
  * A customer must have a first name, so the last resort is the part of the email before the "@".
  *
  * `user_metadata` is written by the account itself: these are labels to show and nothing more, never

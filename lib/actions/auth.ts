@@ -130,24 +130,6 @@ export async function registerAction(formData: FormData) {
   redirect(loginUrl(lang, { info: 'signup_sent', next }))
 }
 
-export async function magicLinkAction(formData: FormData) {
-  const lang = langOf(formData)
-  const next = nextOf(formData)
-  const email = text(formData, 'email')
-  if (!email) redirect(loginUrl(lang, { error: 'missing_fields', tab: 'magic', next }))
-
-  const supabase = await createSupabaseServerClient()
-  // shouldCreateUser: false. Signing up is its own, explicit step (it asks for the names and the consent);
-  // a magic link for an address nobody registered must not make an account out of it.
-  const { error } = await supabase.auth.signInWithOtp({
-    email,
-    options: { shouldCreateUser: false, emailRedirectTo: callbackUrl(lang, next) },
-  })
-  if (error && isRateLimit(error)) redirect(loginUrl(lang, { error: 'rate_limited', tab: 'magic', next }))
-  // Any other answer, including "no such user", is the same one: the page must not say which addresses exist.
-  redirect(loginUrl(lang, { info: 'magic_sent', next }))
-}
-
 export async function resetPasswordAction(formData: FormData) {
   const lang = langOf(formData)
   const email = text(formData, 'email')

@@ -2,7 +2,11 @@
   "nav": {
     "services": "Services",
     "pricing": "Pricing",
-    "contact": "Contact"
+    "contact": "Contact",
+    "login": "Sign in",
+    "account": "My account",
+    "panel": "Admin panel",
+    "logout": "Sign out"
   },
   "hero": {
     "open_badge": "We're open",
@@ -240,19 +244,14 @@
   "login": {
     "title": "Log in",
     "subtitle": "Welcome back to Lelettrica",
-    "tab_password": "Password",
-    "tab_magic": "Magic link",
-    "tab_reset": "Reset",
     "email_placeholder": "name@example.com",
     "password_placeholder": "••••••••",
-    "magic_hint": "You'll receive a one-time link by email. No password needed.",
     "reset_hint": "You'll receive a link to set a new password.",
     "submit_password": "Log in",
-    "submit_magic": "Send magic link",
     "submit_reset": "Send reset link",
     "left_title": "E-bike rental in Dro,\nLake Garda",
     "left_subtitle": "Book your rental, manage your rides or access the staff area.",
-    "gdpr": "Restricted access. Data processed in accordance with GDPR.",
+    "gdpr": "Your data is handled in line with the GDPR.",
     "tab_register": "Sign up",
     "register_hint": "With an account you can book and find your bookings again. We send you an email to confirm the address.",
     "first_name_label": "First name",
@@ -264,7 +263,6 @@
     "privacy_link": "Privacy Policy",
     "submit_register": "Create account",
     "google_button": "Continue with Google",
-    "or": "or",
     "errors": {
       "invalid_credentials": "Email or password is not correct. Try again.",
       "invalid_link": "The link is not valid or has expired. Ask for a new one.",
@@ -278,11 +276,16 @@
       "invalid_phone": "The phone number is not valid. Check the country code or leave it empty."
     },
     "info": {
-      "magic_sent": "If the address is registered, we have sent you a sign-in link: check your email.",
       "reset_sent": "If the address is registered, we have sent you the link to reset the password: check your email.",
       "signup_sent": "Your account is almost ready: we sent you an email, open the link to confirm the address.",
       "password_updated": "Password updated."
-    }
+    },
+    "tab_signin": "Sign in",
+    "title_register": "Create your account",
+    "title_reset": "Reset your password",
+    "or_email": "or with email",
+    "forgot_password": "Forgot your password?",
+    "back_to_signin": "Back to sign in"
   },
   "update_password": {
     "title": "New password",

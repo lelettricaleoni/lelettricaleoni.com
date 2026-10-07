@@ -8,7 +8,7 @@ import { ensureCustomerFor } from '@/lib/auth/ensure-customer'
 import { fetchGooglePhone, REQUEST_GOOGLE_PHONE } from '@/lib/auth/google-phone'
 
 /** The one-time-token types an email from this site can carry. */
-const OTP_TYPES: EmailOtpType[] = ['invite', 'recovery', 'magiclink', 'signup', 'email', 'email_change']
+const OTP_TYPES: EmailOtpType[] = ['invite', 'recovery', 'signup', 'email', 'email_change']
 const LANGUAGES = ['it', 'en', 'de']
 
 function isOtpType(value: string | null): value is EmailOtpType {

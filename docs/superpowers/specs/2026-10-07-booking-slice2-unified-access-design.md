@@ -49,8 +49,9 @@ fetta 3 («account obbligatorio per prenotare», Kevin, 2026-10-02).
 3. **Dopo l'accesso**: admin → `/manage`; cliente → `/[lang]/account`. Un parametro `next` (solo un percorso di questo sito,
    controllato come in `callback`) riporta la persona dove stava andando: servirà alla fetta 3, che manderà qui chi prova a
    prenotare senza un account.
-4. **Registrazione nella stessa pagina**, come quarta scheda («Crea account»): nome, cognome, email, password, consenso alla
-   privacy. Conferma dell'email obbligatoria (già così su Supabase). Subito dopo la conferma la persona è dentro, sull'account.
+4. **Accesso e registrazione sono una sola scheda** (Kevin, 2026-10-07): Google in alto, poi un interruttore a due voci
+   («Accedi» / «Crea account») che cambia i campi sul posto, senza ricaricare. «Crea account» chiede nome, cognome, email,
+   telefono facoltativo, password e consenso alla privacy; la password dimenticata è una vista piccola della stessa scheda. Conferma dell'email obbligatoria (già così su Supabase). Subito dopo la conferma la persona è dentro, sull'account.
 5. **Legame con `customers` solo per email verificata.** Quando un account entra la prima volta (dal ritorno del link o
    dalla pagina dell'account), si cerca un cliente con la stessa email (minuscole) e `user_id` vuoto e lo si collega; se non
    c'è, se ne crea uno con nome e cognome della registrazione. **Solo se l'email dell'account è confermata**
@@ -59,28 +60,31 @@ fetta 3 («account obbligatorio per prenotare», Kevin, 2026-10-02).
 6. **La pagina dell'account** mostra nome, email, telefono, un modo per cambiare la password, l'uscita, e «le tue prenotazioni»
    (vuoto finché non c'è la fetta 3). Per il principio già scritto in `STATE.md`: **solo le prenotazioni online**, mai i
    noleggi registrati dal pannello, anche per la stessa persona.
-7. **Errori e messaggi per codice, nella lingua dell'URL.** `?error=invalid_credentials` e simili, tradotti da
+7. **Niente magic link** (Kevin, 2026-10-07: «l'opzione di accesso con il magic link togliela»). Si accede con Google o con email e
+   password; la password dimenticata si reimposta con un link via email. Il link monouso aperto da un'altra app o da un altro browser
+   rispetto a quello della richiesta può anche non funzionare (PKCE).
+8. **Errori e messaggi per codice, nella lingua dell'URL.** `?error=invalid_credentials` e simili, tradotti da
    `messages/*.json`; niente più frasi italiane nell'indirizzo. Anche `update-password` migra a `messages/*.json`. Le
    azioni conoscono la lingua della persona e la usano nei reindirizzamenti (logout, reset, cambio password).
-8. **Accesso con Google, senza interruttori** (Kevin, 2026-10-07: «non usare il file env come feature flag»). Il pulsante
+9. **Accesso con Google, senza interruttori** (Kevin, 2026-10-07: «non usare il file env come feature flag»). Il pulsante
    «Continua con Google» (OAuth di Supabase) c'è sempre; funziona se il provider è attivo nel progetto Supabase
    dell'ambiente, e quello è l'interruttore. Servono due cose che sono tue: un client OAuth in Google Cloud e il provider
    attivato (passi in «Rilascio»). In produzione il provider si attiva solo al rilascio. I flag erano già stati tolti il
    2026-10-05.
-9. **Il telefono (deciso da Kevin, 2026-10-07): facoltativo, mai una condizione.** Un campo nella registrazione
+10. **Il telefono (deciso da Kevin, 2026-10-07): facoltativo, mai una condizione.** Un campo nella registrazione
    (`user_metadata.customer_phone`, normalizzato con `libphonenumber-js`), e per chi entra con Google il numero del profilo
    Google, **solo quando la costante `REQUEST_GOOGLE_PHONE` (in `lib/auth/google-phone.ts`) passa a `true`**, dopo
    l'approvazione di Google (permesso sensibile: serve la verifica di Google, vedi
    `docs/google-login-setup.md`). Entra nel cliente solo dove manca e solo se nessun altro cliente lo ha: ciò che il negozio
    ha scritto non si sovrascrive, e un numero inutilizzabile si scarta senza far fallire l'accesso
    (`lib/auth/customer-link.ts`, 5 test in `tests/db/customer-link.test.ts`).
-10. **Nessuna migrazione.** `customers.user_id` c'è già; l'account si legge per `user_id`.
+11. **Nessuna migrazione.** `customers.user_id` c'è già; l'account si legge per `user_id`.
 
 ## Dentro questa fetta
 
 - `lib/auth/`: la scelta della destinazione dopo l'accesso, la validazione di `next`, i codici d'errore, il legame con
   `customers`, tutti con test.
-- Le azioni `loginAction`, `registerAction`, `magicLinkAction`, `resetPasswordAction`, `updatePasswordAction`,
+- Le azioni `loginAction`, `registerAction`, `resetPasswordAction`, `updatePasswordAction`,
   `logoutAction`, e `app/auth/callback/route.ts`, tutti ragionando per ruolo e per lingua.
 - La pagina di accesso con la quarta scheda e il pulsante Google (spento), `update-password` su `messages/*.json`,
   la pagina `/[lang]/account`, la protezione di `/[lang]/account` nel proxy.
