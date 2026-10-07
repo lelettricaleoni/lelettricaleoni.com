@@ -25,3 +25,25 @@ describe('privacy policy: who hosts the site', () => {
     })
   }
 })
+
+/**
+ * Requests about personal data go to their own address, `privacy@`, and not to the shop's general one
+ * (Kevin, 2026-10-07). The three places that say so are the owner block, the contact section and the
+ * translated sentence.
+ */
+describe('privacy policy: where to write', () => {
+  const page = readFileSync(join(process.cwd(), 'app', '[lang]', 'privacy', 'page.tsx'), 'utf8')
+
+  it('names privacy@ and not info@ on the page', () => {
+    expect(page).toMatch(/privacy@lelettricaleoni\.com/)
+    expect(page).not.toMatch(/info@lelettricaleoni\.com/)
+  })
+
+  for (const lang of ['it', 'en', 'de']) {
+    it(`sends data requests to privacy@, in ${lang}`, () => {
+      const body: string = privacy(lang).contact_body
+      expect(body).toContain('privacy@lelettricaleoni.com')
+      expect(body).not.toContain('info@')
+    })
+  }
+})
