@@ -29,6 +29,10 @@ npm run db:migrate          # applica al database (richiede DATABASE_DIRECT_URL)
 
 **Mai `apply_migration` (MCP)** per le migrazioni del repo: non scrive nel tracking e `migrate` si rompe (vedi STATE.md).
 
+**Un valore di enum aggiunto non si usa nella stessa transazione, e `npm run db:migrate` le applica tutte in una sola.** Se una migrazione fa `ALTER TYPE … ADD VALUE` e un'altra usa quel valore (in un vincolo, in un indice parziale, in un default), generale e applicale **una alla volta**: `generate` → `db:migrate` per la prima, poi `generate` → `db:migrate` per la seconda. Sul database di produzione (una `execute_sql` per migrazione) il problema non si pone, perché ogni chiamata è una transazione; ma l'ordine resta quello. Esempio: `0018` (valori di `reservation_status`) e `0019` (il vincolo `WHERE status IN ('confirmed','held')`).
+
+**Aggiungere un valore a un enum rompe i tipi di chi lo usa.** Dopo la `0018` `tsc` ha trovato due posti che dichiaravano a mano `'confirmed' | 'cancelled'` (lo storico del cliente, la sincronizzazione con Google Calendar): dopo un `ADD VALUE` si lancia `npx tsc --noEmit` **prima** di dire che la migrazione è finita, e si decide per ogni uso cosa significa il valore nuovo.
+
 Ambienti separati dal 2026-09-14: **sviluppo e produzione hanno ciascuno il proprio progetto
 Supabase**, non condividono più database né pooler (dettagli e credenziali in
 `docs/environment-variables.md`). Applica sempre una migrazione a entrambi, non solo a quello
