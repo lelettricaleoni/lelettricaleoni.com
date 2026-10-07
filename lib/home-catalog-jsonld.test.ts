@@ -23,7 +23,11 @@ function category(overrides: Partial<BikeCategory> = {}): BikeCategory {
   }
 }
 
-const base = { siteUrl: 'https://www.example.test', lang: 'it', name: 'Le nostre bici' }
+const covers = {
+  'aa7da601-1111-2222-3333-444455556666': 'private/bike-model-photos/aa7da601/p1.jpg',
+  'bb7da601-1111-2222-3333-444455556666': 'private/bike-model-photos/bb7da601/p2.jpg',
+}
+const base = { siteUrl: 'https://www.example.test', lang: 'it', name: 'Le nostre bici', covers }
 const gravel = { model: { id: 'aa7da601-1111-2222-3333-444455556666' }, translation: { name: 'Mondraker Arid S' }, category: category() }
 const classic = {
   model: { id: 'bb7da601-1111-2222-3333-444455556666' },
@@ -49,6 +53,23 @@ describe('buildHomeCatalogJsonLd', () => {
       expect(product.offers).toMatchObject({ '@type': 'Offer', priceCurrency: 'EUR' })
     }
     expect(JSON.stringify(ld)).not.toContain('itemOffered')
+  })
+
+  it('gives every product an image, which Google requires of a merchant listing', () => {
+    const ld = buildHomeCatalogJsonLd({ ...base, models: [gravel, classic] })!
+    const [first, second] = ld.hasOfferCatalog.itemListElement
+    expect(first.image).toMatch(/public\/bike-model-photos\/aa7da601\/p1\.share\.jpg$/)
+    expect(second.image).toMatch(/public\/bike-model-photos\/bb7da601\/p2\.share\.jpg$/)
+  })
+
+  it('leaves out a model with no ready photo instead of listing it without an image', () => {
+    const ld = buildHomeCatalogJsonLd({
+      ...base,
+      covers: { [classic.model.id]: covers[classic.model.id as keyof typeof covers] },
+      models: [gravel, classic],
+    })!
+    expect(ld.hasOfferCatalog.itemListElement).toHaveLength(1)
+    expect(ld.hasOfferCatalog.itemListElement[0].name).toBe('City classica')
   })
 
   it('shares the business @id of the layout, so the two fragments merge', () => {
