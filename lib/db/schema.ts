@@ -175,8 +175,8 @@ export const bikeUnits = pgTable('bike_units', {
 export type BikeUnit = typeof bikeUnits.$inferSelect
 export type NewBikeUnit = typeof bikeUnits.$inferInsert
 
-export const reservationKindEnum = pgEnum('reservation_kind', ['counter_rental', 'maintenance'])
-export const reservationStatusEnum = pgEnum('reservation_status', ['confirmed', 'cancelled'])
+export const reservationKindEnum = pgEnum('reservation_kind', ['counter_rental', 'maintenance', 'online_rental'])
+export const reservationStatusEnum = pgEnum('reservation_status', ['confirmed', 'held', 'expired', 'cancelled'])
 
 // The people who rent, from the counter or (later) online. One row per person: the same phone or
 // the same email is the same customer, so a counter customer who later registers online with that

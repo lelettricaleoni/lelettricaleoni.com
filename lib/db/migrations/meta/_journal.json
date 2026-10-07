@@ -127,6 +127,13 @@
       "when": 1791381188327,
       "tag": "0017_customer_language",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1791387466808,
+      "tag": "0018_booking_status_values",
+      "breakpoints": true
     }
   ]
 }
