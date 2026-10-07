@@ -14,6 +14,11 @@ import { ensureCustomerFor } from '@/lib/auth/ensure-customer'
 import { logoutAction } from '@/lib/actions/auth'
 import { updateAccountAction } from '@/lib/actions/account'
 
+// TODO: Cache Components adoption. Refactor this route so this opt-out can be removed.
+// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
+// On the page and not only on the layout: the layout's does not cover the page's own reads of the session.
+export const instant = false
+
 const ERROR_CODES = ['missing_name', 'invalid_phone', 'phone_taken', 'save_failed'] as const
 type ErrorCode = (typeof ERROR_CODES)[number]
 
