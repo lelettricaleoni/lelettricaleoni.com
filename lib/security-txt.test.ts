@@ -30,8 +30,10 @@ describe('public/.well-known/security.txt', () => {
     expect(field('Canonical')).toBe('https://www.lelettricaleoni.com/.well-known/security.txt')
   })
 
-  it('is not behind the locale redirect', () => {
-    // /.well-known/security.txt used to be sent to /it/.well-known/security.txt, which was a 404 page.
+  it('does not go through the proxy at all', () => {
+    // The proxy already lets /.well-known/ through untouched (see its body), so this was never redirected:
+    // before the file existed the path simply answered 404. Keeping it out of the matcher, like
+    // robots.txt and llms.txt, is only so that the proxy does not run for it.
     const pattern = new RegExp(`^${config.matcher[0]}$`)
     expect(pattern.test('/.well-known/security.txt')).toBe(false)
     expect(pattern.test('/bikes')).toBe(true)
