@@ -18,6 +18,7 @@ import { photoLoader } from '@/lib/photo-loader'
 import { confirmMediaUpload, getMediaJobStatuses } from '@/lib/actions/media-jobs'
 import { recordMediaHashAction, findDuplicateMediaAction } from '@/lib/actions/media-hash'
 import { sha256HexOfFile, BROWSER_HASH_MAX_BYTES } from '@/lib/hash-client'
+import { checkMediaContent } from '@/lib/media-content'
 import type { VideoJobStatus } from '@/lib/video-jobs'
 import { mediaProgress, type UploadState } from '@/lib/media-progress'
 import {
@@ -304,6 +305,14 @@ export function MediaUpload({
     // (.mkv on several platforms), and a video mistaken for a photo would be
     // refused as an unsupported photo format.
     const isVideo = file.type.startsWith('video/') || VIDEO_EXTENSION.test(file.name)
+
+    // The name and the reported type say nothing about a damaged file, so the first bytes are read before a single one
+    // moves: a file that is not what it claims to be is refused here, while the person who chose it is looking.
+    const content = await checkMediaContent(file, isVideo ? 'video' : 'photo')
+    if (!content.ok) {
+      toast.error(`${file.name}: ${content.reason}`)
+      return
+    }
 
     // A photo is hashed before a single byte moves, so an identical one can be
     // flagged while it costs nothing to stop. Hashing and the lookup are both a
