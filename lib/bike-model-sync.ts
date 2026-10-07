@@ -80,3 +80,33 @@ export async function replaceModelMedia(modelId: string, items: ModelMediaItem[]
   `)
   return removed
 }
+
+export interface ModelTranslationRow {
+  locale: 'it' | 'en' | 'de'
+  name: string
+  description: string
+  isAutoTranslated: boolean
+}
+
+/**
+ * Makes the model's translations exactly the given ones, in one statement.
+ *
+ * The edit used to UPDATE the three rows, which does nothing, and says nothing, for a
+ * model that has none: a model left half-created by a failed save could be "saved" any
+ * number of times and never got its name (seen in production on 2026-10-07). Writing
+ * the rows afresh also repairs it. Delete and insert are one statement, so there is no
+ * moment with fewer than the old ones.
+ */
+export async function replaceModelTranslations(modelId: string, rows: ModelTranslationRow[]) {
+  const json = JSON.stringify(
+    rows.map((r) => ({ locale: r.locale, name: r.name, description: r.description, auto: r.isAutoTranslated }))
+  )
+  await db.execute(sql`
+    WITH removed AS (
+      DELETE FROM bike_model_translations WHERE bike_model_id = ${modelId}::uuid RETURNING 1
+    )
+    INSERT INTO bike_model_translations (bike_model_id, locale, name, description, is_auto_translated)
+    SELECT ${modelId}::uuid, r.locale::locale, r.name, r.description, r.auto
+    FROM jsonb_to_recordset(${json}::jsonb) AS r(locale text, name text, description text, auto boolean)
+  `)
+}

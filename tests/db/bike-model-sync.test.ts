@@ -1,9 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { asc, eq, inArray } from 'drizzle-orm'
 import {
-  db, bikeModels, bikeCategories, bikeSizes, bikeVersions, bikeModelSizes, bikeModelVersions, media,
+  db, bikeModels, bikeCategories, bikeSizes, bikeVersions, bikeModelSizes, bikeModelVersions, bikeModelTranslations, media,
 } from '@/lib/db'
-import { replaceModelMedia, syncModelSizesAndVersions } from '@/lib/bike-model-sync'
+import { replaceModelMedia, replaceModelTranslations, syncModelSizesAndVersions } from '@/lib/bike-model-sync'
 
 /**
  * The save of a bike model's sizes, versions and media is one statement each.
@@ -113,5 +113,32 @@ describe('test hygiene', () => {
   it('leaves no model of its own behind', async () => {
     const mine = await db.select().from(bikeModels).where(inArray(bikeModels.id, [modelId]))
     expect(mine).toHaveLength(1)
+  })
+})
+
+describe('replaceModelTranslations', () => {
+  const row = (locale: 'it' | 'en' | 'de', name: string) => ({ locale, name, description: `${name} description`, isAutoTranslated: locale !== 'it' })
+  const stored = async () =>
+    (await db.select().from(bikeModelTranslations).where(eq(bikeModelTranslations.bikeModelId, modelId)))
+      .map((r) => `${r.locale}:${r.name}:${r.isAutoTranslated}`).sort()
+
+  it('writes all three languages for a model that has none: this is what repairs a half-created one', async () => {
+    expect(await stored()).toEqual([])
+    await replaceModelTranslations(modelId, [row('it', 'Nome'), row('en', 'Name'), row('de', 'Name DE')])
+    expect(await stored()).toEqual(['de:Name DE:true', 'en:Name:true', 'it:Nome:false'])
+  })
+
+  it('replaces the ones that exist, without leaving a second copy', async () => {
+    await replaceModelTranslations(modelId, [row('it', 'Vecchio'), row('en', 'Old'), row('de', 'Alt')])
+    await replaceModelTranslations(modelId, [row('it', 'Nuovo'), row('en', 'New'), row('de', 'Neu')])
+    expect(await stored()).toEqual(['de:Neu:true', 'en:New:true', 'it:Nuovo:false'])
+  })
+
+  it('keeps the old translations when the new ones cannot be written: all or nothing', async () => {
+    await replaceModelTranslations(modelId, [row('it', 'Nome'), row('en', 'Name'), row('de', 'Name DE')])
+    await expect(
+      replaceModelTranslations(modelId, [row('it', 'Nuovo'), { ...row('en', 'New'), locale: 'xx' as unknown as 'en' }])
+    ).rejects.toThrow()
+    expect(await stored(), 'a failed save wiped the translations').toEqual(['de:Name DE:true', 'en:Name:true', 'it:Nome:false'])
   })
 })

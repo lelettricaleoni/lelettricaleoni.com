@@ -4,6 +4,7 @@ import { Plus, Pencil, Trash2, Check, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { toast } from 'sonner'
+import { rethrowIfStaleAction } from '@/lib/stale-action'
 import {
   createRouteBikeCategoryAction, updateRouteBikeCategoryAction, deleteRouteBikeCategoryAction,
 } from '@/lib/actions/bike-options'
@@ -37,7 +38,8 @@ export function RouteBikeCategoryList({ categories }: { categories: RouteBikeCat
           return
         }
         toast.success('Category deleted')
-      } catch {
+      } catch (error) {
+        rethrowIfStaleAction(error)
         toast.error('This category is still linked to a bike category')
       }
     })
