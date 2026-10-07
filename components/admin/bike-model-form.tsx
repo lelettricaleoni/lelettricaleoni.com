@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox'
 import { Switch } from '@/components/ui/switch'
 import { MediaUpload } from './media-upload'
+import { submitKeepingFields } from '@/lib/submit-keeping-fields'
 import {
   getBikeModelPresignedUploadUrlAction, getBikeModelVideoPresignedUploadUrlAction,
   type BikeModelFormState,
@@ -52,7 +53,8 @@ export function BikeModelForm({
   }
 
   return (
-    <form action={formAction} className="space-y-8 max-w-2xl">
+    // onSubmit, not `action`: see submitKeepingFields — an error must not clear the ticked sizes.
+    <form onSubmit={submitKeepingFields(formAction)} className="space-y-8 max-w-2xl">
       <section className="space-y-4">
         <h2 className="text-lg font-semibold text-[#1e3a5f]">Content (Italian)</h2>
         <p className="text-sm text-muted-foreground">EN and DE are regenerated whenever the Italian text changes.</p>

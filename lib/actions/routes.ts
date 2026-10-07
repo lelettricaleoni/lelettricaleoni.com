@@ -5,7 +5,7 @@ import { z } from 'zod'
 import { eq, and, asc } from 'drizzle-orm'
 import { db, routes, routeTranslations, media } from '@/lib/db'
 import { getAdminUser } from '@/lib/supabase/server'
-import { translateFromItalian } from './translate'
+import { translateNameAndDescription, TRANSLATION_MAX_CHARS } from '@/lib/translate-text'
 import { deleteR2Object, getPresignedUploadUrl } from '@/lib/r2'
 import { getVideoPresignedUploadUrl, getPhotoPresignedUploadUrl, deleteMediaFiles } from '@/lib/media'
 import { photoSourceExtension, photoContentType } from '@/lib/media-client'
@@ -14,7 +14,10 @@ import { shortId } from '@/lib/utils'
 
 const RouteSchema = z.object({
   nameIt:          z.string().min(2).max(200),
-  descriptionIt:   z.string().min(10),
+  descriptionIt:   z.string().min(10).max(
+    TRANSLATION_MAX_CHARS,
+    `The description is too long: ${TRANSLATION_MAX_CHARS} characters at most (it is translated to English and German).`
+  ),
   difficulty:      z.enum(['easy', 'medium', 'hard', 'expert']),
   distanceKm:      z.coerce.number().positive().optional(),
   elevationM:      z.coerce.number().nonnegative().int().optional(),
@@ -128,6 +131,11 @@ export async function createRouteAction(
 
   const { nameIt, descriptionIt, ...routeData } = parsed.data
 
+  // Translate BEFORE writing: the route used to be inserted first, so a failed
+  // translation left a route with no name behind, and every retry left another.
+  const translated = await translateNameAndDescription(nameIt, descriptionIt)
+  if (!translated.ok) return { message: translated.message }
+
   const slug = slugify(nameIt)
   const [newRoute] = await db.insert(routes).values({
     slug,
@@ -142,10 +150,8 @@ export async function createRouteAction(
     gpxSha256: routeData.gpxSha256 || null,
   }).returning()
 
-  const [nameTranslations, descTranslations] = await Promise.all([
-    translateFromItalian(nameIt),
-    translateFromItalian(descriptionIt),
-  ])
+  const nameTranslations = translated.name
+  const descTranslations = translated.description
 
   await db.insert(routeTranslations).values([
     { routeId: newRoute.id, locale: 'it', name: nameIt, description: descriptionIt, isAutoTranslated: false },
@@ -199,6 +205,24 @@ export async function updateRouteAction(
   const { nameIt, descriptionIt, ...routeData } = parsed.data
   const slug = slugify(nameIt)
 
+  // The Italian text decides whether EN and DE are regenerated. Leaving that to
+  // a switch meant an edit could silently leave the other two languages saying
+  // something the Italian no longer says. Decided and translated BEFORE the first
+  // write: a failed translation used to leave the changes half applied.
+  const [currentIt] = await db.select().from(routeTranslations).where(
+    and(eq(routeTranslations.routeId, id), eq(routeTranslations.locale, 'it'))
+  )
+  const reTranslate = needsRetranslation(
+    currentIt ? { name: currentIt.name, description: currentIt.description ?? '' } : undefined,
+    { name: nameIt, description: descriptionIt },
+    formData.get('retranslate') === 'true'
+  )
+  let translated: Awaited<ReturnType<typeof translateNameAndDescription>> | null = null
+  if (reTranslate) {
+    translated = await translateNameAndDescription(nameIt, descriptionIt)
+    if (!translated.ok) return { message: translated.message }
+  }
+
   await db.update(routes).set({
     slug,
     difficulty: routeData.difficulty,
@@ -227,26 +251,11 @@ export async function updateRouteAction(
     )
   }
 
-  // The Italian text decides whether EN and DE are regenerated. Leaving that to
-  // a switch meant an edit could silently leave the other two languages saying
-  // something the Italian no longer says.
-  const [currentIt] = await db.select().from(routeTranslations).where(
-    and(eq(routeTranslations.routeId, id), eq(routeTranslations.locale, 'it'))
-  )
-  const reTranslate = needsRetranslation(
-    currentIt ? { name: currentIt.name, description: currentIt.description ?? '' } : undefined,
-    { name: nameIt, description: descriptionIt },
-    formData.get('retranslate') === 'true'
-  )
-  if (reTranslate) {
-    const [nameT, descT] = await Promise.all([
-      translateFromItalian(nameIt),
-      translateFromItalian(descriptionIt),
-    ])
+  if (translated?.ok) {
     for (const [locale, name, desc, isAuto] of [
       ['it', nameIt, descriptionIt, false],
-      ['en', nameT.en, descT.en, true],
-      ['de', nameT.de, descT.de, true],
+      ['en', translated.name.en, translated.description.en, true],
+      ['de', translated.name.de, translated.description.de, true],
     ] as const) {
       await db
         .update(routeTranslations)
