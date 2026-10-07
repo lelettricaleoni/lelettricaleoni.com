@@ -1,12 +1,12 @@
 import Image from 'next/image'
 import Link from 'next/link'
-import { LanguageSwitcher } from './language-switcher'
 import { MobileMenu } from './mobile-menu'
+import { NavbarEnd } from './navbar-end'
 
 interface NavbarProps {
   lang: string
   dict: {
-    nav: { services: string; pricing: string; contact: string }
+    nav: { services: string; pricing: string; contact: string; login: string; account: string; panel: string; logout: string }
     routes?: { nav_label: string }
     bikes?: { nav_label: string }
   }
@@ -64,7 +64,7 @@ export function Navbar({ lang, dict }: NavbarProps) {
         </div>
 
         <div className="flex items-center gap-2">
-          <LanguageSwitcher currentLang={lang} />
+          <NavbarEnd lang={lang} labels={dict.nav} />
           <MobileMenu links={navLinks} />
         </div>
       </nav>

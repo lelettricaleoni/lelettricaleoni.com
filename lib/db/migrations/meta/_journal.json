@@ -113,6 +113,20 @@
       "when": 1791206185772,
       "tag": "0015_integrations",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1791372450538,
+      "tag": "0016_model_price_adjustment",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1791381188327,
+      "tag": "0017_customer_language",
+      "breakpoints": true
     }
   ]
 }

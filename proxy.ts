@@ -18,6 +18,35 @@ function getLocale(request: NextRequest): string {
   }
 }
 
+/**
+ * Who is signed in on this request, and the response that carries the session the auth service may have
+ * just renewed (new cookies). Whoever returns a response for the request must return THIS one, or the
+ * renewed session is lost.
+ */
+async function readSession(request: NextRequest) {
+  let response = NextResponse.next({ request })
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() { return request.cookies.getAll() },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
+          response = NextResponse.next({ request })
+          cookiesToSet.forEach(({ name, value, options }) =>
+            response.cookies.set(name, value, options)
+          )
+        },
+      },
+    }
+  )
+
+  const { data: { user } } = await supabase.auth.getUser()
+  return { user, response }
+}
+
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
@@ -41,26 +70,7 @@ export async function proxy(request: NextRequest) {
 
   // Admin area protection
   if (pathname.startsWith('/manage')) {
-    let supabaseResponse = NextResponse.next({ request })
-
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() { return request.cookies.getAll() },
-          setAll(cookiesToSet) {
-            cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
-            supabaseResponse = NextResponse.next({ request })
-            cookiesToSet.forEach(({ name, value, options }) =>
-              supabaseResponse.cookies.set(name, value, options)
-            )
-          },
-        },
-      }
-    )
-
-    const { data: { user } } = await supabase.auth.getUser()
+    const { user, response } = await readSession(request)
 
     if (!user || user.app_metadata?.role !== 'admin') {
       const loginUrl = request.nextUrl.clone()
@@ -68,7 +78,25 @@ export async function proxy(request: NextRequest) {
       return NextResponse.redirect(loginUrl)
     }
 
-    return supabaseResponse
+    return response
+  }
+
+  // The customer's account: signed in, or sent to the sign-in page, which brings them back with `next`.
+  // The page checks as well. Doing it here too is what REFRESHES the session: the access token lasts an
+  // hour, only code that can set cookies (this, an action, a route) can renew it, and a page cannot, so
+  // without this a customer would look signed out an hour after signing in.
+  const account = /^\/(it|en|de)\/account(?:\/|$)/.exec(pathname)
+  if (account) {
+    const { user, response } = await readSession(request)
+
+    if (!user) {
+      const loginUrl = request.nextUrl.clone()
+      loginUrl.pathname = `/${account[1]}/login`
+      loginUrl.search = `?next=${encodeURIComponent(pathname)}`
+      return NextResponse.redirect(loginUrl)
+    }
+
+    return response
   }
 
   // i18n routing
@@ -96,6 +124,6 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/((?!api|_next/static|_next/image|favicon\\.ico|icon\\.svg|apple-icon\\.png|opengraph-image|sitemap\\.xml|robots\\.txt|llms\\.txt|.*\\.pdf$|svg/.*|images/.*|cesium/.*).*)',
+    '/((?!api|_next/static|_next/image|favicon\\.ico|icon\\.svg|apple-icon\\.png|opengraph-image|sitemap\\.xml|robots\\.txt|llms\\.txt|\\.well-known/.*|.*\\.pdf$|svg/.*|images/.*|cesium/.*).*)',
   ],
 }

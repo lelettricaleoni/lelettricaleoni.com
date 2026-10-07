@@ -194,7 +194,7 @@ const jsonLd = {
   description: 'Noleggio e-bike Flyer, bici classiche e riparazioni bici a Dro, sul Lago di Garda (Trentino). Aperto tutti i giorni.',
   url: siteUrl,
   telephone: '+393381232434',
-  email: 'lelettricaleoni@gmail.com',
+  email: 'info@lelettricaleoni.com',
   image: `${siteUrl}/opengraph-image`,
   logo: `${siteUrl}/icon.svg`,
   priceRange: '€€',

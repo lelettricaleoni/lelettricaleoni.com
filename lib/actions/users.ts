@@ -29,7 +29,7 @@ import {
 const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000').replace(/\/$/, '')
 
 /** Where an invited person lands once the link is accepted. */
-const INVITE_LANDING = `${SITE_URL}/auth/callback?next=${encodeURIComponent('/manage/update-password')}`
+const INVITE_LANDING = `${SITE_URL}/auth/callback?lang=it&next=${encodeURIComponent('/it/update-password')}`
 
 const InviteSchema = z.object({
   email: z.email().max(254),

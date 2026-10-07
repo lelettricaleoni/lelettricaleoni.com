@@ -37,7 +37,7 @@ export function BikeModelForm({
   const [nameIt, setNameIt] = useState(itTranslation?.name ?? '')
   const [descriptionIt, setDescriptionIt] = useState(itTranslation?.description ?? '')
   const [categoryId, setCategoryId] = useState(model?.categoryId ?? categories[0]?.id ?? '')
-  const [priceSurcharge, setPriceSurcharge] = useState(model?.priceSurcharge ?? '')
+  const [priceAdjustmentPercent, setPriceAdjustmentPercent] = useState(model?.priceAdjustmentPercent && Number(model.priceAdjustmentPercent) !== 0 ? String(Number(model.priceAdjustmentPercent)) : '')
   const [batteryRange, setBatteryRange] = useState(model?.batteryRange ?? '')
   const [motor, setMotor] = useState(model?.motor ?? '')
   const [gearCount, setGearCount] = useState(model?.gearCount ?? '')
@@ -92,12 +92,18 @@ export function BikeModelForm({
           {state.errors?.categoryId && <p className="text-xs text-destructive">{state.errors.categoryId[0]}</p>}
         </div>
         <div className="space-y-1">
-          <Label htmlFor="priceSurcharge">Surcharge over category price</Label>
+          <Label htmlFor="priceAdjustmentPercent">Price adjustment over the category (%)</Label>
           <Input
-            id="priceSurcharge" name="priceSurcharge" type="number" step="0.01" min="0"
-            value={priceSurcharge ?? ''} onChange={(e) => setPriceSurcharge(e.target.value)}
-            placeholder="optional, e.g. carbon frame"
+            id="priceAdjustmentPercent" name="priceAdjustmentPercent" type="number" step="0.5" min="-99" max="300"
+            value={priceAdjustmentPercent} onChange={(e) => setPriceAdjustmentPercent(e.target.value)}
+            placeholder="0"
           />
+          <p className="text-xs text-muted-foreground">
+            Applied to every price of the category (every rental day and the afternoon). Positive adds, for example
+            10 for a carbon frame; negative takes off, for example -15 for a smaller bike. Rounded to the whole euro.
+            Left empty, the prices are those of the category.
+          </p>
+          {state.errors?.priceAdjustmentPercent && <p className="text-xs text-destructive">{state.errors.priceAdjustmentPercent[0]}</p>}
         </div>
       </section>
 

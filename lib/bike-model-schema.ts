@@ -16,7 +16,12 @@ export const BikeModelSchema = z.object({
     `The description is too long: ${TRANSLATION_MAX_CHARS} characters at most (it is translated to English and German).`
   ),
   categoryId:      z.string().uuid(),
-  priceSurcharge:  z.coerce.number().nonnegative().optional(),
+  // The model's own percentage over its category's prices: + is a surcharge, - a discount, empty is 0.
+  // The database refuses what the form does (lib/db/migrations/0016): above -100 and up to +300.
+  priceAdjustmentPercent: z.coerce.number()
+    .gt(-100, 'A discount cannot be 100% or more')
+    .lte(300, 'A surcharge of more than 300% is probably a typing mistake')
+    .default(0),
   batteryRange:    z.string().optional(),
   motor:           z.string().optional(),
   gearCount:       z.string().optional(),

@@ -49,8 +49,17 @@ export function CookieConsentInit({ locale }: CookieConsentInitProps) {
                 {
                   title: 'Cookie necessari',
                   description:
-                    'Questi cookie sono essenziali per il corretto funzionamento del sito e non possono essere disattivati.',
+                    'Questi cookie sono essenziali per il corretto funzionamento del sito e non possono essere disattivati. Quelli dell\'account compaiono solo se accedi.',
                   linkedCategory: 'necessary',
+                  cookieTable: {
+                    caption: 'Cookie utilizzati',
+                    headers: { name: 'Nome', domain: 'Dominio', desc: 'Descrizione' },
+                    body: [
+                      { name: 'cc_cookie', domain: 'www.lelettricaleoni.com', desc: 'Ricorda le tue scelte sui cookie (6 mesi)' },
+                      { name: 'sb-*-auth-token', domain: 'www.lelettricaleoni.com', desc: 'Sessione del tuo account: solo se accedi (fino a 400 giorni)' },
+                      { name: 'sb-*-auth-token-code-verifier', domain: 'www.lelettricaleoni.com', desc: 'Completa accesso o registrazione (fino a 400 giorni)' },
+                    ],
+                  },
                 },
                 {
                   title: 'Cookie analitici',
@@ -89,8 +98,17 @@ export function CookieConsentInit({ locale }: CookieConsentInitProps) {
                 {
                   title: 'Necessary cookies',
                   description:
-                    'These cookies are required for the website to function and cannot be disabled.',
+                    'These cookies are required for the website to function and cannot be disabled. Those of the account appear only if you sign in.',
                   linkedCategory: 'necessary',
+                  cookieTable: {
+                    caption: 'Cookies used',
+                    headers: { name: 'Name', domain: 'Domain', desc: 'Description' },
+                    body: [
+                      { name: 'cc_cookie', domain: 'www.lelettricaleoni.com', desc: 'Remembers your cookie choices (6 months)' },
+                      { name: 'sb-*-auth-token', domain: 'www.lelettricaleoni.com', desc: 'Your account session: only if you sign in (up to 400 days)' },
+                      { name: 'sb-*-auth-token-code-verifier', domain: 'www.lelettricaleoni.com', desc: 'Completes signing in or signing up (up to 400 days)' },
+                    ],
+                  },
                 },
                 {
                   title: 'Analytics cookies',
@@ -129,8 +147,17 @@ export function CookieConsentInit({ locale }: CookieConsentInitProps) {
                 {
                   title: 'Notwendige Cookies',
                   description:
-                    'Diese Cookies sind für die Funktion der Website erforderlich und können nicht deaktiviert werden.',
+                    'Diese Cookies sind für die Funktion der Website erforderlich und können nicht deaktiviert werden. Die des Kontos erscheinen nur, wenn Sie sich anmelden.',
                   linkedCategory: 'necessary',
+                  cookieTable: {
+                    caption: 'Verwendete Cookies',
+                    headers: { name: 'Name', domain: 'Domain', desc: 'Beschreibung' },
+                    body: [
+                      { name: 'cc_cookie', domain: 'www.lelettricaleoni.com', desc: 'Merkt sich Ihre Cookie-Auswahl (6 Monate)' },
+                      { name: 'sb-*-auth-token', domain: 'www.lelettricaleoni.com', desc: 'Sitzung Ihres Kontos: nur wenn Sie sich anmelden (bis zu 400 Tage)' },
+                      { name: 'sb-*-auth-token-code-verifier', domain: 'www.lelettricaleoni.com', desc: 'Schließt die Anmeldung oder Registrierung ab (bis zu 400 Tage)' },
+                    ],
+                  },
                 },
                 {
                   title: 'Analyse-Cookies',

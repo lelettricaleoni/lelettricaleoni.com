@@ -14,6 +14,17 @@ export const instant = false;
 
 const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://www.lelettricaleoni.com').replace(/\/$/, '')
 
+/** A text of the dictionary with blank lines in it is several paragraphs. */
+function Paragraphs({ text }: { text: string }) {
+  return (
+    <div className="space-y-3">
+      {text.split('\n\n').map((paragraph) => (
+        <p key={paragraph} className="text-muted-foreground leading-relaxed">{paragraph}</p>
+      ))}
+    </div>
+  )
+}
+
 export async function generateMetadata({
   params,
 }: {
@@ -67,13 +78,13 @@ export default async function PrivacyPage({
               <h2 className="text-lg font-semibold mb-3">{p.controller_title}</h2>
               <p className="text-muted-foreground leading-relaxed">
                 Leoni Gabriele, Via Roma 90, 38074 Dro (TN), Italia<br />
-                info@lelettricaleoni.com
+                privacy@lelettricaleoni.com
               </p>
             </section>
 
             <section>
               <h2 className="text-lg font-semibold mb-3">{p.data_title}</h2>
-              <p className="text-muted-foreground leading-relaxed">{p.data_body}</p>
+              <Paragraphs text={p.data_body} />
             </section>
 
             <section>
@@ -88,20 +99,25 @@ export default async function PrivacyPage({
 
             <section>
               <h2 className="text-lg font-semibold mb-3">{p.retention_title}</h2>
-              <p className="text-muted-foreground leading-relaxed">{p.retention_body}</p>
+              <Paragraphs text={p.retention_body} />
             </section>
 
             <section>
               <h2 className="text-lg font-semibold mb-3">{p.third_parties_title}</h2>
-              <p className="text-muted-foreground leading-relaxed">{p.third_parties_body}</p>
+              <Paragraphs text={p.third_parties_body} />
+            </section>
+
+            <section>
+              <h2 className="text-lg font-semibold mb-3">{p.browser_title}</h2>
+              <p className="text-muted-foreground leading-relaxed">{p.browser_body}</p>
             </section>
 
             <section>
               <h2 className="text-lg font-semibold mb-3">{p.rights_title}</h2>
               <p className="text-muted-foreground leading-relaxed">
                 {p.rights_body}{' '}
-                <a href="mailto:info@lelettricaleoni.com" className="text-primary hover:underline">
-                  info@lelettricaleoni.com
+                <a href="mailto:privacy@lelettricaleoni.com" className="text-primary hover:underline">
+                  privacy@lelettricaleoni.com
                 </a>
               </p>
             </section>

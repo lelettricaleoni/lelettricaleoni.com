@@ -15,6 +15,7 @@ export async function getRentalOptions(): Promise<RentalOption[]> {
     .selectDistinct({
       modelId: bikeUnits.bikeModelId,
       modelName: bikeModelTranslations.name,
+      priceAdjustmentPercent: bikeModels.priceAdjustmentPercent,
       category: bikeCategories,
       sizeId: bikeSizes.id,
       sizeName: bikeSizes.name,
@@ -43,7 +44,7 @@ export async function getRentalOptions(): Promise<RentalOption[]> {
   for (const row of rows) {
     let model = models.get(row.modelId)
     if (!model) {
-      const priceByDays = Array.from({ length: row.category.maxRentalDays }, (_, index) => priceForDay(row.category, index + 1))
+      const priceByDays = Array.from({ length: row.category.maxRentalDays }, (_, index) => priceForDay(row.category, index + 1, Number(row.priceAdjustmentPercent)))
       model = { option: { modelId: row.modelId, modelName: row.modelName ?? 'Untitled', priceByDays, sizes: [] }, sizes: new Map() }
       models.set(row.modelId, model)
     }

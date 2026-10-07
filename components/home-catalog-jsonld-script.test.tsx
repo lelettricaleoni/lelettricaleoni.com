@@ -12,7 +12,7 @@ import { HomeCatalogJsonLd } from './home-catalog-jsonld-script'
 const props = { lang: 'it' as const, siteUrl: 'https://www.example.test', name: 'Le nostre bici' }
 
 const model = {
-  model: { id: 'aa7da601-1111-2222-3333-444455556666' },
+  model: { id: 'aa7da601-1111-2222-3333-444455556666', priceAdjustmentPercent: '0' },
   translation: { name: 'Mondraker Arid S' },
   category: {
     id: 'c', name: 'Gravel', displayOrder: 0, routeCategoryId: null, maxRentalDays: 5, pricingMode: 'table',

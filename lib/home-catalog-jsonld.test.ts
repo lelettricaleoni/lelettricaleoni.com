@@ -28,9 +28,9 @@ const covers = {
   'bb7da601-1111-2222-3333-444455556666': 'private/bike-model-photos/bb7da601/p2.jpg',
 }
 const base = { siteUrl: 'https://www.example.test', lang: 'it', name: 'Le nostre bici', covers }
-const gravel = { model: { id: 'aa7da601-1111-2222-3333-444455556666' }, translation: { name: 'Mondraker Arid S' }, category: category() }
+const gravel = { model: { id: 'aa7da601-1111-2222-3333-444455556666', priceAdjustmentPercent: '0' }, translation: { name: 'Mondraker Arid S' }, category: category() }
 const classic = {
-  model: { id: 'bb7da601-1111-2222-3333-444455556666' },
+  model: { id: 'bb7da601-1111-2222-3333-444455556666', priceAdjustmentPercent: '0' },
   translation: { name: 'City classica' },
   category: category({ name: 'City Bike Classica', pricingMode: 'linear', day1Price: '15', perDayAfterPrice: '10' }),
 }
@@ -70,6 +70,16 @@ describe('buildHomeCatalogJsonLd', () => {
     })!
     expect(ld.hasOfferCatalog.itemListElement).toHaveLength(1)
     expect(ld.hasOfferCatalog.itemListElement[0].name).toBe('City classica')
+  })
+
+  it('prices a model with its own percentage over the category', () => {
+    const dearer = { ...gravel, model: { ...gravel.model, priceAdjustmentPercent: '10' } } // 25 + 10 % = 27.50 -> 28
+    const cheaper = { ...gravel, model: { ...gravel.model, id: 'cc7da601-1111-2222-3333-444455556666', priceAdjustmentPercent: '-20' } } // 25 - 20 % = 20
+    const ld = buildHomeCatalogJsonLd({ ...base, covers: { ...covers, [cheaper.model.id]: 'private/bike-model-photos/cc7da601/p3.jpg' }, models: [dearer, cheaper] })!
+    const [first, second] = ld.hasOfferCatalog.itemListElement
+    expect(first.offers.price).toBe(28)
+    expect(first.offers.priceSpecification.price).toBe(28)
+    expect(second.offers.price).toBe(20)
   })
 
   it('shares the business @id of the layout, so the two fragments merge', () => {
