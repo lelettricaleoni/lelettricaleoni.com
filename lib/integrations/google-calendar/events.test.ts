@@ -97,3 +97,16 @@ describe('wantedEvent for a cancelled reservation', () => {
     expect(wantedEvent(rental({ status: 'cancelled' }), settings())).toBeNull()
   })
 })
+
+describe('wantedEvent for an online booking', () => {
+  it('shows a confirmed online rental like any other rental', () => {
+    const event = wantedEvent(rental({ kind: 'online_rental' }), settings())!
+    expect(event.summary).toBe('Mondraker Arid S · M · Alu · Mario Rossi')
+    expect(event.start).toEqual({ date: '2026-10-10' })
+  })
+
+  it('has no event for a bike that is only held, and none for one that expired: nobody has paid yet, or ever will', () => {
+    expect(wantedEvent(rental({ kind: 'online_rental', status: 'held' }), settings())).toBeNull()
+    expect(wantedEvent(rental({ kind: 'online_rental', status: 'expired' }), settings())).toBeNull()
+  })
+})
