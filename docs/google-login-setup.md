@@ -69,6 +69,25 @@ Google mostra «continua su `<ref>.supabase.co`», che a un cliente può sembrar
 di Supabase, rende più facili i tentativi di phishing. È un componente aggiuntivo a pagamento del progetto Supabase:
 conviene valutarlo al rilascio, non prima. Se lo attivi, l'indirizzo nuovo va aggiunto agli URI autorizzati di Google.
 
+## «Accedi a `<codice>.supabase.co`»: perché, e come si toglie
+
+Google non mostra il nome «Lelettrica» ma il dominio dell'URI di reindirizzamento, cioè quello di Supabase, **finché la
+*verifica del marchio* (nome e logo) non è approvata**. È normale e non è un errore di configurazione. Il guaio è che la
+verifica del marchio confronta il nome con il sito, e il dominio `supabase.co` non è nostro: è un problema noto (Google
+mostra il dominio e il controllo lo scambia per un nome sbagliato).
+
+Il rimedio pulito è un **dominio personalizzato di Supabase** per il progetto di produzione, `auth.lelettricaleoni.com`:
+1. Supabase → *Project Settings → Custom Domains* (componente aggiuntivo **a pagamento**, serve un piano a pagamento:
+   controlla il costo nella pagina prezzi di Supabase prima di attivarlo).
+2. Su Cloudflare, un record **CNAME** `auth` → `<codice-produzione>.supabase.co`, **senza proxy** (nuvola grigia), e il record
+   TXT `_acme-challenge.auth` che Supabase indica per verificare il dominio. Il certificato arriva in al più mezz'ora.
+3. Attiva il dominio in Supabase. Il vecchio indirizzo continua a funzionare, quindi **nessun fermo**.
+4. In Google, nel client di produzione, aggiungi l'URI `https://auth.lelettricaleoni.com/auth/v1/callback` (e l'origine
+   `https://auth.lelettricaleoni.com` se richiesta); dominio autorizzato `lelettricaleoni.com` (c'è già).
+5. Invia la verifica del marchio da *Google Auth Platform → Branding*.
+
+Per sviluppo e staging non serve: lì non accedono clienti veri, e l'avviso con il dominio di Supabase non fa danni.
+
 ## Fase 2 — Chiedere a Google il numero di telefono (permesso sensibile)
 
 Il permesso è `https://www.googleapis.com/auth/user.phonenumbers.read`. È classificato da Google come **sensibile**:
