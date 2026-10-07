@@ -51,4 +51,15 @@ describe('enqueueMediaJob', () => {
     expect(logged).not.toMatch(/[\r\n]/)
     log.mockRestore()
   })
+
+  it('cannot be made to forge a log line by an error message that quotes the key', async () => {
+    // The queue's own error can carry the job id, which is built from the key.
+    const add = vi.fn(async () => { throw new Error('Job b/private/route-photos/r1/u1\r\n[queue] forged entry.jpg already exists') })
+    const log = vi.spyOn(console, 'error').mockImplementation(() => {})
+    await enqueueMediaJob('private/route-photos/r1/u1.jpg', { bucket: 'b', queue: queueOf(add) })
+    const logged = log.mock.calls[0].map(String).join(' ')
+    expect(logged).not.toMatch(/[\r\n]/)
+    expect(logged).toContain('already exists')
+    log.mockRestore()
+  })
 })
