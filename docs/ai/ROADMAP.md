@@ -55,15 +55,12 @@
   conserva, scelta di Kevin). Ora che la coda è BullMQ e il sito la legge (`lib/queues/`), serve una spec e un piano a parte
   (prossimo passo: brainstorming). Il worker in Node è in produzione dal 2026-10-07; spec e piano della fetta A in
   `docs/superpowers/specs/2026-10-06-node-worker-design.md` e `docs/superpowers/plans/2026-10-06-node-worker.md`.
-- **Chiudere la migrazione del worker** (da fare dopo una settimana tranquilla, intorno al 2026-10-14): archiviare (non
-  cancellare) il repo `videoStream-bucketWorker` con `gh repo archive`, `cd ~/docker/worker && docker compose down -v` e togliere
-  la cartella sulla VM (Python e il suo `worker-redis` sono fermi, pronti al ritorno indietro finché non si spengono). Prima:
-  provare dal pannello una **foto HEIC verticale dall'iPhone** (orientamento e profilo colore: il decodificatore HEIC è deciso su
-  velocità e memoria, `docs/ai/ideas/heic-decode-spike.md`). **Da decidere con Kevin: tre sorgenti PNG corrotti nel bucket di
-  produzione** (due in `private/route-photos/bdd7a446-…`, uno in `private/bike-model-photos/963a0f6d-…`): identici, 1.388.040 byte,
-  col primo byte `EF BF BD` al posto di `89`, quindi non sono immagini; il worker (come Python prima) li scarta con
-  «unsupported image format», dopo tre tentativi restano fra i lavori falliti e non si ripetono. Sono con ogni probabilità l'origine
-  dell'errore di caricamento visto su `bdd7a446` il 2026-10-06; vanno cancellati da R2 insieme alle righe `media` che li citano.
+- **Chiudere la migrazione del worker** (Kevin, 2026-10-07; elenco completo, comandi e stato in `docs/ai/ideas/node-worker-cutover.md`,
+  piano residuo in `docs/superpowers/plans/2026-10-06-node-worker.md`): **provare dal pannello** una foto HEIC verticale dall'iPhone (l'unica
+  verifica mai fatta con un file vero), un JPEG, un MP4 e un file rotto (il #283 deve rifiutarlo), e aprire `/manage/dev` in produzione; **dopo una
+  settimana tranquilla (intorno al 2026-10-14)** archiviare il repo Python (`gh repo archive`), `docker compose down -v` in `~/docker/worker` sulla
+  VM, togliere la cartella e la riga di `authorized_keys` di quel repo. Python è fermo, non spento: è il ritorno indietro. Fatto il 2026-10-07: in
+  produzione, tre PNG che Kevin aveva caricato rotti sono stati cancellati da R2 (erano l'errore di caricamento su `bdd7a446`).
 - **Mettere a punto Google Search Console e Analytics**, dopo il giro di implementazioni in
   corso (chiesto da Kevin il 2026-09-25). Su Analytics: costruire qualche dashboard. Su
   Search Console: oggi è in disordine ("un bel casino") — prima un inventario di cosa c'è

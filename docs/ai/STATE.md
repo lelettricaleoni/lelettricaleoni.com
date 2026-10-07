@@ -165,7 +165,9 @@ contenuto, non dall'estensione.
 più un piccolo JPEG `.share.jpg` per le anteprime social (che non leggono AVIF) e tre versioni
 AVIF ridimensionate `.w480/.w960/.w1600.avif`, sempre tutte e tre (il sito sceglie con
 `lib/photo-loader.ts`, mai dall'ottimizzatore di Vercel: **non ridimensiona i sorgenti AVIF**,
-restituisce l'originale da 2400 px a qualunque larghezza — misurato 2026-09-25). Le foto già
+restituisce l'originale da 2400 px a qualunque larghezza — misurato 2026-09-25). **Il browser legge i primi byte di ogni file prima del PUT**
+(`lib/media-content.ts`, `file-type`) e rifiuta ciò che non è una foto o un video: estensione e tipo dichiarato vengono dal nome, e tre PNG col
+primo byte sovrascritto erano arrivati in produzione. Le foto già
 pubblicate (chiave senza `private/`) non sono mai passate dal worker e restano com'erano.
 `sharp` decodifica una volta sola; **HEIC** (iPhone) passa da `libheif-js` (WebAssembly: il `sharp` precompilato non
 legge l'HEVC). Misurato contro Pillow il 2026-10-06 su 10 immagini (8 foto vere di produzione): stesse dimensioni, peso
@@ -174,8 +176,9 @@ alfa inutile nei master HEIC). `/api/upload` è solo GPX: le foto vanno con PUT 
 browser (spec: `docs/superpowers/specs/2026-09-23-image-processing-worker-design.md`).
 
 La coda è **ricostruibile, non durevole**: non può esserlo più dei dati che serve, e la
-verità sta nello storage. Spec e piano della riscrittura: `docs/superpowers/specs/2026-10-06-node-worker-design.md`,
-`docs/superpowers/plans/2026-10-06-node-worker.md`.
+verità sta nello storage. Spec della riscrittura: `docs/superpowers/specs/2026-10-06-node-worker-design.md`; com'è andato il passaggio,
+le modifiche fatte sulla VM e su Cloudflare, i comandi e ciò che resta: **`docs/ai/ideas/node-worker-cutover.md`** (il piano è ridotto a
+ciò che manca).
 
 ## Decisioni vincolanti, e perché
 
