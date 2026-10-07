@@ -33,19 +33,21 @@ Solo **token**, mai un esadecimale nuovo nel markup. Definiti in `app/globals.cs
 
 | Token | Valore | Uso |
 |---|---|---|
-| `brand-navy` / `brand-navy-dark` | `#1E3A5F` / `#152C4A` | **azione primaria** (pulsante pieno e il suo hover), titoli delle pagine funzionali |
-| `brand-blue` (= `primary`, `ring`) | `#366DA1` | link, spunte, stato attivo, anello del focus |
+| **`primary`** (= `brand-blue`, `ring`) | `#366DA1` | **il colore del sito pubblico**: pulsante pieno (il `Button` predefinito, senza colori aggiunti), link, prezzi, icone, stato attivo, anello del focus |
+| `brand-navy` / `brand-navy-dark` | `#1E3A5F` / `#152C4A` | **il pannello di amministrazione** (barra laterale, intestazioni). Nel sito pubblico è un residuo (vedi «Debito»): non si usa per pagine nuove |
 | `brand-purple` | `#795F91` | **riservato** alle sezioni di prenotazione e appuntamenti, dopo uno studio; non sulle bici |
 | `brand-dark` | `#3D3D3B` | fondi scuri (footer) |
 | `foreground`, `muted-foreground`, `border`, `muted`, `card` | neutri di shadcn | testo, testo secondario, bordi, fondi |
 | rosso 50/700 e verde 50/700 | `bg-red-50 text-red-700 border-red-200`, idem verde | errore e conferma in un riquadro |
 
-Un solo pulsante pieno per vista, quello della cosa principale (in navbar: «Accedi»). Gli altri sono `outline` o `ghost`.
+Un solo pulsante pieno per vista, quello della cosa principale (in navbar: «Accedi»), nel colore predefinito del `Button`. Gli altri sono `outline` o `ghost`.
+
+**Errore da non ripetere** (Kevin, 2026-10-07: «non capisco perché la schermata di login abbia un blu diverso dal resto del sito»): la schermata di accesso era nata copiando il pannello e aveva il navy; il sito pubblico è nel blu `primary` con titoli neri. Una pagina pubblica nuova si guarda **accanto a una pagina pubblica esistente** (home, prezzi, bici) prima di scegliere un colore.
 
 ## Tipografia
 
 Geist (sans) e Geist Mono, da `next/font`. Titolo di sezione `text-3xl sm:text-4xl font-bold`; titolo di una pagina funzionale
-(accesso, account) `text-2xl font-bold text-brand-navy` con sotto `text-sm text-muted-foreground`; testo di servizio `text-xs`.
+(accesso, account) `text-2xl font-bold text-foreground` (nero, come «Listino prezzi») con sotto `text-sm text-muted-foreground`; testo di servizio `text-xs`.
 Frasi in minuscolo con la maiuscola iniziale, mai tutto maiuscolo.
 
 ## Misure e ritmo
@@ -81,8 +83,9 @@ in inglese** e non si traduce. Nessun dettaglio infrastrutturale in ciò che l'u
 
 ## Debito noto (da sistemare, non da imitare)
 
-- **`#1e3a5f` è scritto a mano ~65 volte e `#366DA1` ~28** nel sito pubblico: i token `brand-navy` e `brand-blue` esistono, la
-  migrazione dei file vecchi no (si fa con una sostituzione, in una PR a parte).
+- **Il navy compare ancora nel sito pubblico** (`#1e3a5f` scritto a mano ~65 volte, quasi tutte nel pannello): chip attivi dei
+  filtri, pulsanti di contatto, menu mobile. Vanno portati a `primary` (decisione da confermare con Kevin) e i colori a mano ai token
+  (`#366DA1` ~28 volte). Il pannello resta navy.
 - **La barra dei comandi del flyover** (`route-flyover.tsx`) usa pulsanti a pillola per azioni: eccezione non decisa. Da riportare a
   rettangoli o da dichiarare un'eccezione voluta (è sopra una mappa, su un fondo traslucido).
 - Il pannello usa soprattutto `rounded-lg`; la differenza con il sito (`rounded-md` sui controlli) è accettata finché non si
