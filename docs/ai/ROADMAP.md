@@ -88,6 +88,16 @@
 
 ## Un giorno
 
+- **Ridurre il danno di un'eventuale iniezione SQL: un ruolo del database con meno permessi** (Kevin, 2026-10-07, dopo un controllo
+  del codice). Oggi l'app si collega come `postgres`, quindi l'RLS non la limita: se una query costruita male sfuggisse, avrebbe i
+  poteri di `postgres`. Il codice è pulito (ogni valore è un parametro legato; nessun `sql.raw`, `.unsafe()` o stringa a mano; una
+  guardia in CI, `lib/db/no-raw-sql.test.ts`, in arrivo con l'accesso unificato) e si previene lì. Un ruolo `app` con i soli permessi sulle
+  tabelle usate (niente DDL, niente `auth`, `storage`, `drizzle`) e un altro ruolo per le migrazioni (`DATABASE_DIRECT_URL`) toglierebbe
+  il resto del rischio. **Da misurare prima**: come si comporta con il pooler in transaction mode e `max_pipeline: 0`, con il trigger
+  `ensure_rls` e con le migrazioni già scritte, in sviluppo prima che in produzione. Non è urgente.
+- **Riscrivere con variabili la richiesta GraphQL a Cloudflare** in `lib/dev-stats.ts`: oggi costruisce il testo con `${accountId}`,
+  `${bucketName}` e le date. Sono valori della configurazione del server, non di un utente, quindi nessun rischio ora; passarli come
+  variabili GraphQL toglie la questione e basta una modifica piccola.
 - **Una pagina di aiuto** (Kevin, 2026-10-07): ha già creato `help@lelettricaleoni.com` per metterlo lì. Non esiste ancora una
   pagina: sarebbe utile con gli account e le prenotazioni (come si prenota, accesso e password, annullamenti). Quando nasce,
   il contatto va anche nei dati strutturati e in `docs/contact-details.md`.
