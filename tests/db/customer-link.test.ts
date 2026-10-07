@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { eq, inArray } from 'drizzle-orm'
 import { randomUUID } from 'node:crypto'
 import { db, customers } from '@/lib/db'
-import { linkCustomerToAccount } from '@/lib/auth/customer-link'
+import { linkCustomerToAccount, syncCustomerEmail } from '@/lib/auth/customer-link'
 
 /**
  * An account becomes a customer, or is tied to the one the shop already has under the same email,
@@ -162,6 +162,72 @@ describe('linkCustomerToAccount', () => {
       await linkCustomerToAccount({ userId, email: address, emailConfirmed: true })
       const [row] = await byUser(userId)
       expect(row.phone).toBe(shops)
+    })
+  })
+
+  describe('the language', () => {
+    it('is the one the person was visiting in, on the customer made for the account', async () => {
+      await linkCustomerToAccount({ userId, email: email(), emailConfirmed: true, language: 'de' })
+      const [row] = await byUser(userId)
+      expect(row.language).toBe('de')
+    })
+
+    it('is Italian when none is given, or when it is not one of the three', async () => {
+      await linkCustomerToAccount({ userId, email: email(), emailConfirmed: true, language: 'fr' })
+      const [row] = await byUser(userId)
+      expect(row.language).toBe('it')
+    })
+
+    it('goes to the customer the shop already had, which had the default', async () => {
+      const address = email()
+      await insertCustomer({ email: address })
+      await linkCustomerToAccount({ userId, email: address, emailConfirmed: true, language: 'en' })
+      const [row] = await byUser(userId)
+      expect(row.language).toBe('en')
+    })
+
+    it('is kept when the account gives none', async () => {
+      const address = email()
+      await insertCustomer({ email: address, language: 'de' })
+      await linkCustomerToAccount({ userId, email: address, emailConfirmed: true })
+      const [row] = await byUser(userId)
+      expect(row.language).toBe('de')
+    })
+
+    it('cannot be anything but it, en or de in the database', async () => {
+      await expect(insertCustomer({ email: email(), language: 'fr' })).rejects.toThrow()
+    })
+  })
+
+  describe('syncCustomerEmail', () => {
+    it('puts the new confirmed address on the customer of the account', async () => {
+      const first = email()
+      const second = email()
+      await linkCustomerToAccount({ userId, email: first, emailConfirmed: true })
+      expect(await syncCustomerEmail(userId, second.toUpperCase())).toBe(true)
+      const [row] = await byUser(userId)
+      expect(row.email).toBe(second)
+    })
+
+    it('does nothing when the address is already the one on the customer', async () => {
+      const address = email()
+      await linkCustomerToAccount({ userId, email: address, emailConfirmed: true })
+      expect(await syncCustomerEmail(userId, address)).toBe(false)
+    })
+
+    it('leaves the customer alone when another customer has that address', async () => {
+      const mine = email()
+      const taken = email()
+      await linkCustomerToAccount({ userId, email: mine, emailConfirmed: true })
+      await insertCustomer({ email: taken })
+      expect(await syncCustomerEmail(userId, taken)).toBe(false)
+      const [row] = await byUser(userId)
+      expect(row.email).toBe(mine)
+    })
+
+    it('does nothing for an account with no customer, or without an address', async () => {
+      expect(await syncCustomerEmail(randomUUID(), email())).toBe(false)
+      expect(await syncCustomerEmail(userId, null)).toBe(false)
     })
   })
 

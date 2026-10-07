@@ -6,6 +6,7 @@ import { hasAdminRole } from '@/lib/admin-users'
 import { destinationFor } from '@/lib/auth/destination'
 import { ensureCustomerFor } from '@/lib/auth/ensure-customer'
 import { fetchGooglePhone, REQUEST_GOOGLE_PHONE } from '@/lib/auth/google-phone'
+import { getCustomerLanguage } from '@/lib/auth/account-data'
 
 /** The one-time-token types an email from this site can carry. */
 const OTP_TYPES: EmailOtpType[] = ['invite', 'recovery', 'signup', 'email', 'email_change']
@@ -66,10 +67,13 @@ export async function GET(request: NextRequest) {
       // Anybody who proved their email is in: an admin goes to the panel, a customer to their account.
       // The role is read from app_metadata, which only the service role can write; reading it from
       // user_metadata, which the account writes itself, would accept a role it gave itself.
+      let language: string | null = null
       if (!hasAdminRole(user)) {
-        await ensureCustomerFor(user, { phone: googleToken ? await fetchGooglePhone(googleToken) : null })
+        await ensureCustomerFor(user, { phone: googleToken ? await fetchGooglePhone(googleToken) : null, language: lang })
+        // Once signed in the site is in the language of the account's settings, unless they were going somewhere in particular.
+        language = await getCustomerLanguage(user.id)
       }
-      return NextResponse.redirect(`${origin}${destinationFor(user, lang, next)}`)
+      return NextResponse.redirect(`${origin}${destinationFor(user, language ?? lang, next)}`)
     }
   }
 

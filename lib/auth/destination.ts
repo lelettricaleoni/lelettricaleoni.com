@@ -19,7 +19,7 @@ export function destinationFor(
 ): string {
   const language = LANGUAGES.includes(lang) ? lang : 'it'
   const isAdmin = hasAdminRole(user as RawAuthUser)
-  const fallback = isAdmin ? '/manage' : `/${language}/account`
+  const fallback = isAdmin ? '/manage' : `/${language}/account/settings`
   const requested = safeNextPath(next, fallback)
   // The proxy would bounce a customer from the panel back to the sign-in page anyway: do not start the trip.
   if (!isAdmin && (requested === '/manage' || requested.startsWith('/manage/') || requested.startsWith('/manage?'))) return fallback

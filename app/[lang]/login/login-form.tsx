@@ -26,8 +26,6 @@ interface Dict {
   register_hint: string
   first_name_label: string
   last_name_label: string
-  phone_label: string
-  phone_hint: string
   password_new_hint: string
   consent_label: string
   privacy_link: string
@@ -47,8 +45,8 @@ interface Props {
   next: string
 }
 
-const submitClass = 'w-full bg-brand-navy hover:bg-brand-navy-dark'
-const linkClass = 'text-xs text-brand-blue hover:underline cursor-pointer'
+const submitClass = 'w-full'
+const linkClass = 'text-xs text-primary hover:underline cursor-pointer'
 
 /**
  * The one sign-in page, for customers and admins alike, and for signing up: one card with Google on top and
@@ -84,7 +82,7 @@ export function LoginForm({ lang, d, errorMessage, infoMessage, initialTab, next
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-brand-navy">{heading.title}</h1>
+        <h1 className="text-2xl font-bold text-foreground">{heading.title}</h1>
         <p className="text-sm text-muted-foreground mt-1">{heading.subtitle}</p>
       </div>
 
@@ -121,7 +119,7 @@ export function LoginForm({ lang, d, errorMessage, infoMessage, initialTab, next
                 aria-selected={mode === id}
                 onClick={() => go(id)}
                 className={`py-2.5 transition-colors cursor-pointer ${
-                  mode === id ? 'bg-brand-navy text-white font-semibold' : 'bg-background text-muted-foreground hover:text-foreground'
+                  mode === id ? 'bg-primary text-primary-foreground font-semibold' : 'bg-background text-muted-foreground hover:text-foreground'
                 }`}
               >
                 {label}
@@ -167,11 +165,6 @@ export function LoginForm({ lang, d, errorMessage, infoMessage, initialTab, next
             <Input id="register-email" name="email" type="email" required autoComplete="email" placeholder={d.email_placeholder} />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="register-phone">{d.phone_label}</Label>
-            <Input id="register-phone" name="phone" type="tel" maxLength={30} autoComplete="tel" placeholder="+39 333 1234567" />
-            <p className="text-xs text-muted-foreground">{d.phone_hint}</p>
-          </div>
-          <div className="space-y-1.5">
             <Label htmlFor="register-password">Password</Label>
             <Input id="register-password" name="password" type="password" required minLength={8} maxLength={72} autoComplete="new-password" placeholder={d.password_placeholder} />
             <p className="text-xs text-muted-foreground">{d.password_new_hint}</p>
@@ -180,7 +173,7 @@ export function LoginForm({ lang, d, errorMessage, infoMessage, initialTab, next
             <input type="checkbox" name="consent" required className="mt-0.5" />
             <span>
               {d.consent_label}{' '}
-              <a href={`/${lang}/privacy`} target="_blank" rel="noopener noreferrer" className="text-brand-blue underline">{d.privacy_link}</a>.
+              <a href={`/${lang}/privacy`} target="_blank" rel="noopener noreferrer" className="text-primary underline">{d.privacy_link}</a>.
             </span>
           </label>
           <Button type="submit" className={submitClass}>{d.submit_register}</Button>

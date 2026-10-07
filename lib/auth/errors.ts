@@ -12,13 +12,12 @@ export const AUTH_ERROR_CODES = [
   'weak_password',
   'missing_fields',
   'consent_required',
-  'invalid_phone',
   'rate_limited',
   'signup_failed',
   'generic',
 ] as const
 
-export const AUTH_INFO_CODES = ['reset_sent', 'signup_sent', 'password_updated'] as const
+export const AUTH_INFO_CODES = ['reset_sent', 'signup_sent', 'password_updated', 'signed_out_everywhere', 'account_deleted'] as const
 
 export type AuthErrorCode = (typeof AUTH_ERROR_CODES)[number]
 export type AuthInfoCode = (typeof AUTH_INFO_CODES)[number]

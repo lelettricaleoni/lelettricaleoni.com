@@ -72,7 +72,7 @@ export function LanguageSwitcher({ currentLang }: { currentLang: string }) {
             >
               <Flag countryCode={locale.countryCode} label={locale.label} />
               <span className="flex-1">{locale.name}</span>
-              {locale.code === currentLang && <Check className="text-brand-blue" aria-hidden />}
+              {locale.code === currentLang && <Check className="text-primary" aria-hidden />}
             </Link>
           </DropdownMenuItem>
         ))}

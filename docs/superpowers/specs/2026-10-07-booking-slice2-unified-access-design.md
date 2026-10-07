@@ -71,8 +71,9 @@ fetta 3 («account obbligatorio per prenotare», Kevin, 2026-10-02).
    dell'ambiente, e quello è l'interruttore. Servono due cose che sono tue: un client OAuth in Google Cloud e il provider
    attivato (passi in «Rilascio»). In produzione il provider si attiva solo al rilascio. I flag erano già stati tolti il
    2026-10-05.
-10. **Il telefono (deciso da Kevin, 2026-10-07): facoltativo, mai una condizione.** Un campo nella registrazione
-   (`user_metadata.customer_phone`, normalizzato con `libphonenumber-js`), e per chi entra con Google il numero del profilo
+10. **Il telefono (deciso da Kevin, 2026-10-07): facoltativo, mai una condizione.** **Non si chiede in registrazione** (Kevin,
+   2026-10-07: «non chiedere il numero di telefono in registrazione»): si aggiunge, se si vuole, nelle impostazioni dell'account
+   (normalizzato con `libphonenumber-js`), e per chi entra con Google il numero del profilo
    Google, **solo quando la costante `REQUEST_GOOGLE_PHONE` (in `lib/auth/google-phone.ts`) passa a `true`**, dopo
    l'approvazione di Google (permesso sensibile: serve la verifica di Google, vedi
    `docs/google-login-setup.md`). Entra nel cliente solo dove manca e solo se nessun altro cliente lo ha: ciò che il negozio
@@ -149,3 +150,31 @@ allora, in **produzione** (progetto Supabase `hhfnhz…`) serve controllare a ma
 3. **Vuoi l'accesso con Google?** Se sì, i tre passi sopra sono tuoi; il codice è pronto.
 4. **Registrazione aperta a tutti, o solo con un invito?** Oggi Supabase è aperto. Per un negozio di noleggio aperto al
    pubblico è la scelta naturale; se preferisci l'invito, si chiude `disable_signup` e il modulo sparisce.
+
+## Area «Account settings» (aggiunta il 2026-10-07)
+
+Dopo il primo giro (Kevin: «bisogna poter gestire tutte le classiche cose di un account», e il menu «lo chiamerei account settings, dopo
+ci sarà anche account rents»): `/[lang]/account` non ha pagina propria e rimanda a **`/[lang]/account/settings`**, con un menu laterale
+(sul telefono, una riga scorrevole) che oggi ha un solo gruppo, *Account settings*; il secondo, *Account rents*, sarà quello dei noleggi
+(fetta 3). Il layout (`app/[lang]/account/layout.tsx`) mette navbar, menu e footer e decide chi è dentro; l'utente si chiede a Supabase
+una volta sola per richiesta (`lib/auth/current-user.ts`).
+
+| Pagina | Cosa si fa |
+|---|---|
+| `settings` (Profilo) | nome, cognome, telefono (facoltativo), **lingua** |
+| `settings/security` | cambio email (con conferma nel nuovo indirizzo), cambio password, metodi di accesso (email, Google), **esci da tutti i dispositivi** |
+| `settings/privacy` | **scarica i miei dati** (JSON), **elimina account** (finestra di conferma e indirizzo email da scrivere) |
+
+- **Lingua** (`customers.language`, migrazione `0017`, `CHECK` su it/en/de): non si chiede in registrazione; parte dalla lingua con cui si
+  visitava il sito al momento dell'iscrizione (o dalla lingua del modulo, o per Google quella dell'indirizzo) e si cambia nel profilo.
+  **Per chi è dentro la lingua è questa impostazione**: il selettore di lingua sparisce dalla navbar (`components/navbar-end.tsx`), salvarla
+  porta la pagina nella nuova lingua, e dopo l'accesso, se non si andava in un posto preciso, si arriva alle impostazioni in quella lingua.
+  Servirà anche alle email (fetta 4). Un limite voluto: chi segue un link in un'altra lingua resta in quella finché non cambia l'impostazione.
+- **Cambio email**: Supabase scrive il nuovo indirizzo solo dopo il clic nella nuova casella; il cliente lo segue alla visita successiva
+  (`syncCustomerEmail`), a meno che un altro cliente abbia già quell'indirizzo. Un indirizzo già registrato riceve la stessa risposta di uno libero.
+- **Elimina account**: la scheda cliente è anche l'archivio del negozio. Se ha noleggi **resta**, con i suoi dati, ma slegata dall'account; senza
+  noleggi si cancella (`releaseCustomerOfAccount`, due istruzioni, nessuna transazione). Poi si cancella l'utente di Supabase. Un account staff non si
+  cancella da qui.
+- **Esporta**: tutto ciò che riguarda la persona (account, profilo, **note del negozio comprese**, noleggi), senza id interni.
+- **Da decidere con chi rivede i testi** (`privacy-cookies`): cosa il negozio conserva dopo la cancellazione, e per quanto.
+- **In produzione**: la migrazione `0017` si applica al rilascio, insieme alla `staging → main`.

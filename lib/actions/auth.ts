@@ -7,9 +7,11 @@ import { hasAdminRole } from '@/lib/admin-users'
 import { destinationFor } from '@/lib/auth/destination'
 import { safeNextPath } from '@/lib/auth/next-path'
 import { ensureCustomerFor } from '@/lib/auth/ensure-customer'
-import { normalisePhone } from '@/lib/auth/phone'
 import { GOOGLE_PHONE_SCOPE, REQUEST_GOOGLE_PHONE } from '@/lib/auth/google-phone'
-import type { AuthErrorCode, AuthInfoCode } from '@/lib/auth/errors'
+import { languageOf } from '@/lib/auth/language'
+import { getCustomerLanguage } from '@/lib/auth/account-data'
+import { callbackUrl, isRateLimit, loginUrl } from '@/lib/auth/urls'
+import type { AuthErrorCode } from '@/lib/auth/errors'
 
 /**
  * Signing in, for everybody: an admin lands in the panel, a customer on their account.
@@ -19,16 +21,11 @@ import type { AuthErrorCode, AuthInfoCode } from '@/lib/auth/errors'
  * lost, so a reset or a sign-out always sent a German visitor to the Italian page.
  */
 
-const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000').replace(/\/$/, '')
-const LANGUAGES = ['it', 'en', 'de']
 const MIN_PASSWORD = 8
 // Supabase refuses a password over 72 bytes (the limit of the hash it uses).
 const MAX_PASSWORD = 72
 
-const langOf = (formData: FormData): string => {
-  const lang = formData.get('lang')
-  return typeof lang === 'string' && LANGUAGES.includes(lang) ? lang : 'it'
-}
+const langOf = (formData: FormData): string => languageOf(formData.get('lang'))
 
 /** The page the person was going to, when it is a path of this site; empty otherwise. */
 const nextOf = (formData: FormData): string => {
@@ -40,26 +37,6 @@ const text = (formData: FormData, name: string): string => {
   const value = formData.get(name)
   return typeof value === 'string' ? value.trim() : ''
 }
-
-function loginUrl(lang: string, params: { error?: AuthErrorCode; info?: AuthInfoCode; tab?: string; next?: string }): string {
-  const query = new URLSearchParams()
-  if (params.error) query.set('error', params.error)
-  if (params.info) query.set('info', params.info)
-  if (params.tab) query.set('tab', params.tab)
-  if (params.next) query.set('next', params.next)
-  const qs = query.toString()
-  return `/${lang}/login${qs ? `?${qs}` : ''}`
-}
-
-/** Where an email link brings the person back to: the language and where they were going. */
-function callbackUrl(lang: string, next: string): string {
-  const query = new URLSearchParams({ lang })
-  if (next) query.set('next', next)
-  return `${SITE_URL}/auth/callback?${query.toString()}`
-}
-
-const isRateLimit = (error: { status?: number; code?: string }) =>
-  error.status === 429 || error.code === 'over_email_send_rate_limit' || error.code === 'over_request_rate_limit'
 
 export async function loginAction(formData: FormData) {
   const lang = langOf(formData)
@@ -77,8 +54,10 @@ export async function loginAction(formData: FormData) {
     redirect(loginUrl(lang, { error: code, next }))
   }
 
-  await ensureCustomerFor(data.user)
-  redirect(destinationFor(data.user, lang, next))
+  await ensureCustomerFor(data.user, { language: lang })
+  // Once signed in the site is in the language of the account's settings, unless they were going somewhere in particular.
+  const language = hasAdminRole(data.user) ? null : await getCustomerLanguage(data.user.id)
+  redirect(destinationFor(data.user, language ?? lang, next))
 }
 
 const registerSchema = z.object({
@@ -98,10 +77,6 @@ export async function registerAction(formData: FormData) {
     email: text(formData, 'email').toLowerCase(),
   })
   if (!fields.success) return fail('missing_fields')
-  // Optional. Typed in any format, read as Italian when there is no prefix, kept in the international one.
-  const rawPhone = text(formData, 'phone')
-  const phone = normalisePhone(rawPhone)
-  if (rawPhone && !phone) return fail('invalid_phone')
   const password = String(formData.get('password') ?? '')
   if (password.length < MIN_PASSWORD || password.length > MAX_PASSWORD) return fail('weak_password')
   if (formData.get('consent') !== 'on') return fail('consent_required')
@@ -114,13 +89,7 @@ export async function registerAction(formData: FormData) {
       emailRedirectTo: callbackUrl(lang, next),
       // Labels for the customer record. user_metadata is written by the account itself: it is never read
       // for a permission (lib/admin-users.ts).
-      data: {
-        first_name: fields.data.firstName,
-        last_name: fields.data.lastName,
-        lang,
-        // Not `phone`: Supabase has its own meaning for that. Read when the email is confirmed (lib/auth/ensure-customer.ts).
-        ...(phone ? { customer_phone: phone } : {}),
-      },
+      data: { first_name: fields.data.firstName, last_name: fields.data.lastName, lang },
     },
   })
   if (error) {

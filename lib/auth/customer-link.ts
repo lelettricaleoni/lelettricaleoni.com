@@ -1,6 +1,7 @@
 import { eq, sql } from 'drizzle-orm'
 import { db, customers } from '@/lib/db'
 import { normalisePhone } from './phone'
+import { parseLanguage } from './language'
 
 /**
  * Ties a signed-in account to a customer of the shop, or makes one.
@@ -35,6 +36,8 @@ export interface AccountIdentity {
   lastName?: string
   /** What the person typed or Google knows; any format, it is read here and dropped if it is not a valid number. */
   phone?: string | null
+  /** The language the person was visiting in; the shop's customer takes it, and the default stays when it is unknown. */
+  language?: string | null
 }
 
 export type LinkResult =
@@ -59,6 +62,7 @@ async function link(identity: AccountIdentity): Promise<LinkResult> {
   const firstName = identity.firstName?.trim() || address.split('@')[0]
   const lastName = identity.lastName?.trim() ?? ''
   const phone = normalisePhone(identity.phone)
+  const language = parseLanguage(identity.language)
 
   const [row] = await db.execute<{ existing_id: string | null; linked_id: string | null; created_id: string | null }>(sql`
     WITH existing AS (
@@ -71,6 +75,7 @@ async function link(identity: AccountIdentity): Promise<LinkResult> {
             WHEN phone IS NULL AND ${phone}::text IS NOT NULL
               AND NOT EXISTS (SELECT 1 FROM customers other WHERE other.phone = ${phone}::text)
             THEN ${phone}::text ELSE phone END,
+          language = COALESCE(${language}::text, language),
           updated_at = now()
       WHERE user_id IS NULL
         AND lower(email) = ${address}
@@ -78,9 +83,10 @@ async function link(identity: AccountIdentity): Promise<LinkResult> {
       RETURNING id
     ),
     created AS (
-      INSERT INTO customers (user_id, first_name, last_name, email, phone)
+      INSERT INTO customers (user_id, first_name, last_name, email, phone, language)
       SELECT ${identity.userId}::uuid, ${firstName}, ${lastName}, ${address},
-             (SELECT ${phone}::text WHERE NOT EXISTS (SELECT 1 FROM customers other WHERE other.phone = ${phone}::text))
+             (SELECT ${phone}::text WHERE NOT EXISTS (SELECT 1 FROM customers other WHERE other.phone = ${phone}::text)),
+             COALESCE(${language}::text, 'it')
       WHERE NOT EXISTS (SELECT 1 FROM existing)
         AND NOT EXISTS (SELECT 1 FROM linked)
         AND NOT EXISTS (SELECT 1 FROM customers WHERE lower(email) = ${address})
@@ -101,4 +107,26 @@ async function link(identity: AccountIdentity): Promise<LinkResult> {
   // a customer now), or the email belongs to a customer tied to somebody else.
   const [mine] = await db.select({ id: customers.id }).from(customers).where(eq(customers.userId, identity.userId))
   return mine ? { status: 'existing', customerId: mine.id } : { status: 'taken' }
+}
+
+/**
+ * Puts the confirmed email of the account on its customer, when it changed.
+ *
+ * An account changes its email in two steps, and only the second one (the click in the new mailbox) changes
+ * `user.email`, so what arrives here is always an address the person proved. The customer follows it, unless
+ * another customer already has that address: the email is unique, and the older record is not ours to take.
+ * Nothing is written then, and the account keeps the address it has.
+ */
+export async function syncCustomerEmail(userId: string, email: string | null | undefined): Promise<boolean> {
+  const address = email?.trim().toLowerCase()
+  if (!address) return false
+  const rows = await db.execute<{ id: string }>(sql`
+    UPDATE customers
+    SET email = ${address}, updated_at = now()
+    WHERE user_id = ${userId}::uuid
+      AND email IS DISTINCT FROM ${address}
+      AND NOT EXISTS (SELECT 1 FROM customers other WHERE lower(other.email) = ${address} AND other.user_id IS DISTINCT FROM ${userId}::uuid)
+    RETURNING id
+  `)
+  return rows.length > 0
 }

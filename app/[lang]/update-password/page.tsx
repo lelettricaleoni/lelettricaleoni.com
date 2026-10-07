@@ -57,7 +57,7 @@ export default async function UpdatePasswordPage({
         <div className="flex-1 flex items-center justify-center p-8 bg-background">
           <div className="w-full max-w-sm space-y-6">
             <div>
-              <h1 className="text-2xl font-bold text-brand-navy">{d.title}</h1>
+              <h1 className="text-2xl font-bold text-foreground">{d.title}</h1>
               <p className="text-sm text-muted-foreground mt-1">{d.subtitle}</p>
             </div>
 
@@ -71,7 +71,7 @@ export default async function UpdatePasswordPage({
                 <Label htmlFor="password">{d.label}</Label>
                 <Input id="password" name="password" type="password" required minLength={8} maxLength={72} autoComplete="new-password" placeholder="••••••••" />
               </div>
-              <Button type="submit" className="w-full bg-brand-navy hover:bg-brand-navy-dark">{d.submit}</Button>
+              <Button type="submit" className="w-full">{d.submit}</Button>
             </form>
           </div>
         </div>
