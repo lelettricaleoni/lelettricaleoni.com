@@ -94,6 +94,18 @@ export function RouteElevationChart({
     }
   }
 
+  // Recharts 3 disegna il grafico dopo il primo effetto di questo componente
+  // (misura il contenitore e poi renderizza), quindi la misura fatta al mount
+  // trova un SVG vuoto, esce senza niente, e il ResizeObserver non la ripete
+  // perché il contenitore ha già la sua altezza fissa. Con i bordi a null il
+  // cursore non compariva, il trascinamento puntava sempre al primo punto e il
+  // volo automatico non muoveva il grafico. Si misura quindi al momento dell'uso
+  // se manca, e di nuovo a ogni inizio di trascinamento.
+  function ensurePlotBounds(): PlotBounds | null {
+    if (!plotBoundsRef.current) measurePlotBounds()
+    return plotBoundsRef.current
+  }
+
   // Rimisura ad ogni cambio di dati o di dimensione — un ridimensionamento
   // della finestra sposta esattamente dove Recharts disegna la curva.
   useEffect(() => {
@@ -112,7 +124,7 @@ export function RouteElevationChart({
   function moveCursorTo(index: number) {
     const cursor = cursorRef.current
     const dot = cursorDotRef.current
-    const bounds = plotBoundsRef.current
+    const bounds = ensurePlotBounds()
     if (!cursor || !bounds) return
     const x = bounds.left + (distances[index] / totalDistance) * bounds.width
     cursor.style.display = 'block'
@@ -135,7 +147,7 @@ export function RouteElevationChart({
 
   function indexAtClientX(clientX: number): number {
     const container = containerRef.current
-    const bounds = plotBoundsRef.current
+    const bounds = ensurePlotBounds()
     if (!container || !bounds) return 0
     const x = clientX - container.getBoundingClientRect().left - bounds.left
     const targetDistance = Math.min(Math.max((x / bounds.width) * totalDistance, 0), totalDistance)
@@ -165,6 +177,7 @@ export function RouteElevationChart({
     e.stopPropagation()
     e.currentTarget.setPointerCapture(e.pointerId)
     draggingRef.current = true
+    measurePlotBounds()
     onScrubStart()
     scheduleScrub(e.clientX)
   }
@@ -186,6 +199,7 @@ export function RouteElevationChart({
   return (
     <div
       ref={containerRef}
+      data-testid="elevation-chart"
       className={cn('relative touch-none cursor-ew-resize select-none')}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
@@ -194,6 +208,7 @@ export function RouteElevationChart({
     >
       <div
         ref={cursorRef}
+        data-testid="elevation-cursor"
         className="absolute top-2 bottom-5 w-px pointer-events-none z-10"
         style={{ display: 'none', left: 0, backgroundColor: color, opacity: 0.55 }}
       />
@@ -202,8 +217,21 @@ export function RouteElevationChart({
         className="absolute top-0 left-0 w-2.5 h-2.5 -mt-[5px] -ml-[5px] rounded-full border-2 border-white pointer-events-none z-10 shadow-[0_0_0_1px_rgba(0,0,0,0.08)]"
         style={{ display: 'none', backgroundColor: color }}
       />
-      <ChartContainer config={chartConfig} className="h-40 w-full">
-        <AreaChart data={data} margin={{ top: 8, right: MARGIN_RIGHT, bottom: 5, left: MARGIN_LEFT }}>
+      {/* [&_g]:outline-none: i livelli interni di Recharts 3 (g.recharts-zIndex-layer_*,
+          tabindex=-1) prendono il focus a un clic e il browser gli disegna attorno
+          un `outline: auto` scuro. Il CSS di ChartContainer copre solo
+          .recharts-layer e .recharts-surface, non questi. */}
+      <ChartContainer config={chartConfig} className="h-40 w-full [&_g]:outline-none">
+        {/* accessibilityLayer spento: in Recharts 3 è acceso di default e rende il
+            grafico focalizzabile (role=application, tabindex=0), con la
+            navigazione da tastiera del suo tooltip, che qui non c'è. Un tocco
+            dava il focus a un livello interno e il browser gli disegnava attorno
+            un riquadro scuro. Il grafico si usa col puntatore (vedi sopra). */}
+        <AreaChart
+          accessibilityLayer={false}
+          data={data}
+          margin={{ top: 8, right: MARGIN_RIGHT, bottom: 5, left: MARGIN_LEFT }}
+        >
           <defs>
             <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor={color} stopOpacity={0.45} />
