@@ -1,0 +1,4 @@
+Contact: mailto:security@lelettricaleoni.com
+Expires: 2027-09-30T23:59:59.000Z
+Preferred-Languages: it, en
+Canonical: https://www.lelettricaleoni.com/.well-known/security.txt
