@@ -9,6 +9,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Switch } from '@/components/ui/switch'
 import { GpxUpload } from './gpx-upload'
 import { MediaUpload } from './media-upload'
+import { submitKeepingFields } from '@/lib/submit-keeping-fields'
 import { getPresignedUploadUrlAction, getVideoPresignedUploadUrlAction, type RouteFormState } from '@/lib/actions/routes'
 import type { Route, RouteTranslation, Media } from '@/lib/db'
 
@@ -45,7 +46,8 @@ export function RouteForm({ action, route, translations, photos, bikeTypeOptions
   }
 
   return (
-    <form action={formAction} className="space-y-8 max-w-2xl">
+    // onSubmit, not `action`: see submitKeepingFields — an error must not clear the ticked bike types.
+    <form onSubmit={submitKeepingFields(formAction)} className="space-y-8 max-w-2xl">
       {/* Italian text */}
       <section className="space-y-4">
         <h2 className="text-lg font-semibold text-[#1e3a5f]">Content (Italian)</h2>
