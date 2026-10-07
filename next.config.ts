@@ -116,10 +116,11 @@ const nextConfig: NextConfig = {
   },
   async redirects() {
     return [
-      // Redirect vecchio PDF indicizzato da Google (vecchio sito)
+      // Redirect vecchio PDF indicizzato da Google (vecchio sito) al volantino prezzi in uso.
+      // Puntava a "Volantino 2023.pdf", che non c'è più (404): lib/redirects.test.ts lo controlla.
       {
         source: '/assets/pdf/:file*',
-        destination: '/pdf/Volantino 2023.pdf',
+        destination: '/pdf/Volantino 2026.pdf',
         permanent: true,
       },
     ]
