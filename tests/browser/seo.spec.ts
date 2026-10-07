@@ -151,6 +151,8 @@ test('il catalogo nei dati strutturati della home viene dal database, e non vend
     expect(product['@type']).toBe('Product')
     expect(product.offers?.url).toContain('/it/bikes/')
     expect(product.offers?.price, `prezzo mancante per ${product.name}`).toBeGreaterThan(0)
+    // Con le offerte a posto Google ha chiesto l'immagine: altri 7 errori (2026-10-05).
+    expect(product.image, `immagine mancante per ${product.name}`).toMatch(/\.(share\.jpg|jpe?g|png|webp)$/)
   }
   // Scritto a mano, il catalogo tipava le bici come RentalCar.
   expect(blocks.join('')).not.toContain('RentalCar')

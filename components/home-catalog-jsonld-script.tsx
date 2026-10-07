@@ -1,4 +1,4 @@
-import { getBikeModelsListData } from '@/lib/bikes-data'
+import { getBikeCoverPhotoKeys, getBikeModelsListData } from '@/lib/bikes-data'
 import { buildHomeCatalogJsonLd } from '@/lib/home-catalog-jsonld'
 
 /** The longest the home page waits on the database for its structured data. */
@@ -24,22 +24,27 @@ export async function HomeCatalogJsonLd({
   name: string
 }) {
   let timer: ReturnType<typeof setTimeout> | undefined
-  let models: Awaited<ReturnType<typeof getBikeModelsListData>> | null
+  let catalog: { models: Awaited<ReturnType<typeof getBikeModelsListData>>; covers: Record<string, string> } | null
   try {
-    models = await Promise.race([
-      getBikeModelsListData(lang),
+    // Both reads share one deadline: the photos wait on R2 and Redis, which can
+    // stall just like the database.
+    catalog = await Promise.race([
+      Promise.all([getBikeModelsListData(lang), getBikeCoverPhotoKeys()]).then(([models, covers]) => ({
+        models,
+        covers,
+      })),
       new Promise<null>((resolve) => {
         timer = setTimeout(() => resolve(null), CATALOG_TIMEOUT_MS)
       }),
     ])
   } catch {
-    models = null
+    catalog = null
   } finally {
     clearTimeout(timer)
   }
-  if (!models) return null
+  if (!catalog) return null
 
-  const jsonLd = buildHomeCatalogJsonLd({ siteUrl, lang, name, models })
+  const jsonLd = buildHomeCatalogJsonLd({ siteUrl, lang, name, ...catalog })
   if (!jsonLd) return null
 
   return (
