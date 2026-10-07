@@ -64,6 +64,11 @@
 
 ## Prossimo
 
+- **Non contattare Google prima del consenso** (misurato il 2026-10-07 sul sito vero, da visitatore nuovo: nessun cookie, ma il browser chiede già `gtag.js` a
+  `googletagmanager.com`, quindi Google riceve l'indirizzo IP). Scelta più prudente: caricare `gtag.js` solo dopo «Accetta» (`onConsent`/`onChange` del banner),
+  tenendo `dataLayer` e `gtag` come coda che non contatta nessuno, e cancellare i cookie `_ga*` alla revoca (`autoClear`). Costo: niente più «ping senza cookie»
+  da chi rifiuta, cioè qualche dato in meno (32 sessioni a settimana, oggi). Decisione di Kevin; dettagli e prova in `.claude/skills/cookie-consent/`.
+
 - **Fetta B del worker: una pagina dei lavori nel pannello** (Kevin, 2026-10-06): elenco dei lavori, «Riprova» per i
   falliti, pausa e ripresa di una coda, «Rielabora» per le sole foto (i video non si possono rielaborare: l'originale non si
   conserva, scelta di Kevin). Ora che la coda è BullMQ e il sito la legge (`lib/queues/`), serve una spec e un piano a parte
