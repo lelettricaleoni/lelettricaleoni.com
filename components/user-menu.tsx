@@ -83,7 +83,8 @@ export function UserMenu({ lang, labels }: { lang: string; labels: UserMenuLabel
       <form ref={logoutForm} action={logoutAction} className="hidden">
         <input type="hidden" name="lang" value={lang} />
       </form>
-      <DropdownMenu>
+      {/* modal={false}: see language-switcher.tsx; a modal menu makes the fixed bar jump when the scrollbar goes away. */}
+      <DropdownMenu modal={false}>
         <DropdownMenuTrigger aria-label={labels.account} className={accountClass}>
           <span className="flex size-7 items-center justify-center rounded-full bg-[#1e3a5f] text-xs font-semibold text-white">
             {initial}

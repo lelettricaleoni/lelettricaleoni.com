@@ -47,7 +47,9 @@ export function LanguageSwitcher({ currentLang }: { currentLang: string }) {
   const current = locales.find((locale) => locale.code === currentLang) ?? locales[0]
 
   return (
-    <DropdownMenu>
+    // modal={false}: a modal menu locks the page's scroll, which removes its scrollbar and widens the page by that much,
+    // and the fixed bar then jumps sideways every time a menu opens.
+    <DropdownMenu modal={false}>
       <DropdownMenuTrigger
         aria-label={current.name}
         title={current.name}
