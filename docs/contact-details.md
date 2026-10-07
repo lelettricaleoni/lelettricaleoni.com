@@ -10,11 +10,13 @@ I numeri di riga sono quelli del 2026-10-07: se si spostano, cerca la stringa (c
 |---|---|---|
 | **Nome** | Lelettrica di Leoni Gabriele | dati strutturati `app/[lang]/layout.tsx:192`; autore `:140`; marchio `app/[lang]/bikes/[id]/page.tsx:102`; fornitore `app/[lang]/routes/[id]/page.tsx:112`. Alias nei dati strutturati (`layout.tsx:193`): «Lelettrica», «L'Elettrica Leoni» |
 | **Ragione sociale e P.IVA** | LELETTRICA DI LEONI GABRIELE, P.IVA 02622600225 | `components/footer.tsx:102` (solo lì). L'etichetta «P.IVA» è tradotta: `messages/*.json`, chiave `footer.vat` |
-| **Titolare dei dati** | Leoni Gabriele, Via Roma 90, 38074 Dro (TN), Italia, info@lelettricaleoni.com | `app/[lang]/privacy/page.tsx:69-70`, scritto a mano, uguale nelle tre lingue |
+| **Titolare dei dati** | Leoni Gabriele, Via Roma 90, 38074 Dro (TN), Italia, privacy@lelettricaleoni.com | `app/[lang]/privacy/page.tsx:69-70`, scritto a mano, uguale nelle tre lingue |
 | **Indirizzo** | Via Roma 90, 38074 Dro (TN), Italia | `components/footer.tsx:63`; `components/hero-section.tsx:87`; `components/map-section.tsx:47` (campo copiabile) e `:30` (link alle indicazioni stradali); `components/not-found-page.tsx:54`; `app/[lang]/privacy/page.tsx:69`; dati strutturati `app/[lang]/layout.tsx:205-208` (diviso in campi); parole chiave `layout.tsx:138` |
 | **Telefono** | +39 338 123 2434 (nel link: `tel:+393381232434`) | `components/footer.tsx:66,70`; `components/hero-section.tsx:92,118`; `components/map-section.tsx:54,58`; `components/not-found-page.tsx:45,54`; `components/bike-contact-buttons.tsx:11`; `app/[lang]/[slug]/page.tsx:72` (pagine di servizio); dati strutturati `app/[lang]/layout.tsx:196`. **Anche nei PDF** (vedi sotto) |
-| **Email visibile** | info@lelettricaleoni.com | `components/footer.tsx:74,78`; `components/map-section.tsx:67,71`; `components/bike-contact-buttons.tsx:16`; `app/[lang]/privacy/page.tsx:70,103,104`; `messages/{it,en,de}.json:151` (`privacy.contact_body`, dentro la frase tradotta); dati strutturati `app/[lang]/layout.tsx:197` |
+| **Email visibile** | info@lelettricaleoni.com | `components/footer.tsx:74,78`; `components/map-section.tsx:67,71`; `components/bike-contact-buttons.tsx:16`; dati strutturati `app/[lang]/layout.tsx:197` |
+| **Email per i dati personali** | privacy@lelettricaleoni.com | `app/[lang]/privacy/page.tsx:70,103,104` (titolare e sezione contatti); `messages/{it,en,de}.json:151` (`privacy.contact_body`, dentro la frase tradotta). Dal 2026-10-07: prima era `info@`. `lib/privacy-text.test.ts` lo impone |
 | **Email di sicurezza** | security@lelettricaleoni.com | `public/.well-known/security.txt` (solo lì) |
+| **Email di aiuto** | help@lelettricaleoni.com | **non ancora nel sito**: è riservata a una pagina di aiuto che non esiste (vedi ROADMAP). Quando nasce, va nei dati strutturati (`contactPoint`) e qui |
 | **Orari** | Tutti i giorni 09:00–13:00 e 14:00–19:00 | `messages/{it,en,de}.json`, chiave `info.hours_value` (mostrata da `hero-section.tsx:97` e `map-section.tsx:78`); dati strutturati `app/[lang]/layout.tsx:217-229` (due fasce); descrizioni per i motori `layout.tsx:44-46` (dicono «09:00–19:00», senza la pausa). `pricing.afternoon` è la fascia del prezzo del pomeriggio, non l'orario di apertura |
 | **Social** | Instagram @lelettricaleoni | `components/footer.tsx:85`; dati strutturati `layout.tsx:232`. **Facebook** (`facebook.com/lelettricaleoni`) è solo nei dati strutturati, `layout.tsx:233`: non si vede nel sito |
 | **Mappa** | coordinate 45.958900, 10.904293 | dati strutturati `layout.tsx:211-216` (`geo`, `hasMap`); incorporata in `components/map-embed.tsx:9-11`, con la variabile `NEXT_PUBLIC_MAPS_EMBED_URL` (vedi `docs/environment-variables.md`) |
@@ -26,7 +28,9 @@ visitatore non lo vede, un robot lo legge per intero.
 ## Fuori dal codice
 
 - **Gli alias di posta** si gestiscono su Cloudflare, *Email Routing* della zona `lelettricaleoni.com`, non nel repository:
-  `info@`, `gabriele@` e `security@` inoltrano alla casella del titolare. `gabriele@` non compare nel sito.
+  `info@`, `gabriele@`, `security@`, `privacy@` e `help@` inoltrano alla casella del titolare. `gabriele@` non compare nel sito e `help@`
+  non c'è ancora. **Email Routing solo inoltra, non invia**: un indirizzo da cui il sito *manda* messaggi (conferme, reset,
+  promemoria) passa da un fornitore di invio con SPF e DKIM sul dominio: **Resend**, già configurato e usato da Supabase per le email di accesso (Kevin, 2026-10-07).
 - **Google Business Profile** ha una sua copia di telefono, orari, indirizzo e sito: va aggiornata a mano insieme al sito.
 
 ## I file serviti dalla radice del sito (`public/`)

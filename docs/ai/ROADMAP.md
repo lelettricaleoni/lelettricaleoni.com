@@ -88,6 +88,9 @@
 
 ## Un giorno
 
+- **Una pagina di aiuto** (Kevin, 2026-10-07): ha già creato `help@lelettricaleoni.com` per metterlo lì. Non esiste ancora una
+  pagina: sarebbe utile con gli account e le prenotazioni (come si prenota, accesso e password, annullamenti). Quando nasce,
+  il contatto va anche nei dati strutturati e in `docs/contact-details.md`.
 - **Pulizia di Vercel**, dopo qualche settimana tranquilla dal passaggio del 2026-10-06: cancellare il progetto,
   togliere `vercel.json` e le variabili, il segreto `VERCEL_AUTOMATION_BYPASS_SECRET` e gli ambienti GitHub
   «Preview» e «Production» creati dall'integrazione; **ruotare** la password del database di produzione e il
