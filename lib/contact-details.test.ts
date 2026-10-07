@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { readdirSync, readFileSync, statSync } from 'node:fs'
+import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 
 /**
@@ -11,11 +11,12 @@ import { join } from 'node:path'
 const FORBIDDEN = 'lelettricaleoni@gmail.com'
 const SERVED = ['app', 'components', 'lib', 'messages', 'public']
 
+// withFileTypes: the kind of each entry comes with the listing, so no separate stat of a path that could change before it is read.
 function walk(dir: string): string[] {
-  return readdirSync(dir).flatMap((name) => {
-    const path = join(dir, name)
-    if (name === 'node_modules' || name === 'cesium' || name === 'migrations') return []
-    return statSync(path).isDirectory() ? walk(path) : [path]
+  return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+    const path = join(dir, entry.name)
+    if (entry.name === 'node_modules' || entry.name === 'cesium' || entry.name === 'migrations') return []
+    return entry.isDirectory() ? walk(path) : [path]
   })
 }
 

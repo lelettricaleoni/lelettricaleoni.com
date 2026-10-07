@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { readdirSync, readFileSync, statSync } from 'node:fs'
+import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 
 /**
@@ -8,10 +8,11 @@ import { join } from 'node:path'
  * address, readable by anyone who knew the URL (2026-10-07). Working files go in temp/ (not versioned).
  */
 const SOURCES = ['app', 'components', 'lib', 'messages']
+// withFileTypes: the kind of each entry comes with the listing, so no separate stat of a path that could change before it is read.
 const read = (dir: string): string[] =>
-  readdirSync(dir).flatMap((name) => {
-    const path = join(dir, name)
-    return statSync(path).isDirectory() ? read(path) : /\.(tsx?|json)$/.test(path) && !/\.test\.tsx?$/.test(path) ? [readFileSync(path, 'utf8')] : []
+  readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+    const path = join(dir, entry.name)
+    return entry.isDirectory() ? read(path) : /\.(tsx?|json)$/.test(path) && !/\.test\.tsx?$/.test(path) ? [readFileSync(path, 'utf8')] : []
   })
 
 describe('public/pdf', () => {
