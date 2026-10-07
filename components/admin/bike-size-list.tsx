@@ -4,6 +4,7 @@ import { Plus, Pencil, Trash2, Check, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { toast } from 'sonner'
+import { rethrowIfStaleAction } from '@/lib/stale-action'
 import {
   createBikeSizeAction, updateBikeSizeAction, deleteBikeSizeAction,
 } from '@/lib/actions/bike-options'
@@ -33,7 +34,8 @@ export function BikeSizeList({ sizes }: { sizes: BikeSize[] }) {
       try {
         await deleteBikeSizeAction(id)
         toast.success('Size deleted')
-      } catch {
+      } catch (error) {
+        rethrowIfStaleAction(error)
         toast.error('This size is still used by a model or a bike in the shop')
       }
     })

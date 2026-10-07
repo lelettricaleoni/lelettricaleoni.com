@@ -4,6 +4,7 @@ import { Plus, Pencil, Trash2, Check, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { toast } from 'sonner'
+import { rethrowIfStaleAction } from '@/lib/stale-action'
 import {
   createBikeVersionAction, updateBikeVersionAction, deleteBikeVersionAction,
 } from '@/lib/actions/bike-options'
@@ -33,7 +34,8 @@ export function BikeVersionList({ versions }: { versions: BikeVersion[] }) {
       try {
         await deleteBikeVersionAction(id)
         toast.success('Version deleted')
-      } catch {
+      } catch (error) {
+        rethrowIfStaleAction(error)
         toast.error('This version is still used by a model or a bike in the shop')
       }
     })

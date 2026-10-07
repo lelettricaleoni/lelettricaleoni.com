@@ -4,6 +4,7 @@ import { Pencil, Trash2, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
+import { rethrowIfStaleAction } from '@/lib/stale-action'
 import {
   createBikeCategoryAction, updateBikeCategoryAction, deleteBikeCategoryAction,
   type BikeCategoryInput,
@@ -35,7 +36,8 @@ export function BikeCategoryList({
       try {
         await deleteBikeCategoryAction(id)
         toast.success('Category deleted')
-      } catch {
+      } catch (error) {
+        rethrowIfStaleAction(error)
         toast.error('This category is still used by a model')
       }
     })
