@@ -41,4 +41,14 @@ describe('enqueueMediaJob', () => {
     expect(await enqueueMediaJob('private/route-photos/r1/u1.jpg', { bucket: 'b', queue: queueOf(add) })).toBe('unavailable')
     log.mockRestore()
   })
+
+  it('cannot be made to forge a log line by a key with a line break in it', async () => {
+    const add = vi.fn(async () => { throw new Error('ECONNREFUSED') })
+    const log = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const key = 'private/route-photos/r1/u1\r\n[queue] forged entry.jpg'
+    await enqueueMediaJob(key, { bucket: 'b', queue: queueOf(add) })
+    const logged = log.mock.calls[0].map(String).join(' ')
+    expect(logged).not.toMatch(/[\r\n]/)
+    log.mockRestore()
+  })
 })
