@@ -19,9 +19,9 @@ in produzione: i test contro le anteprime di più pull request insieme hanno esa
 posti del pooler condiviso (`EMAXCONNSESSION`). Ora Preview e Produzione non condividono più
 database, autenticazione né bucket.
 
-**Cosa resta condiviso fra gli ambienti, e perché va bene così**: Upstash Redis (la cache è per chiave di
-storage, non per ambiente — leggere una chiave che l'altro ambiente non ha scritto fallisce aperto;
-**sparirà** con il Redis unico sulla VM, vedi ROADMAP), la chiave Azure Translator, il token Cesium e la
+**Cosa resta condiviso fra gli ambienti, e perché va bene così**: il Redis della VM (uno solo, ma con code
+`bullmq-<ambiente>` e cache `cache:<ambiente>:` separate e un **utente per ruolo e per ambiente**: ognuno vede solo
+le chiavi del proprio ambiente, vedi `deploy/redis/users.acl.template`), la chiave Azure Translator, il token Cesium e la
 chiave CARTO (nessuno di questi tiene dati specifici di un ambiente, solo credenziali verso un servizio a
 pagamento misurato a consumo). **L'eccezione trovata il 2026-09-14**: `NEXT_PUBLIC_GA_MEASUREMENT_ID` è a sua
 volta condiviso, e fino ad allora Google Analytics veniva caricato in ogni ambiente — quindi ogni esecuzione
@@ -34,7 +34,12 @@ senza chiave, funziona ma senza il piano a pagamento). Lo stack `staging` sulla 
 
 **Il CORS del bucket R2 va impostato per ambiente, e non segue le variabili**: si configura sul bucket via
 API Cloudflare (`PUT /accounts/{account}/r2/buckets/{bucket}/cors`), non nel codice. Il bucket di produzione
-ammette `https://www.lelettricaleoni.com` e `https://staging.lelettricaleoni.com`; ogni upload diretto dal
+ammette `https://www.lelettricaleoni.com` e `https://staging.lelettricaleoni.com`; **quello di sviluppo**
+(`dev-lelettrica-trails`, usato da `staging`) ammette `http://localhost:3000`, le anteprime Vercel e
+`https://staging.lelettricaleoni.com` (aggiunta il 2026-10-06: mancava, e ogni caricamento da `staging` dava
+«Upload failed» senza nessun errore sul server). **Ogni nuovo nome del sito va aggiunto al CORS del bucket
+giusto**, e si prova con un preflight (`OPTIONS` con `Origin` e `Access-Control-Request-Method: PUT` su un URL
+presigned: 204 con l'origine ammessa, 403 senza intestazioni se manca). Ogni upload diretto dal
 browser (foto, GPX, video: tutti passano da un URL presigned) e ogni lettura via `fetch` (video HLS) da
 un'altra origine **fallisce in silenzio nel browser**, mentre l'HTML è identico. Provandolo da un nome di
 prova (`vm-www`, 2026-10-06) i media «sparivano» per questo: l'origine va aggiunta al CORS per la durata
@@ -42,17 +47,24 @@ della prova e tolta dopo.
 
 ## Dove stanno i valori
 
-- **Segreti del server** (database, chiavi R2, service role di Supabase, Upstash, Azure, CARTO, chiave di
+- **Segreti del server** (database, chiavi R2, service role di Supabase, `REDIS_URL`, Azure, CARTO, chiave di
   cifratura, `CRON_SECRET`): **solo sulla VM**, in `~/docker/web/<ambiente>.env` (permessi 600). Mai su GitHub,
   mai in git. Modello con i soli nomi: `deploy/web/env.template`. Si modificano con
   `ssh -t clustrenode1 nano ~/docker/web/production.env` e valgono dal deploy successivo.
+- **Segreti del worker dei media**: `~/docker/media-worker/<ambiente>.env` (600), che `deploy/worker/make-env.sh`
+  costruisce dal file del sito (chiavi R2, bucket) e dalla stringa di connessione dell'utente Redis del worker.
+  Modello: `deploy/worker/env.template`. Le stringhe di connessione (una per ruolo e ambiente: `web-staging`,
+  `web-production`, `worker-staging`, `worker-production`) stanno in `~/docker/redis/*.redis-url` (600) e le
+  genera `deploy/redis/render-acl.sh`: le password non esistono altrove.
 - **Valori pubblici `NEXT_PUBLIC_*`**: variabili degli ambienti GitHub `production`, `staging` e `ci`. Next li
   scrive nel codice **in fase di build**: cambiarli richiede una nuova immagine. Non possono essere segreti, finiscono
   comunque nel bundle del browser.
-- **GitHub**: segreto `DEPLOY_SSH_KEY` (chiave che può solo lanciare `deploy.sh`), variabili `DEPLOY_HOST`,
+- **GitHub**: segreto `DEPLOY_SSH_KEY` (chiave che può solo lanciare `deploy/deploy-entry.sh`, che smista a
+  `deploy/web/deploy.sh` e `deploy/worker/deploy.sh`), variabili `DEPLOY_HOST`,
   `DEPLOY_HOST_KEY` (impronta della VM, fissata: se cambia il deploy fallisce) e `DEPLOY_PRODUCTION` (`true` accende
-  i deploy da `main`). Ambiente `ci`: cinque segreti di sviluppo (`DATABASE_URL`, `R2_ACCESS_KEY_ID`,
-  `R2_SECRET_ACCESS_KEY`, `UPSTASH_REDIS_REST_TOKEN`, `CARTO_API_KEY`) più le variabili pubbliche, per il job `browser`.
+  i deploy da `main`, sito e worker). Ambiente `ci`: quattro segreti di sviluppo (`DATABASE_URL`, `R2_ACCESS_KEY_ID`,
+  `R2_SECRET_ACCESS_KEY`, `CARTO_API_KEY`) più le variabili pubbliche, per il job `browser` (senza Redis: la cache
+  è allora un no-op).
 - **Tunnel**: `TUNNEL_TOKEN` in `~/docker/edge/.env` sulla VM.
 - **Vercel**: non più usato, progetto in pausa.
 
@@ -79,7 +91,9 @@ della prova e tolta dopo.
 | `NEXT_PUBLIC_GA_MEASUREMENT_ID` | Google Analytics 4 | GA4 → Admin → Data Streams → Web. **Va impostata solo in produzione**, vedi sopra. |
 | `NEXT_PUBLIC_MAPS_EMBED_URL` | Iframe di Google Maps nella sezione contatti | Google Maps → condividi la posizione → "Incorpora una mappa" → copia l'URL dell'`src`. |
 | `NEXT_PUBLIC_SITE_URL` | Base per URL assoluti (metadata, sitemap, robots) | Fisso: `https://www.lelettricaleoni.com` in produzione; può restare assente altrove, il codice ha quel valore come fallback. |
-| `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` | Cache di lettura (`lib/cache.ts`) e stato del worker video | Console Upstash → il database → REST API. **Condivisa fra tutti gli ambienti** di proposito. **Destinata a sparire**: con sito e worker sulla stessa VM basta il Redis della VM (ROADMAP). |
+| `REDIS_URL` | Cache di lettura (`lib/cache.ts`), code dei media (`lib/queues/`) e, nel worker, le code che esegue | `~/docker/redis/<ruolo>-<ambiente>.redis-url` sulla VM. Vuota o assente = nessun Redis: tutto ciò che lo usa non fa nulla (sviluppo e CI). L'utente Redis è diverso per sito e worker e per ambiente. |
+| `R2_BUCKETS` (worker) | Bucket serviti dal worker, separati da virgole | `lelettrica-trails` (produzione), `dev-lelettrica-trails` (staging). Il worker rifiuta un lavoro per un altro bucket. |
+| `SCAN_INTERVAL_S`, `IMAGE_MAX_EDGE`, `IMAGE_QUALITY`, `IMAGE_EFFORT`, `IMAGE_SHARE_EDGE`, `IMAGE_SHARE_QUALITY`, `LOG_LEVEL`, `WORKDIR_BASE`, `HEALTH_FILE` (worker) | Ritmo della scansione e parametri delle foto | Facoltative: i valori di `deploy/worker/env.template`. **`IMAGE_QUALITY=65` non si tocca** (Kevin, 2026-09-25). |
 | `APP_ENV` / `APP_VERSION` | Quale ambiente è (`production`, `staging`, `ci`) e quale immagine gira | Le imposta `deploy/web/deploy.sh` (la versione è il digest dell'immagine) e il job `browser`; non vanno nei file `.env`. `/api/health` riporta la versione. |
 
 

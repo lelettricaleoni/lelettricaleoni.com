@@ -23,15 +23,17 @@ documento vecchio, è storia, non stato attuale.
 Sorgenti video in `private/route-videos/`, flussi HLS in `public/route-videos/`. Quel
 `private/` **non protegge nulla**: il dominio pubblico del bucket espone tutto. Il sorgente
 vive solo per i minuti che il worker impiega a cancellarlo dopo la transcodifica — non
-trattarlo come se fosse davvero riservato.
+trattarlo come se fosse davvero riservato. **Il worker** (video e foto) sta in questo repository, in `worker/`
+(Node.js, immagine `Dockerfile.worker`); le regole sulle chiavi stanno in `lib/media/keys.ts`, **un solo file che
+importano sito e worker** (nessun accordo da tenere a mano fra due repo).
 
 ## Foto — staging privato, master pubblico
 
 Una foto caricata dal pannello va (URL presigned, PUT diretto dal browser) in
 `private/route-photos/…` o `private/bike-model-photos/…`; il worker la trasforma in un
 master AVIF (2400 px) sotto `public/…` con estensione `.avif`, e cancella il sorgente.
-Mappatura in `photoPublicKey` (`lib/media-client.ts`), **specchio di `imaging.py` nel repo
-del worker**: si cambia in due posti o in nessuno. Una foto pubblicata prima di questo lavoro
+Mappatura in `photoPublicKey` (`lib/media/keys.ts`, riesportata da `lib/media-client.ts`), usata anche dal
+worker. Una foto pubblicata prima di questo lavoro
 ha una chiave *senza* `private/` e si serve com'è — è così che le due famiglie si
 distinguono, senza migrazione.
 
@@ -49,19 +51,23 @@ distinguono, senza migrazione.
   e serve il master oltre i 1600 px. **Non passare un master AVIF dall'ottimizzatore di
   Vercel**: non ridimensiona l'AVIF, restituisce l'originale da 2400 px (310 KiB) a qualunque
   larghezza, e il browser lo riduce di sette volte in un colpo (raggi seghettati). I nomi e le
-  larghezze sono un accordo col worker (`imaging.RENDITION_WIDTHS`): si cambiano in due repo o
-  in nessuno. Le foto di prima del worker (JPEG, PNG, WebP) il loader le manda ancora
+  larghezze sono `RENDITION_WIDTHS` in `lib/media/keys.ts`, lette anche dal worker. Le foto di prima del worker (JPEG, PNG, WebP) il loader le manda ancora
   all'ottimizzatore di Next. Il viewer a schermo intero usa il master.
 - La cancellazione (`deleteMediaFiles`) porta via anche le tre versioni.
-- Lo stato passa da `videojob:v1:<storage-key>` con le fasi dei video (`transcoding`
-  incluso): il token del worker scrive solo lì, e una fase sconosciuta viene scartata da
-  `parseStatus`.
+- Lo stato si legge **dalla coda** (`lib/queues/status.ts`, `readJobStatus`): fasi `queued`, `downloading`,
+  `transcoding` (anche per una foto in codifica), `uploading`, `done`, `failed`; l'avanzamento scritto dal worker è
+  validato con `zod` (`lib/queues/schemas.ts`) e una fase sconosciuta non entra. Il browser, dopo il PUT, chiama la
+  Server Action `confirmMediaUpload` (`lib/actions/media-jobs.ts`) che accoda subito il lavoro; con Redis spento il
+  caricamento non fallisce e la **scansione del worker (all'avvio e ogni 10 minuti)** trova il file.
+- **Il worker rifiuta** un lavoro per un bucket che non serve o con una chiave fuori dalla propria forma (nessun
+  segmento `.`/`..`), e passa a ffmpeg solo i contenitori ammessi (`INPUT_FORMATS`).
 - `/api/upload` è solo per il GPX. I duplicati di foto si controllano nel browser
   (`lib/hash-client.ts`).
 
 ## Manifesti HLS — due nomi possibili
 
-Il worker di transcodifica (`lelettricaleoni/videoStream-bucketWorker`, repo separato) ha
+Il worker di transcodifica (prima in Python nel repo `videoStream-bucketWorker`, ora in `worker/jobs/video.ts`;
+gli argomenti di ffmpeg sono identici, provato con un file generato dal codice Python) aveva
 cambiato formato in corsa: prima un solo `playlist.m3u8` nella radice del prefisso, dal
 commit `55cc594` (2026-06-10) adaptive bitrate con `master.m3u8` più
 `1080p|720p|480p/playlist.m3u8` sotto. **Controlla entrambi i nomi** (`HLS_MANIFESTS` in
@@ -74,14 +80,14 @@ Le renditions in un `master.m3u8` sono ordinate dalla più alta bitrate alla pi�
 
 ## Cache — quando è sicuro tenerla a lungo
 
-`lib/cache.ts` (`readThrough`, su Upstash Redis) tiene per **7 giorni** sia l'URL HLS
+`lib/cache.ts` (`readThrough`, sul Redis della VM, chiavi `cache:<ambiente>:`) tiene per **7 giorni** sia l'URL HLS
 risolto sia i punti GPX parsati: entrambi non cambiano più una volta scritti, e il
 versionamento della chiave (`hls:v2:...`, `gpx:v1:<key>:<updatedAt>`) fa scadere naturalmente
 una voce quando il file sottostante cambia — non serve invalidazione esplicita. **Un valore
 `null`/vuoto non viene mai cache-ato**: un fallimento temporaneo (worker non ancora finito,
-R2 irraggiungibile) non deve restare "non disponibile" per una settimana. Senza credenziali
-Upstash configurate la cache è un no-op che fallisce aperto entro 250ms — sviluppo e CI non
-hanno bisogno di Redis per funzionare.
+R2 irraggiungibile) non deve restare "non disponibile" per una settimana. Senza `REDIS_URL` la cache è un
+no-op che fallisce aperto entro 250ms — sviluppo e CI non hanno bisogno di Redis per funzionare. Con Redis
+spento sulla VM il sito risponde con lo stesso contenuto e gli stessi tempi (provato su staging, 2026-10-06).
 
 ## GPX — watermark e proiezione
 

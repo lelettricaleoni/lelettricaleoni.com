@@ -4,7 +4,7 @@
 > componenti si ricava con `ls`; il motivo per cui i tile CARTO passano dal server no.
 > Se questo file supera le ~150 righe, qualcosa è entrato che non doveva.
 >
-> Ultimo allineamento: 2026-10-06.
+> Ultimo allineamento: 2026-10-07.
 
 ## Prodotto
 
@@ -74,9 +74,11 @@ ritraduzione (flag `retranslate`). Visto su `bdd7a446`, lasciato com'è.
 Se R2 rallenta, le card dei percorsi si degradano da sole: i media stanno in un confine
 Suspense separato apposta, per non bloccare il resto della pagina.
 
-**Cache di lettura su Upstash Redis** (`lib/cache.ts`): URL dei manifesti HLS e punti GPX
-già analizzati, che non cambiano mai. Senza credenziali è un no-op, e ogni lettura fallisce
-aperta entro 250 ms. Lo stesso Upstash tiene lo stato di transcodifica del worker.
+**Cache di lettura sul Redis della VM** (`lib/cache.ts`, chiavi `cache:<ambiente>:`): URL dei manifesti HLS e punti GPX
+già analizzati, che non cambiano mai. Senza `REDIS_URL` è un no-op, e ogni lettura fallisce aperta entro 250 ms
+(provato su staging con Redis spento: stesso contenuto, stessi tempi). **Le connessioni (`lib/redis.ts`) accodano i
+comandi fino al primo `ready` e dopo falliscono subito**: con `enableOfflineQueue: false` fin dall'inizio il primo
+comando dopo ogni avvio falliva («Stream isn't writeable») e la prima richiesta saltava la cache.
 
 **Prenotazioni (fetta 1, in produzione dal 2026-10-05).** `bike_reservations`: una riga per
 bici e periodo, `ends_on` esclusivo, `EXCLUDE` su `during` per le sole righe `confirmed`, `request_key`
@@ -128,40 +130,52 @@ sorgente vive solo i minuti che il worker impiega a cancellarlo. La cache di Clo
 quel dominio è attiva (`cf-cache-status: HIT`, `Age` di giorni): si legge con una GET, mai
 con HEAD, che risponde `DYNAMIC`.
 
-**Il worker** (`lelettricaleoni/videoStream-bucketWorker`) sta in `~/docker/worker` sulla VM
-`clustrenode1` (Oracle Cloud, ARM64, 2 CPU), con un Redis append-only per la coda BullMQ,
-nessuna porta aperta. Quattro rendition HLS (1080/720/480/360p), segmenti da 4 s allineati.
+**Il worker** sta in questo repository (`worker/`, immagine `Dockerfile.worker`), in Node.js e TypeScript: fino al 2026-10-07
+era in Python nel repo privato `videoStream-bucketWorker` (da archiviare, non cancellare, dopo una settimana tranquilla).
+Un container per ambiente, `media-worker-<ambiente>`, sulla VM; **un lavoro alla volta per coda** (due core: due lavori
+insieme sarebbero più lenti, non più veloci) e ffmpeg sotto `nice`. Tre code BullMQ 5 (`video-transcode`, `image-process`,
+`image-renditions`) con prefisso per ambiente `bullmq-<ambiente>`; tre tentativi con attesa esponenziale da 10 s; id del
+lavoro = `bucket/chiave`, quindi un doppione lo rifiuta la coda. Quattro rendition HLS (1080/720/480/360p), segmenti da 4 s,
+argomenti di ffmpeg **identici a quelli di Python** (`worker/fixtures/ffmpeg-args.golden.json`, generato dal codice
+vecchio: se un parametro cambia il test fallisce). Un video **senza audio** passa: la mappa dei flussi non nomina una
+traccia che non c'è (con Python ffmpeg rifiutava).
 
 | | |
 |---|---|
-| Trova il lavoro | elencando R2: un sorgente senza manifesto **è** il lavoro da fare |
-| Coda | BullMQ, job id = l'oggetto, tre tentativi con backoff |
-| Stato per job | su Upstash, `videojob:v1:<storage-key>`, letto da `lib/video-jobs.ts` |
-| Stato del worker | battito ogni 15 s su `videojob:v1:__worker__` (`heartbeat.py`), letto da `lib/worker-heartbeat.ts` per `/manage/dev` |
-| Altri lavori | registro in `jobs/__init__.py`: un modulo, una riga in `HANDLERS`, per i cron una in `SCHEDULES` |
+| Chi accoda | il browser, dopo il PUT, con la Server Action `confirmMediaUpload`; e la **scansione** del worker (all'avvio e ogni 10 minuti), che elenca R2: un sorgente senza risultato accanto **è** il lavoro da fare. Con Redis spento il caricamento non fallisce |
+| Stato di un lavoro | letto dalla coda (`lib/queues/status.ts`), nessuno store a parte; l'avanzamento è validato con `zod` |
+| Ordine di scrittura | foto: anteprima, versioni dalla più grande, **master per ultimo**; video: segmenti, playlist dei livelli, **`master.m3u8` per ultimo**. Il sorgente si cancella solo dopo. **Nessun originale si conserva** (Kevin, 2026-10-06: silo, bucket privato e MinIO scartati) |
+| Salute | un file (`~/healthy`) rinnovato ogni 15 s finché Redis risponde, letto dall'`HEALTHCHECK` di Docker. `node worker.mjs --check` prova a freddo AVIF, ffmpeg, ffprobe e libheif e **ferma il deploy** se qualcosa manca |
+| Deploy | `deploy-worker.yml` → `deploy/worker/deploy.sh`, via `deploy/deploy-entry.sh` (l'unico comando della chiave di deploy): il nuovo parte accanto al vecchio, il vecchio **finisce il lavoro in corso** e si ferma (`stop_timeout` di mezz'ora); il precedente resta fermo per `rollback` |
+| Un lavoro nuovo | un `createXHandler` in `worker/jobs/`, una coda in `lib/queues/names.ts`, una riga in `worker/main.ts`; scheduler per i cron |
 
-**Deploy automatico dal 2026-09-15**: ogni push a `main` con modifiche a `.py`,
-`requirements.txt` o `Dockerfile` costruisce l'immagine, la fissa per digest esatto e la
-distribuisce da sola sulla VM (`deploy.sh`, via una chiave SSH dedicata con comando forzato
-in `authorized_keys`: non può eseguire nient'altro, verificato dal vivo). Prima di sostituire
-il container, `deploy.sh` prova l'immagine a freddo (importa tutti i moduli con l'`.env`
-vero) e torna indietro da sola se non parte sano.
+**Redis è uno solo** (`~/docker/redis`): rete Docker `internal` senza uscita, nessuna porta pubblicata, AOF, `noeviction`.
+**Quattro utenti ACL**, uno per ruolo e per ambiente (`web-staging`, `web-production`, `worker-staging`,
+`worker-production`), ciascuno solo sulle chiavi del proprio ambiente (`bullmq-<ambiente>:*`, `cache:<ambiente>:*`): un
+`staging` compromesso non vede la produzione. Il vecchio `worker-redis` e Upstash restano solo finché il worker Python
+non si spegne e per il ripiego su Vercel.
+
+**Il worker non si fida dei dati di un lavoro** (arrivano da Redis): rifiuta un bucket fuori da `R2_BUCKETS` e una chiave
+che non è del tipo giusto o ha segmenti `.`/`..` (`worker/jobs/target.ts`, senza ritentare), e lascia leggere a ffmpeg
+solo i contenitori delle estensioni accettate (`INPUT_FORMATS`, `-format_whitelist`): ffmpeg sceglie il demuxer dal
+contenuto, non dall'estensione.
 
 **Foto: stessa strada dei video, coda propria** (`image-process`). Sorgenti in
 `private/route-photos/` e `private/bike-model-photos/`, master AVIF in `public/…/<uuid>.avif`
 più un piccolo JPEG `.share.jpg` per le anteprime social (che non leggono AVIF) e tre versioni
 AVIF ridimensionate `.w480/.w960/.w1600.avif`, sempre tutte e tre (il sito sceglie con
 `lib/photo-loader.ts`, mai dall'ottimizzatore di Vercel: **non ridimensiona i sorgenti AVIF**,
-restituisce l'originale da 2400 px a qualunque larghezza — misurato 2026-09-25). Lo stato usa
-il prefisso `videojob:` dei video perché il token del worker scrive solo lì. Le foto già
+restituisce l'originale da 2400 px a qualunque larghezza — misurato 2026-09-25). Le foto già
 pubblicate (chiave senza `private/`) non sono mai passate dal worker e restano com'erano.
-`/api/upload` è solo GPX: le foto vanno con PUT presigned e il duplicato si controlla nel
+`sharp` decodifica una volta sola; **HEIC** (iPhone) passa da `libheif-js` (WebAssembly: il `sharp` precompilato non
+legge l'HEVC). Misurato contro Pillow il 2026-10-06 su 10 immagini (8 foto vere di produzione): stesse dimensioni, peso
+0,92-1,15 volte, SSIM ≥ 0,9955, **qualità 65 invariata** (`docs/ai/ideas/node-worker-parity.md`; trovato e corretto un canale
+alfa inutile nei master HEIC). `/api/upload` è solo GPX: le foto vanno con PUT presigned e il duplicato si controlla nel
 browser (spec: `docs/superpowers/specs/2026-09-23-image-processing-worker-design.md`).
 
 La coda è **ricostruibile, non durevole**: non può esserlo più dei dati che serve, e la
-verità sta nello storage.
-Il token Upstash del worker può **solo `SET` su `videojob:*`** e non può leggere: rubato
-dalla VM, non raggiunge le cache HLS e GPX che stanno lì accanto.
+verità sta nello storage. Spec e piano della riscrittura: `docs/superpowers/specs/2026-10-06-node-worker-design.md`,
+`docs/superpowers/plans/2026-10-06-node-worker.md`.
 
 ## Decisioni vincolanti, e perché
 
@@ -215,6 +229,19 @@ browser, l'HTML è identico (vedi `docs/environment-variables.md`).
 `/etc/ssh/ssh_host_ed25519_key.pub` via ssh) e un argomento che inizia con `/` viene convertito in un percorso di Git:
 `MSYS_NO_PATHCONV=1`. Un commento di un record DNS di Cloudflare non può superare 100 caratteri.
 
+
+**Il browser carica direttamente su R2, quindi ogni nome del sito va nel CORS del bucket giusto.** Il bucket di sviluppo
+non ammetteva `staging`: ogni caricamento dava «Upload failed» al volo e il server non registrava niente (il preflight dava
+403 senza intestazioni). Dettagli e prova col preflight in `docs/environment-variables.md`.
+
+**Trappole trovate dal vivo il 2026-10-06 sul worker e su Redis.** (1) `docker kill` segna il container come fermato a
+mano: **Docker non lo riavvia** nemmeno con `unless-stopped`; per simulare un crash vero si uccide il processo dall'host
+(`sudo kill -9 <pid>`), e allora riparte. (2) Un file ACL di Redis non ammette righe di commento: `render-acl.sh` toglie
+quelle del modello, e senza Redis non parte. (3) `npm install bullmq ioredis` prende la **6**: fissate alla 5, come nella
+spec (in 6 sono cambiati anche i tipi dei conteggi). (4) `worker/jobs/video.ts` lancia ffmpeg con `-format_whitelist` e
+`worker/jobs/target.ts` valida bucket e chiave: non togliere i controlli per «semplificare». (5) Un worker ucciso a metà
+riprende da solo, ma dopo la scadenza del blocco (due minuti), non subito. (6) Su un ritorno a Python: `docker compose start
+video-worker` in `~/docker/worker` e fermare il worker Node di quell'ambiente; Python ha una sua scansione ogni 30 s.
 
 **Una pagina spenta risponde 200, non 404.** Le pagine percorsi hanno un `loading.tsx`,
 quindi Next le trasmette in streaming e lo stato non è più modificabile quando `notFound()`
