@@ -45,6 +45,10 @@ Aggiornalo quando cambia. È la base per scrivere i testi, non il testo.
   `sb-<progetto>-auth-token` (spezzato in `.0`, `.1` se grande) e `sb-<progetto>-auth-token-code-verifier`, durata 400
   giorni (predefinita di `@supabase/ssr`). Se si attiva Google: Google LLC fornisce l'accesso, e il numero di telefono
   solo con il permesso sensibile `user.phonenumbers.read` (costante `REQUEST_GOOGLE_PHONE` in `lib/auth/google-phone.ts`, falsa finché Google non approva).
+- **Impostazioni dell'account** (fetta 2, su `staging`): la persona può **scaricare i suoi dati** (account, profilo, note del negozio, noleggi), **cambiare
+  email** (la conferma parte da Supabase, via Resend), **uscire da tutti i dispositivi** ed **eliminare l'account**. L'eliminazione cancella l'utente e, se non
+  ha noleggi, la sua scheda cliente; **con noleggi la scheda resta**, slegata dall'account (è anche l'archivio del negozio). Preferenza di **lingua**
+  (`customers.language`): è un dato dell'account, non un cookie. Il telefono non si chiede in registrazione. Registrarsi richiede di confermare l'email.
 - **Clienti e noleggi registrati al banco**: tabelle `customers`, `bike_reservations` (nome, contatti, date, importi,
   note). Non passano dal sito pubblico; li inserisce il pannello. Base giuridica e conservazione: **da definire**.
 - **Pannello (solo staff)**: Azure Translator riceve i testi del catalogo (percorsi e modelli), **non** dati dei clienti;
@@ -98,6 +102,8 @@ Da portare a chi rivede i testi, finché non hanno risposta:
 3. Contratti con i fornitori (Cloudflare, Oracle, Supabase, Google, Resend): accordi sul trattamento
    (art. 28) e trasferimenti fuori dall'UE (Cloudflare e Google negli USA: Data Privacy Framework).
 4. Serve il registro dei trattamenti (art. 30)?
-5. Base giuridica dei dati dell'account (esecuzione del contratto di noleggio) e dell'email di servizio.
-6. Cesium ion e Esri ricevono l'IP senza consenso: va bene dichiararli nell'informativa, o servono dietro il banner?
-7. Lo script di Google Analytics si carica prima del consenso (anche con Consent Mode negato): è accettabile?
+5. Dopo la cancellazione di un account con noleggi il negozio conserva nome, contatti e noleggi: per quanto, su quale base, e l'informativa lo dice?
+   Il testo nella pagina «Dati e privacy» rimanda all'informativa.
+6. Base giuridica dei dati dell'account (esecuzione del contratto di noleggio) e dell'email di servizio.
+7. Cesium ion e Esri ricevono l'IP senza consenso: va bene dichiararli nell'informativa, o servono dietro il banner?
+8. Lo script di Google Analytics si carica prima del consenso (anche con Consent Mode negato): è accettabile?

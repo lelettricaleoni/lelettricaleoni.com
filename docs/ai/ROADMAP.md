@@ -52,7 +52,8 @@
   privacy e testi dei cookie** (account, dati dei clienti del banco, cookie di sessione, Google, terze parti del
   flyover; Kevin, 2026-10-07: «bisogna assolutamente modificare le privacy e i cookie»). Fatti, domande aperte per
   un legale e checklist: skill `.claude/skills/privacy-cookies/`. La verifica di Google per il telefono la richiede
-  comunque (`docs/google-login-setup.md`).
+  comunque (`docs/google-login-setup.md`). **Al rilascio della fetta 2 va applicata in produzione la migrazione `0017`** (lingua del cliente), con la riga nel
+  tracking, come le altre (STATE: «Si applica così»).
   **Bloccante per la fetta 3 (prenotazione e pagamento online): una pagina dei termini e condizioni di noleggio**
   (Kevin, 2026-10-07). Oggi non esiste (`/it/terms` risponde «Pagina non trovata»). Parte dalle regole già decise:
   pagamento intero, rimborso intero fino a 48 ore prima, solo giorni interi. **Da decidere con Kevin prima di scriverla:**
