@@ -250,16 +250,68 @@
     "submit_password": "Accedi",
     "submit_magic": "Invia magic link",
     "submit_reset": "Invia link di reset",
-    "magic_sent": "Controlla la tua email: ti abbiamo inviato un link di accesso.",
-    "reset_sent": "Controlla la tua email: ti abbiamo inviato il link per reimpostare la password.",
     "left_title": "Noleggio e-bike a Dro,\nLago di Garda",
     "left_subtitle": "Prenota il tuo noleggio, gestisci le tue uscite o accedi all'area staff.",
-    "gdpr": "Accesso riservato. Dati trattati nel rispetto del GDPR."
+    "gdpr": "Accesso riservato. Dati trattati nel rispetto del GDPR.",
+    "tab_register": "Crea account",
+    "register_hint": "Con un account puoi prenotare e ritrovare le tue prenotazioni. Ti mandiamo una email per confermare l’indirizzo.",
+    "first_name_label": "Nome",
+    "last_name_label": "Cognome",
+    "phone_label": "Telefono (facoltativo)",
+    "phone_hint": "Ci serve solo per contattarti riguardo a un noleggio. Puoi lasciarlo vuoto.",
+    "password_new_hint": "Almeno 8 caratteri",
+    "consent_label": "Accetto il trattamento dei miei dati come descritto nella",
+    "privacy_link": "Privacy Policy",
+    "submit_register": "Crea account",
+    "google_button": "Continua con Google",
+    "or": "oppure",
+    "errors": {
+      "invalid_credentials": "Email o password non corrette. Riprova.",
+      "invalid_link": "Il link non è valido o è scaduto. Richiedine uno nuovo.",
+      "weak_password": "La password deve avere almeno 8 caratteri.",
+      "missing_fields": "Compila tutti i campi.",
+      "consent_required": "Per creare l’account serve accettare il trattamento dei dati.",
+      "rate_limited": "Troppi tentativi. Aspetta qualche minuto e riprova.",
+      "signup_failed": "Non siamo riusciti a creare l’account. Riprova tra poco.",
+      "generic": "Qualcosa non ha funzionato. Riprova.",
+      "email_not_confirmed": "Prima di accedere conferma l’indirizzo con il link che ti abbiamo mandato per email.",
+      "invalid_phone": "Il numero di telefono non è valido. Controlla il prefisso o lascialo vuoto."
+    },
+    "info": {
+      "magic_sent": "Se l’indirizzo è registrato, ti abbiamo inviato un link di accesso: controlla la tua email.",
+      "reset_sent": "Se l’indirizzo è registrato, ti abbiamo inviato il link per reimpostare la password: controlla la tua email.",
+      "signup_sent": "Account quasi pronto: ti abbiamo mandato una email, apri il link per confermare l’indirizzo.",
+      "password_updated": "Password aggiornata."
+    }
   },
   "update_password": {
     "title": "Nuova password",
     "subtitle": "Scegli una password di almeno 8 caratteri",
     "label": "Nuova password",
-    "submit": "Salva password"
+    "submit": "Salva password",
+    "back_to_login": "Torna all’accesso"
+  },
+  "account": {
+    "title": "Il tuo account",
+    "subtitle": "I tuoi dati e le tue prenotazioni.",
+    "profile_title": "I tuoi dati",
+    "first_name_label": "Nome",
+    "last_name_label": "Cognome",
+    "email_label": "Email",
+    "phone_label": "Telefono",
+    "phone_hint": "Facoltativo. Ci serve per contattarti in caso di necessità. Scrivilo con il prefisso, per esempio +39.",
+    "save": "Salva",
+    "saved": "Dati salvati.",
+    "password_title": "Password",
+    "change_password": "Cambia password",
+    "bookings_title": "Le tue prenotazioni",
+    "bookings_empty": "Non hai ancora prenotazioni online. Quelle fatte di persona in negozio non compaiono qui.",
+    "logout": "Esci",
+    "errors": {
+      "missing_name": "Nome e cognome sono obbligatori.",
+      "invalid_phone": "Il numero di telefono non è valido.",
+      "phone_taken": "Questo numero risulta già associato a un altro cliente. Scrivici per sistemarlo.",
+      "save_failed": "Non siamo riusciti a salvare. Riprova."
+    }
   }
 }

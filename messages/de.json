@@ -250,16 +250,68 @@
     "submit_password": "Anmelden",
     "submit_magic": "Magic link senden",
     "submit_reset": "Reset-Link senden",
-    "magic_sent": "Prüfe deine E-Mail: Wir haben dir einen Anmeldelink gesendet.",
-    "reset_sent": "Prüfe deine E-Mail: Wir haben dir einen Link zum Zurücksetzen gesendet.",
     "left_title": "E-Bike-Verleih in Dro,\nGardasee",
     "left_subtitle": "Buche deinen Verleih, verwalte deine Ausfahrten oder greife auf den Mitarbeiterbereich zu.",
-    "gdpr": "Eingeschränkter Zugang. Daten werden gemäß DSGVO verarbeitet."
+    "gdpr": "Eingeschränkter Zugang. Daten werden gemäß DSGVO verarbeitet.",
+    "tab_register": "Konto erstellen",
+    "register_hint": "Mit einem Konto kannst du buchen und deine Buchungen wiederfinden. Wir schicken dir eine E-Mail, um die Adresse zu bestätigen.",
+    "first_name_label": "Vorname",
+    "last_name_label": "Nachname",
+    "phone_label": "Telefon (optional)",
+    "phone_hint": "Wir verwenden sie nur, um dich wegen einer Vermietung zu erreichen. Du kannst das Feld leer lassen.",
+    "password_new_hint": "Mindestens 8 Zeichen",
+    "consent_label": "Ich stimme der Verarbeitung meiner Daten zu, wie in der",
+    "privacy_link": "Datenschutzerklärung",
+    "submit_register": "Konto erstellen",
+    "google_button": "Weiter mit Google",
+    "or": "oder",
+    "errors": {
+      "invalid_credentials": "E-Mail oder Passwort stimmt nicht. Versuche es erneut.",
+      "invalid_link": "Der Link ist ungültig oder abgelaufen. Fordere einen neuen an.",
+      "weak_password": "Das Passwort muss mindestens 8 Zeichen haben.",
+      "missing_fields": "Fülle alle Felder aus.",
+      "consent_required": "Um das Konto zu erstellen, musst du der Datenverarbeitung zustimmen.",
+      "rate_limited": "Zu viele Versuche. Warte ein paar Minuten und versuche es erneut.",
+      "signup_failed": "Wir konnten das Konto nicht erstellen. Versuche es gleich noch einmal.",
+      "generic": "Etwas ist schiefgelaufen. Versuche es erneut.",
+      "email_not_confirmed": "Bestätige vor der Anmeldung deine Adresse mit dem Link, den wir dir per E-Mail geschickt haben.",
+      "invalid_phone": "Die Telefonnummer ist ungültig. Prüfe die Vorwahl oder lass das Feld leer."
+    },
+    "info": {
+      "magic_sent": "Wenn die Adresse registriert ist, haben wir dir einen Anmeldelink geschickt: Prüfe deine E-Mail.",
+      "reset_sent": "Wenn die Adresse registriert ist, haben wir dir den Link zum Zurücksetzen des Passworts geschickt: Prüfe deine E-Mail.",
+      "signup_sent": "Dein Konto ist fast fertig: Wir haben dir eine E-Mail geschickt, öffne den Link, um die Adresse zu bestätigen.",
+      "password_updated": "Passwort aktualisiert."
+    }
   },
   "update_password": {
     "title": "Neues Passwort",
     "subtitle": "Wähle ein Passwort mit mindestens 8 Zeichen",
     "label": "Neues Passwort",
-    "submit": "Passwort speichern"
+    "submit": "Passwort speichern",
+    "back_to_login": "Zurück zur Anmeldung"
+  },
+  "account": {
+    "title": "Dein Konto",
+    "subtitle": "Deine Daten und deine Buchungen.",
+    "profile_title": "Deine Daten",
+    "first_name_label": "Vorname",
+    "last_name_label": "Nachname",
+    "email_label": "E-Mail",
+    "phone_label": "Telefon",
+    "phone_hint": "Freiwillig. Wir brauchen sie, um dich bei Bedarf zu erreichen. Mit Landesvorwahl schreiben, zum Beispiel +39.",
+    "save": "Speichern",
+    "saved": "Daten gespeichert.",
+    "password_title": "Passwort",
+    "change_password": "Passwort ändern",
+    "bookings_title": "Deine Buchungen",
+    "bookings_empty": "Du hast noch keine Online-Buchungen. Vor Ort im Geschäft gemachte Vermietungen erscheinen hier nicht.",
+    "logout": "Abmelden",
+    "errors": {
+      "missing_name": "Vor- und Nachname sind Pflicht.",
+      "invalid_phone": "Die Telefonnummer ist nicht gültig.",
+      "phone_taken": "Diese Nummer ist bereits einem anderen Kunden zugeordnet. Schreib uns, dann klären wir das.",
+      "save_failed": "Wir konnten nicht speichern. Versuche es erneut."
+    }
   }
 }

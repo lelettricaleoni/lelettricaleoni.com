@@ -250,16 +250,68 @@
     "submit_password": "Log in",
     "submit_magic": "Send magic link",
     "submit_reset": "Send reset link",
-    "magic_sent": "Check your email: we've sent you a login link.",
-    "reset_sent": "Check your email: we've sent you a password reset link.",
     "left_title": "E-bike rental in Dro,\nLake Garda",
     "left_subtitle": "Book your rental, manage your rides or access the staff area.",
-    "gdpr": "Restricted access. Data processed in accordance with GDPR."
+    "gdpr": "Restricted access. Data processed in accordance with GDPR.",
+    "tab_register": "Sign up",
+    "register_hint": "With an account you can book and find your bookings again. We send you an email to confirm the address.",
+    "first_name_label": "First name",
+    "last_name_label": "Last name",
+    "phone_label": "Phone (optional)",
+    "phone_hint": "We only use it to reach you about a rental. You can leave it empty.",
+    "password_new_hint": "At least 8 characters",
+    "consent_label": "I accept the processing of my data as described in the",
+    "privacy_link": "Privacy Policy",
+    "submit_register": "Create account",
+    "google_button": "Continue with Google",
+    "or": "or",
+    "errors": {
+      "invalid_credentials": "Email or password is not correct. Try again.",
+      "invalid_link": "The link is not valid or has expired. Ask for a new one.",
+      "weak_password": "The password must be at least 8 characters.",
+      "missing_fields": "Fill in all the fields.",
+      "consent_required": "To create the account you need to accept the processing of your data.",
+      "rate_limited": "Too many attempts. Wait a few minutes and try again.",
+      "signup_failed": "We could not create the account. Try again shortly.",
+      "generic": "Something went wrong. Try again.",
+      "email_not_confirmed": "Before signing in, confirm your address with the link we emailed you.",
+      "invalid_phone": "The phone number is not valid. Check the country code or leave it empty."
+    },
+    "info": {
+      "magic_sent": "If the address is registered, we have sent you a sign-in link: check your email.",
+      "reset_sent": "If the address is registered, we have sent you the link to reset the password: check your email.",
+      "signup_sent": "Your account is almost ready: we sent you an email, open the link to confirm the address.",
+      "password_updated": "Password updated."
+    }
   },
   "update_password": {
     "title": "New password",
     "subtitle": "Choose a password of at least 8 characters",
     "label": "New password",
-    "submit": "Save password"
+    "submit": "Save password",
+    "back_to_login": "Back to sign in"
+  },
+  "account": {
+    "title": "Your account",
+    "subtitle": "Your details and your bookings.",
+    "profile_title": "Your details",
+    "first_name_label": "First name",
+    "last_name_label": "Last name",
+    "email_label": "Email",
+    "phone_label": "Phone",
+    "phone_hint": "Optional. We need it to reach you if necessary. Write it with the country code, for example +39.",
+    "save": "Save",
+    "saved": "Details saved.",
+    "password_title": "Password",
+    "change_password": "Change password",
+    "bookings_title": "Your bookings",
+    "bookings_empty": "You have no online bookings yet. Rentals made in person at the shop do not appear here.",
+    "logout": "Sign out",
+    "errors": {
+      "missing_name": "First and last name are required.",
+      "invalid_phone": "The phone number is not valid.",
+      "phone_taken": "This number is already linked to another customer. Write to us and we will sort it out.",
+      "save_failed": "We could not save. Try again."
+    }
   }
 }

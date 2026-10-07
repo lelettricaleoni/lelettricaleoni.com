@@ -1,72 +1,13 @@
-'use client'
-import { Suspense } from 'react'
-import Image from 'next/image'
-import { useSearchParams } from 'next/navigation'
-import { updatePasswordAction } from '@/lib/actions/auth'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import { redirect } from 'next/navigation'
 
-export default function UpdatePasswordPage() {
-  return (
-    <Suspense fallback={null}>
-      <UpdatePasswordForm />
-    </Suspense>
-  )
-}
+// TODO: Cache Components adoption. Refactor this route so this opt-out can be removed.
+// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
+export const instant = false;
 
-// useSearchParams needs its own Suspense boundary — search params are only
-// known at request time, and without this Cache Components can't build a
-// shell for the route at all.
-function UpdatePasswordForm() {
-  const searchParams = useSearchParams()
-  const error = searchParams.get('error')
-
-  return (
-    <div className="min-h-screen flex">
-      {/* Left panel */}
-      <div className="hidden lg:flex lg:w-1/2 flex-col justify-between p-12 bg-[#1e3a5f] relative overflow-hidden">
-        <div className="absolute -top-24 -right-24 w-96 h-96 rounded-full bg-white/5" />
-        <div className="absolute -bottom-32 -left-16 w-80 h-80 rounded-full bg-white/5" />
-        <div className="absolute top-1/2 right-8 w-48 h-48 rounded-full bg-[#366DA1]/40" />
-        <div className="relative z-10 space-y-4">
-          <h2 className="text-3xl font-bold text-white leading-tight">Set a new<br />secure password</h2>
-          <p className="text-[#a8c4e0] text-base leading-relaxed max-w-xs">
-            Choose a strong password to protect the admin panel.
-          </p>
-        </div>
-        <div className="relative z-10">
-          <p className="text-[#a8c4e0] text-sm">Restricted access. Data handled in compliance with GDPR.</p>
-        </div>
-      </div>
-
-      {/* Right panel */}
-      <div className="flex-1 flex flex-col items-center justify-center p-8 bg-background">
-        <div className="w-full max-w-sm space-y-8">
-          <div className="flex justify-center">
-            <Image src="/svg/LogoLelettrica_full.svg" alt="Lelettrica" width={160} height={64} />
-          </div>
-
-          <div>
-            <h1 className="text-2xl font-bold text-[#1e3a5f]">New password</h1>
-            <p className="text-sm text-muted-foreground mt-1">Choose a password with at least 8 characters</p>
-          </div>
-
-          {error && (
-            <div className="p-3 bg-red-50 text-red-700 rounded-lg text-sm border border-red-200">{error}</div>
-          )}
-
-          <form action={updatePasswordAction} className="space-y-4">
-            <div className="space-y-1.5">
-              <Label htmlFor="password">New password</Label>
-              <Input id="password" name="password" type="password" required minLength={8} autoComplete="new-password" placeholder="••••••••" />
-            </div>
-            <Button type="submit" className="w-full bg-[#1e3a5f] hover:bg-[#152c4a]">
-              Save password
-            </Button>
-          </form>
-        </div>
-      </div>
-    </div>
-  )
+/**
+ * There is one page to set a new password, /[lang]/update-password, for everybody. This was an English-only
+ * copy of it for the panel; like /manage/login it now only points there.
+ */
+export default function ManageUpdatePasswordRedirect() {
+  redirect('/it/update-password')
 }

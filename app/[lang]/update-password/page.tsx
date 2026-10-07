@@ -1,55 +1,56 @@
-'use client'
-import { Suspense } from 'react'
 import Image from 'next/image'
-import { useParams, useSearchParams } from 'next/navigation'
-import { updatePasswordAction } from '@/lib/actions/auth'
+import { notFound, redirect } from 'next/navigation'
+import { getDictionary, hasLocale } from '../dictionaries'
 import { Navbar } from '@/components/navbar'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { updatePasswordAction } from '@/lib/actions/auth'
+import { createSupabaseServerClient } from '@/lib/supabase/server'
+import { parseAuthErrorCode } from '@/lib/auth/errors'
 
-const DICT = {
-  it: { title: 'Nuova password', subtitle: 'Scegli una password di almeno 8 caratteri', label: 'Nuova password', submit: 'Salva password', gdpr: 'Accesso riservato. Dati trattati nel rispetto del GDPR.', left_title: 'Noleggio e-bike a Dro,\nLago di Garda' },
-  en: { title: 'New password', subtitle: 'Choose a password of at least 8 characters', label: 'New password', submit: 'Save password', gdpr: 'Restricted access. Data processed in accordance with GDPR.', left_title: 'E-bike rental in Dro,\nLake Garda' },
-  de: { title: 'Neues Passwort', subtitle: 'Wähle ein Passwort mit mindestens 8 Zeichen', label: 'Neues Passwort', submit: 'Passwort speichern', gdpr: 'Eingeschränkter Zugang. Daten werden gemäß DSGVO verarbeitet.', left_title: 'E-Bike-Verleih in Dro,\nGardasee' },
-}
+// TODO: Cache Components adoption. Refactor this route so this opt-out can be removed.
+// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
+export const instant = false;
 
-const NAV_DICT = {
-  it: { nav: { services: 'Servizi', pricing: 'Prezzi', contact: 'Contatti' } },
-  en: { nav: { services: 'Services', pricing: 'Pricing', contact: 'Contact' } },
-  de: { nav: { services: 'Leistungen', pricing: 'Preise', contact: 'Kontakt' } },
-}
+/**
+ * The new password, after the link of a reset (the callback has already signed the person in) or from the
+ * account page. A server page like the sign-in one, with its texts in messages/*.json: it used to be a
+ * client page with a dictionary of its own and a stand-in one for the navigation bar.
+ */
+export default async function UpdatePasswordPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ lang: string }>
+  searchParams: Promise<{ error?: string }>
+}) {
+  const { lang } = await params
+  if (!hasLocale(lang)) notFound()
 
-export default function UpdatePasswordPage() {
-  return (
-    <Suspense fallback={null}>
-      <UpdatePasswordForm />
-    </Suspense>
-  )
-}
+  // Without a session there is nothing to update: the link of the reset has expired or was never opened.
+  const supabase = await createSupabaseServerClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect(`/${lang}/login?error=invalid_link`)
 
-// useSearchParams needs its own Suspense boundary — search params are only
-// known at request time, and without this Cache Components can't build a
-// shell for the route at all.
-function UpdatePasswordForm() {
-  const { lang } = useParams<{ lang: string }>()
-  const searchParams = useSearchParams()
-  const error = searchParams.get('error')
-  const d = DICT[lang as keyof typeof DICT] ?? DICT.it
-  const navDict = NAV_DICT[lang as keyof typeof NAV_DICT] ?? NAV_DICT.it
+  const { error } = await searchParams
+  const dict = await getDictionary(lang)
+  const d = dict.update_password
+  const errorCode = parseAuthErrorCode(error)
+  const errorMessage = errorCode ? dict.login.errors[errorCode] : null
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Navbar lang={lang ?? 'it'} dict={navDict} />
+      <Navbar lang={lang} dict={dict} />
 
       <div className="flex flex-1 pt-16">
         <div className="hidden lg:block lg:w-1/2 relative overflow-hidden">
           <Image src="/images/about.webp" alt="" fill className="object-cover" priority />
           <div className="absolute bottom-12 left-12 right-12 z-10 space-y-3">
             <h2 className="text-3xl font-bold text-white leading-tight drop-shadow-lg whitespace-pre-line">
-              {d.left_title}
+              {dict.login.left_title}
             </h2>
-            <p className="text-white/80 text-sm drop-shadow">{d.gdpr}</p>
+            <p className="text-white/80 text-sm drop-shadow">{dict.login.gdpr}</p>
           </div>
         </div>
 
@@ -60,15 +61,15 @@ function UpdatePasswordForm() {
               <p className="text-sm text-muted-foreground mt-1">{d.subtitle}</p>
             </div>
 
-            {error && (
-              <div className="p-3 bg-red-50 text-red-700 rounded-lg text-sm border border-red-200">{error}</div>
+            {errorMessage && (
+              <div role="alert" className="p-3 bg-red-50 text-red-700 rounded-lg text-sm border border-red-200">{errorMessage}</div>
             )}
 
             <form action={updatePasswordAction} className="space-y-4">
-              <input type="hidden" name="lang" value={lang ?? 'it'} />
+              <input type="hidden" name="lang" value={lang} />
               <div className="space-y-1.5">
                 <Label htmlFor="password">{d.label}</Label>
-                <Input id="password" name="password" type="password" required minLength={8} autoComplete="new-password" placeholder="••••••••" />
+                <Input id="password" name="password" type="password" required minLength={8} maxLength={72} autoComplete="new-password" placeholder="••••••••" />
               </div>
               <Button type="submit" className="w-full bg-[#1e3a5f] hover:bg-[#152c4a]">{d.submit}</Button>
             </form>
