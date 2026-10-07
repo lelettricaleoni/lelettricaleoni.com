@@ -100,8 +100,8 @@ una voce nel banner), così Indietro funziona e un link si condivide. Nessun dat
 3. **Riepilogo e pagamento**: righe, totale, telefono (se manca), «Accetto i termini di noleggio» (link a `/[lang]/terms`), «Paga con Stripe». Il pulsante
    resta spento dopo il primo clic. Senza accesso: «Accedi per prenotare» porta a `/[lang]/login` e riporta qui con tutto intatto (`next`).
 
-La pagina di ogni bici ha un pulsante «Prenota» che apre il flusso con il modello scelto. **Dopo il pagamento**: `/[lang]/account/rents/<id>?paid=1`, che aspetta
-il webhook (pochi secondi, poi mostra «in conferma» e continua a controllare) e mostra bici, date, importi e il link alla ricevuta di Stripe.
+La pagina di ogni bici ha un pulsante «Prenota» che apre il flusso con il modello scelto. **Dopo il pagamento**: `/[lang]/account/rents/<id>?paid=1`, che
+chiama `confirmBooking` (se il webhook è già passato non fa nulla) e mostra bici, date, importi e il link alla ricevuta di Stripe.
 
 **Account rents** (`/[lang]/account/rents`, nel menu accanto a «Account settings»): le prenotazioni online del cliente, mai quelle del banco, in
 «prossime» e «passate»; il dettaglio di ognuna con le sue bici. Ogni bici ha «Annulla» finché è rimborsabile, con una finestra che dice l'importo che torna;
@@ -121,27 +121,45 @@ dopo il termine c'è scritto di contattare il negozio (`help@lelettricaleoni.com
    `createCounterRental` (assegnazione di una bici libera, ritentando sul vincolo `23P01`), ma con stato `held`. Se una riga fallisce (nessuna bici libera):
    si rilasciano quelle già tenute, la testata diventa `expired`, e si risponde dicendo **quale riga** non è più disponibile. Niente transazioni (`max_pipeline: 0`):
    le righe tenute scadono comunque da sole.
-5. Crea la **sessione di Stripe Checkout** (pagamento unico, EUR, una riga per bici con `price_data`, `client_reference_id` = id della prenotazione,
+5. Crea la **sessione di Stripe Checkout** (pagamento unico, EUR, **solo carte** con `payment_method_types: ['card']` (i portafogli come Apple Pay e Google Pay sono carte),
+   `submit_type: 'book'` (il pulsante dice «Prenota»), una riga per bici con `price_data`, `client_reference_id` = id della prenotazione,
    `metadata.booking_id`, `customer_email`, lingua del cliente, `expires_at` = la scadenza del posto, `success_url`, `cancel_url`), con la
    `request_key` come chiave di idempotenza. Salva `stripe_session_id` e manda il cliente all'indirizzo di Stripe.
-6. `cancel_url` riporta al carrello e **rilascia subito** le bici (un clic su «indietro» non deve tenerle 30 minuti).
+6. `cancel_url` riporta al carrello e **chiude la sessione su Stripe** (`checkout.sessions.expire`) **prima** di liberare le bici (un clic su «indietro» non deve tenerle 30 minuti,
+   e la sessione non deve restare pagabile da un'altra scheda del browser).
 
-### Confermare — webhook `POST /api/stripe/webhook`
-È l'**unica** rotta `app/api/` di questa fetta, perché a chiamare è Stripe e non il nostro sito (regola del progetto).
-- Verifica la firma sul corpo grezzo con l'SDK (`constructEvent`) e il segreto del webhook; scarta ciò che non è firmato.
-- Salta gli eventi già in `stripe_events` (insert con `ON CONFLICT DO NOTHING`).
-- `checkout.session.completed` con pagamento riuscito: **un'istruzione sola** porta `pending → confirmed` la testata e `held → confirmed` le righe, e salva il
-  `payment_intent`. Se le righe erano già scadute e la bici è stata presa, **rimborsa tutto il pagamento** (`reason = late_payment`), segna `failed_refunded`
-  e lo registra: è il caso raro che non deve costare soldi a nessuno.
-- `checkout.session.expired`: rilascia le righe.
-- `refund.updated` / `charge.refunded`: allinea `booking_refunds` (anche per i rimborsi fatti dal pannello di Stripe).
-- Risponde `200` appena l'evento è registrato; un errore interno risponde `500` e Stripe ritenta.
+**Perché solo carte.** Alcuni metodi di pagamento (addebito SEPA, bonifici) confermano **giorni dopo**: la sessione risulta completata ma non pagata (`unpaid`), e il denaro arriva con
+`checkout.session.async_payment_succeeded`. Un posto tenuto 30 minuti non può aspettare giorni. Con le sole carte il pagamento è immediato. Se un giorno si aggiungessero altri metodi,
+servirebbe gestire quegli eventi e un posto tenuto più a lungo: non ora.
 
-### Scadere e riconciliare — lavoro del worker ogni 5 minuti
-Un lavoro ripetuto di BullMQ (l'impalcatura c'è: un `createXHandler` in `worker/jobs/`, una coda in `lib/queues/names.ts`, una riga in `worker/main.ts`):
-1. **Libera** le righe `held` con la scadenza passata e porta la testata a `expired`.
-2. **Riconcilia**: per le testate `pending` scadute da più di 5 minuti chiede a Stripe lo stato della sessione; se risulta pagata (webhook perso), conferma.
-Il rilascio «pigro» nella disponibilità resta come prima rete.
+### Confermare — una sola funzione, chiamata da tre posti
+`confirmBooking(sessionId)` è **idempotente e può girare più volte, anche insieme** (lo chiede Stripe stessa): ricarica la sessione da Stripe, controlla `payment_status` (`paid`) e
+porta `pending → confirmed` la testata e `held → confirmed` le righe con **un'istruzione sola**, salvando il `payment_intent`. La chiamano:
+1. il **webhook** `POST /api/stripe/webhook`, per `checkout.session.completed`: è l'**unica** rotta `app/api/` di questa fetta, perché a chiamare è Stripe e non il nostro sito;
+   verifica la firma sul corpo grezzo con l'SDK (`constructEvent`), salta gli eventi già in `stripe_events` (`ON CONFLICT DO NOTHING`), risponde `200` appena l'evento è registrato
+   (un errore interno risponde `500` e Stripe ritenta). Stripe dice che i webhook sono **obbligatori** per non perdere un pagamento (il cliente può chiudere il browser dopo aver pagato);
+2. la **pagina di ritorno** `/account/rents/<id>?paid=1`, che chiama la stessa funzione con la sessione della prenotazione: se il webhook è in ritardo la conferma arriva comunque, subito, mentre il
+   cliente è lì (Stripe aspetta fino a 10 secondi la risposta del webhook prima di reindirizzare, e raccomanda proprio di fare così);
+3. il **lavoro del worker** (sotto).
+Gli altri eventi: `checkout.session.expired` (liberare dopo il controllo descritto sotto); `refund.created`, `refund.updated`, `refund.failed` e `charge.refunded` allineano `booking_refunds`
+(anche per i rimborsi fatti dal pannello di Stripe); un `refund.failed` avvisa Kevin e lascia il rimborso `failed` e ritentabile.
+
+### Scadere senza mai vendere due volte una bici pagata
+**Regola**: una riga `held` **si libera solo dopo che Stripe ha detto che quella sessione non può più essere pagata.** Non basta che sia passato il tempo.
+Per ogni testata `pending` con `hold_expires_at` passata, la funzione `settleHold(bookingId)` fa, in ordine:
+1. chiede a Stripe di **far scadere la sessione** (`POST /v1/checkout/sessions/{id}/expire`: funziona solo su una sessione `open`; dopo, il cliente non può più completarla e vede «sessione scaduta»);
+2. se la chiamata riesce → la sessione era aperta e non pagata: **ora** si liberano le righe (`held → expired`) e la testata diventa `expired`;
+3. se risponde che la sessione non è scadibile (già completata o già scaduta) → si **rilegge** la sessione: se è pagata, si chiama `confirmBooking`; se è già scaduta senza pagamento, si libera.
+Così non esiste una finestra in cui un cliente ha pagato e la sua bici viene data a un altro.
+
+Chi la chiama: un **lavoro del worker ogni minuto** (BullMQ ripetuto: l'impalcatura c'è, un `createXHandler` in `worker/jobs/`, una coda in `lib/queues/names.ts`, una riga in `worker/main.ts`),
+e, **a richiesta**, la disponibilità: se una bici è libera «a parte» una prenotazione `pending` già scaduta, si chiama `settleHold` per quelle poche testate e si riprova, senza aspettare il minuto.
+Non esiste più un rilascio «cieco» solo a tempo (quello della fetta 1 valeva senza Stripe: qui si sostituisce).
+
+### Il pagamento arrivato quando il posto non c'è più (la rete di sicurezza)
+Con la regola sopra **non dovrebbe accadere**: una sessione scaduta non si può pagare. Resta per le anomalie (un nostro errore, un orologio sbagliato, una testata segnata `cancelled` per sbaglio).
+Se `confirmBooking` trova una testata non più `pending` ma la sessione **pagata**: 1) prova a **riassegnare** una bici libera dello stesso modello, taglia e versione per le stesse date;
+2) se non c'è, **rimborsa tutto il pagamento** (`reason = late_payment`, una riga per bici), segna la testata `failed_refunded` e avvisa Kevin. Mai tenere soldi senza una bici.
 
 ## Annullare e rimborsare
 
@@ -189,6 +207,9 @@ con data precisa) va comunicato: da far confermare a chi rivede i testi. È un t
 - **Database** (`npm run test:db`, solo sviluppo): tenere/confermare/scadere con richieste concorrenti; carrello con una bici mancante (rilascio delle altre e riga indicata);
   webhook ripetuto; pagamento tardivo con rimborso; nessun doppio rimborso; l'annullamento rilascia le date e non le altre bici.
 - **Webhook** con eventi firmati davvero dall'SDK (`generateTestHeaderString`), senza rete.
+- **`settleHold`** con il client di Stripe sostituito, nei tre casi: la sessione si fa scadere (si liberano le righe), è già completata e pagata (si conferma), è già scaduta (si libera);
+  e il caso in cui due chiamate arrivano insieme (webhook e pagina di ritorno): una sola conferma.
+- **Pagamento oltre la scadenza** (la rete di sicurezza): riassegna una bici libera dello stesso tipo, oppure rimborsa tutto e segna `failed_refunded`.
 - **Browser** su staging con la carta di prova di Stripe (a mano o in una suite a parte), non in CI.
 - Test di contratto sul client di Stripe sostituito (le azioni non devono toccare la rete nei test).
 
@@ -205,9 +226,14 @@ con data precisa) va comunicato: da far confermare a chi rivede i testi. È un t
 
 ## Rischi e cose da sapere
 
-- **Tenere le bici per scherzo**: coperto da una prenotazione `pending` per cliente e dal limite di 5 scadute all'ora.
-- **Webhook perso o in ritardo**: coperto dalla riconciliazione ogni 5 minuti e dal rimborso automatico del pagamento tardivo.
+- **Tenere le bici per scherzo**: coperto da una prenotazione `pending` per cliente e dal limite di 5 scadute all'ora (al massimo 30 minuti di blocco per volta).
+- **Webhook perso o in ritardo**: coperto dalla pagina di ritorno (che conferma da sola), dal lavoro di ogni minuto e dalla regola «non si libera un posto finché Stripe non dice che la sessione non è più pagabile».
 - **Stripe raggiungibile solo se il tunnel lo lascia passare**: da provare su staging prima di qualunque altra cosa.
+- **Un rimborso costa a Kevin la commissione**: Stripe **non restituisce** le sue commissioni sul pagamento originale (se il rimborso è quasi immediato è uno «storno» e le commissioni non si trattengono).
+  Ogni annullamento rimborsato intero ha quindi un costo per il negozio: è la conseguenza della regola delle 48 ore, non un difetto del sistema.
+- **I rimborsi usano il saldo di Stripe**: se è insufficiente (per esempio dopo un pagamento già versato in banca), un rimborso con carta resta **in sospeso** finché il saldo non basta; ricompare
+  `pending` e poi `succeeded` con `refund.updated`. Kevin deve tenere un saldo o accettare che i rimborsi si completino con ritardo.
+- **Un rimborso può fallire** (carta annullata o scaduta, raramente): `refund.failed` lo segna `failed`, avvisa Kevin e si decide come restituire i soldi a mano.
 - **Più bici = più rimborsi parziali**: ogni importo è per riga, in centesimi; la somma dei rimborsi di una prenotazione non supera mai il suo totale (controllo nella stessa istruzione che inserisce la riga `pending`).
 - **Il prototipo di Kevin** (`C:\AzureDevOps\firebase`, calendario di selezione) si guarda per l'interfaccia del calendario, non si porta il resto (Firestore, Stripe di prova).
 
@@ -215,5 +241,6 @@ con data precisa) va comunicato: da far confermare a chi rivede i testi. È un t
 
 1. **Contenuto dei termini**: cauzione (se e quanto), danni, furto e smarrimento, età minima e casco, mancata presentazione, maltempo, orari di ritiro e riconsegna. *Servono a Kevin per
    scriverla; bloccano solo il rilascio, non la costruzione.*
-2. **Account Stripe**: esiste? Chiavi di prova per lo staging; soggetto e paese per l'informativa; ricevute via email attive nelle impostazioni.
+2. **Account Stripe**: esiste? Chiavi di prova per lo staging; soggetto e paese per l'informativa; ricevute via email attive nelle impostazioni; **quando Stripe versa i soldi in banca**
+   (il saldo serve a coprire i rimborsi).
 3. **Scontrino o fattura** per i pagamenti online: oggi Kevin li gestisce a parte per il banco; per l'online vale lo stesso? (Stripe non emette documenti fiscali italiani.)
