@@ -40,7 +40,9 @@ Solo **token**, mai un esadecimale nuovo nel markup. Definiti in `app/globals.cs
 | `foreground`, `muted-foreground`, `border`, `muted`, `card` | neutri di shadcn | testo, testo secondario, bordi, fondi |
 | rosso 50/700 e verde 50/700 | `bg-red-50 text-red-700 border-red-200`, idem verde | errore e conferma in un riquadro |
 
-Un solo pulsante pieno per vista, quello della cosa principale (in navbar: «Accedi»), nel colore predefinito del `Button`. Gli altri sono `outline` o `ghost`.
+Un solo pulsante pieno per vista, quello della cosa principale, nel colore predefinito del `Button`. Gli altri sono `outline` o `ghost`.
+
+**La navbar è l'eccezione** (Kevin, 2026-10-07: «non mi piace che la sezione account o la lingua abbiano un colore di fondo diverso dal resto della navbar»): la barra è bianca **semitrasparente** sopra le foto, e il riempimento bianco di un pulsante `outline` ci compare come un riquadro. I suoi controlli sono quindi **trasparenti con il bordo** (`bg-transparent`; `buttonVariants` non fonde le classi: serve `cn(buttonVariants(...), 'bg-transparent …')`). «Accedi» si distingue per bordo e testo `primary`, non per un fondo pieno.
 
 **Errore da non ripetere** (Kevin, 2026-10-07: «non capisco perché la schermata di login abbia un blu diverso dal resto del sito»): la schermata di accesso era nata copiando il pannello e aveva il navy; il sito pubblico è nel blu `primary` con titoli neri. Una pagina pubblica nuova si guarda **accanto a una pagina pubblica esistente** (home, prezzi, bici) prima di scegliere un colore.
 
