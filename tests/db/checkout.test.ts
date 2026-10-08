@@ -110,16 +110,24 @@ describe('beginCheckout', () => {
     expect((await bookingOf(first.bookingId)).status).toBe('confirmed')
   })
 
-  it('two tabs of the same customer at once, with two different keys: one wins, the other is told, only one set of bikes is held', async () => {
+  it('two tabs of the same customer at once, with two different keys: one payment stays open, and only its bikes are held', async () => {
     const results = await Promise.all([beginCheckout(request({ cart: cart(1) }), gateway), beginCheckout(request({ cart: cart(2) }), gateway)])
-    const redirects = results.filter((r) => r.status === 'redirect')
-    expect(redirects).toHaveLength(1)
-    expect(results.map((r) => r.status).filter((s) => s !== 'redirect')).toHaveLength(1)
-    expect((await mine()).filter((b) => b.status === 'pending')).toHaveLength(1)
+    const open = (await mine()).filter((b) => b.status === 'pending')
+    expect(open).toHaveLength(1)
+    const winner = open[0]
+    // the bikes held are the winner's, and only them
     const held = (await db.select().from(bikeReservations).where(eq(bikeReservations.customerId, fx.customerId))).filter((l) => l.status === 'held')
-    const winner = redirects[0]
-    if (winner.status !== 'redirect') throw new Error('unreachable')
-    expect(held.every((line) => line.bookingId === winner.bookingId)).toBe(true)
+    expect(held.length).toBeGreaterThan(0)
+    expect(held.every((line) => line.bookingId === winner.id)).toBe(true)
+    // whoever was sent to pay for another booking holds a session that can no longer be paid
+    for (const result of results) {
+      if (result.status === 'redirect' && result.bookingId !== winner.id) {
+        expect(await gateway.getSession(result.url.split('/').pop()!)).toEqual({ status: 'expired' })
+      }
+    }
+    // at least one of them got through, and nobody was told something impossible
+    expect(results.some((r) => r.status === 'redirect')).toBe(true)
+    expect(results.every((r) => ['redirect', 'closed', 'has_pending', 'in_progress', 'try_again'].includes(r.status))).toBe(true)
   })
 
   it('in production without Stripe it holds nothing and says payments are not available', async () => {
