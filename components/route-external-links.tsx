@@ -1,6 +1,10 @@
 'use client'
-import { siStrava, siKomoot } from 'simple-icons'
+import { SiStrava, SiKomoot } from 'react-icons/si'
 import { trackEvent } from '@/lib/analytics'
+
+// The brands' own colours (the icon takes the text colour, white, on top of them).
+const STRAVA_COLOR = '#FC4C02'
+const KOMOOT_COLOR = '#6AA127'
 
 interface RouteExternalLinksProps {
   stravaUrl?: string | null
@@ -23,12 +27,10 @@ export function RouteExternalLinks({
           target="_blank"
           rel="noopener noreferrer"
           className="inline-flex items-center gap-2 h-9 px-3 rounded-md text-sm font-medium text-white hover:opacity-90 transition-opacity cursor-pointer"
-          style={{ backgroundColor: `#${siStrava.hex}` }}
+          style={{ backgroundColor: STRAVA_COLOR }}
           onClick={() => trackEvent('outbound_click', { link_domain: 'strava.com', link_type: 'route' })}
         >
-          <svg viewBox="0 0 24 24" fill="white" width={14} height={14} aria-hidden="true">
-            <path d={siStrava.path} />
-          </svg>
+          <SiStrava size={14} aria-hidden="true" />
           {openStrava}
         </a>
       )}
@@ -38,12 +40,10 @@ export function RouteExternalLinks({
           target="_blank"
           rel="noopener noreferrer"
           className="inline-flex items-center gap-2 h-9 px-3 rounded-md text-sm font-medium text-white hover:opacity-90 transition-opacity cursor-pointer"
-          style={{ backgroundColor: `#${siKomoot.hex}` }}
+          style={{ backgroundColor: KOMOOT_COLOR }}
           onClick={() => trackEvent('outbound_click', { link_domain: 'komoot.com', link_type: 'route' })}
         >
-          <svg viewBox="0 0 24 24" fill="white" width={14} height={14} aria-hidden="true">
-            <path d={siKomoot.path} />
-          </svg>
+          <SiKomoot size={14} aria-hidden="true" />
           {openKomoot}
         </a>
       )}

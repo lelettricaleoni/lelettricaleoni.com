@@ -1,6 +1,6 @@
 'use client'
 import { useState, useTransition } from 'react'
-import { Download } from 'lucide-react'
+import { LuDownload } from 'react-icons/lu'
 import { Button } from '@/components/ui/button'
 import { exportAccountDataAction } from '@/lib/actions/account'
 
@@ -29,7 +29,7 @@ export function ExportDataButton({ label, failed }: { label: string; failed: str
   return (
     <div className="space-y-2">
       <Button type="button" variant="outline" onClick={download} disabled={pending}>
-        <Download />
+        <LuDownload />
         {label}
       </Button>
       {error && <p role="alert" className="text-sm text-red-700">{failed}</p>}

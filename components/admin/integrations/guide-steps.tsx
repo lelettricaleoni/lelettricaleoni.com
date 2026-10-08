@@ -1,4 +1,4 @@
-import { Check, ExternalLink } from 'lucide-react'
+import { LuCheck, LuExternalLink } from 'react-icons/lu'
 import { cn } from '@/lib/utils'
 import { GUIDE_STEPS } from '@/lib/integrations/google-calendar/guide'
 
@@ -20,7 +20,7 @@ export function GuideSteps({ completed }: { completed: string[] }) {
                 done ? 'border-emerald-600 bg-emerald-600 text-white' : 'border-muted-foreground/40 text-muted-foreground',
               )}
             >
-              {done ? <Check size={14} /> : index + 1}
+              {done ? <LuCheck size={14} /> : index + 1}
             </span>
             <div className="min-w-0 space-y-1.5">
               <h3 className="text-sm font-semibold">
@@ -38,7 +38,7 @@ export function GuideSteps({ completed }: { completed: string[] }) {
                       key={link.href} href={link.href} target="_blank" rel="noreferrer noopener"
                       className="inline-flex items-center gap-1 text-[#366DA1] underline-offset-2 hover:underline"
                     >
-                      {link.label}<ExternalLink size={12} aria-hidden />
+                      {link.label}<LuExternalLink size={12} aria-hidden />
                     </a>
                   ))}
                 </p>

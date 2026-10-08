@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
-import { MapPin, Phone, Clock, Circle } from 'lucide-react'
+import { LuMapPin, LuPhone, LuClock, LuCircle } from 'react-icons/lu'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { trackEvent } from '@/lib/analytics'
@@ -57,7 +57,7 @@ export function HeroSection({ lang, dict }: HeroSectionProps) {
         {/* Status badges */}
         <div className="flex flex-wrap items-center justify-center gap-3">
           <Badge className="bg-green-500/20 text-green-200 border-green-400/40 text-sm px-4 py-1.5 font-semibold uppercase tracking-wider flex items-center gap-1.5">
-            <Circle size={8} className="fill-green-300 text-green-300" />
+            <LuCircle size={8} className="fill-green-300 text-green-300" />
             {dict.hero.open_badge}
           </Badge>
           <Badge
@@ -83,17 +83,17 @@ export function HeroSection({ lang, dict }: HeroSectionProps) {
         {/* Quick info */}
         <div className="flex flex-col sm:flex-row items-center gap-4 text-white/70 text-sm mt-2">
           <span className="flex items-center gap-1.5">
-            <MapPin size={15} className="text-white/60" />
+            <LuMapPin size={15} className="text-white/60" />
             Via Roma 90, Dro (TN)
           </span>
           <span className="hidden sm:block text-white/30">·</span>
           <span className="flex items-center gap-1.5">
-            <Phone size={15} className="text-white/60" />
+            <LuPhone size={15} className="text-white/60" />
             +39 338 123 2434
           </span>
           <span className="hidden sm:block text-white/30">·</span>
           <span className="flex items-center gap-1.5">
-            <Clock size={15} className="text-white/60" />
+            <LuClock size={15} className="text-white/60" />
             {dict.info.hours_value}
           </span>
         </div>

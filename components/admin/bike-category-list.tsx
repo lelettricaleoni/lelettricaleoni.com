@@ -1,6 +1,6 @@
 'use client'
 import { useState, useTransition } from 'react'
-import { Pencil, Trash2, Plus } from 'lucide-react'
+import { LuPencil, LuTrash2, LuPlus } from 'react-icons/lu'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
@@ -68,17 +68,17 @@ export function BikeCategoryList({
           </div>
           <div className="flex gap-1">
             <Button size="icon" variant="ghost" onClick={() => setEditing(cat)}>
-              <Pencil size={14} />
+              <LuPencil size={14} />
             </Button>
             <Button size="icon" variant="ghost" className="text-destructive" disabled={isPending} onClick={() => handleDelete(cat.id)}>
-              <Trash2 size={14} />
+              <LuTrash2 size={14} />
             </Button>
           </div>
         </div>
       ))}
 
       <Button variant="outline" onClick={() => setEditing('new')} className="gap-1">
-        <Plus size={14} /> New category
+        <LuPlus size={14} /> New category
       </Button>
     </div>
   )

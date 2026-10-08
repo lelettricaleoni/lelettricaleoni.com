@@ -1,6 +1,6 @@
 'use client'
 import { useState } from 'react'
-import { Check, ChevronsUpDown } from 'lucide-react'
+import { LuCheck, LuChevronsUpDown } from 'react-icons/lu'
 import { Button } from '@/components/ui/button'
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
@@ -43,7 +43,7 @@ export function SearchSelect({
           className={cn('justify-between px-3 font-normal', !selected && 'text-muted-foreground', className)}
         >
           <span className="truncate">{selected?.label ?? placeholder}</span>
-          <ChevronsUpDown className="size-4 shrink-0 opacity-50" />
+          <LuChevronsUpDown className="size-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
       <PopoverContent align="start" className="w-72 max-w-[calc(100vw-2rem)] p-0">
@@ -57,7 +57,7 @@ export function SearchSelect({
                   key={option.value} value={option.label} keywords={option.keywords}
                   onSelect={() => { onChange(option.value); setOpen(false) }}
                 >
-                  <Check className={cn('size-4', option.value === value ? 'opacity-100' : 'opacity-0')} />
+                  <LuCheck className={cn('size-4', option.value === value ? 'opacity-100' : 'opacity-0')} />
                   {option.label}
                 </CommandItem>
               ))}

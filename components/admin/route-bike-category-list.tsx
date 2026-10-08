@@ -1,6 +1,6 @@
 'use client'
 import { useState, useTransition } from 'react'
-import { Plus, Pencil, Trash2, Check, X } from 'lucide-react'
+import { LuPlus, LuPencil, LuTrash2, LuCheck, LuX } from 'react-icons/lu'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { toast } from 'sonner'
@@ -62,20 +62,20 @@ export function RouteBikeCategoryList({ categories }: { categories: RouteBikeCat
             <>
               <Input value={draftName} onChange={(e) => setDraftName(e.target.value)} className="h-8" />
               <Button size="icon" variant="ghost" disabled={isPending} onClick={() => saveEdit(category.id, category.displayOrder)}>
-                <Check size={14} />
+                <LuCheck size={14} />
               </Button>
               <Button size="icon" variant="ghost" onClick={() => setEditingId(null)}>
-                <X size={14} />
+                <LuX size={14} />
               </Button>
             </>
           ) : (
             <>
               <span className="flex-1 text-sm">{category.name}</span>
               <Button size="icon" variant="ghost" onClick={() => startEdit(category)}>
-                <Pencil size={14} />
+                <LuPencil size={14} />
               </Button>
               <Button size="icon" variant="ghost" className="text-destructive" disabled={isPending} onClick={() => handleDelete(category.id)}>
-                <Trash2 size={14} />
+                <LuTrash2 size={14} />
               </Button>
             </>
           )}
@@ -90,7 +90,7 @@ export function RouteBikeCategoryList({ categories }: { categories: RouteBikeCat
           className="h-8"
         />
         <Button size="icon" variant="outline" disabled={isPending} onClick={handleCreate}>
-          <Plus size={14} />
+          <LuPlus size={14} />
         </Button>
       </div>
     </div>

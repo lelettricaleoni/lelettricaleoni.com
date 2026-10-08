@@ -1,7 +1,7 @@
 'use client'
 import { useState, useCallback } from 'react'
 import { useDropzone } from 'react-dropzone'
-import { Video, X, CheckCircle } from 'lucide-react'
+import { LuVideo, LuX, LuCircleCheckBig } from 'react-icons/lu'
 import { toast } from 'sonner'
 import { getVideoPresignedUploadUrlAction } from '@/lib/actions/routes'
 
@@ -65,14 +65,14 @@ export function VideoUpload({ routeId, defaultVideoKey, onUploaded, onRemoved }:
   if (videoKey && !uploading) {
     return (
       <div className="flex items-center gap-3 bg-card border rounded-lg p-3">
-        <CheckCircle size={18} className="text-green-500 shrink-0" />
+        <LuCircleCheckBig size={18} className="text-green-500 shrink-0" />
         <span className="text-sm flex-1 truncate font-mono">{videoKey.split('/').pop()}</span>
         <button
           type="button"
           onClick={() => { setVideoKey(null); onRemoved() }}
           className="text-destructive hover:text-destructive/80 cursor-pointer"
         >
-          <X size={14} />
+          <LuX size={14} />
         </button>
       </div>
     )
@@ -87,7 +87,7 @@ export function VideoUpload({ routeId, defaultVideoKey, onUploaded, onRemoved }:
     >
       <input {...getInputProps()} />
       <div className="flex flex-col items-center gap-2 text-sm text-muted-foreground">
-        <Video size={24} />
+        <LuVideo size={24} />
         {uploading
           ? <span>Caricamento... {progress}%</span>
           : <span>Trascina il video qui o clicca per selezionarlo (.mp4, .mov, .avi, .mkv)</span>

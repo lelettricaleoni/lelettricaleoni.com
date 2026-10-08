@@ -1,7 +1,7 @@
 'use client'
 import { useTransition } from 'react'
 import Link from 'next/link'
-import { Pencil, Trash2, Eye, EyeOff, List, ListX } from 'lucide-react'
+import { LuPencil, LuTrash2, LuEye, LuEyeOff, LuList, LuListX } from 'react-icons/lu'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -63,7 +63,7 @@ export function RouteListItem({ route, name }: { route: Route; name: string }) {
           disabled={isPending}
           title={route.isPublished ? 'Hide' : 'Publish'}
         >
-          {route.isPublished ? <EyeOff size={16} /> : <Eye size={16} />}
+          {route.isPublished ? <LuEyeOff size={16} /> : <LuEye size={16} />}
         </Button>
 
         {route.isPublished && (
@@ -73,18 +73,18 @@ export function RouteListItem({ route, name }: { route: Route; name: string }) {
             disabled={isPending}
             title={route.unlisted ? 'Show in list' : 'Remove from list (link keeps working)'}
           >
-            {route.unlisted ? <List size={16} /> : <ListX size={16} />}
+            {route.unlisted ? <LuList size={16} /> : <LuListX size={16} />}
           </Button>
         )}
 
         <Button variant="ghost" size="icon" asChild>
-          <Link href={`/manage/routes/${route.id}`}><Pencil size={16} /></Link>
+          <Link href={`/manage/routes/${route.id}`}><LuPencil size={16} /></Link>
         </Button>
 
         <AlertDialog>
           <AlertDialogTrigger asChild>
             <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive">
-              <Trash2 size={16} />
+              <LuTrash2 size={16} />
             </Button>
           </AlertDialogTrigger>
           <AlertDialogContent>

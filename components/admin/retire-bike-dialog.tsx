@@ -1,6 +1,6 @@
 'use client'
 import { useState, useTransition } from 'react'
-import { PackageX } from 'lucide-react'
+import { LuPackageX } from 'react-icons/lu'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Calendar } from '@/components/ui/calendar'
@@ -38,7 +38,7 @@ export function RetireBikeDialog({ unitId, label, today }: { unitId: string; lab
   return (
     <>
       <Button size="icon" variant="ghost" aria-label="Retire bike" disabled={isPending} onClick={() => setOpen(true)}>
-        <PackageX size={14} />
+        <LuPackageX size={14} />
       </Button>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-h-[90vh] overflow-y-auto">

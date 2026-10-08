@@ -1,6 +1,6 @@
 'use client'
 import { useState, useTransition } from 'react'
-import { RefreshCw } from 'lucide-react'
+import { LuRefreshCw } from 'react-icons/lu'
 import { Button } from '@/components/ui/button'
 import { StatusBadge } from '@/components/admin/integrations/status-badge'
 import { syncNowAction, type SyncNowActionResult } from '@/lib/actions/integrations'
@@ -37,7 +37,7 @@ export function IntegrationActivity({ view }: { view: IntegrationView }) {
             events that no longer match a booking. Events you added to the calendar by hand are never touched. It also runs by itself once a day.
           </p>
           <Button type="button" variant="outline" onClick={syncNow} disabled={isPending}>
-            <RefreshCw size={16} className={isPending ? 'mr-2 animate-spin' : 'mr-2'} aria-hidden />Sync now
+            <LuRefreshCw size={16} className={isPending ? 'mr-2 animate-spin' : 'mr-2'} aria-hidden />Sync now
           </Button>
           {result?.status === 'done' && (
             <p role="status" className={result.failed > 0 ? 'text-sm text-destructive' : 'text-sm text-emerald-700'}>

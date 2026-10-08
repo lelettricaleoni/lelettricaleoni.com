@@ -116,8 +116,9 @@ Nei log non entrano mai dati di persone: per gli errori di una query, `safeError
 
 ## shadcn/ui
 - `npx shadcn@latest init` è interattivo — preferire: crea `components.json` manualmente + `npx shadcn@latest add <componenti>`
-- Installare anche: `clsx`, `tailwind-merge`, `class-variance-authority`, `@radix-ui/react-slot`, `lucide-react`
-- `lucide-react` non include icone di brand (es. Instagram) → usare SVG inline
+- Installare anche: `clsx`, `tailwind-merge`, `class-variance-authority`, `@radix-ui/react-slot`, `react-icons`
+- Le icone sono tutte `react-icons` (Lucide è `react-icons/lu`, i loghi `react-icons/si`): **`lucide-react` non c'è più**, e un
+  componente scritto da `shadcn add` che lo importa va riscritto con `react-icons/lu` (vedi la skill `design-system`)
 
 ## Igiene del repository
 - La root è per la configurazione, non per i file di lavoro: screenshot, dump, esportazioni e output di debug vanno nella cartella scratchpad di sessione, mai nel progetto
