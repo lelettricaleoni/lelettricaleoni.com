@@ -15,6 +15,8 @@
 - **Mai un commit su `main` o `staging`**: ramo `feat/booking-3b-payment-core` da `origin/staging`, PR verso `staging`, non unire prima che `verify`, `browser` e `CodeQL` siano verdi **sullo stesso commit** (`headRefOid`), senza attendere attivamente i controlli.
 - **Solo `staging`.** Nulla di questa fetta si pubblica in produzione prima che Kevin lo decida, e **mai senza Stripe**: la finta non deve esistere in produzione (Task 1 lo fissa con un test).
 - **Un solo statement per ogni passo che deve essere atomico** (il client non regge le transazioni: `db.transaction` fallisce con `UNSAFE_TRANSACTION`, e `lib/db/no-transactions.test.ts` blocca la CI). Più righe che devono concordare = una CTE.
+- **Next.js**: questa fetta è tutta in `lib/` e Postgres, senza API di Next. Se un compito tocca comunque una (un `after()`, una Server Action, una rotta), si legge **prima** la pagina giusta di `node_modules/next/dist/docs/01-app/` e si scrive nel messaggio quale (regola di `CLAUDE.md`).
+- **Numero della migrazione**: è il primo libero dopo `staging` (qui `0022`, perché `0021` è la migrazione che toglie l'unicità del telefono, PR #320); se nel frattempo ne è arrivata un'altra, `drizzle-kit generate` dà il numero giusto e il nome del file e il `tag` del journal si adeguano.
 - **Codice, identificatori, commenti in inglese.** Messaggi per l'utente: non in questa fetta (nessuna interfaccia).
 - **Nessun dato di persone nei log**: gli errori di query si scrivono con `safeErrorSummary(error)` (`lib/safe-error.ts`), mai con `String(error)`.
 - **Soldi in centesimi interi**, mai float; date di calendario come stringhe `YYYY-MM-DD`; «oggi» in `Europe/Rome` (`todayInRome()`).
@@ -491,7 +493,7 @@ git commit -m "Payment gateway seam: a contract, a fake that exists only outside
 
 **Files:**
 - Modify: `lib/db/schema.ts` (dopo `bookings`), `tests/db/fixtures.ts`
-- Create: `lib/db/migrations/0021_booking_refunds.sql` (generata, poi rinominata e completata)
+- Create: `lib/db/migrations/0022_booking_refunds.sql` (generata, poi rinominata e completata)
 - Test: `tests/db/booking-refunds.test.ts`
 
 **Interfaces:**
@@ -637,7 +639,7 @@ Se `bikeReservations` è dichiarata **dopo** `bookings` nel file, sposta la nuov
 npx drizzle-kit generate
 ```
 
-Rinomina il file generato in `lib/db/migrations/0021_booking_refunds.sql` e il `tag` corrispondente in `lib/db/migrations/meta/_journal.json`. **Aggiungi in fondo** (come in `0019`, a mano, perché le altre tabelle sono chiuse allo stesso modo):
+Rinomina il file generato in `lib/db/migrations/0022_booking_refunds.sql` e il `tag` corrispondente in `lib/db/migrations/meta/_journal.json`. **Aggiungi in fondo** (come in `0019`, a mano, perché le altre tabelle sono chiuse allo stesso modo):
 
 ```sql
 --> statement-breakpoint
@@ -659,7 +661,7 @@ Expected: 4 test passano, nessun errore di tipo.
 
 ```bash
 git add lib/db tests/db
-git commit -m "Refunds table: one refund per bike, with its own row-level security (migration 0021)"
+git commit -m "Refunds table: one refund per bike, with its own row-level security (migration 0022)"
 ```
 
 ---
