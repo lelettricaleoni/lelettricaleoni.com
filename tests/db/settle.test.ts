@@ -1,10 +1,25 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { eq, sql } from 'drizzle-orm'
 import { db, bikeReservations, bookings } from '@/lib/db'
 import { FakeGateway } from '@/lib/booking/payments/fake'
 import { settleHold, settleOverdueHolds } from '@/lib/booking/settle'
 import { getFreeBikes } from '@/lib/booking/availability'
 import { createFixture, insertBooking, startPendingBooking, type Fixture } from './fixtures'
+
+// A hook that runs once, right before expireBooking, to make something happen at the exact moment a real race would.
+const hooks = vi.hoisted(() => ({ beforeExpire: undefined as undefined | ((bookingId: string) => Promise<void>) }))
+vi.mock('@/lib/booking/holds', async (importOriginal) => {
+  const real = await importOriginal<typeof import('@/lib/booking/holds')>()
+  return {
+    ...real,
+    expireBooking: async (bookingId: string) => {
+      const hook = hooks.beforeExpire
+      hooks.beforeExpire = undefined
+      if (hook) await hook(bookingId)
+      return real.expireBooking(bookingId)
+    },
+  }
+})
 
 const RANGE = { startsOn: '2031-11-03', endsOn: '2031-11-06' }
 
@@ -47,6 +62,20 @@ describe('settling a held booking', () => {
     const bare = await insertBooking(fx.customerId, RANGE) // pending, no session id
     expect(await settleHold(bare, gateway)).toBe('expired')
     expect((await bookingOf(bare)).status).toBe('expired')
+  })
+
+  it('a session that was saved while the hold was being settled is closed too: it never stays payable for a booking that is gone', async () => {
+    const bare = await insertBooking(fx.customerId, RANGE) // pending, no session id when it is read
+    const session = await gateway.createSession({
+      bookingId: bare, bookingKey: crypto.randomUUID(), customerEmail: 'db-test@example.test', language: 'it',
+      lines: [{ label: 'bike', amountCents: 3000 }], expiresAt: new Date(Date.now() + 30 * 60_000),
+      successUrl: 'https://example.test/ok', cancelUrl: 'https://example.test/back',
+    })
+    // the customer's request saves the session id exactly between the moment settleHold read the booking and the moment it closes it
+    hooks.beforeExpire = async (id) => { await db.update(bookings).set({ stripeSessionId: session.id }).where(eq(bookings.id, id)) }
+    expect(await settleHold(bare, gateway)).toBe('expired')
+    expect((await bookingOf(bare)).status).toBe('expired')
+    expect(await gateway.getSession(session.id)).toEqual({ status: 'expired' })
   })
 
   it('does nothing to a booking that is not pending any more, or that does not exist', async () => {

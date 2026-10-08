@@ -17,9 +17,16 @@ export async function settleHold(bookingId: string, gateway: PaymentGateway = ge
   const booking = await findBooking(bookingId)
   if (!booking || booking.status !== 'pending') return 'closed'
 
-  // No session yet: the process stopped between holding the bikes and opening the payment. Nobody can pay it.
+  // No session yet: the process stopped between holding the bikes and opening the payment, or is about to save it. Nobody can pay it...
   if (!booking.stripeSessionId) {
     await expireBooking(bookingId)
+    // ...unless the session was saved while this ran (the person's own request, a moment after it was read here): the booking is gone,
+    // so that session must not stay payable. Its owner closes it too if it arrives later (beginCheckout), so either order is safe.
+    const after = await findBooking(bookingId)
+    if (after?.stripeSessionId && (await gateway.expireSession(after.stripeSessionId)) === 'not_open') {
+      // paid in that very moment: the late-payment net decides between the bikes and the money
+      await confirmBooking(bookingId, gateway)
+    }
     return 'expired'
   }
 
