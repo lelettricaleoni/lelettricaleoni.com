@@ -23,17 +23,23 @@ export type IssuedRefund =
 /**
  * Gives back the money of ONE bike, in this order, so that a crash anywhere leaves something a second call can finish:
  *  1. the refund is written down as `pending` (one row per bike: the unique key makes a second refund impossible), in the same
- *     statement that checks the refunds of the booking will not add up to more than it was paid;
+ *     statement that checks (a) the bike is still in the state a refund is due from (`confirmed` for a cancellation, `expired` for
+ *     a payment that came after the bikes were freed), (b) the amount is not more than that bike cost, and (c) the refunds of the
+ *     booking will not add up to more than it was paid;
  *  2. the gateway is asked, with the reservation as its idempotency key (a repeated request gets the same refund);
  *  3. the row is updated with the answer.
  * A refund that already succeeded is returned as it is; one that failed or stayed pending is asked again, for the amount first written.
  */
 export async function issueRefund(input: IssueRefundInput, gateway: PaymentGateway): Promise<IssuedRefund> {
+  const dueFrom = input.reason === 'late_payment' ? 'expired' : 'confirmed'
   const inserted = await db.execute<{ id: string }>(sql`
     insert into booking_refunds (reservation_id, booking_id, amount_cents, reason, created_by)
     select ${input.reservationId}::uuid, b.id, ${input.amountCents}::int, ${input.reason}::refund_reason, ${input.createdBy}::uuid
     from bookings b
+    join bike_reservations r on r.id = ${input.reservationId}::uuid and r.booking_id = b.id
     where b.id = ${input.bookingId}::uuid
+      and r.status = ${dueFrom}::reservation_status
+      and ${input.amountCents}::int <= coalesce(r.amount_cents, 0)
       and ${input.amountCents}::int
         + coalesce((select sum(f.amount_cents) from booking_refunds f where f.booking_id = b.id and f.status <> 'failed'), 0)
         <= b.total_cents
@@ -43,7 +49,13 @@ export async function issueRefund(input: IssueRefundInput, gateway: PaymentGatew
   let amountCents = input.amountCents
   if (inserted.length === 0) {
     const [existing] = await db.select().from(bookingRefunds).where(eq(bookingRefunds.reservationId, input.reservationId))
-    if (!existing) return { status: 'failed', reason: 'over_total' }
+    if (!existing) {
+      // Refused by the statement: say which rule (the bike is not refundable any more, or the booking would be over-refunded).
+      const [bike] = await db.select({ status: bikeReservations.status, amountCents: bikeReservations.amountCents })
+        .from(bikeReservations).where(eq(bikeReservations.id, input.reservationId))
+      const refundable = bike && bike.status === dueFrom && input.amountCents <= (bike.amountCents ?? 0)
+      return { status: 'failed', reason: refundable ? 'over_total' : 'not_refundable' }
+    }
     if (existing.status === 'succeeded' && existing.gatewayRefundId) return { status: 'succeeded', refundRef: existing.gatewayRefundId }
     amountCents = existing.amountCents
     await db.update(bookingRefunds).set({ status: 'pending' })

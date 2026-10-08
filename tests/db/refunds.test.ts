@@ -138,11 +138,36 @@ describe('refunds and the cancellation of one online bike', () => {
   describe('issueRefund', () => {
     it('never refunds more than the booking was paid, whatever is asked bike by bike', async () => {
       const paid = await insertPaidBooking(fx, FAR, [3000, 4000])
+      // the booking was paid less than its bikes add up to (a discount given by hand): the cap is the booking's own total
+      await db.update(bookings).set({ totalCents: 5000 }).where(eq(bookings.id, paid.bookingId))
       const base = { bookingId: paid.bookingId, paymentRef: paid.paymentRef, reason: 'staff' as const, createdBy: null }
-      expect(await issueRefund({ ...base, reservationId: paid.reservationIds[0], amountCents: 6000 }, gateway)).toMatchObject({ status: 'succeeded' })
-      expect(await issueRefund({ ...base, reservationId: paid.reservationIds[1], amountCents: 1001 }, gateway)).toEqual({ status: 'failed', reason: 'over_total' })
-      expect(await issueRefund({ ...base, reservationId: paid.reservationIds[1], amountCents: 1000 }, gateway)).toMatchObject({ status: 'succeeded' })
+      expect(await issueRefund({ ...base, reservationId: paid.reservationIds[0], amountCents: 3000 }, gateway)).toMatchObject({ status: 'succeeded' })
+      expect(await issueRefund({ ...base, reservationId: paid.reservationIds[1], amountCents: 2001 }, gateway)).toEqual({ status: 'failed', reason: 'over_total' })
+      expect(await issueRefund({ ...base, reservationId: paid.reservationIds[1], amountCents: 2000 }, gateway)).toMatchObject({ status: 'succeeded' })
       expect(gateway.refundCount()).toBe(2)
+    })
+
+    it('never refunds more than the bike itself cost, even when the rest of the booking could cover it', async () => {
+      const paid = await insertPaidBooking(fx, FAR, [3000, 4000])
+      const result = await issueRefund({
+        bookingId: paid.bookingId, paymentRef: paid.paymentRef, reservationId: paid.reservationIds[0],
+        amountCents: 3500, reason: 'staff', createdBy: null,
+      }, gateway)
+      expect(result).toEqual({ status: 'failed', reason: 'not_refundable' })
+      expect(gateway.refundCount()).toBe(0)
+      expect(await refundsOf(paid.bookingId)).toHaveLength(0)
+    })
+
+    it('does not refund a bike that was already cancelled (a cancellation that won the race): no money moves', async () => {
+      const paid = await insertPaidBooking(fx, FAR, [3000, 4000])
+      // staff cancel with nothing to give back: no refund row exists, the bike is cancelled
+      await cancelOnlineReservation({ reservationId: paid.reservationIds[0], actor: staff(), refundCents: 0, now: NOW_EARLY }, gateway)
+      const result = await issueRefund({
+        bookingId: paid.bookingId, paymentRef: paid.paymentRef, reservationId: paid.reservationIds[0],
+        amountCents: 3000, reason: 'customer', createdBy: null,
+      }, gateway)
+      expect(result).toEqual({ status: 'failed', reason: 'not_refundable' })
+      expect(gateway.refundCount()).toBe(0)
     })
 
     it('a refund that already succeeded is not asked for again', async () => {
