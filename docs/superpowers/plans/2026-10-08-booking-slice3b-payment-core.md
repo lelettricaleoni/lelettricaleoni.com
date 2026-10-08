@@ -51,7 +51,7 @@ Gli ingressi e le condizioni che la spec implica ma che nessun compito Â«feliceÂ
 | `lib/booking/settle.ts` | `settleHold(bookingId, gateway)` e `settleOverdueHolds(gateway)`. |
 | `lib/booking/checkout.ts` | `beginCheckout(input, gateway)`: l'orchestrazione dall'inizio del pagamento al reindirizzamento. |
 | `lib/booking/holds.ts` (modifica) | `confirmHold` salva il riferimento di pagamento; `findBooking` esportata; `reviveBooking`. |
-| `lib/db/schema.ts` + migrazione `0021` | tabella `booking_refunds`, enum `refund_status` e `refund_reason`. |
+| `lib/db/schema.ts` + migrazione `0022` | tabella `booking_refunds`, enum `refund_status` e `refund_reason`. |
 | `tests/db/fixtures.ts` (modifica) | `insertPaidBooking`, `startPendingBooking`; opzioni `totalCents` e `amountCents`. |
 
 ---
