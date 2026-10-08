@@ -35,7 +35,12 @@
   carrello con più bici, Stripe Checkout, webhook, posto tenuto 30 minuti, annullamento una bici alla volta, Account rents, termini di noleggio.
   Chiede a Kevin un account Stripe (chiavi di prova per lo staging) e il contenuto dei termini.
   **Fetta 3a (dati, disponibilità, posti tenuti): piano in `docs/superpowers/plans/2026-10-07-booking-slice3a-holds.md`, fatta e provata su `staging`.** Stripe per ora fuori:
-  una «porta» per il pagamento con una finta solo fuori produzione, poi Stripe vero. **Solo `staging`; in produzione decide Kevin, e non senza Stripe.** Per l'account cliente: collegare chi si registra a `customers` per email (`user_id`) e
+  una «porta» per il pagamento con una finta solo fuori produzione, poi Stripe vero. **Solo `staging`; in produzione decide Kevin, e non senza Stripe.**
+  **Fetta 3b (il motore del pagamento dietro la porta, senza pagine): piano in `docs/superpowers/plans/2026-10-08-booking-slice3b-payment-core.md`, fatta su `staging`**
+  (finta + fabbrica che rifiuta in produzione, rimborsi per bici, conferma, pagamento tardivo, scadenza senza vendere due volte una bici pagata, inizio del
+  pagamento). **Restano**: 3c (pagina `/rent`, Account rents, azioni del pannello con `cancelOnlineReservation`, pagina finta di pagamento, lavoro del worker che
+  chiama `settleOverdueHolds` ogni minuto, sincronizzazione con Google Calendar dopo conferma e annullamento, termini) e 3d (`StripeGateway`, `stripe_events`,
+  `POST /api/stripe/webhook`, `expires_at` ≥ 31 minuti, saldo di Stripe per i rimborsi, avviso a Kevin per i pagamenti tardivi: oggi solo un log). Per l'account cliente: collegare chi si registra a `customers` per email (`user_id`) e
   mostrargli solo le prenotazioni online; gli account non admin oggi sono tutti di Kevin.
   Il calendario di Kevin sta in `C:\AzureDevOps\firebase` (`app/rent/`, da portare ricollegandolo
   ai dati veri); il resto di quel repo (Firestore, Stripe di prova) non si riusa.

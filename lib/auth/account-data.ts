@@ -1,6 +1,6 @@
 import type { User } from '@supabase/supabase-js'
 import { eq, sql } from 'drizzle-orm'
-import { db, bikeReservations, bookings, customers } from '@/lib/db'
+import { db, bikeReservations, bookingRefunds, bookings, customers } from '@/lib/db'
 import { parseLanguage, type Language } from './language'
 
 /**
@@ -69,6 +69,15 @@ export async function buildAccountExport(user: User) {
       }).from(bookings).where(eq(bookings.customerId, customer.id))
     : []
 
+  const refundRows = customer
+    ? await db.select({
+        amountCents: bookingRefunds.amountCents,
+        status: bookingRefunds.status,
+        reason: bookingRefunds.reason,
+        createdAt: bookingRefunds.createdAt,
+      }).from(bookingRefunds).innerJoin(bookings, eq(bookings.id, bookingRefunds.bookingId)).where(eq(bookings.customerId, customer.id))
+    : []
+
   return {
     exportedAt: new Date().toISOString(),
     account: {
@@ -94,6 +103,12 @@ export async function buildAccountExport(user: User) {
       // In euros, as shown to the customer; the database keeps whole cents.
       amount: rental.amountCents === null ? null : rental.amountCents / 100,
       amountCents: undefined,
+    })),
+    refunds: refundRows.map((refund) => ({
+      amount: refund.amountCents / 100,
+      status: refund.status,
+      reason: refund.reason,
+      createdAt: refund.createdAt.toISOString(),
     })),
     bookings: bookingRows.map((booking) => ({
       status: booking.status,
