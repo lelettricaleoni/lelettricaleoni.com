@@ -127,6 +127,27 @@
       "when": 1791381188327,
       "tag": "0017_customer_language",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1791387466808,
+      "tag": "0018_booking_status_values",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1791387780642,
+      "tag": "0019_bookings_and_held",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1791442778235,
+      "tag": "0020_booking_line_count_one_pending",
+      "breakpoints": true
     }
   ]
 }

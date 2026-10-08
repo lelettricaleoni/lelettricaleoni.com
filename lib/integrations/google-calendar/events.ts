@@ -14,8 +14,9 @@ export interface CalendarSettings {
 
 export interface ReservationForCalendar {
   id: string
-  kind: 'counter_rental' | 'maintenance'
-  status: 'confirmed' | 'cancelled'
+  kind: 'counter_rental' | 'maintenance' | 'online_rental'
+  /** Only `confirmed` has an event: `held` is not paid yet, `expired` never was, `cancelled` is over. */
+  status: 'confirmed' | 'held' | 'expired' | 'cancelled'
   startsOn: IsoDate
   /** Exclusive: the day the bike is back. Google's all-day events end the same way. */
   endsOn: IsoDate

@@ -1,7 +1,7 @@
 'use client'
 import { useRef } from 'react'
 import Link from 'next/link'
-import { ChevronDown, LayoutDashboard, LogOut, UserRound } from 'lucide-react'
+import { LuChevronDown, LuLayoutDashboard, LuLogOut, LuUserRound } from 'react-icons/lu'
 import type { User } from '@supabase/supabase-js'
 import { hasAdminRole } from '@/lib/admin-users'
 import { namesFromAccount } from '@/lib/auth/identity'
@@ -50,7 +50,7 @@ export function UserMenu({ lang, labels, user }: { lang: string; labels: UserMen
   if (user === null) {
     return (
       <Link href={`/${lang}/login`} className={signInClass}>
-        <UserRound aria-hidden />
+        <LuUserRound aria-hidden />
         {labels.login}
       </Link>
     )
@@ -72,7 +72,7 @@ export function UserMenu({ lang, labels, user }: { lang: string; labels: UserMen
             {initial}
           </span>
           {firstName && <span className="hidden max-w-24 truncate sm:inline">{firstName}</span>}
-          <ChevronDown className="text-muted-foreground" aria-hidden />
+          <LuChevronDown className="text-muted-foreground" aria-hidden />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-60">
           <DropdownMenuLabel className="font-normal">
@@ -82,21 +82,21 @@ export function UserMenu({ lang, labels, user }: { lang: string; labels: UserMen
           <DropdownMenuSeparator />
           <DropdownMenuItem asChild className="cursor-pointer">
             <Link href={`/${lang}/account/settings`}>
-              <UserRound />
+              <LuUserRound />
               {labels.account}
             </Link>
           </DropdownMenuItem>
           {hasAdminRole(user) && (
             <DropdownMenuItem asChild className="cursor-pointer">
               <Link href="/manage">
-                <LayoutDashboard />
+                <LuLayoutDashboard />
                 {labels.panel}
               </Link>
             </DropdownMenuItem>
           )}
           <DropdownMenuSeparator />
           <DropdownMenuItem className="cursor-pointer" onSelect={() => logoutForm.current?.requestSubmit()}>
-            <LogOut />
+            <LuLogOut />
             {labels.logout}
           </DropdownMenuItem>
         </DropdownMenuContent>

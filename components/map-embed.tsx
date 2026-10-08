@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { MapPin } from 'lucide-react'
+import { LuMapPin } from 'react-icons/lu'
 import { Button } from '@/components/ui/button'
 import { MapLoader } from '@/components/map-loader'
 import { trackEvent } from '@/lib/analytics'
@@ -56,7 +56,7 @@ export function MapEmbed({ title, loadPrompt, loadNotice, loadButton }: MapEmbed
   return (
     <div className="w-full h-full flex flex-col items-center justify-center gap-4 bg-muted">
       <div className="w-12 h-12 rounded-full bg-background flex items-center justify-center shadow-sm">
-        <MapPin size={22} className="text-primary" />
+        <LuMapPin size={22} className="text-primary" />
       </div>
       <div className="text-center px-6">
         <p className="font-semibold text-foreground text-sm">{loadPrompt}</p>

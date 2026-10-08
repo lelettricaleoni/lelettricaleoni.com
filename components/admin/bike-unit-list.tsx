@@ -1,6 +1,6 @@
 'use client'
 import { useTransition } from 'react'
-import { RotateCcw, Trash2 } from 'lucide-react'
+import { LuRotateCcw, LuTrash2 } from 'react-icons/lu'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
 import { deleteBikeUnitAction, restoreBikeUnitAction } from '@/lib/actions/bike-units'
@@ -80,7 +80,7 @@ export function BikeUnitList({
                           disabled={isPending}
                           onClick={() => handleRestore(unit.id)}
                         >
-                          <RotateCcw size={14} />
+                          <LuRotateCcw size={14} />
                         </Button>
                       ) : (
                         <RetireBikeDialog
@@ -93,7 +93,7 @@ export function BikeUnitList({
                         disabled={isPending}
                         onClick={() => handleDelete(unit.id)}
                       >
-                        <Trash2 size={14} />
+                        <LuTrash2 size={14} />
                       </Button>
                     </div>
                   </div>

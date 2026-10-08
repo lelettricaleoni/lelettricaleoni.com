@@ -59,8 +59,13 @@ Frasi in minuscolo con la maiuscola iniziale, mai tutto maiuscolo.
   padding laterale `px-4 sm:px-6`; sezioni della home `py-20`.
 - **Ombre**: `shadow-sm` di base, `hover:shadow-md` sulle card, `shadow-lg` e oltre solo per ciò che galleggia (menu, finestre).
 - **Bordi**: `border` con il colore del token; una card è `border bg-card`.
-- **Icone**: `lucide-react`, 16 px dentro i pulsanti (il `Button` le dimensiona da solo). Icone di marca: `react-icons`
-  (il logo di Google è `FcGoogle`, a colori, come chiedono le regole di Google). Mai un CDN.
+- **Icone**: una sola libreria, `react-icons`. Le icone dell'interfaccia sono quelle di Lucide, `react-icons/lu` (`LuCheck`,
+  `LuHouse`…); i loghi di marca da `react-icons/si` (Strava, Komoot, WhatsApp) o `react-icons/fc` (il logo di Google è `FcGoogle`,
+  a colori, come chiedono le regole di Google). **Dimensione**: a differenza di Lucide, `react-icons` parte da `1em`, non da 24 px:
+  dentro un `Button` o una voce di menu ci pensa il componente (16 px); altrove metti `size-4` o `size={…}`. Mai un CDN, mai un SVG
+  copiato a mano se la libreria ce l'ha. `lucide-react` e `simple-icons` non ci sono più (2026-10-08, vedi la skill `clean-project`).
+  **Dopo ogni `npx shadcn add`**, che scrive ancora `lucide-react` nei componenti (`components.json` dice `lucide`): sostituire
+  l'import con `react-icons/lu` (nomi `LuNome`; i vecchi alias hanno un altro nome: `Home`→`LuHouse`, `CheckCircle`→`LuCircleCheckBig`).
 - **Focus e stati**: l'anello del `Button`, `disabled:opacity-50`, `cursor-pointer` sugli elementi cliccabili.
 
 ## Comportamento

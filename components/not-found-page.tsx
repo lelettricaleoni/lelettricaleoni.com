@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import Image from 'next/image'
-import { MapPin, ArrowLeft } from 'lucide-react'
+import { LuMapPin, LuArrowLeft } from 'react-icons/lu'
 import { Button } from '@/components/ui/button'
 
 export function NotFoundPage() {
@@ -37,13 +37,13 @@ export function NotFoundPage() {
       <div className="mt-10 flex flex-col sm:flex-row gap-3 items-center">
         <Button asChild size="lg" className="gap-2">
           <Link href="/it">
-            <ArrowLeft size={18} />
+            <LuArrowLeft size={18} />
             Torna alla home
           </Link>
         </Button>
         <Button asChild variant="outline" size="lg" className="gap-2">
           <a href="tel:+393381232434">
-            <MapPin size={18} />
+            <LuMapPin size={18} />
             Chiamaci
           </a>
         </Button>

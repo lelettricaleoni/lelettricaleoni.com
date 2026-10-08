@@ -1,7 +1,7 @@
-import { CalendarDays } from 'lucide-react'
+import { LuCalendarDays } from 'react-icons/lu'
 import type { IntegrationIcon } from '@/lib/integrations/registry'
 
-const ICONS = { calendar: CalendarDays } satisfies Record<IntegrationIcon, typeof CalendarDays>
+const ICONS = { calendar: LuCalendarDays } satisfies Record<IntegrationIcon, typeof LuCalendarDays>
 
 /** The registry holds a name; this is where it becomes a component. */
 export function IntegrationIconBox({ icon, className }: { icon: IntegrationIcon; className?: string }) {

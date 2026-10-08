@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
-import { Plus } from 'lucide-react'
+import { LuPlus } from 'react-icons/lu'
 import { getBikeModelsForAdmin } from '@/lib/actions/bike-models'
 import { getAdminUser } from '@/lib/supabase/server'
 import { BikeModelList } from '@/components/admin/bike-model-list'
@@ -21,7 +21,7 @@ export default async function AdminBikeModelsPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-[#1e3a5f]">Bike models</h1>
         <Button asChild className="bg-[#1e3a5f] hover:bg-[#152c4a]">
-          <Link href="/manage/bikes/new"><Plus size={16} className="mr-1" /> New model</Link>
+          <Link href="/manage/bikes/new"><LuPlus size={16} className="mr-1" /> New model</Link>
         </Button>
       </div>
 

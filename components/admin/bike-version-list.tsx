@@ -1,6 +1,6 @@
 'use client'
 import { useState, useTransition } from 'react'
-import { Plus, Pencil, Trash2, Check, X } from 'lucide-react'
+import { LuPlus, LuPencil, LuTrash2, LuCheck, LuX } from 'react-icons/lu'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { toast } from 'sonner'
@@ -58,20 +58,20 @@ export function BikeVersionList({ versions }: { versions: BikeVersion[] }) {
             <>
               <Input value={draftName} onChange={(e) => setDraftName(e.target.value)} className="h-8" />
               <Button size="icon" variant="ghost" disabled={isPending} onClick={() => saveEdit(version.id, version.displayOrder)}>
-                <Check size={14} />
+                <LuCheck size={14} />
               </Button>
               <Button size="icon" variant="ghost" onClick={() => setEditingId(null)}>
-                <X size={14} />
+                <LuX size={14} />
               </Button>
             </>
           ) : (
             <>
               <span className="flex-1 text-sm">{version.name}</span>
               <Button size="icon" variant="ghost" onClick={() => startEdit(version)}>
-                <Pencil size={14} />
+                <LuPencil size={14} />
               </Button>
               <Button size="icon" variant="ghost" className="text-destructive" disabled={isPending} onClick={() => handleDelete(version.id)}>
-                <Trash2 size={14} />
+                <LuTrash2 size={14} />
               </Button>
             </>
           )}
@@ -86,7 +86,7 @@ export function BikeVersionList({ versions }: { versions: BikeVersion[] }) {
           className="h-8"
         />
         <Button size="icon" variant="outline" disabled={isPending} onClick={handleCreate}>
-          <Plus size={14} />
+          <LuPlus size={14} />
         </Button>
       </div>
     </div>

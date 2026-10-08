@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import Link from 'next/link'
-import { Ruler, TrendingUp, Clock } from 'lucide-react'
+import { LuRuler, LuTrendingUp, LuClock } from 'react-icons/lu'
 import { Badge } from '@/components/ui/badge'
 import { BikeTypeIcon, bikeTypeBadgeClass } from '@/components/bike-type-icon'
 import { DifficultyBadge } from '@/components/difficulty-badge'
@@ -39,11 +39,11 @@ export function RouteCard({ route, translation, media, lang, dict }: RouteCardPr
   const stats = [
     // Whole kilometres: with decimals the label rarely fits in a third of the card.
     // The route page shows them.
-    { key: 'distance', icon: Ruler, value: route.distanceKm ? `${formatRouteKm(route.distanceKm, lang, 'whole')} km` : '-', label: d.stat_distance_label },
-    { key: 'elevation', icon: TrendingUp, value: route.elevationM != null ? `${route.elevationM} m` : '-', label: d.stat_elevation_label },
+    { key: 'distance', icon: LuRuler, value: route.distanceKm ? `${formatRouteKm(route.distanceKm, lang, 'whole')} km` : '-', label: d.stat_distance_label },
+    { key: 'elevation', icon: LuTrendingUp, value: route.elevationM != null ? `${route.elevationM} m` : '-', label: d.stat_elevation_label },
     {
       key: 'duration',
-      icon: Clock,
+      icon: LuClock,
       value: route.durationMin
         ? `${Math.floor(route.durationMin / 60)}h${route.durationMin % 60 > 0 ? `${route.durationMin % 60}m` : ''}`
         : '-',

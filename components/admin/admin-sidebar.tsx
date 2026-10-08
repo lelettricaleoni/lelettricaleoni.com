@@ -1,16 +1,16 @@
 'use client'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Home, Map, Users, Code2, LogOut, Bike, SlidersHorizontal, Warehouse, CalendarDays, Contact, Plug } from 'lucide-react'
+import { LuHouse, LuMap, LuUsers, LuCodeXml, LuLogOut, LuBike, LuSlidersHorizontal, LuWarehouse, LuCalendarDays, LuContact, LuPlug } from 'react-icons/lu'
 import { logoutAction } from '@/lib/actions/auth'
 import { cn } from '@/lib/utils'
 import type { AdminUserSummary } from '@/lib/admin-users'
-import type { LucideIcon } from 'lucide-react'
+import type { IconType } from 'react-icons'
 
 interface NavItem {
   href: string
   label: string
-  icon: LucideIcon
+  icon: IconType
   exact?: boolean
 }
 
@@ -21,20 +21,20 @@ interface NavGroup {
 }
 
 export const navGroups: NavGroup[] = [
-  { items: [{ href: '/manage', label: 'Home', icon: Home, exact: true }] },
+  { items: [{ href: '/manage', label: 'Home', icon: LuHouse, exact: true }] },
   { label: 'Content', items: [
-    { href: '/manage/routes', label: 'Routes', icon: Map },
+    { href: '/manage/routes', label: 'Routes', icon: LuMap },
   ] },
   { label: 'Bikes', items: [
-    { href: '/manage/bikes', label: 'Bikes', icon: Bike },
-    { href: '/manage/bikes/shop', label: 'Shop', icon: Warehouse },
-    { href: '/manage/bookings', label: 'Bookings', icon: CalendarDays },
-    { href: '/manage/customers', label: 'Customers', icon: Contact },
-    { href: '/manage/bikes/options', label: 'Bike options', icon: SlidersHorizontal },
+    { href: '/manage/bikes', label: 'Bikes', icon: LuBike },
+    { href: '/manage/bikes/shop', label: 'Shop', icon: LuWarehouse },
+    { href: '/manage/bookings', label: 'Bookings', icon: LuCalendarDays },
+    { href: '/manage/customers', label: 'Customers', icon: LuContact },
+    { href: '/manage/bikes/options', label: 'Bike options', icon: LuSlidersHorizontal },
   ] },
   { label: 'System', items: [
-    { href: '/manage/users', label: 'Access', icon: Users },
-    { href: '/manage/integrations', label: 'Integrations', icon: Plug },
+    { href: '/manage/users', label: 'Access', icon: LuUsers },
+    { href: '/manage/integrations', label: 'Integrations', icon: LuPlug },
   ] },
 ]
 
@@ -53,7 +53,7 @@ export function AdminSidebar({ hasDevAccess }: { hasDevAccess?: AdminUserSummary
   const groups = hasDevAccess
     ? navGroups.map((group) =>
         group.label === 'System'
-          ? { ...group, items: [...group.items, { href: '/manage/dev', label: 'Dev', icon: Code2 }] }
+          ? { ...group, items: [...group.items, { href: '/manage/dev', label: 'Dev', icon: LuCodeXml }] }
           : group
       )
     : navGroups
@@ -94,7 +94,7 @@ export function AdminSidebar({ hasDevAccess }: { hasDevAccess?: AdminUserSummary
           type="submit"
           className="flex items-center gap-2 px-3 py-2 text-white/50 hover:text-white text-sm w-full rounded-md hover:bg-white/10 transition-colors"
         >
-          <LogOut size={15} />
+          <LuLogOut size={15} />
           Log out
         </button>
       </form>

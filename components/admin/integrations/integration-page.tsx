@@ -1,7 +1,7 @@
 'use client'
 import { useState, useTransition } from 'react'
 import Link from 'next/link'
-import { ChevronLeft } from 'lucide-react'
+import { LuChevronLeft } from 'react-icons/lu'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -51,7 +51,7 @@ export function IntegrationPage({
   return (
     <div className="space-y-6">
       <Link href="/manage/integrations" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground">
-        <ChevronLeft size={16} /> Integrations
+        <LuChevronLeft size={16} /> Integrations
       </Link>
 
       <div className="flex flex-wrap items-start justify-between gap-4">

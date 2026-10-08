@@ -6,6 +6,7 @@ import {
 import { fullName } from '@/lib/customer'
 import { summarize, type CustomerSummary } from '@/lib/customers'
 import { EXCLUSION_VIOLATION, FOREIGN_KEY_VIOLATION, pgErrorCode } from '@/lib/pg-errors'
+import { occupying } from '@/lib/booking/occupancy'
 import { daysBetween, exclusiveEnd, monthDays, type DayRange, type IsoDate, type IsoMonth } from '@/lib/dates'
 
 /*
@@ -60,7 +61,7 @@ async function findOverlaps(
 ): Promise<ReservationSummary[]> {
   return selectSummaries(and(
     eq(bikeReservations.bikeUnitId, bikeUnitId),
-    eq(bikeReservations.status, 'confirmed'),
+    occupying(),
     lt(bikeReservations.startsOn, endsOn),
     gt(bikeReservations.endsOn, startsOn),
     excludeId ? ne(bikeReservations.id, excludeId) : undefined,
@@ -146,7 +147,7 @@ export async function createCounterRental(input: CreateRentalInput): Promise<Cre
           and (u.retired_on is null or ${input.endsOn}::date <= u.retired_on)
           and not exists (
             select 1 from bike_reservations r
-            where r.bike_unit_id = u.id and r.status = 'confirmed'
+            where r.bike_unit_id = u.id and r.status in ('confirmed', 'held')
               and r.during && daterange(${input.startsOn}::date, ${input.endsOn}::date, '[)'))
         order by u.created_at, u.id
         limit 1
@@ -234,7 +235,7 @@ export async function getMoveCandidates(reservationId: string): Promise<MoveCand
       and (u.retired_on is null or ${reservation.endsOn}::date <= u.retired_on)
       and not exists (
         select 1 from bike_reservations r
-        where r.bike_unit_id = u.id and r.status = 'confirmed'
+        where r.bike_unit_id = u.id and r.status in ('confirmed', 'held')
           and r.during && daterange(${reservation.startsOn}::date, ${reservation.endsOn}::date, '[)'))
     order by is_same desc, model_name, s.display_order, v.display_order, u.id`)
 
@@ -317,7 +318,7 @@ export async function getOccupiedRanges(bikeUnitId: string, excludeReservationId
     .from(bikeReservations)
     .where(and(
       eq(bikeReservations.bikeUnitId, bikeUnitId),
-      eq(bikeReservations.status, 'confirmed'),
+      occupying(),
       excludeReservationId ? ne(bikeReservations.id, excludeReservationId) : undefined,
     ))
     .orderBy(asc(bikeReservations.startsOn))
@@ -361,6 +362,8 @@ export interface GridReservation {
   customer: CustomerSummary | null
   /** The price of the rental in cents: null for a maintenance. */
   amountCents: number | null
+  /** `held` while the person is still paying for it. */
+  status: 'confirmed' | 'held'
 }
 
 export interface GridUnit {
@@ -410,7 +413,7 @@ export async function getGrid(month: IsoMonth): Promise<GridUnit[]> {
       .from(bikeReservations)
       .leftJoin(customers, eq(customers.id, bikeReservations.customerId))
       .where(and(
-        eq(bikeReservations.status, 'confirmed'),
+        occupying(),
         lt(bikeReservations.startsOn, monthEnd),
         gt(bikeReservations.endsOn, monthStart),
       )),
@@ -422,6 +425,7 @@ export async function getGrid(month: IsoMonth): Promise<GridUnit[]> {
     list.push({
       id: row.id, kind: row.kind, startsOn: row.startsOn, endsOn: row.endsOn,
       label: caption(row, customer), customer: customer ? summarize(customer) : null, amountCents: row.amountCents,
+      status: row.status === 'held' ? 'held' : 'confirmed',
     })
     byUnit.set(row.bikeUnitId, list)
   }
@@ -463,7 +467,7 @@ export async function retireBikeUnit(id: string, retiredOn: IsoDate): Promise<Re
     where u.id = ${id}::uuid
       and not exists (
         select 1 from bike_reservations r
-        where r.bike_unit_id = u.id and r.status = 'confirmed' and r.ends_on > ${retiredOn}::date)
+        where r.bike_unit_id = u.id and r.status in ('confirmed', 'held') and r.ends_on > ${retiredOn}::date)
     returning u.id`)
   if (rows.length > 0) return { status: 'retired' }
 
@@ -472,7 +476,7 @@ export async function retireBikeUnit(id: string, retiredOn: IsoDate): Promise<Re
 
   const conflicts = await selectSummaries(and(
     eq(bikeReservations.bikeUnitId, id),
-    eq(bikeReservations.status, 'confirmed'),
+    occupying(),
     gt(bikeReservations.endsOn, retiredOn),
   ))
   return { status: 'conflict', conflicts }

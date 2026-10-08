@@ -17,8 +17,8 @@ const unit = (
   sizeId: 'size-m', sizeName: 'M', versionId: 'version-alu', versionName: 'Alu', retiredOn, reservations,
 })
 
-const rental = { id: 'r1', kind: 'counter_rental' as const, startsOn: '2031-07-10', endsOn: '2031-07-13', label: 'Mario Rossi', customer: { id: 'c1', firstName: 'Mario', lastName: 'Rossi', email: null, phone: null, notes: null }, amountCents: 4500 }
-const maintenance = { id: 'm1', kind: 'maintenance' as const, startsOn: '2031-07-20', endsOn: '2031-07-22', label: 'chain', customer: null, amountCents: null }
+const rental = { id: 'r1', kind: 'counter_rental' as const, startsOn: '2031-07-10', endsOn: '2031-07-13', label: 'Mario Rossi', customer: { id: 'c1', firstName: 'Mario', lastName: 'Rossi', email: null, phone: null, notes: null }, amountCents: 4500, status: 'confirmed' as const }
+const maintenance = { id: 'm1', kind: 'maintenance' as const, startsOn: '2031-07-20', endsOn: '2031-07-22', label: 'chain', customer: null, amountCents: null, status: 'confirmed' as const }
 
 function render(units: GridUnit[], today = '2031-07-15') {
   return renderToStaticMarkup(createElement(BookingView, { month: '2031-07', today, units, models: [] }))

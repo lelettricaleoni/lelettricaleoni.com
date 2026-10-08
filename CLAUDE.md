@@ -68,6 +68,13 @@ importato qui sopra. Non duplicarli in questo file.
   per le date (da installare con la prima fetta delle prenotazioni; le date di calendario
   viaggiano come stringhe `YYYY-MM-DD` e «oggi» si calcola in `Europe/Rome`), e
   `libphonenumber-js` per i telefoni. shadcn è il sistema UI primario.
+- **Next.js: la documentazione che fa fede sta in `node_modules/next/dist/docs/`, e si legge PRIMA di scrivere** (Kevin, 2026-10-08,
+  dopo che l'avevo saltata per un'intera sessione). Questa versione non è il Next che conosci (`AGENTS.md`, che `next dev` riscrive:
+  per questo la regola sta anche qui). Prima di scrivere o cambiare codice che usa un'API di Next (Server Action, `route.ts`, `instant`,
+  `after()`, `proxy.ts`, `"use cache"` / `updateTag`, `metadata`, segmenti dinamici, `loading.tsx`, `notFound()`) apri la pagina giusta
+  (`node_modules/next/dist/docs/01-app/`: `ls` e `grep -rn` per l'API) e **scrivi nel messaggio quale pagina hai letto**. Se la
+  documentazione non dice una cosa, non darla per scontata e non dire che «la documentazione lo conferma»: cerca un precedente nel
+  progetto o provala. Vale anche per chi scrive un piano: i compiti che toccano Next citano la pagina da leggere.
 - **`--webpack`, mai Turbopack**: `next dev --webpack` e `next build --webpack`. Non esiste
   `--no-turbopack`.
 - **Niente `next-seo`**: è per il Pages Router. Usa l'API `Metadata` nativa e JSON-LD.
@@ -90,7 +97,7 @@ importato qui sopra. Non duplicarli in questo file.
 Next.js 16 (routing, Cache Components, trappole verificate) e i18n (architettura, come
 aggiungere stringhe) sono skill di progetto — `.claude/skills/nextjs-16/`,
 `.claude/skills/i18n/`, `.claude/skills/db-migrations/`, `.claude/skills/media-storage/`,
-`.claude/skills/maps/`, `.claude/skills/privacy-cookies/`, `.claude/skills/cookie-consent/`, `.claude/skills/design-system/` — caricate su richiesta invece che
+`.claude/skills/maps/`, `.claude/skills/privacy-cookies/`, `.claude/skills/cookie-consent/`, `.claude/skills/design-system/`, `.claude/skills/clean-project/` (un lavoro, uno strumento; niente avanzi) — caricate su richiesta invece che
 sempre, così non pesano quando il task non le tocca.
 
 **Ogni lavoro visivo parte da `design-system`** (Kevin, 2026-10-07): raggi, colori, componenti e misure già decisi dal sito.
@@ -109,8 +116,9 @@ Nei log non entrano mai dati di persone: per gli errori di una query, `safeError
 
 ## shadcn/ui
 - `npx shadcn@latest init` è interattivo — preferire: crea `components.json` manualmente + `npx shadcn@latest add <componenti>`
-- Installare anche: `clsx`, `tailwind-merge`, `class-variance-authority`, `@radix-ui/react-slot`, `lucide-react`
-- `lucide-react` non include icone di brand (es. Instagram) → usare SVG inline
+- Installare anche: `clsx`, `tailwind-merge`, `class-variance-authority`, `@radix-ui/react-slot`, `react-icons`
+- Le icone sono tutte `react-icons` (Lucide è `react-icons/lu`, i loghi `react-icons/si`): **`lucide-react` non c'è più**, e un
+  componente scritto da `shadcn add` che lo importa va riscritto con `react-icons/lu` (vedi la skill `design-system`)
 
 ## Igiene del repository
 - La root è per la configurazione, non per i file di lavoro: screenshot, dump, esportazioni e output di debug vanno nella cartella scratchpad di sessione, mai nel progetto

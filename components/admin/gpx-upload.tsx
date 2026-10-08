@@ -1,7 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { useDropzone } from 'react-dropzone'
-import { Upload, FileCheck } from 'lucide-react'
+import { LuUpload, LuFileCheck } from 'react-icons/lu'
 import { toast } from 'sonner'
 import { getPresignedUploadUrlAction } from '@/lib/actions/routes'
 import { gpxPointsToSvgPath } from '@/lib/gpx-svg'
@@ -91,11 +91,11 @@ export function GpxUpload({ routeId, defaultGpxKey, onUploaded }: GpxUploadProps
         <input {...getInputProps()} />
         {gpxKey ? (
           <div className="flex items-center justify-center gap-2 text-sm text-green-600">
-            <FileCheck size={18} /> GPX file uploaded (click to replace)
+            <LuFileCheck size={18} /> GPX file uploaded (click to replace)
           </div>
         ) : (
           <div className="flex flex-col items-center gap-2 text-sm text-muted-foreground">
-            <Upload size={18} />
+            <LuUpload size={18} />
             {uploading ? 'Uploading...' : 'Drop the .gpx file here or click to select'}
           </div>
         )}

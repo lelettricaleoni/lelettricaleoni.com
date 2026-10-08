@@ -5,7 +5,7 @@ import Lightbox from 'yet-another-react-lightbox'
 import 'yet-another-react-lightbox/styles.css'
 import Zoom from 'yet-another-react-lightbox/plugins/zoom'
 import Hls from 'hls.js'
-import { VideoOff } from 'lucide-react'
+import { LuVideoOff } from 'react-icons/lu'
 import { VideoPlayer } from '@/components/video-player'
 import { MediaPlaceholder } from '@/components/media-placeholder'
 import { hlsUrl, photoUrl, lowestBitrateLevel, type MediaWithHls } from '@/lib/media-client'
@@ -108,7 +108,7 @@ function HlsVideoSlide({ hlsUrl, active }: { hlsUrl: string; active: boolean }) 
     // of implying the visitor should wait.
     return (
       <div className="flex flex-col items-center justify-center gap-3 w-full h-full">
-        <VideoOff size={32} className="text-white/30" />
+        <LuVideoOff size={32} className="text-white/30" />
         <span className="text-sm text-white/40">Video non disponibile al momento</span>
       </div>
     )

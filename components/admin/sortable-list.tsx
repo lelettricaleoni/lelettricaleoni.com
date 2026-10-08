@@ -11,7 +11,7 @@ import {
   useSortable, verticalListSortingStrategy, arrayMove,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { GripVertical } from 'lucide-react'
+import { LuGripVertical } from 'react-icons/lu'
 
 export interface SortableItem {
   id: string
@@ -34,7 +34,7 @@ function SortableRow({ item }: { item: SortableItem }) {
         className="text-muted-foreground hover:text-foreground cursor-grab shrink-0 p-2"
         aria-label="Drag to reorder"
       >
-        <GripVertical size={16} />
+        <LuGripVertical size={16} />
       </button>
       <div className="flex-1 min-w-0">{item.node}</div>
     </div>

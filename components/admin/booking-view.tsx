@@ -2,7 +2,7 @@
 import { Fragment, useEffect, useMemo, useState, useTransition } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { CalendarPlus, ChevronLeft, ChevronRight, Plus, Wrench } from 'lucide-react'
+import { LuCalendarPlus, LuChevronLeft, LuChevronRight, LuPlus, LuWrench } from 'react-icons/lu'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { cn } from '@/lib/utils'
@@ -58,13 +58,13 @@ export function BookingView({ month, today, units, models }: BookingViewProps) {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-bold text-[#1e3a5f]">Bookings</h1>
         <div className="flex items-center gap-2">
-          <Button onClick={() => setRental({ unit: null })}><Plus size={16} className="mr-1" />New rental</Button>
+          <Button onClick={() => setRental({ unit: null })}><LuPlus size={16} className="mr-1" />New rental</Button>
           <Button asChild variant="outline" size="icon" aria-label="Previous month">
-            <Link href={`/manage/bookings?month=${shiftMonth(month, -1)}`}><ChevronLeft size={16} /></Link>
+            <Link href={`/manage/bookings?month=${shiftMonth(month, -1)}`}><LuChevronLeft size={16} /></Link>
           </Button>
           <span className="min-w-36 text-center font-medium">{monthTitle(month)}</span>
           <Button asChild variant="outline" size="icon" aria-label="Next month">
-            <Link href={`/manage/bookings?month=${shiftMonth(month, 1)}`}><ChevronRight size={16} /></Link>
+            <Link href={`/manage/bookings?month=${shiftMonth(month, 1)}`}><LuChevronRight size={16} /></Link>
           </Button>
         </div>
       </div>
@@ -190,11 +190,11 @@ function UnitRow({ unit, month, days, today, onSelect, onPlanMaintenance, onAddR
           {/* A bike already retired cannot be rented any more: only one retiring later still can. */}
           {!(unit.retiredOn && unit.retiredOn <= today) && (
             <Button variant="ghost" size="icon" className="size-7" aria-label="Add rental" title="Add rental" onClick={onAddRental}>
-              <CalendarPlus size={14} />
+              <LuCalendarPlus size={14} />
             </Button>
           )}
           <Button variant="ghost" size="icon" className="size-7" aria-label="Plan maintenance" title="Plan maintenance" onClick={onPlanMaintenance}>
-            <Wrench size={14} />
+            <LuWrench size={14} />
           </Button>
         </div>
       </div>

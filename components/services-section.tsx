@@ -1,4 +1,4 @@
-import { Bike, Wrench } from 'lucide-react'
+import { LuBike, LuWrench } from 'react-icons/lu'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { SectionViewTracker } from '@/components/section-view-tracker'
 
@@ -24,7 +24,7 @@ export function ServicesSection({ dict }: ServicesSectionProps) {
           <Card className="border-border/60 hover:shadow-md transition-shadow">
             <CardHeader className="pb-3">
               <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-3">
-                <Bike className="text-primary" size={24} />
+                <LuBike className="text-primary" size={24} />
               </div>
               <CardTitle className="text-xl text-foreground">
                 {dict.services.rental.title}
@@ -40,7 +40,7 @@ export function ServicesSection({ dict }: ServicesSectionProps) {
           <Card className="border-border/60 hover:shadow-md transition-shadow">
             <CardHeader className="pb-3">
               <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-3">
-                <Wrench className="text-primary" size={24} />
+                <LuWrench className="text-primary" size={24} />
               </div>
               <CardTitle className="text-xl text-foreground">
                 {dict.services.repair.title}

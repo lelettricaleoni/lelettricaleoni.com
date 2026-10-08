@@ -1,6 +1,6 @@
 'use client'
 
-import { MapPin, Phone, Mail, Clock, ExternalLink } from 'lucide-react'
+import { LuMapPin, LuPhone, LuMail, LuClock, LuExternalLink } from 'react-icons/lu'
 import { Button } from '@/components/ui/button'
 import { MapEmbed } from '@/components/map-embed'
 import { trackEvent } from '@/lib/analytics'
@@ -42,12 +42,12 @@ export function MapSection({ dict }: MapSectionProps) {
           {/* Info card */}
           <div className="space-y-6">
             <InfoRow
-              icon={<MapPin className="text-primary" size={20} />}
+              icon={<LuMapPin className="text-primary" size={20} />}
               label={dict.info.address_label}
               value="Via Roma, 90, Dro (TN) 38074, Italia"
             />
             <InfoRow
-              icon={<Phone className="text-primary" size={20} />}
+              icon={<LuPhone className="text-primary" size={20} />}
               label={dict.info.phone_label}
               value={
                 <a
@@ -60,7 +60,7 @@ export function MapSection({ dict }: MapSectionProps) {
               }
             />
             <InfoRow
-              icon={<Mail className="text-primary" size={20} />}
+              icon={<LuMail className="text-primary" size={20} />}
               label={dict.info.email_label}
               value={
                 <a
@@ -73,7 +73,7 @@ export function MapSection({ dict }: MapSectionProps) {
               }
             />
             <InfoRow
-              icon={<Clock className="text-primary" size={20} />}
+              icon={<LuClock className="text-primary" size={20} />}
               label={dict.info.hours_label}
               value={dict.info.hours_value}
             />
@@ -85,7 +85,7 @@ export function MapSection({ dict }: MapSectionProps) {
                   rel="noopener noreferrer"
                   onClick={() => trackEvent('get_directions')}
                 >
-                <ExternalLink size={16} />
+                <LuExternalLink size={16} />
                 {dict.info.directions}
               </a>
             </Button>

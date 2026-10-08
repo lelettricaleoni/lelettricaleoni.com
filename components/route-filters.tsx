@@ -1,6 +1,6 @@
 'use client'
 import { useState, type ReactNode } from 'react'
-import { SlidersHorizontal, RotateCcw, Images, Map as MapIcon } from 'lucide-react'
+import { LuSlidersHorizontal, LuRotateCcw, LuImages, LuMap as MapIcon } from 'react-icons/lu'
 import { cn } from '@/lib/utils'
 import { trackEvent } from '@/lib/analytics'
 import { RouteCard } from './route-card'
@@ -76,7 +76,7 @@ export function RouteFilters({ routes, lang, dict, bikeTypeOptions }: RouteFilte
               'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold border cursor-pointer transition-colors shrink-0',
               activeFilterCount > 0 ? PILL_ACTIVE : PILL_INACTIVE
             )}>
-              <SlidersHorizontal size={15} />
+              <LuSlidersHorizontal size={15} />
               {d.filters_button}
               {activeFilterCount > 0 && (
                 <span className={cn(
@@ -148,7 +148,7 @@ export function RouteFilters({ routes, lang, dict, bikeTypeOptions }: RouteFilte
                   onClick={() => { setActiveDifficulty(null); setActiveBikeType(null) }}
                   className="h-8 text-xs gap-1.5 text-muted-foreground"
                 >
-                  <RotateCcw size={13} />
+                  <LuRotateCcw size={13} />
                   {d.no_results_reset}
                 </Button>
               </div>
@@ -179,7 +179,7 @@ export function RouteFilters({ routes, lang, dict, bikeTypeOptions }: RouteFilte
             'inline-flex items-center justify-center h-7 w-8 rounded-sm transition-colors',
             previewMode === 'media' ? 'bg-background text-[#1e3a5f] shadow-sm' : 'text-muted-foreground'
           )}>
-            <Images size={15} />
+            <LuImages size={15} />
           </span>
           <span className={cn(
             'inline-flex items-center justify-center h-7 w-8 rounded-sm transition-colors',
@@ -194,7 +194,7 @@ export function RouteFilters({ routes, lang, dict, bikeTypeOptions }: RouteFilte
       {filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-4 min-h-[50vh] text-center">
           <div className="flex items-center justify-center w-14 h-14 rounded-full bg-muted">
-            <SlidersHorizontal size={24} className="text-muted-foreground" />
+            <LuSlidersHorizontal size={24} className="text-muted-foreground" />
           </div>
           <p className="font-medium text-[#1e3a5f]">{d.no_results}</p>
           <button

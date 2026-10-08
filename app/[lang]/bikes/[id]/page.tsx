@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation'
 import { connection } from 'next/server'
 import Link from 'next/link'
 import type { Metadata } from 'next'
-import { ArrowLeft } from 'lucide-react'
+import { LuArrowLeft } from 'react-icons/lu'
 import { getDictionary, hasLocale } from '../../dictionaries'
 import { Navbar } from '@/components/navbar'
 import { Footer } from '@/components/footer'
@@ -118,7 +118,7 @@ export default async function BikeDetailPage({
       <main className="w-full pt-24 pb-8">
         <div className="max-w-6xl mx-auto px-12 sm:px-20 space-y-8">
           <Link href={`/${lang}/bikes`} className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-[#366DA1]">
-            <ArrowLeft size={16} /> {d.back_to_list}
+            <LuArrowLeft size={16} /> {d.back_to_list}
           </Link>
 
           <MediaGallery media={allMedia} title={translation?.name ?? id} fit="contain" />

@@ -1,6 +1,6 @@
 'use client'
 import { useTransition } from 'react'
-import { ShieldCheck, ShieldOff, Code2 } from 'lucide-react'
+import { LuShieldCheck, LuShieldOff, LuCodeXml } from 'react-icons/lu'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -79,7 +79,7 @@ export function UserListItem({
             title={user.hasDevAccess ? 'Remove dev panel access' : 'Grant dev panel access'}
             className={user.hasDevAccess ? 'text-muted-foreground' : ''}
           >
-            <Code2 size={16} className="mr-1" />
+            <LuCodeXml size={16} className="mr-1" />
             {user.hasDevAccess ? 'Dev: yes' : 'Dev: no'}
           </Button>
         )}
@@ -97,7 +97,7 @@ export function UserListItem({
                 }
                 className="text-destructive hover:text-destructive"
               >
-                <ShieldOff size={16} className="mr-1" /> Revoke
+                <LuShieldOff size={16} className="mr-1" /> Revoke
               </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
@@ -128,7 +128,7 @@ export function UserListItem({
             onClick={() => run(() => grantAdminAction(user.id))}
             title="Grant access"
           >
-            <ShieldCheck size={16} className="mr-1" /> Grant access
+            <LuShieldCheck size={16} className="mr-1" /> Grant access
           </Button>
         )}
       </div>
