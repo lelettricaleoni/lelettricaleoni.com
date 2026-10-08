@@ -1,8 +1,8 @@
-import { and, eq } from 'drizzle-orm'
-import { db, bikeReservations, bikeUnits, bookingRefunds, bookings, type Booking } from '@/lib/db'
+import { and, asc, eq } from 'drizzle-orm'
+import { db, bikeReservations, bikeUnits, type Booking } from '@/lib/db'
 import { safeErrorSummary } from '@/lib/safe-error'
 import type { ConfirmResult } from './confirm'
-import { confirmHold, expireBooking, findBooking, holdOneBike, reviveBooking } from './holds'
+import { claimForRefund, confirmHold, findBooking, holdOneBike, reviveBooking } from './holds'
 import type { PaymentGateway } from './payments/gateway'
 import { issueRefund } from './refunds'
 
@@ -18,28 +18,32 @@ interface OriginalLine {
  * The money of a booking arrived although its bikes had been freed. It should not happen: a held bike is only freed once the gateway
  * says its session can no longer be paid (settleHold). This is the net for what we did not foresee, and the rule is: never keep money
  * without a bike.
- *  1. Unless a refund of this booking has already begun (then the money goes back, whatever has become free since): bring the booking
- *     back to pending and hold again a bike of the same model, size and version for each original line; if all are held, confirm.
- *  2. Otherwise (or if any line finds nobody free, or the customer already has another payment on its way): free what was held again
- *     and refund every original line in full; the booking becomes `failed_refunded`.
+ *  1. Only ONE caller may bring the booking back (`reviveBooking` is a compare-and-set on `expired`): it holds again a bike of the same
+ *     model, size and version for each original line, and if all are held, confirms. A caller that lost that race does nothing: the
+ *     other one is deciding between the bikes and the money, and doing both would give the person both.
+ *  2. If the bikes cannot come back (a line finds nobody free, or the customer already has another payment on its way) the booking is
+ *     CLAIMED for the refund (`failed_refunded`, in one statement that also frees what was held again) BEFORE any money moves: from that
+ *     moment nobody can sell the bikes again. Then every original line is refunded in full; asking again finishes what did not go through.
  */
 export async function settleLatePayment(bookingId: string, paymentRef: string, gateway: PaymentGateway): Promise<ConfirmResult> {
   const booking = await findBooking(bookingId)
   if (!booking) return { status: 'unknown_booking' }
+  if (booking.status === 'failed_refunded') return refundEverything(booking, await originalLines(booking), paymentRef, gateway)
   if (booking.status !== 'expired') return { status: 'closed', bookingId, bookingStatus: booking.status }
 
-  const original = await originalLines(bookingId)
-  if (!(await refundBegan(bookingId)) && (await reviveBooking(bookingId))) {
-    if (await holdAgain(booking, original)) {
-      const done = await confirmHold(bookingId, paymentRef)
-      if (done.confirmed) return { status: 'reassigned', bookingId }
-    }
-    await expireBooking(bookingId) // frees whatever was held again
+  const original = await originalLines(booking)
+  const revived = await reviveBooking(bookingId)
+  if (revived === 'taken') return { status: 'incomplete', bookingId } // somebody else is settling it
+  if (revived === 'revived' && (await holdAgain(booking, original))) {
+    const done = await confirmHold(bookingId, paymentRef)
+    if (done.confirmed) return { status: 'reassigned', bookingId }
   }
+  if (!(await claimForRefund(bookingId))) return { status: 'incomplete', bookingId }
   return refundEverything(booking, original, paymentRef, gateway)
 }
 
-async function originalLines(bookingId: string): Promise<OriginalLine[]> {
+/** The bikes first held for the booking: the first `lineCount` lines made, so a bike held again for a moment is never counted. */
+async function originalLines(booking: Booking): Promise<OriginalLine[]> {
   const rows = await db
     .select({
       id: bikeReservations.id,
@@ -50,14 +54,10 @@ async function originalLines(bookingId: string): Promise<OriginalLine[]> {
     })
     .from(bikeReservations)
     .innerJoin(bikeUnits, eq(bikeUnits.id, bikeReservations.bikeUnitId))
-    .where(and(eq(bikeReservations.bookingId, bookingId), eq(bikeReservations.status, 'expired')))
+    .where(and(eq(bikeReservations.bookingId, booking.id), eq(bikeReservations.status, 'expired')))
+    .orderBy(asc(bikeReservations.createdAt), asc(bikeReservations.id))
+    .limit(booking.lineCount)
   return rows.map((row) => ({ ...row, amountCents: row.amountCents ?? 0 }))
-}
-
-async function refundBegan(bookingId: string): Promise<boolean> {
-  const rows = await db.select({ id: bookingRefunds.id }).from(bookingRefunds)
-    .where(and(eq(bookingRefunds.bookingId, bookingId), eq(bookingRefunds.reason, 'late_payment'))).limit(1)
-  return rows.length > 0
 }
 
 async function holdAgain(booking: Booking, original: OriginalLine[]): Promise<boolean> {
@@ -92,7 +92,6 @@ async function refundEverything(booking: Booking, original: OriginalLine[], paym
     console.error('[booking] late payment: not every refund went through; it will be asked again', { bookingId: booking.id })
     return { status: 'refund_failed', bookingId: booking.id }
   }
-  await db.update(bookings).set({ status: 'failed_refunded' }).where(and(eq(bookings.id, booking.id), eq(bookings.status, 'expired')))
   // Kevin is told by email from slice 4; until then this line is what there is to find.
   console.error('[booking] late payment: refunded in full, the bikes were no longer free', { bookingId: booking.id })
   return { status: 'refunded', bookingId: booking.id }

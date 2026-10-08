@@ -58,12 +58,43 @@ describe('a payment that arrives after the bikes were freed', () => {
     gateway.failNextRefund = true
     const first = await confirmBooking(pending.bookingId, gateway)
     expect(first).toEqual({ status: 'refund_failed', bookingId: pending.bookingId })
-    expect((await bookingOf(pending.bookingId)).status).toBe('expired')
+    // the booking is already claimed for the refund: nobody can sell its bikes again while the money is on its way back
+    expect((await bookingOf(pending.bookingId)).status).toBe('failed_refunded')
     // the thief's bikes are cancelled meanwhile: the bikes are free again, but the money is already on its way back
     await db.update(bikeReservations).set({ status: 'cancelled' }).where(eq(bikeReservations.bookingId, thief.bookingId))
     const second = await confirmBooking(pending.bookingId, gateway)
     expect(second).toEqual({ status: 'refunded', bookingId: pending.bookingId })
     expect((await bookingOf(pending.bookingId)).status).toBe('failed_refunded')
+    expect(gateway.refundCount()).toBe(2)
+  })
+
+  it('two calls at once (the webhook and the page the customer lands on): the bikes are given back OR the money is, never both', async () => {
+    for (let round = 0; round < 5; round++) {
+      const pending = await paidButExpired(2)
+      const results = await Promise.all([confirmBooking(pending.bookingId, gateway), confirmBooking(pending.bookingId, gateway)])
+      const booking = await bookingOf(pending.bookingId)
+      expect(booking.status).toBe('confirmed')
+      expect(results.map((r) => r.status)).not.toContain('refunded')
+      expect(results.map((r) => r.status)).toContain('reassigned')
+      expect(await refundsOf(pending.bookingId)).toHaveLength(0)
+      expect(gateway.refundCount()).toBe(0)
+      // free the bikes for the next round
+      await db.delete(bikeReservations).where(eq(bikeReservations.bookingId, pending.bookingId))
+      await db.delete(bookings).where(eq(bookings.id, pending.bookingId))
+    }
+  })
+
+  it('finishes the refunds after a bring-back attempt that held some bikes and failed on the next', async () => {
+    const pending = await paidButExpired(2)
+    await insertPaidBooking(fx, RANGE, [1000]) // takes one of the two bikes: the first line finds a bike, the second does not
+    gateway.failNextRefund = true
+    const first = await confirmBooking(pending.bookingId, gateway)
+    expect(first).toEqual({ status: 'refund_failed', bookingId: pending.bookingId })
+    const second = await confirmBooking(pending.bookingId, gateway)
+    expect(second).toEqual({ status: 'refunded', bookingId: pending.bookingId })
+    const refunds = await refundsOf(pending.bookingId)
+    expect(refunds).toHaveLength(2) // one per ORIGINAL bike, not one more for the bike held again for a moment
+    expect(refunds.reduce((sum, refund) => sum + refund.amountCents, 0)).toBe(6000)
     expect(gateway.refundCount()).toBe(2)
   })
 

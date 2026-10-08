@@ -226,19 +226,42 @@ export async function findOverduePending(): Promise<{ id: string; stripeSessionI
     .where(and(eq(bookings.status, 'pending'), sql`${bookings.holdExpiresAt} <= now()`))
 }
 
+export type ReviveResult = 'revived' | 'taken' | 'blocked'
+
 /**
  * Expired → pending again, for a few minutes: the first step of giving a bike to a payment that arrived after its bikes were freed.
- * False when the booking is not expired any more, or when the customer has another payment on its way (one at a time).
+ * `taken`: the booking is not expired any more, so somebody else is already settling it (only ONE caller revives).
+ * `blocked`: the customer has another payment on its way (one at a time), so this one cannot come back.
  */
-export async function reviveBooking(bookingId: string, minutes = 5): Promise<boolean> {
+export async function reviveBooking(bookingId: string, minutes = 5): Promise<ReviveResult> {
   try {
     const rows = await db.execute<{ id: string }>(sql`
       update bookings set status = 'pending', hold_expires_at = now() + make_interval(mins => ${minutes})
       where id = ${bookingId}::uuid and status = 'expired'
       returning id`)
-    return rows.length > 0
+    return rows.length > 0 ? 'revived' : 'taken'
   } catch (error) {
-    if (pgErrorCode(error) === UNIQUE_VIOLATION) return false
+    if (pgErrorCode(error) === UNIQUE_VIOLATION) return 'blocked'
     throw error
   }
+}
+
+/**
+ * Pending or expired → failed_refunded, with any bike still held freed, in ONE statement. It is the CLAIM on the refund of a payment
+ * that arrived too late: from here on nobody can bring the bikes back, so the money and the bikes are never both given.
+ * False when somebody else changed the booking first.
+ */
+export async function claimForRefund(bookingId: string): Promise<boolean> {
+  const [row] = await db.execute<{ bookings: number }>(sql`
+    with b as (
+      update bookings set status = 'failed_refunded'
+      where id = ${bookingId}::uuid and status in ('pending', 'expired')
+      returning id
+    ), l as (
+      update bike_reservations set status = 'expired'
+      where booking_id in (select id from b) and status = 'held'
+      returning id
+    )
+    select (select count(*) from b)::int as bookings`)
+  return row.bookings > 0
 }

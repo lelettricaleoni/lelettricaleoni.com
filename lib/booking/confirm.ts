@@ -35,6 +35,7 @@ export async function confirmBooking(bookingId: string, gateway: PaymentGateway 
     if (again?.status !== 'expired') return { status: 'closed', bookingId, bookingStatus: again?.status ?? 'unknown' }
     return settleLatePayment(bookingId, session.paymentRef, gateway)
   }
-  if (booking.status === 'expired') return settleLatePayment(bookingId, session.paymentRef, gateway)
+  // `failed_refunded`: claimed for the refund already; asking again finishes the refunds that did not go through.
+  if (booking.status === 'expired' || booking.status === 'failed_refunded') return settleLatePayment(bookingId, session.paymentRef, gateway)
   return { status: 'closed', bookingId, bookingStatus: booking.status }
 }
