@@ -6,6 +6,7 @@ import { Check, ChevronDown } from 'lucide-react'
 import ReactCountryFlag from 'react-country-flag'
 import { trackEvent } from '@/lib/analytics'
 import { buttonVariants } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 import { switchLocalePath } from '@/lib/service-pages'
 import type { Locale } from '@/app/[lang]/dictionaries'
 import {
@@ -54,7 +55,7 @@ export function LanguageSwitcher({ currentLang }: { currentLang: string }) {
       <DropdownMenuTrigger
         aria-label={current.name}
         title={current.name}
-        className={buttonVariants({ variant: 'outline', size: 'sm', className: 'gap-1.5 px-2.5 text-xs font-semibold' })}
+        className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'bg-transparent gap-1.5 px-2.5 text-xs font-semibold')}
       >
         <Flag countryCode={current.countryCode} label={current.label} />
         <span className="hidden sm:inline">{current.label}</span>
