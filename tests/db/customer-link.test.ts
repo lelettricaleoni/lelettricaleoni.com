@@ -137,21 +137,21 @@ describe('linkCustomerToAccount', () => {
       expect(row.phone).toBe(shops)
     })
 
-    it('leaves the phone out, and still links, when it belongs to another customer', async () => {
-      const taken = phone()
-      await insertCustomer({ email: email(), phone: taken })
+    it('writes the phone even when another customer has the same number (a couple, a family)', async () => {
+      const shared = phone()
+      await insertCustomer({ email: email(), phone: shared })
       const address = email()
       const existing = await insertCustomer({ email: address })
-      const result = await linkCustomerToAccount({ userId, email: address, emailConfirmed: true, phone: taken })
+      const result = await linkCustomerToAccount({ userId, email: address, emailConfirmed: true, phone: shared })
       expect(result).toEqual({ status: 'linked', customerId: existing.id })
       const [row] = await byUser(userId)
-      expect(row.phone).toBeNull()
+      expect(row.phone).toBe(shared)
       // the same for a customer made from scratch
       const other = randomUUID()
-      const made = await linkCustomerToAccount({ userId: other, email: email(), emailConfirmed: true, phone: taken })
+      const made = await linkCustomerToAccount({ userId: other, email: email(), emailConfirmed: true, phone: shared })
       expect(made.status).toBe('created')
       const [madeRow] = await byUser(other)
-      expect(madeRow.phone).toBeNull()
+      expect(madeRow.phone).toBe(shared)
       await db.delete(customers).where(eq(customers.userId, other))
     })
 

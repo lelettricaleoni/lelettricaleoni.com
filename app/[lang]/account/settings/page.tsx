@@ -17,7 +17,7 @@ import { updateAccountAction } from '@/lib/actions/account'
 // See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
 export const instant = false
 
-const ERROR_CODES = ['missing_name', 'invalid_phone', 'phone_taken', 'save_failed'] as const
+const ERROR_CODES = ['missing_name', 'invalid_phone', 'save_failed'] as const
 type ErrorCode = (typeof ERROR_CODES)[number]
 
 // Each language is named in itself: somebody who cannot read the page must still find theirs.

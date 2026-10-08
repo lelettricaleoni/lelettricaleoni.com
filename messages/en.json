@@ -345,7 +345,6 @@
     "errors": {
       "missing_name": "First and last name are required.",
       "invalid_phone": "The phone number is not valid.",
-      "phone_taken": "This number is already linked to another customer. Write to us and we will sort it out.",
       "save_failed": "We could not save. Try again.",
       "invalid_email": "The email address is not valid.",
       "same_email": "It is already the address of your account.",

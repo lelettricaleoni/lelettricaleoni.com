@@ -7,9 +7,9 @@ import { UNIQUE_VIOLATION, pgErrorCode } from '@/lib/pg-errors'
 import type { IsoDate } from '@/lib/dates'
 
 /*
- * The directory of the people who rent. The same phone or the same email is the same person
- * (unique indexes in the database), a name alone is not: two Mario Rossi with different contacts
- * are two customers.
+ * The directory of the people who rent. The same email is the same person (a unique index in the database); a name
+ * alone is not, and neither is a phone number, which a couple or a family shares: two Mario Rossi, or two people with the
+ * same number, are two customers.
  */
 
 export interface CustomerSummary {
@@ -30,9 +30,9 @@ export function summarize(row: Customer): CustomerSummary {
 
 export type CreateCustomerResult =
   | { status: 'created'; customer: CustomerSummary }
-  | { status: 'exists'; customer: CustomerSummary; matchedOn: 'email' | 'phone' }
+  | { status: 'exists'; customer: CustomerSummary }
 
-/** One statement: a unique index decides, so two people saving the same phone at once cannot both win. */
+/** One statement: a unique index decides, so two people saving the same email at once cannot both win. */
 export async function createCustomer(input: CustomerInput): Promise<CreateCustomerResult> {
   const inserted = await db.insert(customers)
     .values({
@@ -43,19 +43,13 @@ export async function createCustomer(input: CustomerInput): Promise<CreateCustom
     .returning()
   if (inserted.length > 0) return { status: 'created', customer: summarize(inserted[0]) }
 
-  // Only an email or a phone can collide; without either there is nothing to look for (and a
-  // `where` with nothing in it would return an arbitrary customer).
-  if (!input.email && !input.phone) throw new Error('Customer not created for an unknown reason')
-  const [existing] = await db.select().from(customers).where(or(
-    input.email ? eq(customers.email, input.email) : undefined,
-    input.phone ? eq(customers.phone, input.phone) : undefined,
-  ))
+  // Only an email can collide; without one there is nothing to look for (and a `where` with
+  // nothing in it would return an arbitrary customer).
+  if (!input.email) throw new Error('Customer not created for an unknown reason')
+  const [existing] = await db.select().from(customers).where(eq(customers.email, input.email))
   // Not found means the conflict was on something this call does not control; say so loudly.
   if (!existing) throw new Error('Customer not created and no existing customer found')
-  return {
-    status: 'exists', customer: summarize(existing),
-    matchedOn: input.email && existing.email === input.email ? 'email' : 'phone',
-  }
+  return { status: 'exists', customer: summarize(existing) }
 }
 
 const SEARCH_LIMIT = 8
@@ -189,10 +183,10 @@ export async function getCustomerDetail(id: string): Promise<CustomerDetail | nu
 
 export type UpdateCustomerResult =
   | { status: 'updated'; customer: CustomerSummary }
-  | { status: 'conflict'; matchedOn: 'email' | 'phone'; other: CustomerSummary }
+  | { status: 'conflict'; other: CustomerSummary }
   | { status: 'not_found' }
 
-/** A contact left out is cleared. The phone or the email of another customer is refused, with who has it. */
+/** A contact left out is cleared. The email of another customer is refused, with who has it (a phone may be shared). */
 export async function updateCustomer(id: string, input: CustomerInput): Promise<UpdateCustomerResult> {
   try {
     const rows = await db.update(customers)
@@ -206,14 +200,9 @@ export async function updateCustomer(id: string, input: CustomerInput): Promise<
     return rows.length > 0 ? { status: 'updated', customer: summarize(rows[0]) } : { status: 'not_found' }
   } catch (error) {
     if (pgErrorCode(error) !== UNIQUE_VIOLATION) throw error
-    const [other] = await db.select().from(customers).where(and(
-      ne(customers.id, id),
-      or(
-        input.email ? eq(customers.email, input.email) : undefined,
-        input.phone ? eq(customers.phone, input.phone) : undefined,
-      ),
-    ))
+    if (!input.email) throw error
+    const [other] = await db.select().from(customers).where(and(ne(customers.id, id), eq(customers.email, input.email)))
     if (!other) throw error
-    return { status: 'conflict', matchedOn: input.email && other.email === input.email ? 'email' : 'phone', other: summarize(other) }
+    return { status: 'conflict', other: summarize(other) }
   }
 }
