@@ -7,7 +7,17 @@ description: "Use when writing or reviewing Next.js code in this project: routin
 
 Questo repository è su una versione con cambiamenti sostanziali rispetto a quanto un modello
 sa di default. **Prima di scrivere codice, leggi `node_modules/next/dist/docs/`** (percorso
-risolto dalla directory di questo file) — è la regola in `AGENTS.md`, non ripetuta qui.
+risolto dalla directory di questo file) — è la regola in `AGENTS.md`, ripetuta in `CLAUDE.md` perché `next dev` riscrive il primo.
+Le pagine che servono più spesso (percorsi dalla radice `01-app/`):
+
+| Cosa stai scrivendo | Pagina |
+|---|---|
+| Server Action (`'use server'`, `after()`, `revalidate`) | `02-guides/server-actions.md` |
+| Rotta `route.ts` (un webhook, un servizio esterno) | `01-getting-started/15-route-handlers.md` |
+| Pagina che legge cookie o dati per richiesta, `instant` | `03-api-reference/03-file-conventions/02-route-segment-config/instant.md`, `02-guides/instant-navigation.md` |
+| Segmenti dinamici, `params`, `generateStaticParams` | `03-api-reference/03-file-conventions/dynamic-routes.md` |
+
+**Scrivi nel messaggio quale pagina hai letto.** Se non dice una cosa, non darla per vera: un precedente nel progetto o una prova.
 
 ## Routing e layout — cosa è cambiato
 
