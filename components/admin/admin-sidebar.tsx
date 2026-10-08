@@ -20,7 +20,7 @@ interface NavGroup {
   items: NavItem[]
 }
 
-const navGroups: NavGroup[] = [
+export const navGroups: NavGroup[] = [
   { items: [{ href: '/manage', label: 'Home', icon: Home, exact: true }] },
   { label: 'Content', items: [
     { href: '/manage/routes', label: 'Routes', icon: Map },
@@ -30,7 +30,7 @@ const navGroups: NavGroup[] = [
     { href: '/manage/bikes/shop', label: 'Shop', icon: Warehouse },
     { href: '/manage/bookings', label: 'Bookings', icon: CalendarDays },
     { href: '/manage/customers', label: 'Customers', icon: Contact },
-    { href: '/manage/bike-options', label: 'Bike options', icon: SlidersHorizontal },
+    { href: '/manage/bikes/options', label: 'Bike options', icon: SlidersHorizontal },
   ] },
   { label: 'System', items: [
     { href: '/manage/users', label: 'Access', icon: Users },
@@ -38,15 +38,14 @@ const navGroups: NavGroup[] = [
   ] },
 ]
 
-// /manage/bikes/shop shares the /manage/bikes prefix with the "Bikes" entry
-// above it — without this exception both would light up at once whenever
-// the shop page is open.
-function isActive(pathname: string, item: NavItem): boolean {
+const allHrefs = navGroups.flatMap((group) => group.items.map((item) => item.href))
+
+// Shop and Bike options live under /manage/bikes, the "Bikes" entry's own prefix: when a deeper entry matches too,
+// that one lights up and the shallower one does not.
+export function isActive(pathname: string, item: NavItem): boolean {
   if (item.exact) return pathname === item.href
-  if (item.href === '/manage/bikes') {
-    return pathname.startsWith(item.href) && !pathname.startsWith('/manage/bikes/shop')
-  }
-  return pathname.startsWith(item.href)
+  if (!pathname.startsWith(item.href)) return false
+  return !allHrefs.some((href) => href.length > item.href.length && pathname.startsWith(href))
 }
 
 export function AdminSidebar({ hasDevAccess }: { hasDevAccess?: AdminUserSummary['hasDevAccess'] }) {
