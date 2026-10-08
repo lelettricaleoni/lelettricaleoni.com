@@ -140,6 +140,13 @@ describe('holding the bikes of a booking', () => {
     expect(await confirmHold(result.bookingId)).toEqual({ confirmed: false, lines: 0 })
   })
 
+  it('keeps the reference of the payment when it confirms', async () => {
+    const result = await startHold(input())
+    if (result.status !== 'held') throw new Error('setup')
+    await confirmHold(result.bookingId, 'pi_test_123')
+    expect((await bookingOf(result.bookingId)).stripePaymentIntentId).toBe('pi_test_123')
+  })
+
   it('does not confirm a booking that has expired, and its bikes stay free', async () => {
     const result = await startHold(input())
     if (result.status !== 'held') throw new Error('setup')

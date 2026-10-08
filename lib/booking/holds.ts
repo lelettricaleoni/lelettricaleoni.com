@@ -45,7 +45,7 @@ async function findByKey(bookingKey: string, customerId: string) {
   return row
 }
 
-async function findById(bookingId: string) {
+export async function findBooking(bookingId: string) {
   const [row] = await db.select().from(bookings).where(eq(bookings.id, bookingId))
   return row
 }
@@ -126,7 +126,7 @@ export async function startHold(input: StartHoldInput): Promise<StartHoldResult>
     for (let index = 0; index < input.lines.length; index++) {
       const outcome = await holdOneBike(created.id, input, input.lines[index])
       if (outcome === 'closed') {
-        return { status: 'closed', bookingId: created.id, bookingStatus: (await findById(created.id))?.status ?? 'expired' }
+        return { status: 'closed', bookingId: created.id, bookingStatus: (await findBooking(created.id))?.status ?? 'expired' }
       }
       if (outcome !== 'held') {
         await expireBooking(created.id)
@@ -172,7 +172,7 @@ export async function holdOneBike(
         on conflict (request_key) do nothing
         returning id`)
       if (rows.length > 0) return 'held'
-      return (await findById(bookingId))?.status === 'pending' ? 'none_free' : 'closed'
+      return (await findBooking(bookingId))?.status === 'pending' ? 'none_free' : 'closed'
     } catch (error) {
       // Another request took the bike this one had picked, a moment earlier: pick again.
       if (pgErrorCode(error) === EXCLUSION_VIOLATION) continue
@@ -186,10 +186,11 @@ export async function holdOneBike(
  * Pending → confirmed, with every held bike of the booking, in one statement. Does nothing (and says so) when the booking is no
  * longer pending, or does not hold all the bikes it is made of: a payment cannot confirm bikes that have been released.
  */
-export async function confirmHold(bookingId: string): Promise<{ confirmed: boolean; lines: number }> {
+export async function confirmHold(bookingId: string, paymentRef: string | null = null): Promise<{ confirmed: boolean; lines: number }> {
   const [row] = await db.execute<{ bookings: number; lines: number }>(sql`
     with b as (
-      update bookings set status = 'confirmed', confirmed_at = now()
+      update bookings set status = 'confirmed', confirmed_at = now(),
+        stripe_payment_intent_id = coalesce(${paymentRef}::text, stripe_payment_intent_id)
       where id = ${bookingId}::uuid and status = 'pending'
         and line_count = (select count(*) from bike_reservations r where r.booking_id = bookings.id and r.status = 'held')
       returning id
@@ -223,4 +224,44 @@ export async function findOverduePending(): Promise<{ id: string; stripeSessionI
   return db.select({ id: bookings.id, stripeSessionId: bookings.stripeSessionId })
     .from(bookings)
     .where(and(eq(bookings.status, 'pending'), sql`${bookings.holdExpiresAt} <= now()`))
+}
+
+export type ReviveResult = 'revived' | 'taken' | 'blocked'
+
+/**
+ * Expired → pending again, for a few minutes: the first step of giving a bike to a payment that arrived after its bikes were freed.
+ * `taken`: the booking is not expired any more, so somebody else is already settling it (only ONE caller revives).
+ * `blocked`: the customer has another payment on its way (one at a time), so this one cannot come back.
+ */
+export async function reviveBooking(bookingId: string, minutes = 5): Promise<ReviveResult> {
+  try {
+    const rows = await db.execute<{ id: string }>(sql`
+      update bookings set status = 'pending', hold_expires_at = now() + make_interval(mins => ${minutes})
+      where id = ${bookingId}::uuid and status = 'expired'
+      returning id`)
+    return rows.length > 0 ? 'revived' : 'taken'
+  } catch (error) {
+    if (pgErrorCode(error) === UNIQUE_VIOLATION) return 'blocked'
+    throw error
+  }
+}
+
+/**
+ * Pending or expired → failed_refunded, with any bike still held freed, in ONE statement. It is the CLAIM on the refund of a payment
+ * that arrived too late: from here on nobody can bring the bikes back, so the money and the bikes are never both given.
+ * False when somebody else changed the booking first.
+ */
+export async function claimForRefund(bookingId: string): Promise<boolean> {
+  const [row] = await db.execute<{ bookings: number }>(sql`
+    with b as (
+      update bookings set status = 'failed_refunded'
+      where id = ${bookingId}::uuid and status in ('pending', 'expired')
+      returning id
+    ), l as (
+      update bike_reservations set status = 'expired'
+      where booking_id in (select id from b) and status = 'held'
+      returning id
+    )
+    select (select count(*) from b)::int as bookings`)
+  return row.bookings > 0
 }

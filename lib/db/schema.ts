@@ -272,6 +272,29 @@ export const bikeReservations = pgTable('bike_reservations', {
 export type BikeReservation = typeof bikeReservations.$inferSelect
 export type NewBikeReservation = typeof bikeReservations.$inferInsert
 
+export const refundStatusEnum = pgEnum('refund_status', ['pending', 'succeeded', 'failed'])
+export const refundReasonEnum = pgEnum('refund_reason', ['customer', 'staff', 'late_payment'])
+
+// One refund per bike, at most (reservation_id is unique): a bike is never refunded twice, and a repeated request finds the row
+// instead of making a second one. `gateway_refund_id` is the gateway's own id (Stripe's, or the fake's), whatever the gateway is.
+export const bookingRefunds = pgTable('booking_refunds', {
+  id:              uuid('id').primaryKey().defaultRandom(),
+  reservationId:   uuid('reservation_id').notNull().unique().references(() => bikeReservations.id),
+  bookingId:       uuid('booking_id').notNull().references(() => bookings.id),
+  amountCents:     integer('amount_cents').notNull(),
+  status:          refundStatusEnum('status').notNull().default('pending'),
+  // How many times the gateway was asked for this refund: a failed refund is asked again as a new request (lib/booking/refunds.ts).
+  attempts:        integer('attempts').notNull().default(1),
+  gatewayRefundId: text('gateway_refund_id'),
+  reason:          refundReasonEnum('reason').notNull(),
+  // The signed-in user who asked (staff or customer); null for what the system did itself (a late payment).
+  createdBy:       uuid('created_by'),
+  createdAt:       timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [index('booking_refunds_booking_idx').on(t.bookingId)])
+
+export type BookingRefund = typeof bookingRefunds.$inferSelect
+export type NewBookingRefund = typeof bookingRefunds.$inferInsert
+
 // Generalized from route_photos on 2026-09-17 to also hold bike model
 // media. Exactly one of routeId/bikeModelId is set, enforced by a CHECK
 // constraint added in the migration for this table (Drizzle's pg-core has
