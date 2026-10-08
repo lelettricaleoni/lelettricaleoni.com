@@ -90,7 +90,7 @@ importato qui sopra. Non duplicarli in questo file.
 Next.js 16 (routing, Cache Components, trappole verificate) e i18n (architettura, come
 aggiungere stringhe) sono skill di progetto — `.claude/skills/nextjs-16/`,
 `.claude/skills/i18n/`, `.claude/skills/db-migrations/`, `.claude/skills/media-storage/`,
-`.claude/skills/maps/`, `.claude/skills/privacy-cookies/`, `.claude/skills/cookie-consent/`, `.claude/skills/design-system/` — caricate su richiesta invece che
+`.claude/skills/maps/`, `.claude/skills/privacy-cookies/`, `.claude/skills/cookie-consent/`, `.claude/skills/design-system/`, `.claude/skills/clean-project/` (un lavoro, uno strumento; niente avanzi) — caricate su richiesta invece che
 sempre, così non pesano quando il task non le tocca.
 
 **Ogni lavoro visivo parte da `design-system`** (Kevin, 2026-10-07): raggi, colori, componenti e misure già decisi dal sito.
