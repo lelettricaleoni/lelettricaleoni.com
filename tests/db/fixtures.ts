@@ -4,6 +4,8 @@ import {
   type NewBikeReservation,
 } from '@/lib/db'
 import type { DayRange } from '@/lib/dates'
+import { startHold } from '@/lib/booking/holds'
+import type { PaymentGateway } from '@/lib/booking/payments/gateway'
 
 export interface Fixture {
   modelId: string
@@ -120,4 +122,23 @@ export async function insertPaidBooking(
     reservationIds.push(await insertOnlineLine(bookingId, fx.customerId, fx.unitIds[index], range, 'confirmed', amount))
   }
   return { bookingId, reservationIds, paymentRef }
+}
+
+/** A pending booking of the fixture's customer with `lineCount` bikes held and a payment session open on `gateway`. */
+export async function startPendingBooking(
+  fx: Fixture, gateway: PaymentGateway, range: DayRange, lineCount: number,
+): Promise<{ bookingId: string; sessionId: string; holdExpiresAt: Date }> {
+  const bookingKey = crypto.randomUUID()
+  const lines = Array.from({ length: lineCount }, () => ({
+    bikeModelId: fx.modelId, bikeSizeId: fx.sizeId, bikeVersionId: fx.versionId, amountCents: 3000,
+  }))
+  const hold = await startHold({ bookingKey, customerId: fx.customerId, ...range, language: 'it', lines })
+  if (hold.status !== 'held') throw new Error(`setup: expected held, got ${hold.status}`)
+  const session = await gateway.createSession({
+    bookingId: hold.bookingId, bookingKey, customerEmail: 'db-test@example.test', language: 'it',
+    lines: lines.map((line) => ({ label: 'bike', amountCents: line.amountCents })),
+    expiresAt: hold.holdExpiresAt, successUrl: 'https://example.test/ok', cancelUrl: 'https://example.test/back',
+  })
+  await db.update(bookings).set({ stripeSessionId: session.id }).where(eq(bookings.id, hold.bookingId))
+  return { bookingId: hold.bookingId, sessionId: session.id, holdExpiresAt: hold.holdExpiresAt }
 }
