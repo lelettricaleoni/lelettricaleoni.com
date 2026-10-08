@@ -68,6 +68,13 @@ importato qui sopra. Non duplicarli in questo file.
   per le date (da installare con la prima fetta delle prenotazioni; le date di calendario
   viaggiano come stringhe `YYYY-MM-DD` e «oggi» si calcola in `Europe/Rome`), e
   `libphonenumber-js` per i telefoni. shadcn è il sistema UI primario.
+- **Next.js: la documentazione che fa fede sta in `node_modules/next/dist/docs/`, e si legge PRIMA di scrivere** (Kevin, 2026-10-08,
+  dopo che l'avevo saltata per un'intera sessione). Questa versione non è il Next che conosci (`AGENTS.md`, che `next dev` riscrive:
+  per questo la regola sta anche qui). Prima di scrivere o cambiare codice che usa un'API di Next (Server Action, `route.ts`, `instant`,
+  `after()`, `proxy.ts`, `"use cache"` / `updateTag`, `metadata`, segmenti dinamici, `loading.tsx`, `notFound()`) apri la pagina giusta
+  (`node_modules/next/dist/docs/01-app/`: `ls` e `grep -rn` per l'API) e **scrivi nel messaggio quale pagina hai letto**. Se la
+  documentazione non dice una cosa, non darla per scontata e non dire che «la documentazione lo conferma»: cerca un precedente nel
+  progetto o provala. Vale anche per chi scrive un piano: i compiti che toccano Next citano la pagina da leggere.
 - **`--webpack`, mai Turbopack**: `next dev --webpack` e `next build --webpack`. Non esiste
   `--no-turbopack`.
 - **Niente `next-seo`**: è per il Pages Router. Usa l'API `Metadata` nativa e JSON-LD.
