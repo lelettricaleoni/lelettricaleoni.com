@@ -37,8 +37,14 @@ export async function settleHold(bookingId: string, gateway: PaymentGateway = ge
 
   const session = await gateway.getSession(booking.stripeSessionId)
   if (session.status === 'paid') {
-    const confirmed = await confirmBooking(bookingId, gateway)
-    return confirmed.status === 'confirmed' || confirmed.status === 'already_confirmed' ? 'confirmed' : 'closed'
+    let confirmed = await confirmBooking(bookingId, gateway)
+    if (confirmed.status === 'incomplete') {
+      // Paid, pending, and holding fewer bikes than it needs (a bring-back that stopped half way). Left alone it would stay like this for
+      // ever: end it, and let the late-payment net decide between the bikes and the money.
+      await expireBooking(bookingId)
+      confirmed = await confirmBooking(bookingId, gateway)
+    }
+    return ['confirmed', 'already_confirmed', 'reassigned'].includes(confirmed.status) ? 'confirmed' : 'closed'
   }
   if (session.status === 'expired') {
     await expireBooking(bookingId)

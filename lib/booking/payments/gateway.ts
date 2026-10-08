@@ -38,8 +38,14 @@ export type SessionState =
 export type ExpireResult = 'expired' | 'not_open'
 
 export interface RefundRequest {
-  /** One refund per reservation: also the key that makes asking twice harmless. */
+  /** One refund per reservation. */
   reservationId: string
+  /**
+   * 1 for the first request; a failed refund is asked again as attempt 2, 3... The gateway's idempotency key is the reservation AND the
+   * attempt: the same request twice gets the same answer (Stripe keeps it for a day, an error included), so a retry after a failure
+   * must be a different request, and the database row, not the gateway, is what stops a bike being refunded twice.
+   */
+  attempt: number
   paymentRef: string
   amountCents: number
 }

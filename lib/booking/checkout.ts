@@ -1,4 +1,4 @@
-import { and, eq } from 'drizzle-orm'
+import { and, eq, isNull } from 'drizzle-orm'
 import { db, bookings } from '@/lib/db'
 import type { IsoDate } from '@/lib/dates'
 import { expireBooking, findBooking, startHold, type StartHoldResult } from './holds'
@@ -91,12 +91,21 @@ export async function beginCheckout(input: BeginCheckoutInput, gateway?: Payment
     throw error
   }
 
+  // Saved only if the booking is still pending AND has no session yet: a double click makes two requests with the same key, and the
+  // one that is not saved must not stay payable (a payment on a session nobody knows about is money without a booking).
   const saved = await db.update(bookings).set({ stripeSessionId: session.id })
-    .where(and(eq(bookings.id, hold.bookingId), eq(bookings.status, 'pending'))).returning({ id: bookings.id })
+    .where(and(eq(bookings.id, hold.bookingId), eq(bookings.status, 'pending'), isNull(bookings.stripeSessionId)))
+    .returning({ id: bookings.id })
   if (saved.length === 0) {
-    // Somebody ended this booking while the session was being opened (the customer started another one): do not leave it payable.
-    await payments.expireSession(session.id)
+    await payments.expireSession(session.id) // ours is not the one that was saved: close it
     const now = await findBooking(hold.bookingId)
+    if (now?.status === 'pending' && now.stripeSessionId) {
+      // The other request saved its session first: both go to that one.
+      const kept = await payments.getSession(now.stripeSessionId)
+      if (kept.status === 'open') return { status: 'redirect', bookingId: hold.bookingId, url: kept.url, holdExpiresAt: hold.holdExpiresAt }
+      if (kept.status === 'paid') return { status: 'already_paid', bookingId: hold.bookingId }
+    }
+    // Somebody ended this booking while the session was being opened (the customer started another one).
     return { status: 'closed', bookingId: hold.bookingId, bookingStatus: now?.status ?? 'expired' }
   }
   return { status: 'redirect', bookingId: hold.bookingId, url: session.url, holdExpiresAt: hold.holdExpiresAt }

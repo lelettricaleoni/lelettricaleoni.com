@@ -78,6 +78,19 @@ describe('settling a held booking', () => {
     expect(await gateway.getSession(session.id)).toEqual({ status: 'expired' })
   })
 
+  it('a paid booking left pending with fewer bikes than it needs is not stuck for ever: the bikes come back or the money does', async () => {
+    const pending = await startPendingBooking(fx, gateway, RANGE, 2)
+    gateway.pay(pending.sessionId)
+    // a bring-back attempt that died half way: the booking is pending again, paid, and holds only one of its two bikes
+    const [firstLine] = await db.select().from(bikeReservations).where(eq(bikeReservations.bookingId, pending.bookingId))
+    await db.update(bikeReservations).set({ status: 'expired' }).where(eq(bikeReservations.id, firstLine.id))
+    expect(await settleHold(pending.bookingId, gateway)).toBe('confirmed')
+    expect((await bookingOf(pending.bookingId)).status).toBe('confirmed')
+    const confirmed = (await db.select().from(bikeReservations).where(eq(bikeReservations.bookingId, pending.bookingId))).filter((l) => l.status === 'confirmed')
+    expect(confirmed).toHaveLength(2)
+    expect(gateway.refundCount()).toBe(0)
+  })
+
   it('does nothing to a booking that is not pending any more, or that does not exist', async () => {
     const pending = await startPendingBooking(fx, gateway, RANGE, 1)
     gateway.pay(pending.sessionId)

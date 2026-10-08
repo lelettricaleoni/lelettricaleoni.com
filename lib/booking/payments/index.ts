@@ -3,7 +3,6 @@ import { FakeGateway } from './fake'
 import type { PaymentGateway } from './gateway'
 
 export type { PaymentGateway } from './gateway'
-export { FakeGateway } from './fake'
 
 export class PaymentsNotConfiguredError extends Error {
   constructor() {

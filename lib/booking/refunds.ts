@@ -47,6 +47,7 @@ export async function issueRefund(input: IssueRefundInput, gateway: PaymentGatew
     returning id`)
 
   let amountCents = input.amountCents
+  let attempt = 1
   if (inserted.length === 0) {
     const [existing] = await db.select().from(bookingRefunds).where(eq(bookingRefunds.reservationId, input.reservationId))
     if (!existing) {
@@ -58,17 +59,29 @@ export async function issueRefund(input: IssueRefundInput, gateway: PaymentGatew
     }
     if (existing.status === 'succeeded' && existing.gatewayRefundId) return { status: 'succeeded', refundRef: existing.gatewayRefundId }
     amountCents = existing.amountCents
-    await db.update(bookingRefunds).set({ status: 'pending' })
-      .where(and(eq(bookingRefunds.reservationId, input.reservationId), eq(bookingRefunds.status, 'failed')))
+    attempt = existing.attempts
+    if (existing.status === 'failed') {
+      // A failed refund is asked again as a NEW request (the gateway keeps the answer to one it has seen, an error included).
+      // Only one caller wins the bump; the other must not touch the row or ask the gateway: somebody else is retrying it.
+      const [bumped] = await db.update(bookingRefunds)
+        .set({ status: 'pending', attempts: sql`${bookingRefunds.attempts} + 1` })
+        .where(and(eq(bookingRefunds.reservationId, input.reservationId), eq(bookingRefunds.status, 'failed')))
+        .returning({ attempts: bookingRefunds.attempts })
+      if (!bumped) return { status: 'failed', reason: 'retry_in_progress' }
+      attempt = bumped.attempts
+    }
   }
 
-  const result = await gateway.refund({ reservationId: input.reservationId, paymentRef: input.paymentRef, amountCents })
+  // The answer is written only onto the row of THIS attempt, still pending: a late answer never overwrites a newer one.
+  const thisAttempt = and(
+    eq(bookingRefunds.reservationId, input.reservationId), eq(bookingRefunds.status, 'pending'), eq(bookingRefunds.attempts, attempt),
+  )
+  const result = await gateway.refund({ reservationId: input.reservationId, attempt, paymentRef: input.paymentRef, amountCents })
   if (result.status === 'failed') {
-    await db.update(bookingRefunds).set({ status: 'failed' }).where(eq(bookingRefunds.reservationId, input.reservationId))
+    await db.update(bookingRefunds).set({ status: 'failed' }).where(thisAttempt)
     return result
   }
-  await db.update(bookingRefunds).set({ status: result.status, gatewayRefundId: result.refundRef })
-    .where(eq(bookingRefunds.reservationId, input.reservationId))
+  await db.update(bookingRefunds).set({ status: result.status, gatewayRefundId: result.refundRef }).where(thisAttempt)
   return result
 }
 
@@ -121,8 +134,14 @@ export async function cancelOnlineReservation(
   if (row.status !== 'confirmed') return { status: 'not_found' }
 
   const price = row.amountCents ?? 0
+  // A refund that was already made or is on its way (the gateway answered, then the database failed before the bike was cancelled):
+  // the money is back, so the bike must go, whatever the clock or the amount asked now say.
+  const [made] = await db.select().from(bookingRefunds).where(eq(bookingRefunds.reservationId, row.id))
+  const alreadyRefunded = made && (made.status === 'succeeded' || made.status === 'pending') ? made : undefined
   let refundCents: number
-  if (input.actor.kind === 'customer') {
+  if (alreadyRefunded) {
+    refundCents = alreadyRefunded.amountCents
+  } else if (input.actor.kind === 'customer') {
     if (!isRefundable(row.startsOn, input.now)) return { status: 'too_late', deadline: refundDeadline(row.startsOn) }
     refundCents = price
   } else {

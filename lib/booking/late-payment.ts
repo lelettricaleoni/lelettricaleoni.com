@@ -34,9 +34,13 @@ export async function settleLatePayment(bookingId: string, paymentRef: string, g
   const original = await originalLines(booking)
   const revived = await reviveBooking(bookingId)
   if (revived === 'taken') return { status: 'incomplete', bookingId } // somebody else is settling it
-  if (revived === 'revived' && (await holdAgain(booking, original))) {
-    const done = await confirmHold(bookingId, paymentRef)
-    if (done.confirmed) return { status: 'reassigned', bookingId }
+  if (revived === 'revived') {
+    try {
+      if ((await holdAgain(booking, original)) && (await confirmHold(bookingId, paymentRef)).confirmed) return { status: 'reassigned', bookingId }
+    } catch (error) {
+      // A dropped connection half way must not leave a paid booking pending with some bikes held: the money goes back instead.
+      console.error('[booking] late payment: bringing the bikes back failed', { bookingId, error: safeErrorSummary(error) })
+    }
   }
   if (!(await claimForRefund(bookingId))) return { status: 'incomplete', bookingId }
   return refundEverything(booking, original, paymentRef, gateway)

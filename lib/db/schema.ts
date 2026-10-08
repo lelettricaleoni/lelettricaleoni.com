@@ -283,6 +283,8 @@ export const bookingRefunds = pgTable('booking_refunds', {
   bookingId:       uuid('booking_id').notNull().references(() => bookings.id),
   amountCents:     integer('amount_cents').notNull(),
   status:          refundStatusEnum('status').notNull().default('pending'),
+  // How many times the gateway was asked for this refund: a failed refund is asked again as a new request (lib/booking/refunds.ts).
+  attempts:        integer('attempts').notNull().default(1),
   gatewayRefundId: text('gateway_refund_id'),
   reason:          refundReasonEnum('reason').notNull(),
   // The signed-in user who asked (staff or customer); null for what the system did itself (a late payment).

@@ -6,6 +6,15 @@ import { beginCheckout, type BeginCheckoutInput } from '@/lib/booking/checkout'
 import { getFreeBikes } from '@/lib/booking/availability'
 import { createFixture, type Fixture } from './fixtures'
 
+async function waitFor(condition: () => Promise<boolean>, ms = 5000) {
+  const end = Date.now() + ms
+  while (Date.now() < end) {
+    if (await condition()) return
+    await new Promise((resolve) => setTimeout(resolve, 25))
+  }
+  throw new Error('timeout')
+}
+
 const TODAY = '2031-10-01'
 const STAY = { startsOn: '2031-11-03', endsOn: '2031-11-06' } // 3 days
 
@@ -80,6 +89,30 @@ describe('beginCheckout', () => {
     expect(second.url).toBe(first.url)
     expect(gateway.sessionCount()).toBe(1)
     expect(await mine()).toHaveLength(1)
+  })
+
+  it('the same key twice at once (a double click): one payment session stays open and both go to it', async () => {
+    let release: () => void = () => {}
+    const gate = new Promise<void>((resolve) => { release = resolve })
+    class SlowFirst extends FakeGateway {
+      private first = true
+      async createSession(input: Parameters<FakeGateway['createSession']>[0]) {
+        if (this.first) { this.first = false; await gate } // the first request stops inside the gateway, after holding the bikes
+        return super.createSession(input)
+      }
+    }
+    const slow = new SlowFirst(new Map(), new Map())
+    const same = request({ cart: cart(2) })
+    const first = beginCheckout(same, slow)
+    await waitFor(async () => (await mine()).length === 1 && (await db.select().from(bikeReservations).where(eq(bikeReservations.customerId, fx.customerId))).length === 2)
+    const second = await beginCheckout(same, slow) // finds the bikes held and no session yet: opens its own
+    release()
+    const firstResult = await first
+    if (firstResult.status !== 'redirect' || second.status !== 'redirect') throw new Error(`expected redirects, got ${firstResult.status} and ${second.status}`)
+    expect(firstResult.url).toBe(second.url)
+    const [booking] = await mine()
+    expect(booking.stripeSessionId).toBe(second.url.split('/').pop())
+    expect(slow.openSessionCount()).toBe(1)
   })
 
   it('asking again after the customer has paid says it is paid', async () => {

@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { eq } from 'drizzle-orm'
 import { db, bikeReservations, bookingRefunds, bookings } from '@/lib/db'
 import { FakeGateway } from '@/lib/booking/payments/fake'
@@ -7,6 +7,20 @@ import { expireBooking } from '@/lib/booking/holds'
 import { createFixture, insertPaidBooking, startPendingBooking, type Fixture } from './fixtures'
 
 const RANGE = { startsOn: '2031-11-03', endsOn: '2031-11-06' }
+
+// Makes the n-th bike held again fail with an error (a dropped connection, a container stopped by a deploy), once.
+const hooks = vi.hoisted(() => ({ failHoldNumber: undefined as undefined | number, holds: 0 }))
+vi.mock('@/lib/booking/holds', async (importOriginal) => {
+  const real = await importOriginal<typeof import('@/lib/booking/holds')>()
+  return {
+    ...real,
+    holdOneBike: async (...args: Parameters<typeof real.holdOneBike>) => {
+      hooks.holds++
+      if (hooks.failHoldNumber === hooks.holds) { hooks.failHoldNumber = undefined; throw new Error('connection lost') }
+      return real.holdOneBike(...args)
+    },
+  }
+})
 
 /** A booking whose bikes were freed (`expired`) although its session was then paid: the case that should never happen. */
 describe('a payment that arrives after the bikes were freed', () => {
@@ -98,6 +112,17 @@ describe('a payment that arrives after the bikes were freed', () => {
     expect(refunds).toHaveLength(2) // one per ORIGINAL bike, not one more for the bike held again for a moment
     expect(refunds.reduce((sum, refund) => sum + refund.amountCents, 0)).toBe(6000)
     expect(gateway.refundCount()).toBe(2)
+  })
+
+  it('an error half way through bringing the bikes back does not leave the money held and the customer locked out: it refunds', async () => {
+    const pending = await paidButExpired(2)
+    hooks.holds = 0
+    hooks.failHoldNumber = 2 // the first bike is held again, the second attempt dies
+    const result = await confirmBooking(pending.bookingId, gateway)
+    expect(result).toEqual({ status: 'refunded', bookingId: pending.bookingId })
+    expect((await bookingOf(pending.bookingId)).status).toBe('failed_refunded')
+    expect((await refundsOf(pending.bookingId)).reduce((sum, refund) => sum + refund.amountCents, 0)).toBe(6000)
+    expect((await linesOf(pending.bookingId)).some((line) => line.status === 'held')).toBe(false)
   })
 
   it('refunds when the customer already has another payment on its way (one at a time)', async () => {

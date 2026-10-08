@@ -67,18 +67,30 @@ describe('the fake gateway', () => {
     expect(await gateway().getSession('fake_cs_nobody')).toEqual({ status: 'expired' })
   })
 
-  it('refunds a reservation once: asking again gives the same refund, and a failure is only for the next try', async () => {
+  it('refunds a reservation once per request: the same request gives the same answer, a failure included; a new attempt is a new request', async () => {
     const fake = gateway()
-    const first = await fake.refund({ reservationId: 'r1', paymentRef: 'pi', amountCents: 2000 })
-    const again = await fake.refund({ reservationId: 'r1', paymentRef: 'pi', amountCents: 2000 })
-    expect(first).toEqual({ status: 'succeeded', refundRef: 'fake_re_r1' })
+    const first = await fake.refund({ reservationId: 'r1', attempt: 1, paymentRef: 'pi', amountCents: 2000 })
+    const again = await fake.refund({ reservationId: 'r1', attempt: 1, paymentRef: 'pi', amountCents: 2000 })
+    expect(first).toEqual({ status: 'succeeded', refundRef: 'fake_re_r1_1' })
     expect(again).toEqual(first)
     expect(fake.refundCount()).toBe(1)
 
+    // Stripe keeps the answer of an idempotency key for a day, an error too: asking again with the same key is not a retry.
     fake.failNextRefund = true
-    expect(await fake.refund({ reservationId: 'r2', paymentRef: 'pi', amountCents: 500 })).toMatchObject({ status: 'failed' })
+    const failed = await fake.refund({ reservationId: 'r2', attempt: 1, paymentRef: 'pi', amountCents: 500 })
+    expect(failed).toMatchObject({ status: 'failed' })
+    expect(await fake.refund({ reservationId: 'r2', attempt: 1, paymentRef: 'pi', amountCents: 500 })).toEqual(failed)
     expect(fake.refundCount()).toBe(1)
-    expect(await fake.refund({ reservationId: 'r2', paymentRef: 'pi', amountCents: 500 })).toEqual({ status: 'succeeded', refundRef: 'fake_re_r2' })
+    expect(await fake.refund({ reservationId: 'r2', attempt: 2, paymentRef: 'pi', amountCents: 500 })).toEqual({ status: 'succeeded', refundRef: 'fake_re_r2_2' })
+    expect(fake.refundCount()).toBe(2)
+  })
+
+  it('counts the sessions that can still be paid', async () => {
+    const fake = gateway()
+    const a = await fake.createSession(input())
+    await fake.createSession(input())
+    await fake.expireSession(a.id)
+    expect(fake.openSessionCount()).toBe(1)
   })
 })
 

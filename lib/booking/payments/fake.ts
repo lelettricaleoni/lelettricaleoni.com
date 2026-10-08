@@ -66,15 +66,17 @@ export class FakeGateway implements PaymentGateway {
     return true
   }
 
+  /** Like Stripe: the same reservation and attempt gets the same answer for ever, a failure too; a new attempt is a new request. */
   async refund(request: RefundRequest): Promise<RefundResult> {
-    const done = this.refunds.get(request.reservationId)
+    const key = `${request.reservationId}:${request.attempt}`
+    const done = this.refunds.get(key)
     if (done) return done
+    let result: RefundResult = { status: 'succeeded', refundRef: `fake_re_${request.reservationId}_${request.attempt}` }
     if (this.failNextRefund) {
       this.failNextRefund = false
-      return { status: 'failed', reason: 'fake refund failure' }
+      result = { status: 'failed', reason: 'fake refund failure' }
     }
-    const result: RefundResult = { status: 'succeeded', refundRef: `fake_re_${request.reservationId}` }
-    this.refunds.set(request.reservationId, result)
+    this.refunds.set(key, result)
     return result
   }
 
@@ -90,7 +92,13 @@ export class FakeGateway implements PaymentGateway {
     return this.sessions.size
   }
 
+  /** The refunds that were made (the failed ones are not). */
   refundCount(): number {
-    return this.refunds.size
+    return [...this.refunds.values()].filter((result) => result.status !== 'failed').length
+  }
+
+  /** The sessions that can still be paid. */
+  openSessionCount(): number {
+    return [...this.sessions.values()].filter((session) => this.stateOf(session) === 'open').length
   }
 }

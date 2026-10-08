@@ -94,6 +94,31 @@ describe('refunds and the cancellation of one online bike', () => {
       expect(gateway.refundCount()).toBe(1)
     })
 
+    it('asks the gateway again as a NEW attempt after a failure, never with the key that already failed', async () => {
+      const paid = await insertPaidBooking(fx, FAR, [3000])
+      const attempts: number[] = []
+      const real = gateway.refund.bind(gateway)
+      gateway.refund = async (request) => { attempts.push(request.attempt); return real(request) }
+      gateway.failNextRefund = true
+      await cancelOnlineReservation({ reservationId: paid.reservationIds[0], actor: customer(), now: NOW_EARLY }, gateway)
+      await cancelOnlineReservation({ reservationId: paid.reservationIds[0], actor: customer(), now: NOW_EARLY }, gateway)
+      expect(attempts).toEqual([1, 2])
+      expect(await refundsOf(paid.bookingId)).toMatchObject([{ status: 'succeeded', attempts: 2 }])
+    })
+
+    it('finishes the cancellation of a bike whose refund was already made, even after the deadline: the money is back, the bike must go', async () => {
+      const paid = await insertPaidBooking(fx, FAR, [3000])
+      // the gateway refunded, then the database failed before the bike was cancelled
+      await db.insert(bookingRefunds).values({
+        reservationId: paid.reservationIds[0], bookingId: paid.bookingId, amountCents: 3000, reason: 'customer',
+        status: 'succeeded', gatewayRefundId: 'fake_re_done_1',
+      })
+      const result = await cancelOnlineReservation({ reservationId: paid.reservationIds[0], actor: customer(), now: new Date('2031-12-09T10:00:00Z') }, gateway)
+      expect(result).toEqual({ status: 'cancelled', refundedCents: 3000, bookingCancelled: true, refund: 'succeeded' })
+      expect(await stateOf(paid.reservationIds[0])).toBe('cancelled')
+      expect(gateway.refundCount()).toBe(0)
+    })
+
     it('keeps the bike and says why when the gateway refuses; asking again finishes the job', async () => {
       const paid = await insertPaidBooking(fx, FAR, [3000])
       gateway.failNextRefund = true
