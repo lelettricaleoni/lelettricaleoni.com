@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import dynamic from 'next/dynamic'
-import { Play, Square, ChevronDown, TrendingUp, Ruler, Clock } from 'lucide-react'
+import { LuPlay, LuSquare, LuChevronDown, LuTrendingUp, LuRuler, LuClock } from 'react-icons/lu'
 import { MapLoader } from '@/components/map-loader'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
@@ -481,9 +481,9 @@ export function RouteFlyover({
               >
                 <span className="flex items-center justify-center w-9 h-9 rounded-full bg-[#366DA1] text-white shadow-sm group-hover:bg-[#2d5c8e] transition-colors shrink-0">
                   {flying ? (
-                    <Square size={13} className="fill-current" />
+                    <LuSquare size={13} className="fill-current" />
                   ) : (
-                    <Play size={13} className="fill-current ml-0.5" />
+                    <LuPlay size={13} className="fill-current ml-0.5" />
                   )}
                 </span>
                 <span className="text-sm font-semibold text-[#1e3a5f]">
@@ -503,7 +503,7 @@ export function RouteFlyover({
 
               <CollapsibleTrigger asChild>
                 <button className="flex items-center gap-1.5 px-3.5 py-2 rounded-full hover:bg-white/70 transition-colors cursor-pointer text-sm font-semibold text-[#1e3a5f]">
-                  <ChevronDown size={15} className={cn('transition-transform shrink-0', chartOpen && 'rotate-180')} />
+                  <LuChevronDown size={15} className={cn('transition-transform shrink-0', chartOpen && 'rotate-180')} />
                   {labels.toggle}
                 </button>
               </CollapsibleTrigger>
@@ -513,15 +513,15 @@ export function RouteFlyover({
               <div className="px-4 pb-4 pt-1">
                 <div className="flex items-center gap-4 h-5 mb-1">
                   <span className="inline-flex items-center gap-1.5 text-sm font-medium text-[#1e3a5f]" aria-label={labels.distance}>
-                    <Ruler size={14} className="text-muted-foreground" aria-hidden />
+                    <LuRuler size={14} className="text-muted-foreground" aria-hidden />
                     <span ref={distanceLabelRef} />
                   </span>
                   <span className="inline-flex items-center gap-1.5 text-sm font-medium text-[#1e3a5f]" aria-label={labels.altitude}>
-                    <TrendingUp size={14} className="text-muted-foreground" aria-hidden />
+                    <LuTrendingUp size={14} className="text-muted-foreground" aria-hidden />
                     <span ref={altitudeLabelRef} />
                   </span>
                   <span className="inline-flex items-center gap-1.5 text-sm font-medium text-[#1e3a5f]" aria-label={labels.duration}>
-                    <Clock size={14} className="text-muted-foreground" aria-hidden />
+                    <LuClock size={14} className="text-muted-foreground" aria-hidden />
                     <span ref={durationLabelRef} />
                   </span>
                 </div>

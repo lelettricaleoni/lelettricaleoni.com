@@ -1,7 +1,7 @@
 'use client'
 import { useTransition } from 'react'
 import Link from 'next/link'
-import { Pencil, Trash2, Eye, EyeOff } from 'lucide-react'
+import { LuPencil, LuTrash2, LuEye, LuEyeOff } from 'react-icons/lu'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -52,17 +52,17 @@ export function BikeModelListItem({ model, name }: { model: BikeModel; name: str
 
       <div className="flex items-center gap-2 shrink-0 ml-4">
         <Button variant="ghost" size="icon" onClick={handleTogglePublish} disabled={isPending} title={model.isPublished ? 'Hide' : 'Publish'}>
-          {model.isPublished ? <EyeOff size={16} /> : <Eye size={16} />}
+          {model.isPublished ? <LuEyeOff size={16} /> : <LuEye size={16} />}
         </Button>
 
         <Button variant="ghost" size="icon" asChild>
-          <Link href={`/manage/bikes/${model.id}`}><Pencil size={16} /></Link>
+          <Link href={`/manage/bikes/${model.id}`}><LuPencil size={16} /></Link>
         </Button>
 
         <AlertDialog>
           <AlertDialogTrigger asChild>
             <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive">
-              <Trash2 size={16} />
+              <LuTrash2 size={16} />
             </Button>
           </AlertDialogTrigger>
           <AlertDialogContent>

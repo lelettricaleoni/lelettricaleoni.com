@@ -1,7 +1,7 @@
 'use client'
 import { useActionState, useEffect, useRef } from 'react'
 import { useFormStatus } from 'react-dom'
-import { Mail } from 'lucide-react'
+import { LuMail } from 'react-icons/lu'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -12,7 +12,7 @@ function SubmitButton() {
   const { pending } = useFormStatus()
   return (
     <Button type="submit" disabled={pending} className="bg-[#1e3a5f] hover:bg-[#152c4a]">
-      <Mail size={16} className="mr-1" />
+      <LuMail size={16} className="mr-1" />
       {pending ? 'Sending…' : 'Invite'}
     </Button>
   )

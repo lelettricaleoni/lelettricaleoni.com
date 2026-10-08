@@ -1,6 +1,6 @@
 import Link from 'next/link'
-import { Zap, Bike, Mountain } from 'lucide-react'
-import type { LucideIcon } from 'lucide-react'
+import { LuZap, LuBike, LuMountain } from 'react-icons/lu'
+import type { IconType } from 'react-icons'
 import { Button } from '@/components/ui/button'
 import { SectionViewTracker } from './section-view-tracker'
 
@@ -39,11 +39,11 @@ export function BikesTeaserSection({ lang, dict }: BikesTeaserSectionProps) {
 
   // The same icons the price list gives these four families, so the two
   // sections read as one.
-  const families: { icon: LucideIcon; label: string }[] = [
-    { icon: Zap, label: p.emtb_title },
-    { icon: Zap, label: p.gravel_city_title },
-    { icon: Bike, label: p.classic_bike_title },
-    { icon: Mountain, label: p.classic_mtb_title },
+  const families: { icon: IconType; label: string }[] = [
+    { icon: LuZap, label: p.emtb_title },
+    { icon: LuZap, label: p.gravel_city_title },
+    { icon: LuBike, label: p.classic_bike_title },
+    { icon: LuMountain, label: p.classic_mtb_title },
   ]
 
   return (

@@ -1,6 +1,6 @@
 'use client'
 import { useState, type ReactNode } from 'react'
-import { SlidersHorizontal, RotateCcw } from 'lucide-react'
+import { LuSlidersHorizontal, LuRotateCcw } from 'react-icons/lu'
 import { cn } from '@/lib/utils'
 import { trackEvent } from '@/lib/analytics'
 import { BikeCard } from './bike-card'
@@ -68,7 +68,7 @@ export function BikeFilters({ models, lang, dict }: BikeFiltersProps) {
               'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold border cursor-pointer transition-colors shrink-0',
               activeFilterCount > 0 ? PILL_ACTIVE : PILL_INACTIVE
             )}>
-              <SlidersHorizontal size={15} />
+              <LuSlidersHorizontal size={15} />
               {d.filters_button}
               {activeFilterCount > 0 && (
                 <span className="flex items-center justify-center w-4 h-4 rounded-full text-[10px] font-bold bg-white text-[#1e3a5f]">
@@ -123,7 +123,7 @@ export function BikeFilters({ models, lang, dict }: BikeFiltersProps) {
             {activeFilterCount > 0 && (
               <div className="flex justify-end pt-3 border-t">
                 <Button variant="outline" size="sm" onClick={resetFilters} className="h-8 text-xs gap-1.5 text-muted-foreground">
-                  <RotateCcw size={13} />
+                  <LuRotateCcw size={13} />
                   {d.no_results_reset}
                 </Button>
               </div>
@@ -137,7 +137,7 @@ export function BikeFilters({ models, lang, dict }: BikeFiltersProps) {
       {filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-4 min-h-[50vh] text-center">
           <div className="flex items-center justify-center w-14 h-14 rounded-full bg-muted">
-            <SlidersHorizontal size={24} className="text-muted-foreground" />
+            <LuSlidersHorizontal size={24} className="text-muted-foreground" />
           </div>
           <p className="font-medium text-[#1e3a5f]">{d.no_results}</p>
           <button onClick={resetFilters} className="text-sm font-medium text-[#366DA1] cursor-pointer hover:underline underline-offset-4">

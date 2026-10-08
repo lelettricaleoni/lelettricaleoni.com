@@ -1,4 +1,4 @@
-import { Mountain } from 'lucide-react'
+import { LuMountain } from 'react-icons/lu'
 
 /**
  * One "nothing to show yet" treatment for the whole app, instead of a
@@ -11,7 +11,7 @@ import { Mountain } from 'lucide-react'
 export function MediaPlaceholder({ pulse }: { pulse?: boolean }) {
   return (
     <div className={`absolute inset-0 flex items-center justify-center bg-[#c8dae8] ${pulse ? 'animate-pulse' : ''}`}>
-      <Mountain size={32} className="text-[#366DA1]/50" />
+      <LuMountain size={32} className="text-[#366DA1]/50" />
     </div>
   )
 }

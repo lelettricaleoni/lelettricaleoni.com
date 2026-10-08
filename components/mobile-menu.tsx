@@ -2,7 +2,7 @@
 import { useState, useEffect, useSyncExternalStore } from 'react'
 import { createPortal } from 'react-dom'
 import Link from 'next/link'
-import { Menu, X } from 'lucide-react'
+import { LuMenu, LuX } from 'react-icons/lu'
 import { usePathname } from 'next/navigation'
 
 interface MobileMenuProps {
@@ -60,7 +60,7 @@ export function MobileMenu({ links }: MobileMenuProps) {
             className="p-1.5 rounded-md text-muted-foreground hover:text-[#1e3a5f] hover:bg-[#1e3a5f]/5 transition-colors cursor-pointer"
             aria-label="Chiudi menu"
           >
-            <X size={20} />
+            <LuX size={20} />
           </button>
         </div>
 
@@ -88,7 +88,7 @@ export function MobileMenu({ links }: MobileMenuProps) {
         aria-label="Apri menu"
         aria-expanded={open}
       >
-        <Menu size={22} />
+        <LuMenu size={22} />
       </button>
 
       {mounted && createPortal(overlay, document.body)}

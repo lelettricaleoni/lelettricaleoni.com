@@ -1,6 +1,6 @@
 'use client'
 import { useState } from 'react'
-import { Download, FileDown, Info, CheckCircle2, AlertCircle } from 'lucide-react'
+import { LuDownload, LuFileDown, LuInfo, LuCircleCheck, LuCircleAlert } from 'react-icons/lu'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import {
@@ -38,7 +38,7 @@ export function RouteGpxModal({ shortId, routeName, dict }: RouteGpxModalProps) 
   return (
     <>
       <Button variant="outline" size="sm" onClick={() => setOpen(true)}>
-        <Download size={14} className="mr-1.5" />
+        <LuDownload size={14} className="mr-1.5" />
         {d.download_gpx}
       </Button>
 
@@ -47,7 +47,7 @@ export function RouteGpxModal({ shortId, routeName, dict }: RouteGpxModalProps) 
           <DialogHeader>
             <div className="flex items-center gap-3 mb-1">
               <div className="w-10 h-10 rounded-full bg-[#1e3a5f]/10 flex items-center justify-center shrink-0">
-                <FileDown size={20} className="text-[#1e3a5f]" />
+                <LuFileDown size={20} className="text-[#1e3a5f]" />
               </div>
               <div>
                 <DialogTitle className="text-[#1e3a5f]">{d.gpx_modal_title}</DialogTitle>
@@ -58,7 +58,7 @@ export function RouteGpxModal({ shortId, routeName, dict }: RouteGpxModalProps) 
 
           <div className="space-y-5 pt-1">
             <div className="flex items-start gap-2.5 rounded-lg bg-muted/60 px-3.5 py-2.5">
-              <Info size={14} className="text-muted-foreground mt-0.5 shrink-0" />
+              <LuInfo size={14} className="text-muted-foreground mt-0.5 shrink-0" />
               <p className="text-xs text-muted-foreground leading-relaxed">{d.gpx_modal_note}</p>
             </div>
 
@@ -83,7 +83,7 @@ export function RouteGpxModal({ shortId, routeName, dict }: RouteGpxModalProps) 
             {/* Done state */}
             {status === 'done' && (
               <div className="flex items-center gap-2.5 rounded-lg bg-green-50 border border-green-200 px-3.5 py-2.5">
-                <CheckCircle2 size={16} className="text-green-600 shrink-0" />
+                <LuCircleCheck size={16} className="text-green-600 shrink-0" />
                 <p className="text-sm text-green-700 font-medium">File scaricato con successo.</p>
               </div>
             )}
@@ -91,7 +91,7 @@ export function RouteGpxModal({ shortId, routeName, dict }: RouteGpxModalProps) 
             {/* Error state */}
             {status === 'error' && (
               <div className="flex items-center gap-2.5 rounded-lg bg-red-50 border border-red-200 px-3.5 py-2.5">
-                <AlertCircle size={16} className="text-red-600 shrink-0" />
+                <LuCircleAlert size={16} className="text-red-600 shrink-0" />
                 <p className="text-sm text-red-700">{error}</p>
               </div>
             )}
@@ -102,7 +102,7 @@ export function RouteGpxModal({ shortId, routeName, dict }: RouteGpxModalProps) 
                 className="w-full bg-[#1e3a5f] hover:bg-[#2a4f7f] text-white"
                 onClick={handleDownload}
               >
-                <Download size={16} className="mr-2" />
+                <LuDownload size={16} className="mr-2" />
                 {d.gpx_modal_download}
               </Button>
             ) : status === 'done' ? (
@@ -115,7 +115,7 @@ export function RouteGpxModal({ shortId, routeName, dict }: RouteGpxModalProps) 
               </Button>
             ) : (
               <Button className="w-full bg-[#1e3a5f] text-white opacity-60" disabled>
-                <Download size={16} className="mr-2 animate-bounce" />
+                <LuDownload size={16} className="mr-2 animate-bounce" />
                 Download in corso...
               </Button>
             )}

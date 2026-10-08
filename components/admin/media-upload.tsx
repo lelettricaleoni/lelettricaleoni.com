@@ -10,7 +10,7 @@ import {
   useSortable, verticalListSortingStrategy, arrayMove,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { GripVertical, X, Upload, Video, ImageIcon } from 'lucide-react'
+import { LuGripVertical, LuX, LuUpload, LuVideo, LuImage } from 'react-icons/lu'
 import Image from 'next/image'
 import { toast } from 'sonner'
 import { photoUrl, isStagedPhotoKey } from '@/lib/media-client'
@@ -95,7 +95,7 @@ function PhotoThumb({ src }: { src: string }) {
   if (!src || failed) {
     return (
       <div className="w-16 h-12 rounded bg-muted flex items-center justify-center shrink-0">
-        <ImageIcon size={20} className="text-muted-foreground" />
+        <LuImage size={20} className="text-muted-foreground" />
       </div>
     )
   }
@@ -154,7 +154,7 @@ function SortableItem({
         <div className="w-4 shrink-0" />
       ) : (
         <button type="button" {...attributes} {...listeners} className="text-muted-foreground hover:text-foreground cursor-grab shrink-0">
-          <GripVertical size={16} />
+          <LuGripVertical size={16} />
         </button>
       )}
 
@@ -162,7 +162,7 @@ function SortableItem({
         <PhotoThumb key={thumbSrc} src={thumbSrc} />
       ) : (
         <div className="w-16 h-12 rounded bg-muted flex items-center justify-center shrink-0">
-          <Video size={20} className="text-muted-foreground" />
+          <LuVideo size={20} className="text-muted-foreground" />
         </div>
       )}
 
@@ -180,7 +180,7 @@ function SortableItem({
 
       {!uploading && (
         <button type="button" onClick={onRemove} className="text-destructive hover:text-destructive/80 cursor-pointer shrink-0">
-          <X size={14} />
+          <LuX size={14} />
         </button>
       )}
     </div>
@@ -472,7 +472,7 @@ export function MediaUpload({
       >
         <input {...getInputProps()} />
         <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-          <Upload size={16} />
+          <LuUpload size={16} />
           <span>Add a photo or video (drag or click)</span>
         </div>
         <p className="text-xs text-muted-foreground mt-1">Photos: JPG, PNG, WebP, TIFF or HEIC</p>

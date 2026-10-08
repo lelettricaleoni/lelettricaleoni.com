@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation'
 import { connection } from 'next/server'
 import Link from 'next/link'
 import type { Metadata } from 'next'
-import { ArrowLeft, Ruler, TrendingUp, Clock } from 'lucide-react'
+import { LuArrowLeft, LuRuler, LuTrendingUp, LuClock } from 'react-icons/lu'
 import { getDictionary, hasLocale } from '../../dictionaries'
 import { Navbar } from '@/components/navbar'
 import { Footer } from '@/components/footer'
@@ -121,7 +121,7 @@ export default async function RouteDetailPage({
       <div className="max-w-6xl mx-auto px-12 sm:px-20 space-y-8">
         {/* Back */}
         <Link href={`/${lang}/routes`} className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-[#366DA1]">
-          <ArrowLeft size={14} /> {d.back_to_list}
+          <LuArrowLeft size={14} /> {d.back_to_list}
         </Link>
 
         {/* Title + bike types + difficulty */}
@@ -166,7 +166,7 @@ export default async function RouteDetailPage({
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           {route.distanceKm && (
             <div className="flex flex-col items-center gap-2 rounded-2xl border bg-white p-4 shadow-sm">
-              <Ruler size={20} className="text-[#366DA1]" />
+              <LuRuler size={20} className="text-[#366DA1]" />
               <p className="text-2xl font-bold text-[#1e3a5f] leading-none">
                 {formatRouteKm(route.distanceKm, lang, 'detail')}<span className="text-sm font-normal ml-0.5">km</span>
               </p>
@@ -175,7 +175,7 @@ export default async function RouteDetailPage({
           )}
           {route.elevationM != null && (
             <div className="flex flex-col items-center gap-2 rounded-2xl border bg-white p-4 shadow-sm">
-              <TrendingUp size={20} className="text-[#366DA1]" />
+              <LuTrendingUp size={20} className="text-[#366DA1]" />
               <p className="text-2xl font-bold text-[#1e3a5f] leading-none">
                 {route.elevationM}<span className="text-sm font-normal ml-0.5">m</span>
               </p>
@@ -184,7 +184,7 @@ export default async function RouteDetailPage({
           )}
           {route.durationMin && (
             <div className="flex flex-col items-center gap-2 rounded-2xl border bg-white p-4 shadow-sm">
-              <Clock size={20} className="text-[#366DA1]" />
+              <LuClock size={20} className="text-[#366DA1]" />
               <p className="text-2xl font-bold text-[#1e3a5f] leading-none">
                 {Math.floor(route.durationMin / 60)}h{route.durationMin % 60 > 0 ? `${route.durationMin % 60}m` : ''}
               </p>

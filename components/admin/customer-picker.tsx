@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState, useTransition } from 'react'
-import { UserPlus } from 'lucide-react'
+import { LuUserPlus } from 'react-icons/lu'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -87,7 +87,7 @@ function Search({
           placeholder="Name, phone or email" aria-label="Search customers" autoComplete="off"
         />
         <Button type="button" variant="outline" className="shrink-0" onClick={onAdd}>
-          <UserPlus size={16} className="mr-1" />New customer
+          <LuUserPlus size={16} className="mr-1" />New customer
         </Button>
       </div>
       {text && list === null && <p className="text-sm text-muted-foreground">Searching…</p>}

@@ -1,6 +1,6 @@
 'use client'
 
-import { Download, Zap, Bike, Tag, Mountain } from 'lucide-react'
+import { LuDownload, LuZap, LuBike, LuTag, LuMountain } from 'react-icons/lu'
 import { Button } from '@/components/ui/button'
 import {
   Table,
@@ -91,7 +91,7 @@ export function PricingSection({ dict }: { dict: PricingDict }) {
 
         {/* Gravel & City eBike */}
         <div className="mb-10">
-          <SectionTitle icon={<Zap size={18} />} label={p.gravel_city_title} />
+          <SectionTitle icon={<LuZap size={18} />} label={p.gravel_city_title} />
           <div className="rounded-xl border border-border bg-white overflow-x-auto shadow-sm">
             <Table>
               <TableHeader>
@@ -125,7 +125,7 @@ export function PricingSection({ dict }: { dict: PricingDict }) {
 
         {/* eMTB */}
         <div className="mb-10">
-          <SectionTitle icon={<Zap size={18} />} label={p.emtb_title} />
+          <SectionTitle icon={<LuZap size={18} />} label={p.emtb_title} />
           <div className="rounded-xl border border-border bg-white overflow-x-auto shadow-sm">
             <Table>
               <TableHeader>
@@ -162,7 +162,7 @@ export function PricingSection({ dict }: { dict: PricingDict }) {
         {/* Bici classiche */}
         <div className="grid sm:grid-cols-2 gap-6 mb-6">
           <div>
-            <SectionTitle icon={<Bike size={18} />} label={p.classic_bike_title} />
+            <SectionTitle icon={<LuBike size={18} />} label={p.classic_bike_title} />
             <div className="rounded-xl border border-border bg-white overflow-hidden shadow-sm">
               <PriceRow label={p.day_1}     price="€15" />
               <PriceRow label={p.from_day2} price={`€10 ${p.per_day}`} />
@@ -170,7 +170,7 @@ export function PricingSection({ dict }: { dict: PricingDict }) {
           </div>
 
           <div>
-            <SectionTitle icon={<Mountain size={18} />} label={p.classic_mtb_title} />
+            <SectionTitle icon={<LuMountain size={18} />} label={p.classic_mtb_title} />
             <div className="rounded-xl border border-border bg-white overflow-hidden shadow-sm">
               <PriceRow label={p.day_1}     price="€20" />
               <PriceRow label={p.from_day2} price={`€15 ${p.per_day}`} />
@@ -180,7 +180,7 @@ export function PricingSection({ dict }: { dict: PricingDict }) {
 
         {/* Extra */}
         <div className="mb-10">
-          <SectionTitle icon={<Tag size={18} />} label={p.extras_title} />
+          <SectionTitle icon={<LuTag size={18} />} label={p.extras_title} />
           <div className="rounded-xl border border-border bg-white overflow-hidden shadow-sm">
             <PriceRow label={p.charger}        price="€5"  sub={`(${p.one_time})`} />
             <PriceRow label={p.child_seat}     price="€3"  sub={`(${p.one_time})`} />
@@ -198,7 +198,7 @@ export function PricingSection({ dict }: { dict: PricingDict }) {
               rel="noopener noreferrer"
               onClick={() => trackEvent('file_download', { file_name: 'listino-prezzi-2026', file_extension: 'pdf' })}
             >
-              <Download size={18} />
+              <LuDownload size={18} />
               {p.download_pdf}
             </a>
           </Button>

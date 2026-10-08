@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Check, ChevronDown } from 'lucide-react'
+import { LuCheck, LuChevronDown } from 'react-icons/lu'
 import ReactCountryFlag from 'react-country-flag'
 import { trackEvent } from '@/lib/analytics'
 import { buttonVariants } from '@/components/ui/button'
@@ -59,7 +59,7 @@ export function LanguageSwitcher({ currentLang }: { currentLang: string }) {
       >
         <Flag countryCode={current.countryCode} label={current.label} />
         <span className="hidden sm:inline">{current.label}</span>
-        <ChevronDown className="text-muted-foreground" aria-hidden />
+        <LuChevronDown className="text-muted-foreground" aria-hidden />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="min-w-40">
         {locales.map((locale) => (
@@ -73,7 +73,7 @@ export function LanguageSwitcher({ currentLang }: { currentLang: string }) {
             >
               <Flag countryCode={locale.countryCode} label={locale.label} />
               <span className="flex-1">{locale.name}</span>
-              {locale.code === currentLang && <Check className="text-primary" aria-hidden />}
+              {locale.code === currentLang && <LuCheck className="text-primary" aria-hidden />}
             </Link>
           </DropdownMenuItem>
         ))}

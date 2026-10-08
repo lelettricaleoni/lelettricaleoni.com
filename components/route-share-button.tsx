@@ -1,5 +1,5 @@
 'use client'
-import { Share2 } from 'lucide-react'
+import { LuShare2 } from 'react-icons/lu'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
 import { trackEvent } from '@/lib/analytics'
@@ -12,7 +12,7 @@ export function RouteShareButton({ url, label, copiedLabel }: { url: string; lab
   }
   return (
     <Button variant="outline" size="sm" onClick={handleShare}>
-      <Share2 size={14} className="mr-1.5" /> {label}
+      <LuShare2 size={14} className="mr-1.5" /> {label}
     </Button>
   )
 }

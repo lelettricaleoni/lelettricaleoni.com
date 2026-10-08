@@ -1,6 +1,6 @@
 'use client'
 import { useRef, useState, useTransition } from 'react'
-import { CheckCircle2, KeyRound, TriangleAlert } from 'lucide-react'
+import { LuCircleCheck, LuKeyRound, LuTriangleAlert } from 'react-icons/lu'
 import { toast } from 'sonner'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import {
@@ -93,7 +93,7 @@ export function GoogleCalendarSettings({ view, encryptionConfigured }: { view: I
       <div className="space-y-8">
         {!encryptionConfigured && (
           <Alert variant="destructive">
-            <TriangleAlert className="size-4" />
+            <LuTriangleAlert className="size-4" />
             <AlertTitle>Keys cannot be saved yet</AlertTitle>
             <AlertDescription>Secure storage is not set up on this server, so a key would not be protected. Nothing will be saved until it is.</AlertDescription>
           </Alert>
@@ -104,7 +104,7 @@ export function GoogleCalendarSettings({ view, encryptionConfigured }: { view: I
           {view.hasSecret && (
             <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border bg-muted/40 p-3 text-sm">
               <div className="flex items-center gap-2">
-                <KeyRound size={16} className="text-emerald-700" aria-hidden />
+                <LuKeyRound size={16} className="text-emerald-700" aria-hidden />
                 <div>
                   <p className="font-medium">Key saved</p>
                   {view.serviceAccountEmail && <p className="break-all text-muted-foreground">{view.serviceAccountEmail}</p>}
@@ -176,14 +176,14 @@ export function GoogleCalendarSettings({ view, encryptionConfigured }: { view: I
           <Button type="button" variant="outline" onClick={test} disabled={isPending || !view.hasSecret}>Test connection</Button>
           {testResult?.status === 'ok' && (
             <Alert>
-              <CheckCircle2 className="size-4 text-emerald-700" />
+              <LuCircleCheck className="size-4 text-emerald-700" />
               <AlertTitle>The connection works</AlertTitle>
               <AlertDescription>{testResult.warning ?? 'Now press Enable at the top of the page.'}</AlertDescription>
             </Alert>
           )}
           {(testResult?.status === 'failed' || testResult?.status === 'invalid') && (
             <Alert variant="destructive">
-              <TriangleAlert className="size-4" />
+              <LuTriangleAlert className="size-4" />
               <AlertTitle>The test did not pass</AlertTitle>
               <AlertDescription>{testResult.message}</AlertDescription>
             </Alert>

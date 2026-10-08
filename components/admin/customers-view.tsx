@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { ChevronLeft } from 'lucide-react'
+import { LuChevronLeft } from 'react-icons/lu'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -77,7 +77,7 @@ export function CustomerView({ detail }: { detail: CustomerDetail }) {
   return (
     <div className="space-y-6">
       <Link href="/manage/customers" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground">
-        <ChevronLeft size={16} /> Customers
+        <LuChevronLeft size={16} /> Customers
       </Link>
 
       <div className="flex flex-wrap items-start justify-between gap-3">
