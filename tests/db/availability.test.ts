@@ -15,7 +15,8 @@ describe('getFreeBikes', () => {
     (await getFreeBikes(range, options)).find((row) => row.bikeModelId === fx.modelId)
 
   async function occupy(unitId: string, status: 'held' | 'confirmed' | 'expired' | 'cancelled', range = RANGE) {
-    const booking = await insertBooking(fx.customerId, range)
+    // Availability reads the bikes, not the booking; a confirmed booking each keeps a customer's "one pending at a time" out of the way.
+    const booking = await insertBooking(fx.customerId, range, { status: 'confirmed' })
     await insertOnlineLine(booking, fx.customerId, unitId, range, status)
   }
 

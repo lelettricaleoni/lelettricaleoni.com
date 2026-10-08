@@ -1,3 +1,4 @@
+import { sql } from 'drizzle-orm'
 import {
   pgTable, text, integer, numeric, boolean,
   timestamp, uuid, pgEnum, index, unique, uniqueIndex, date, jsonb
@@ -222,10 +223,15 @@ export const bookings = pgTable('bookings', {
   stripeSessionId:       text('stripe_session_id').unique(),
   stripePaymentIntentId: text('stripe_payment_intent_id'),
   holdExpiresAt:         timestamp('hold_expires_at', { withTimezone: true }).notNull(),
-  createdAt:             timestamp('created_at').notNull().defaultNow(),
-  confirmedAt:           timestamp('confirmed_at'),
+  // How many bikes the booking is made of: a booking holding fewer is still being put together (or was left half done)
+  // and is neither shown as ready nor confirmed.
+  lineCount:             integer('line_count').notNull().default(1),
+  createdAt:             timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  confirmedAt:           timestamp('confirmed_at', { withTimezone: true }),
 }, (t) => [
   index('bookings_customer_idx').on(t.customerId),
+  // At most one payment on its way per customer: the application checks first, this is what holds when two tabs race.
+  uniqueIndex('bookings_one_pending_per_customer').on(t.customerId).where(sql`${t.status} = 'pending'`),
   index('bookings_status_expires_idx').on(t.status, t.holdExpiresAt),
 ])
 

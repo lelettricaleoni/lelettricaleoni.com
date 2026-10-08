@@ -71,12 +71,16 @@ export type LineStatus = 'held' | 'confirmed' | 'expired' | 'cancelled'
 export async function insertBooking(
   customerId: string,
   range: DayRange,
-  options: { status?: 'pending' | 'confirmed' | 'expired' | 'cancelled'; holdMinutes?: number; createdMinutesAgo?: number } = {},
+  options: {
+    status?: 'pending' | 'confirmed' | 'expired' | 'cancelled'; holdMinutes?: number; createdMinutesAgo?: number
+    lineCount?: number; requestKey?: string
+  } = {},
 ): Promise<string> {
   const [row] = await db.insert(bookings).values({
     customerId,
-    requestKey: crypto.randomUUID(),
+    requestKey: options.requestKey ?? crypto.randomUUID(),
     status: options.status ?? 'pending',
+    ...(options.lineCount === undefined ? {} : { lineCount: options.lineCount }),
     startsOn: range.startsOn,
     endsOn: range.endsOn,
     totalCents: 4500,

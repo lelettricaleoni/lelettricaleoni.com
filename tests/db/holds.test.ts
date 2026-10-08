@@ -3,9 +3,9 @@ import { eq, inArray, sql } from 'drizzle-orm'
 import { db, bikeReservations, bookings, customers } from '@/lib/db'
 import { getFreeBikes } from '@/lib/booking/availability'
 import {
-  confirmHold, expireBooking, findOverduePending, findPendingBooking, startHold, type StartHoldInput,
+  confirmHold, expireBooking, findOverduePending, findPendingBooking, holdOneBike, startHold, type StartHoldInput,
 } from '@/lib/booking/holds'
-import { createFixture, insertBooking, type Fixture } from './fixtures'
+import { createFixture, insertBooking, insertOnlineLine, type Fixture } from './fixtures'
 
 const RANGE = { startsOn: '2031-11-03', endsOn: '2031-11-06' }
 
@@ -173,5 +173,58 @@ describe('holding the bikes of a booking', () => {
     expect(await findOverduePending()).toContainEqual({ id: result.bookingId, stripeSessionId: null })
     await expireBooking(result.bookingId)
     expect(await findOverduePending()).not.toContainEqual(expect.objectContaining({ id: result.bookingId }))
+  })
+
+  // --- found by the final review ---------------------------------------------------------------------------
+
+  it('does not hold a bike for a booking that has already been closed', async () => {
+    const closed = await insertBooking(fx.customerId, RANGE, { status: 'expired', lineCount: 1 })
+    const outcome = await holdOneBike(closed, input(), lines(1)[0])
+    expect(outcome).toBe('closed')
+    expect(await linesOf(closed)).toHaveLength(0)
+    expect(await free()).toBe(3)
+  })
+
+  it('says a replay of a booking still being put together is in progress, not held', async () => {
+    const key = crypto.randomUUID()
+    const bookingId = await insertBooking(fx.customerId, RANGE, { lineCount: 2, requestKey: key })
+    await insertOnlineLine(bookingId, fx.customerId, fx.unitIds[0], RANGE, 'held')
+    expect(await startHold(input({ bookingKey: key, lines: lines(2) }))).toEqual({ status: 'in_progress', bookingId })
+    await insertOnlineLine(bookingId, fx.customerId, fx.unitIds[1], RANGE, 'held')
+    expect((await startHold(input({ bookingKey: key, lines: lines(2) }))).status).toBe('held')
+  })
+
+  it('does not confirm a booking that is missing some of its bikes', async () => {
+    const bookingId = await insertBooking(fx.customerId, RANGE, { lineCount: 2 })
+    await insertOnlineLine(bookingId, fx.customerId, fx.unitIds[0], RANGE, 'held')
+    expect(await confirmHold(bookingId)).toEqual({ confirmed: false, lines: 0 })
+    expect((await bookingOf(bookingId)).status).toBe('pending')
+  })
+
+  it('closes the booking and frees its bikes when something throws half way', async () => {
+    const broken = { bikeModelId: 'not-a-uuid', bikeSizeId: fx.sizeId, bikeVersionId: fx.versionId, amountCents: 3000 }
+    await expect(startHold(input({ lines: [...lines(1), broken] }))).rejects.toThrow()
+    expect(await findPendingBooking(fx.customerId)).toBeNull()
+    expect(await free()).toBe(3)
+  })
+
+  it('never lets one customer have two payments on their way, even from two tabs at once', async () => {
+    for (let round = 0; round < 4; round++) {
+      const results = await Promise.all([startHold(input()), startHold(input())])
+      expect(results.map((r) => r.status).sort()).toEqual(['has_pending', 'held'])
+      const pending = await db.select().from(bookings).where(eq(bookings.customerId, fx.customerId))
+      expect(pending.filter((b) => b.status === 'pending')).toHaveLength(1)
+      for (const b of pending) await expireBooking(b.id)
+    }
+  })
+
+  it('does not answer a replay with the booking of another customer', async () => {
+    const key = crypto.randomUUID()
+    const first = await startHold(input({ bookingKey: key }))
+    if (first.status !== 'held') throw new Error('setup')
+    const stranger = await otherCustomer()
+    const result = await startHold(input({ bookingKey: key, customerId: stranger }))
+    expect(result.status).not.toBe('held')
+    expect(result).not.toMatchObject({ bookingId: first.bookingId })
   })
 })

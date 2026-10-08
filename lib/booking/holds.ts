@@ -1,7 +1,7 @@
 import { and, eq, gte, sql } from 'drizzle-orm'
-import { db, bookings } from '@/lib/db'
+import { db, bikeReservations, bookings, type Booking } from '@/lib/db'
 import type { IsoDate } from '@/lib/dates'
-import { EXCLUSION_VIOLATION, pgErrorCode } from '@/lib/pg-errors'
+import { EXCLUSION_VIOLATION, UNIQUE_VIOLATION, pgErrorCode } from '@/lib/pg-errors'
 import { ABANDONED_LIMIT, HOLD_MINUTES, type BikeSpec } from './rules'
 
 /*
@@ -32,14 +32,31 @@ export interface StartHoldInput {
 export type StartHoldResult =
   | { status: 'held'; bookingId: string; holdExpiresAt: Date; replayed: boolean }
   | { status: 'closed'; bookingId: string; bookingStatus: string }
+  /** The same key came back while the first request is still holding the bikes (a double click): wait, do not pay yet. */
+  | { status: 'in_progress'; bookingId: string }
   | { status: 'has_pending'; bookingId: string }
   | { status: 'too_many_attempts' }
   | { status: 'unavailable'; lineIndex: number }
   | { status: 'try_again'; lineIndex: number }
 
-async function findByKey(bookingKey: string) {
-  const [row] = await db.select().from(bookings).where(eq(bookings.requestKey, bookingKey))
+/** The booking this customer made with the key. A key is never answered with somebody else's booking. */
+async function findByKey(bookingKey: string, customerId: string) {
+  const [row] = await db.select().from(bookings).where(and(eq(bookings.requestKey, bookingKey), eq(bookings.customerId, customerId)))
   return row
+}
+
+async function findById(bookingId: string) {
+  const [row] = await db.select().from(bookings).where(eq(bookings.id, bookingId))
+  return row
+}
+
+/** What asking again with the key of an existing booking means. */
+async function replayOf(booking: Booking): Promise<StartHoldResult> {
+  if (booking.status !== 'pending') return { status: 'closed', bookingId: booking.id, bookingStatus: booking.status }
+  const [row] = await db.select({ count: sql<number>`count(*)::int` }).from(bikeReservations)
+    .where(and(eq(bikeReservations.bookingId, booking.id), eq(bikeReservations.status, 'held')))
+  if ((row?.count ?? 0) < booking.lineCount) return { status: 'in_progress', bookingId: booking.id }
+  return { status: 'held', bookingId: booking.id, holdExpiresAt: booking.holdExpiresAt, replayed: true }
 }
 
 /** The customer's booking that is waiting for a payment, if any (the caller decides what to do with an overdue one). */
@@ -69,50 +86,68 @@ async function countRecentlyLapsed(customerId: string): Promise<number> {
  * database refuses a bike another request took a moment earlier, the line picks again, up to a few times.
  */
 export async function startHold(input: StartHoldInput): Promise<StartHoldResult> {
-  const existing = await findByKey(input.bookingKey)
-  if (existing) {
-    return existing.status === 'pending'
-      ? { status: 'held', bookingId: existing.id, holdExpiresAt: existing.holdExpiresAt, replayed: true }
-      : { status: 'closed', bookingId: existing.id, bookingStatus: existing.status }
-  }
+  const existing = await findByKey(input.bookingKey, input.customerId)
+  if (existing) return replayOf(existing)
 
   const pending = await findPendingBooking(input.customerId)
   if (pending) return { status: 'has_pending', bookingId: pending.id }
   if ((await countRecentlyLapsed(input.customerId)) >= ABANDONED_LIMIT) return { status: 'too_many_attempts' }
 
   const totalCents = input.lines.reduce((sum, line) => sum + line.amountCents, 0)
-  const [created] = await db.insert(bookings)
-    .values({
-      customerId: input.customerId,
-      requestKey: input.bookingKey,
-      startsOn: input.startsOn,
-      endsOn: input.endsOn,
-      totalCents,
-      language: input.language,
-      holdExpiresAt: sql`now() + make_interval(mins => ${HOLD_MINUTES})`,
-    })
-    .onConflictDoNothing({ target: bookings.requestKey })
-    .returning({ id: bookings.id, holdExpiresAt: bookings.holdExpiresAt })
+  let created: { id: string; holdExpiresAt: Date } | undefined
+  try {
+    const rows = await db.insert(bookings)
+      .values({
+        customerId: input.customerId,
+        requestKey: input.bookingKey,
+        startsOn: input.startsOn,
+        endsOn: input.endsOn,
+        totalCents,
+        language: input.language,
+        lineCount: input.lines.length,
+        holdExpiresAt: sql`now() + make_interval(mins => ${HOLD_MINUTES})`,
+      })
+      .onConflictDoNothing({ target: bookings.requestKey })
+      .returning({ id: bookings.id, holdExpiresAt: bookings.holdExpiresAt })
+    created = rows[0]
+  } catch (error) {
+    // The only other unique index is "one pending booking per customer": two tabs raced and the other one got there first.
+    if (pgErrorCode(error) !== UNIQUE_VIOLATION) throw error
+    const other = await findPendingBooking(input.customerId)
+    return other ? { status: 'has_pending', bookingId: other.id } : { status: 'try_again', lineIndex: 0 }
+  }
   if (!created) {
     // The same key won a race against this very call.
-    const raced = await findByKey(input.bookingKey)
-    if (!raced) return { status: 'try_again', lineIndex: 0 }
-    return raced.status === 'pending'
-      ? { status: 'held', bookingId: raced.id, holdExpiresAt: raced.holdExpiresAt, replayed: true }
-      : { status: 'closed', bookingId: raced.id, bookingStatus: raced.status }
+    const raced = await findByKey(input.bookingKey, input.customerId)
+    return raced ? replayOf(raced) : { status: 'try_again', lineIndex: 0 }
   }
 
-  for (let index = 0; index < input.lines.length; index++) {
-    const outcome = await holdOneBike(created.id, input, input.lines[index])
-    if (outcome !== 'held') {
-      await expireBooking(created.id)
-      return outcome === 'none_free' ? { status: 'unavailable', lineIndex: index } : { status: 'try_again', lineIndex: index }
+  try {
+    for (let index = 0; index < input.lines.length; index++) {
+      const outcome = await holdOneBike(created.id, input, input.lines[index])
+      if (outcome === 'closed') {
+        return { status: 'closed', bookingId: created.id, bookingStatus: (await findById(created.id))?.status ?? 'expired' }
+      }
+      if (outcome !== 'held') {
+        await expireBooking(created.id)
+        return outcome === 'none_free' ? { status: 'unavailable', lineIndex: index } : { status: 'try_again', lineIndex: index }
+      }
     }
+  } catch (error) {
+    // Whatever went wrong, do not leave a half-built booking holding bikes and blocking the customer for half an hour.
+    await expireBooking(created.id).catch(() => undefined)
+    throw error
   }
   return { status: 'held', bookingId: created.id, holdExpiresAt: created.holdExpiresAt, replayed: false }
 }
 
-async function holdOneBike(bookingId: string, input: StartHoldInput, line: HoldLine): Promise<'held' | 'none_free' | 'exhausted'> {
+/**
+ * One bike for one line of the booking. 'closed' means the booking is no longer pending (somebody expired it while this was
+ * running): nothing is held, because a bike held for a closed booking would never be freed by anyone.
+ */
+export async function holdOneBike(
+  bookingId: string, input: StartHoldInput, line: HoldLine,
+): Promise<'held' | 'none_free' | 'closed' | 'exhausted'> {
   // One key per line, kept across the attempts, so a repeated statement cannot hold the same line twice.
   const lineKey = crypto.randomUUID()
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
@@ -127,6 +162,7 @@ async function holdOneBike(bookingId: string, input: StartHoldInput, line: HoldL
           and u.bike_size_id = ${line.bikeSizeId}::uuid
           and u.bike_version_id = ${line.bikeVersionId}::uuid
           and (u.retired_on is null or ${input.endsOn}::date <= u.retired_on)
+          and exists (select 1 from bookings b where b.id = ${bookingId}::uuid and b.status = 'pending')
           and not exists (
             select 1 from bike_reservations r
             where r.bike_unit_id = u.id and r.status in ('confirmed', 'held')
@@ -136,7 +172,7 @@ async function holdOneBike(bookingId: string, input: StartHoldInput, line: HoldL
         on conflict (request_key) do nothing
         returning id`)
       if (rows.length > 0) return 'held'
-      return 'none_free'
+      return (await findById(bookingId))?.status === 'pending' ? 'none_free' : 'closed'
     } catch (error) {
       // Another request took the bike this one had picked, a moment earlier: pick again.
       if (pgErrorCode(error) === EXCLUSION_VIOLATION) continue
@@ -148,13 +184,14 @@ async function holdOneBike(bookingId: string, input: StartHoldInput, line: HoldL
 
 /**
  * Pending → confirmed, with every held bike of the booking, in one statement. Does nothing (and says so) when the booking is no
- * longer pending: a payment cannot confirm bikes that have been released.
+ * longer pending, or does not hold all the bikes it is made of: a payment cannot confirm bikes that have been released.
  */
 export async function confirmHold(bookingId: string): Promise<{ confirmed: boolean; lines: number }> {
   const [row] = await db.execute<{ bookings: number; lines: number }>(sql`
     with b as (
       update bookings set status = 'confirmed', confirmed_at = now()
       where id = ${bookingId}::uuid and status = 'pending'
+        and line_count = (select count(*) from bike_reservations r where r.booking_id = bookings.id and r.status = 'held')
       returning id
     ), l as (
       update bike_reservations set status = 'confirmed'

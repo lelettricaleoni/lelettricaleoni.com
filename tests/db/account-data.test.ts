@@ -2,9 +2,9 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { randomUUID } from 'node:crypto'
 import { eq, inArray } from 'drizzle-orm'
 import type { User } from '@supabase/supabase-js'
-import { db, bikeReservations, customers } from '@/lib/db'
+import { db, bikeReservations, bookings, customers } from '@/lib/db'
 import { buildAccountExport, getCustomerLanguage, releaseCustomerOfAccount } from '@/lib/auth/account-data'
-import { createFixture, reservationValues, type Fixture } from './fixtures'
+import { createFixture, insertBooking, insertOnlineLine, reservationValues, type Fixture } from './fixtures'
 
 /**
  * What happens to the shop's record of a person when their account is deleted, what they can download, and the
@@ -25,7 +25,12 @@ async function customerOf(userId: string, overrides: Partial<typeof customers.$i
 
 afterEach(async () => {
   for (const fixture of fixtures.splice(0)) await fixture.cleanup()
-  if (made.length) await db.delete(customers).where(inArray(customers.id, made.splice(0)))
+  if (made.length) {
+    const ids = made.splice(0)
+    await db.delete(bikeReservations).where(inArray(bikeReservations.customerId, ids))
+    await db.delete(bookings).where(inArray(bookings.customerId, ids))
+    await db.delete(customers).where(inArray(customers.id, ids))
+  }
 })
 
 async function rentalFor(customerId: string) {
@@ -51,6 +56,31 @@ describe('releaseCustomerOfAccount', () => {
     expect(await releaseCustomerOfAccount(userId)).toEqual({ kept: true, deleted: false })
     const [row] = await db.select().from(customers).where(eq(customers.id, customer.id))
     expect(row).toMatchObject({ id: customer.id, userId: null, firstName: 'Giulia', phone: customer.phone })
+  })
+
+  it('deletes a customer whose only trace is online bookings that never got paid', async () => {
+    const userId = randomUUID()
+    const customer = await customerOf(userId)
+    const fixture = await createFixture(1)
+    fixtures.push(fixture)
+    const range = { startsOn: '2031-12-01', endsOn: '2031-12-03' }
+    await insertBooking(customer.id, range, { status: 'expired' }) // no bike was ever held
+    const withBike = await insertBooking(customer.id, range, { status: 'expired' })
+    await insertOnlineLine(withBike, customer.id, fixture.unitIds[0], range, 'expired')
+    expect(await releaseCustomerOfAccount(userId)).toEqual({ kept: false, deleted: true })
+    expect(await db.select().from(customers).where(eq(customers.id, customer.id))).toHaveLength(0)
+    expect(await db.select().from(bookings).where(eq(bookings.customerId, customer.id))).toHaveLength(0)
+  })
+
+  it('keeps a customer with a paid online booking', async () => {
+    const userId = randomUUID()
+    const customer = await customerOf(userId)
+    const fixture = await createFixture(1)
+    fixtures.push(fixture)
+    const range = { startsOn: '2031-12-01', endsOn: '2031-12-03' }
+    const booking = await insertBooking(customer.id, range, { status: 'confirmed' })
+    await insertOnlineLine(booking, customer.id, fixture.unitIds[0], range, 'confirmed')
+    expect(await releaseCustomerOfAccount(userId)).toEqual({ kept: true, deleted: false })
   })
 
   it('does nothing for an account with no customer, and when it is asked twice', async () => {

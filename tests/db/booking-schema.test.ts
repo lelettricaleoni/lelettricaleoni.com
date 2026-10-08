@@ -36,7 +36,7 @@ describe('the exclusion constraint, with held bikes', () => {
   it('lets a held bike block another held bike', async () => {
     const first = await insertBooking(fx.customerId, RANGE)
     await insertOnlineLine(first, fx.customerId, unit(), RANGE, 'held')
-    const second = await insertBooking(fx.customerId, OVERLAPPING)
+    const second = await insertBooking(fx.customerId, OVERLAPPING, { status: 'confirmed' })
     expect(await failsWith(insertOnlineLine(second, fx.customerId, unit(), OVERLAPPING, 'held'))).toBe(EXCLUSION_VIOLATION)
   })
 
