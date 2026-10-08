@@ -1,6 +1,6 @@
 import { eq, inArray, sql } from 'drizzle-orm'
 import {
-  db, bikeCategories, customers, bikeModels, bikeSizes, bikeVersions, bikeUnits, bikeReservations, bookings,
+  db, bikeCategories, customers, bikeModels, bikeSizes, bikeVersions, bikeUnits, bikeReservations, bookings, bookingRefunds,
   type NewBikeReservation,
 } from '@/lib/db'
 import type { DayRange } from '@/lib/dates'
@@ -40,6 +40,10 @@ export async function createFixture(unitCount: number): Promise<Fixture> {
     unitIds,
     customerId: customer.id,
     cleanup: async () => {
+      await db.delete(bookingRefunds).where(inArray(
+        bookingRefunds.bookingId,
+        db.select({ id: bookings.id }).from(bookings).where(eq(bookings.customerId, customer.id)),
+      ))
       if (unitIds.length > 0) {
         await db.delete(bikeReservations).where(inArray(bikeReservations.bikeUnitId, unitIds))
         await db.delete(bikeUnits).where(inArray(bikeUnits.id, unitIds))
@@ -73,7 +77,7 @@ export async function insertBooking(
   range: DayRange,
   options: {
     status?: 'pending' | 'confirmed' | 'expired' | 'cancelled'; holdMinutes?: number; createdMinutesAgo?: number
-    lineCount?: number; requestKey?: string
+    lineCount?: number; requestKey?: string; totalCents?: number
   } = {},
 ): Promise<string> {
   const [row] = await db.insert(bookings).values({
@@ -83,7 +87,7 @@ export async function insertBooking(
     ...(options.lineCount === undefined ? {} : { lineCount: options.lineCount }),
     startsOn: range.startsOn,
     endsOn: range.endsOn,
-    totalCents: 4500,
+    totalCents: options.totalCents ?? 4500,
     holdExpiresAt: sql`now() + make_interval(mins => ${options.holdMinutes ?? 30})`,
     createdAt: sql`now() - make_interval(mins => ${options.createdMinutesAgo ?? 0})`,
   }).returning({ id: bookings.id })
@@ -92,11 +96,28 @@ export async function insertBooking(
 
 /** One bike of an online booking, in the given state. */
 export async function insertOnlineLine(
-  bookingId: string, customerId: string, bikeUnitId: string, range: DayRange, status: LineStatus,
+  bookingId: string, customerId: string, bikeUnitId: string, range: DayRange, status: LineStatus, amountCents = 4500,
 ): Promise<string> {
   const [row] = await db.insert(bikeReservations).values({
     bikeUnitId, kind: 'online_rental', status, startsOn: range.startsOn, endsOn: range.endsOn,
-    customerId, bookingId, amountCents: 4500, requestKey: crypto.randomUUID(),
+    customerId, bookingId, amountCents, requestKey: crypto.randomUUID(),
   }).returning({ id: bikeReservations.id })
   return row.id
+}
+
+/** A confirmed online booking with one confirmed bike per amount, paid with `paymentRef` (needs `amounts.length` bikes in the fixture). */
+export async function insertPaidBooking(
+  fx: Fixture, range: DayRange, amounts: number[], paymentRef = `fake_pi_${crypto.randomUUID()}`,
+): Promise<{ bookingId: string; reservationIds: string[]; paymentRef: string }> {
+  const bookingId = await insertBooking(fx.customerId, range, {
+    status: 'confirmed', lineCount: amounts.length, totalCents: amounts.reduce((sum, amount) => sum + amount, 0),
+  })
+  await db.update(bookings)
+    .set({ stripePaymentIntentId: paymentRef, stripeSessionId: `fake_cs_${crypto.randomUUID()}` })
+    .where(eq(bookings.id, bookingId))
+  const reservationIds: string[] = []
+  for (const [index, amount] of amounts.entries()) {
+    reservationIds.push(await insertOnlineLine(bookingId, fx.customerId, fx.unitIds[index], range, 'confirmed', amount))
+  }
+  return { bookingId, reservationIds, paymentRef }
 }
