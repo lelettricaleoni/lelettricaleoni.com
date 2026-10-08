@@ -47,7 +47,7 @@ function Fields({ customer, onSaved }: { customer: CustomerSummary; onSaved: () 
       if (result.status === 'conflict') {
         setError(
           <>
-            That {result.matchedOn} already belongs to{' '}
+            That email already belongs to{' '}
             <Link className="underline" href={`/manage/customers/${result.other.id}`}>
               {fullName(result.other.firstName, result.other.lastName)}
             </Link>.

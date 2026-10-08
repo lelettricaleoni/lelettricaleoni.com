@@ -179,10 +179,11 @@ export type NewBikeUnit = typeof bikeUnits.$inferInsert
 export const reservationKindEnum = pgEnum('reservation_kind', ['counter_rental', 'maintenance', 'online_rental'])
 export const reservationStatusEnum = pgEnum('reservation_status', ['confirmed', 'held', 'expired', 'cancelled'])
 
-// The people who rent, from the counter or (later) online. One row per person: the same phone or
-// the same email is the same customer, so a counter customer who later registers online with that
-// email lands on the same row and keeps the history. `user_id` is the auth account, once there is one.
-// First and last name are required; the contacts are optional but unique when present.
+// The people who rent, from the counter or (later) online. One row per person: the same email is
+// the same customer, so a counter customer who later registers online with that email lands on the
+// same row and keeps the history. `user_id` is the auth account, once there is one.
+// First and last name are required. The email is unique when present; the PHONE IS NOT (Kevin, 2026-10-08): a couple, a family
+// or a group shares one number, and a unique phone would stop the second person from saving theirs or from booking.
 export const customers = pgTable('customers', {
   id:        uuid('id').primaryKey().defaultRandom(),
   userId:    uuid('user_id').unique(),
@@ -198,7 +199,6 @@ export const customers = pgTable('customers', {
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 }, (t) => [
   uniqueIndex('customers_email_unique').on(t.email),
-  uniqueIndex('customers_phone_unique').on(t.phone),
 ])
 
 export type Customer = typeof customers.$inferSelect

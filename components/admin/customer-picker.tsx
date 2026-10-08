@@ -135,8 +135,8 @@ function NewCustomer({
       const result = await createCustomerAction({ firstName, lastName, phone, phoneCountry, email, notes })
       if (result.status === 'invalid') { setError(result.message); return }
       if (result.status === 'exists') {
-        // The phone or the email belongs to someone already in the list: use that person.
-        toast.info(`Already in the list (same ${result.matchedOn}): ${fullName(result.customer.firstName, result.customer.lastName)}`)
+        // The email belongs to someone already in the list: use that person.
+        toast.info(`Already in the list (same email): ${fullName(result.customer.firstName, result.customer.lastName)}`)
       }
       onCreated(result.customer)
     })

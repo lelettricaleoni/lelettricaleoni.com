@@ -1,0 +1,1 @@
+DROP INDEX "customers_phone_unique";

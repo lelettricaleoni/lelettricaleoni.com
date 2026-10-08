@@ -40,19 +40,19 @@ describe('createCustomer', () => {
     expect(a.customer.id).not.toBe(b.customer.id)
   })
 
-  it('returns the existing customer when the phone is already known, and does not create another', async () => {
+  it('lets two people share a phone number: a couple or a family has one', async () => {
     const first = await create(person({ phone: '+393471111111' }))
     const second = await create(person({ firstName: 'Maria', phone: '+393471111111' }))
-    expect(second.status).toBe('exists')
-    if (second.status === 'exists') expect(second.matchedOn).toBe('phone')
-    expect(second.customer.id).toBe(first.customer.id)
+    expect(first.status).toBe('created')
+    expect(second.status).toBe('created')
+    expect(second.customer.id).not.toBe(first.customer.id)
+    expect(second.customer.phone).toBe(first.customer.phone)
   })
 
   it('returns the existing customer when the email is already known', async () => {
     const first = await create(person({ email: `${TAG}@example.com` }))
     const second = await create(person({ firstName: 'Maria', email: `${TAG}@example.com` }))
     expect(second.status).toBe('exists')
-    if (second.status === 'exists') expect(second.matchedOn).toBe('email')
     expect(second.customer.id).toBe(first.customer.id)
   })
 
