@@ -162,11 +162,17 @@ export async function getCustomerDetail(id: string): Promise<CustomerDetail | nu
     .where(and(eq(bikeReservations.customerId, id), eq(bikeReservations.kind, 'counter_rental')))
     .orderBy(desc(bikeReservations.startsOn), desc(bikeReservations.createdAt))
 
-  const rentals: CustomerRental[] = rows.map((row) => ({
-    id: row.reservation.id, startsOn: row.reservation.startsOn, endsOn: row.reservation.endsOn,
-    status: row.reservation.status, amountCents: row.reservation.amountCents,
-    bike: [row.modelName ?? 'Untitled', row.sizeName, row.versionName, row.unitId.slice(0, 8)].join(' · '),
-  }))
+  // A counter rental is `confirmed` or `cancelled`. `held` and `expired` belong to online bookings (a bike kept for somebody who
+  // is still paying, or never paid for) and are not a rental: they are left out of the history, whatever the kind.
+  const rentals: CustomerRental[] = rows.flatMap((row) => {
+    const status = row.reservation.status
+    if (status !== 'confirmed' && status !== 'cancelled') return []
+    return [{
+      id: row.reservation.id, startsOn: row.reservation.startsOn, endsOn: row.reservation.endsOn,
+      status, amountCents: row.reservation.amountCents,
+      bike: [row.modelName ?? 'Untitled', row.sizeName, row.versionName, row.unitId.slice(0, 8)].join(' · '),
+    }]
+  })
   const counted = rentals.filter((rental) => rental.status === 'confirmed')
   const days = counted.map((rental) => rental.startsOn).sort()
   return {
