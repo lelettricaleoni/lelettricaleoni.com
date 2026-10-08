@@ -111,8 +111,9 @@ RLS su ogni tabella di `public` e l'event trigger `ensure_rls` (le tabelle nuove
 stesso (provato su produzione con una tabella creata e annullata). Gli avvisi `rls_enabled_no_policy` (livello INFO) che
 restano sono voluti: nessuna policy = tabella chiusa all'API.
 **Clienti e importi.** `customers`: una riga per persona, nome e cognome obbligatori, cellulare (E.164, letto
-nel paese scelto accanto al campo: `libphonenumber-js`) ed email facoltativi; stesso cellulare o stessa email
-= stessa persona (indici unici), due omonimi con contatti diversi sono due clienti. Il noleggio punta al
+nel paese scelto accanto al campo: `libphonenumber-js`) ed email facoltativi; **la stessa email è la stessa persona** (indice unico), il
+**cellulare no** (Kevin, 2026-10-08: una coppia o una famiglia ne condivide uno, e con l'indice unico il secondo non poteva salvarlo né prenotare):
+due omonimi, o due persone con lo stesso numero, sono due clienti. Il noleggio punta al
 cliente (`customer_id`, CHECK) e ha `amount_cents` (centesimi, mai float), precompilato dal listino
 (`priceForDay`) e correggibile. L'incasso di un cliente è la somma dei noleggi **confermati**: annullati e
 manutenzioni non contano. **L'account cliente (fetta 2) mostrerà solo le prenotazioni online**, mai quelle

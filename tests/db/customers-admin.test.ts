@@ -105,13 +105,17 @@ describe('updateCustomer', () => {
     expect((await getCustomerDetail(fx.customerId))!.customer.phone).toBeNull()
   })
 
-  it('refuses a phone or an email that belongs to another customer, and says which', async () => {
+  it('refuses an email that belongs to another customer, and says who has it', async () => {
     const other = await createCustomer(person({ phone: '+393478880000', email: `${crypto.randomUUID()}@example.com` }))
     extraCustomers.push(other.customer.id)
-    const phone = await updateCustomer(fx.customerId, person({ phone: '+393478880000' }))
-    expect(phone).toMatchObject({ status: 'conflict', matchedOn: 'phone' })
     const email = await updateCustomer(fx.customerId, person({ email: other.customer.email! }))
-    expect(email).toMatchObject({ status: 'conflict', matchedOn: 'email' })
+    expect(email).toMatchObject({ status: 'conflict', other: { id: other.customer.id } })
+  })
+
+  it('accepts a phone that another customer already has', async () => {
+    const other = await createCustomer(person({ phone: '+393478880001' }))
+    extraCustomers.push(other.customer.id)
+    expect((await updateCustomer(fx.customerId, person({ phone: '+393478880001' }))).status).toBe('updated')
   })
 
   it('lets a customer keep its own phone', async () => {

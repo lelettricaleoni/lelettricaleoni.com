@@ -23,9 +23,8 @@ import { parseLanguage } from './language'
  *   - an email already belonging to a customer tied to ANOTHER account is left alone ('taken').
  * The unique indexes decide a race: two requests for the same account at once end with one customer.
  *
- * The phone is an offer, never a condition: it is written only where the customer has none, and only if no
- * other customer has it (the number is unique). The shop wrote what it has, so an account never overwrites it,
- * and a number that cannot be used is left out without failing the link.
+ * The phone is an offer, never a condition: it is written only where the customer has none. The shop wrote what it
+ * has, so an account never overwrites it. Another customer may have the same number (a couple, a family): that is allowed.
  */
 export interface AccountIdentity {
   userId: string
@@ -49,12 +48,6 @@ export type LinkResult =
   | { status: 'no-email' }
 
 export async function linkCustomerToAccount(identity: AccountIdentity): Promise<LinkResult> {
-  const result = await link(identity)
-  // A phone that lost a race with another customer's makes the insert give way as a whole: try once more without it.
-  return result.status === 'taken' && identity.phone ? link({ ...identity, phone: null }) : result
-}
-
-async function link(identity: AccountIdentity): Promise<LinkResult> {
   const address = identity.email?.trim().toLowerCase()
   if (!address) return { status: 'no-email' }
   if (!identity.emailConfirmed) return { status: 'unverified' }
@@ -71,10 +64,7 @@ async function link(identity: AccountIdentity): Promise<LinkResult> {
     linked AS (
       UPDATE customers
       SET user_id = ${identity.userId}::uuid,
-          phone = CASE
-            WHEN phone IS NULL AND ${phone}::text IS NOT NULL
-              AND NOT EXISTS (SELECT 1 FROM customers other WHERE other.phone = ${phone}::text)
-            THEN ${phone}::text ELSE phone END,
+          phone = COALESCE(phone, ${phone}::text),
           language = COALESCE(${language}::text, language),
           updated_at = now()
       WHERE user_id IS NULL
@@ -85,7 +75,7 @@ async function link(identity: AccountIdentity): Promise<LinkResult> {
     created AS (
       INSERT INTO customers (user_id, first_name, last_name, email, phone, language)
       SELECT ${identity.userId}::uuid, ${firstName}, ${lastName}, ${address},
-             (SELECT ${phone}::text WHERE NOT EXISTS (SELECT 1 FROM customers other WHERE other.phone = ${phone}::text)),
+             ${phone}::text,
              COALESCE(${language}::text, 'it')
       WHERE NOT EXISTS (SELECT 1 FROM existing)
         AND NOT EXISTS (SELECT 1 FROM linked)

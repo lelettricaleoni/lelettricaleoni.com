@@ -13,7 +13,6 @@ import { ensureCustomerFor } from '@/lib/auth/ensure-customer'
 import { buildAccountExport, releaseCustomerOfAccount } from '@/lib/auth/account-data'
 import { languageOf, parseLanguage } from '@/lib/auth/language'
 import { callbackUrl, isRateLimit, loginUrl } from '@/lib/auth/urls'
-import { UNIQUE_VIOLATION, pgErrorCode } from '@/lib/pg-errors'
 import { safeErrorSummary } from '@/lib/safe-error'
 
 /**
@@ -76,9 +75,8 @@ export async function updateAccountAction(formData: FormData) {
       .where(eq(customers.userId, user.id))
       .returning({ id: customers.id })
     if (updated.length === 0) return back('error=save_failed')
-  } catch (error) {
-    // The phone is unique: the same number is the same person (lib/customers.ts). It belongs to another customer.
-    return back(pgErrorCode(error) === UNIQUE_VIOLATION ? 'error=phone_taken' : 'error=save_failed')
+  } catch {
+    return back('error=save_failed')
   }
   return back('saved=1', language ?? lang)
 }
