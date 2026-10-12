@@ -51,6 +51,7 @@ Aggiornalo quando cambia. È la base per scrivere i testi, non il testo.
   email** (la conferma parte da Supabase, via Resend), **uscire da tutti i dispositivi** ed **eliminare l'account**. L'eliminazione cancella l'utente e, se non
   ha noleggi, la sua scheda cliente; **con noleggi la scheda resta**, slegata dall'account (è anche l'archivio del negozio). Preferenza di **lingua**
   (`customers.language`): è un dato dell'account, non un cookie. Il telefono non si chiede in registrazione. Registrarsi richiede di confermare l'email.
+- **Pagina di prenotazione `/rent` (2026-10-12)**: il browser di **ogni visitatore**, anche senza account, resta collegato al canale pubblico di Supabase Realtime (`reservations`, lo stesso del calendario del pannello) per sapere che una bici è stata presa o liberata e rileggere la pagina. L'avviso non porta dati personali (solo bici e giorni); Supabase riceve l'IP, senza consenso, come Esri e Cesium: dichiarato in `privacy.third_parties_body`. Nessun cookie né storage per chi non ha un account.
 - **Clienti e noleggi registrati al banco**: tabelle `customers`, `bike_reservations` (nome, contatti, date, importi,
   note). Non passano dal sito pubblico; li inserisce il pannello. Base giuridica e conservazione: **da definire**.
 - **Pannello (solo staff)**: Azure Translator riceve i testi del catalogo (percorsi e modelli), **non** dati dei clienti;
