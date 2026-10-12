@@ -5,6 +5,7 @@ import { getFreeBikes } from '@/lib/booking/availability'
 import {
   confirmHold, expireBooking, findOverduePending, findPendingBooking, freeOrphanHeldBikes, holdOneBike, startHold, type StartHoldInput,
 } from '@/lib/booking/holds'
+import { HOLD_MINUTES } from '@/lib/booking/rules'
 import { createFixture, insertBooking, insertOnlineLine, type Fixture } from './fixtures'
 
 const RANGE = { startsOn: '2031-11-03', endsOn: '2031-11-06' }
@@ -39,7 +40,7 @@ describe('holding the bikes of a booking', () => {
     return row.id
   }
 
-  it('holds one bike per line, on different bikes, for thirty minutes', async () => {
+  it('holds one bike per line, on different bikes, for the hold time (HOLD_MINUTES)', async () => {
     const result = await startHold(input({ lines: lines(2) }))
     if (result.status !== 'held') throw new Error(`expected held, got ${result.status}`)
     expect(result.replayed).toBe(false)
@@ -53,8 +54,8 @@ describe('holding the bikes of a booking', () => {
     const booking = await bookingOf(result.bookingId)
     expect(booking).toMatchObject({ status: 'pending', totalCents: 6000, language: 'it', ...RANGE })
     const minutes = (booking.holdExpiresAt.getTime() - Date.now()) / 60_000
-    expect(minutes).toBeGreaterThan(28)
-    expect(minutes).toBeLessThanOrEqual(30.5)
+    expect(minutes).toBeGreaterThan(HOLD_MINUTES - 2)
+    expect(minutes).toBeLessThanOrEqual(HOLD_MINUTES + 0.5)
   })
 
   it('replays: asking again with the same key finds the same booking and holds nothing more', async () => {

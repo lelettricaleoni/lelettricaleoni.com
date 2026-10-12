@@ -19,8 +19,8 @@
   solo giorni interi; account obbligatorio; i noleggi al banco si registrano nello stesso
   calendario del pannello; disponibilità per **bici fisica e intervallo di date**, con un
   vincolo di esclusione di Postgres (`btree_gist`, disponibile e non installata su dev e
-  produzione) contro le doppie prenotazioni; posto tenuto 30 minuti (minimo di una sessione
-  Stripe Checkout). **Provato il 2026-10-02** con richieste concorrenti vere sul pooler (spike,
+  produzione) contro le doppie prenotazioni; posto tenuto 15 minuti (dal 2026-10-12, Kevin; prima 30, il minimo di una
+  sessione Stripe Checkout: ora la sessione si apre per 31 minuti e `settleHold` la chiude allo scadere dei 15). **Provato il 2026-10-02** con richieste concorrenti vere sul pooler (spike,
   15/15 controlli): il vincolo regge, ma il codice deve ritentare su `23P01`; rilascio dei
   posti scaduti e assegnazione sono istruzioni separate, senza transazioni (`max_pipeline: 0`).
   **Fetta 1 (calendario e stato delle bici nel pannello): in produzione dal 2026-10-05**, con i clienti
@@ -32,7 +32,7 @@
   `docs/superpowers/plans/2026-10-02-booking-slice1-admin-calendar.md`. Griglia su `date-fns` e CSS:
   gli scheduler con vista a risorse sono a pagamento o non adatti (confronto nella spec). Le fette 2-5
   sono da disegnare. **Fetta 3: spec scritta il 2026-10-07**, da rivedere (`docs/superpowers/specs/2026-10-07-booking-slice3-online-booking-design.md`):
-  carrello con più bici, Stripe Checkout, webhook, posto tenuto 30 minuti, annullamento una bici alla volta, Account rents, termini di noleggio.
+  carrello con più bici, Stripe Checkout, webhook, posto tenuto 15 minuti, annullamento una bici alla volta, Account rents, termini di noleggio.
   Chiede a Kevin un account Stripe (chiavi di prova per lo staging) e il contenuto dei termini.
   **Fetta 3a (dati, disponibilità, posti tenuti): piano in `docs/superpowers/plans/2026-10-07-booking-slice3a-holds.md`, fatta e provata su `staging`.** Stripe per ora fuori:
   una «porta» per il pagamento con una finta solo fuori produzione, poi Stripe vero. **Solo `staging`; in produzione decide Kevin, e non senza Stripe.** **Pagina `/rent` con il selettore dei giorni (2026-10-12):** spec in `docs/superpowers/specs/2026-10-12-rent-page-day-strip-design.md`, piano della parte A in `docs/superpowers/plans/2026-10-12-rent-page-day-picker.md` (per giornate e per bici, card per modello, disponibilità aggiornata in tempo reale: fatta su `staging`). **Resta la parte B: orari di apertura e chiusure dal pannello** (`/manage/hours`, `checkStay` rifiuta un primo o ultimo giorno chiuso), con un piano a parte. Orari del sito (home, mappa, dati strutturati) ancora scritti a mano: da decidere se leggano la stessa tabella.
@@ -67,7 +67,7 @@
   tracking, come le altre (STATE: «Si applica così»).
   **Bloccante per la fetta 3 (prenotazione e pagamento online): una pagina dei termini e condizioni di noleggio**
   (Kevin, 2026-10-07). **Dal 2026-10-12 esiste una bozza** (`/[lang]/terms`, tre lingue, con l'avviso «bozza da far rivedere» in cima: si toglie con la
-  revisione) scritta solo sulle regole già decise; `lib/booking/terms-text.test.ts` fa fallire la CI se i numeri nel testo (30 minuti, 180 giorni,
+  revisione) scritta solo sulle regole già decise; `lib/booking/terms-text.test.ts` fa fallire la CI se i numeri nel testo (15 minuti, 180 giorni,
   10 bici, le 9:00) non sono più quelli del codice. **Al rilascio**: link nel footer e riga in `app/sitemap.ts` (oggi non ci sono apposta), nome
   del fornitore dei pagamenti nell'informativa (la 3d), «Sie» o «du» in tedesco da decidere (l'informativa e i termini usano «Sie», le pagine `/rent`
   e Account «du»). Regole già decise:

@@ -148,7 +148,7 @@ export type AbandonMyCheckoutResult =
 
 /**
  * The person went back from the payment page. The session is closed on the gateway FIRST and only then are the bikes freed (`settleHold`:
- * a click on "back" must not leave the session payable from another tab), at once and not after the thirty minutes. If they had
+ * a click on "back" must not leave the session payable from another tab), at once and not when the hold would have run out. If they had
  * already paid, the booking is confirmed instead. The cart comes back, as it was, in the address of the booking page.
  */
 export async function abandonMyCheckout(user: User, bookingId: string, lang: string, gateway?: PaymentGateway): Promise<AbandonMyCheckoutResult> {
@@ -159,6 +159,39 @@ export async function abandonMyCheckout(user: User, bookingId: string, lang: str
   const after = await findBooking(bookingId)
   if (after?.status === 'confirmed') return { status: 'paid' }
   return { status: 'abandoned', href: rentHref(languageOf(lang), await stateOfBooking(own.booking)) }
+}
+
+export type ResumeCheckoutResult =
+  | { status: 'redirect'; url: string }
+  | { status: 'paid' | 'expired' | 'closed' | 'in_progress' | 'not_found' | 'payments_unavailable' }
+
+/**
+ * "Complete payment" on a booking that is still waiting for it: back to the payment page while it can still be paid. Only the person's own
+ * booking, and only while the bikes are still held; when the time is up (or the gateway already closed the page) the wait is ended the way
+ * the sweeper does it (`settleHold`: the page is closed first, a payment that landed in the last moment is kept), and the person is told.
+ * `paid` is sent to the booking page, which confirms it (`confirmMyBooking`).
+ */
+export async function resumeMyCheckout(user: User, bookingId: string, gateway?: PaymentGateway, now: Date = new Date()): Promise<ResumeCheckoutResult> {
+  const own = await ownBooking(user, bookingId)
+  if (!own) return { status: 'not_found' }
+  const payments = await getGateway(gateway)
+  if (!payments) return { status: 'payments_unavailable' }
+  const { booking } = own
+  if (booking.status === 'confirmed') return { status: 'paid' }
+  if (booking.status !== 'pending') return { status: 'closed' }
+
+  if (booking.holdExpiresAt.getTime() <= now.getTime()) {
+    const settled = await settleHold(booking.id, payments)
+    return { status: settled === 'confirmed' ? 'paid' : 'expired' }
+  }
+  // The payment page is opened right after the bikes are held: no page yet means it is being opened this very moment.
+  if (!booking.stripeSessionId) return { status: 'in_progress' }
+
+  const session = await payments.getSession(booking.stripeSessionId)
+  if (session.status === 'open') return { status: 'redirect', url: session.url }
+  if (session.status === 'paid') return { status: 'paid' }
+  await settleHold(booking.id, payments)
+  return { status: 'expired' }
 }
 
 /** The booking page's state that made this booking: its days and its bikes (the first ones made, whatever happened to them since). */

@@ -1,15 +1,13 @@
-import { Suspense } from 'react'
 import { notFound } from 'next/navigation'
 import { connection } from 'next/server'
 import type { Metadata } from 'next'
-import { eq, inArray } from 'drizzle-orm'
+import { eq } from 'drizzle-orm'
 import { getDictionary, hasLocale } from '../dictionaries'
 import { Navbar } from '@/components/navbar'
 import { Footer } from '@/components/footer'
-import { BikeCardMediaAsync } from '@/components/bike-card-media-async'
+import { getModelMedia } from '@/components/bike-model-media'
 import { RentFlow, type RentAccount } from '@/components/rent/rent-flow'
-import { Skeleton } from '@/components/ui/skeleton'
-import { db, bikeModels, customers } from '@/lib/db'
+import { db, customers } from '@/lib/db'
 import { getCurrentUser } from '@/lib/auth/current-user'
 import { getUnitBusyIntervals } from '@/lib/booking/busy-intervals'
 import { getFocusModel, listBookableBikes } from '@/lib/booking/catalog'
@@ -60,15 +58,7 @@ export default async function RentPage({
   const units = await getUnitBusyIntervals({ modelId: focus?.id, window: { startsOn: minDay, endsOn: addDaysTo(maxDay, 1) } })
   // Every published model, the ones with no bike free for the days switched off; the cart and the summary use them all.
   const models = range ? await listBookableBikes(range, lang, { includeUnavailable: true }) : []
-  const rows = models.length > 0 ? await db.select().from(bikeModels).where(inArray(bikeModels.id, models.map((model) => model.id))) : []
-  const media = Object.fromEntries(models.flatMap((model) => {
-    const row = rows.find((entry) => entry.id === model.id)
-    return row ? [[model.id, (
-      <Suspense key={model.id} fallback={<Skeleton className="h-40 w-full rounded-none" />}>
-        <BikeCardMediaAsync model={row} title={model.name} />
-      </Suspense>
-    )]] : []
-  }))
+  const media = await getModelMedia(models)
 
   const user = await getCurrentUser()
   let account: RentAccount = { kind: 'guest' }

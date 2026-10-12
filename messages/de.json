@@ -411,7 +411,19 @@
       "back": "Alle Buchungen",
       "not_found": "Diese Buchung gibt es nicht.",
       "refund_line": "Erstattung: {amount}",
-      "help_email": "help@lelettricaleoni.com"
+      "help_email": "help@lelettricaleoni.com",
+      "pay_now": "Zahlung abschließen",
+      "pay_until": "Die Fahrräder bleiben bis {time} für dich reserviert.",
+      "pay_expired": "Die Zeit zum Bezahlen ist abgelaufen und die Fahrräder wurden freigegeben.",
+      "pay_errors": {
+        "expired": "Die Zeit zum Bezahlen ist abgelaufen und die Fahrräder wurden freigegeben. Du kannst neu buchen.",
+        "closed": "Diese Buchung muss nicht mehr bezahlt werden.",
+        "in_progress": "Wir bereiten die Zahlung noch vor. Versuche es gleich noch einmal.",
+        "payments_unavailable": "Zahlungen sind noch nicht aktiv.",
+        "not_found": "Diese Buchung gibt es nicht.",
+        "login_required": "Deine Sitzung ist abgelaufen. Melde dich erneut an.",
+        "invalid_request": "Etwas ist schiefgelaufen: Lade die Seite neu und versuche es erneut."
+      }
     }
   },
   "rent": {
@@ -449,7 +461,7 @@
     "terms_link": "Mietbedingungen",
     "pay": "{total} bezahlen",
     "paying": "Einen Moment…",
-    "hold_note": "Die Fahrräder bleiben 30 Minuten für dich reserviert, während du bezahlst.",
+    "hold_note": "Die Fahrräder bleiben 15 Minuten für dich reserviert, während du bezahlst.",
     "errors": {
       "invalid_request": "Etwas ist schiefgegangen: Lade die Seite neu und versuche es erneut.",
       "not_allowed": "Mit diesem Konto kannst du nicht buchen. Bestätige deine E-Mail und versuche es erneut.",
@@ -501,7 +513,7 @@
     "seller_title": "Wer vermietet",
     "seller_body": "Lelettrica di Leoni Gabriele, Via Roma 90, 38074 Dro (TN), Italien. USt-IdNr. 02622600225.\nTelefon +39 338 123 2434, E-Mail info@lelettricaleoni.com.",
     "booking_title": "So buchen Sie",
-    "booking_body": "Sie buchen auf der Website, mit einem Konto, indem Sie die Tage und die Fahrräder wählen. Vermietet wird für ganze Tage: ab morgen bis zu 180 Tage ab heute, für höchstens 10 Fahrräder auf einmal. Mieten für heute werden im Geschäft abgeschlossen.\nWir fragen nach einer Handynummer, die wir nur verwenden, wenn es ein Problem bei der Abholung gibt.\nDie gewählten Fahrräder werden 30 Minuten lang für Sie reserviert, so lange haben Sie Zeit zum Bezahlen. Schließen Sie die Zahlung nicht ab, werden sie wieder frei.",
+    "booking_body": "Sie buchen auf der Website, mit einem Konto, indem Sie die Tage und die Fahrräder wählen. Vermietet wird für ganze Tage: ab morgen bis zu 180 Tage ab heute, für höchstens 10 Fahrräder auf einmal. Mieten für heute werden im Geschäft abgeschlossen.\nWir fragen nach einer Handynummer, die wir nur verwenden, wenn es ein Problem bei der Abholung gibt.\nDie gewählten Fahrräder werden 15 Minuten lang für Sie reserviert, so lange haben Sie Zeit zum Bezahlen. Schließen Sie die Zahlung nicht ab, werden sie wieder frei.",
     "payment_title": "Preis und Zahlung",
     "payment_body": "Der Preis ist der, den Sie vor der Zahlung in der Zusammenfassung sehen, in Euro. Der gesamte Betrag wird bei der Buchung bezahlt. Die Buchung ist bestätigt, wenn die Zahlung erfolgreich war. Die Preise verstehen sich inklusive Mehrwertsteuer.",
     "invoice_title": "Rechnung",

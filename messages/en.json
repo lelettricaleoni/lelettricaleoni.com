@@ -411,7 +411,19 @@
       "back": "All bookings",
       "not_found": "This booking does not exist.",
       "refund_line": "Refund: {amount}",
-      "help_email": "help@lelettricaleoni.com"
+      "help_email": "help@lelettricaleoni.com",
+      "pay_now": "Complete payment",
+      "pay_until": "The bikes are yours until {time}.",
+      "pay_expired": "The time to pay has run out and the bikes have been released.",
+      "pay_errors": {
+        "expired": "The time to pay has run out and the bikes have been released. You can book again.",
+        "closed": "This booking no longer needs paying.",
+        "in_progress": "We are still preparing the payment. Try again in a moment.",
+        "payments_unavailable": "Payments are not active yet.",
+        "not_found": "This booking does not exist.",
+        "login_required": "Your session has expired. Sign in again.",
+        "invalid_request": "Something went wrong: reload the page and try again."
+      }
     }
   },
   "rent": {
@@ -449,7 +461,7 @@
     "terms_link": "rental terms",
     "pay": "Pay {total}",
     "paying": "One moment…",
-    "hold_note": "The bikes are held for you for 30 minutes while you pay.",
+    "hold_note": "The bikes are held for you for 15 minutes while you pay.",
     "errors": {
       "invalid_request": "Something went wrong: reload the page and try again.",
       "not_allowed": "This account cannot book. Confirm your email and try again.",
@@ -501,7 +513,7 @@
     "seller_title": "Who rents to you",
     "seller_body": "Lelettrica di Leoni Gabriele, Via Roma 90, 38074 Dro (TN), Italy. VAT no. 02622600225.\nPhone +39 338 123 2434, email info@lelettricaleoni.com.",
     "booking_title": "How to book",
-    "booking_body": "You book on the site, with an account, by choosing the days and the bikes. Rentals are for whole days: from tomorrow up to 180 days from today, for at most 10 bikes at a time. Rentals for today are made at the shop.\nWe ask for a mobile number, which we will only use if there is a problem with the pickup.\nThe bikes you choose are held for you for 30 minutes, the time it takes to pay. If you do not complete the payment, they become available again.",
+    "booking_body": "You book on the site, with an account, by choosing the days and the bikes. Rentals are for whole days: from tomorrow up to 180 days from today, for at most 10 bikes at a time. Rentals for today are made at the shop.\nWe ask for a mobile number, which we will only use if there is a problem with the pickup.\nThe bikes you choose are held for you for 15 minutes, the time it takes to pay. If you do not complete the payment, they become available again.",
     "payment_title": "Price and payment",
     "payment_body": "The price is the one you see in the summary before you pay, in euros. You pay the full amount when you book. The booking is confirmed when the payment succeeds. Prices include VAT.",
     "invoice_title": "Invoice",

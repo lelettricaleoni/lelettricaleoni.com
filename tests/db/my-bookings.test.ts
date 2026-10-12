@@ -68,6 +68,24 @@ describe('the bookings of a customer, as Account rents shows them', () => {
     expect(upcoming[0].bikes[0].canCancel).toBe(false) // it is not paid yet: there is nothing to refund
   })
 
+  it('tells a booking waiting for payment until when the bikes are held, and lets it be paid only while there is time', async () => {
+    const waiting = await insertBooking(fx.customerId, FAR)
+    await insertOnlineLine(waiting, fx.customerId, fx.unitIds[0], FAR, 'held')
+    const [{ holdExpiresAt }] = await db.select({ holdExpiresAt: bookings.holdExpiresAt }).from(bookings).where(eq(bookings.id, waiting))
+    const inTime = (await listMyBookings(fx.customerId, 'it', { today: TODAY, now: new Date(holdExpiresAt.getTime() - 60_000) })).upcoming[0]
+    expect(inTime).toMatchObject({ status: 'pending', canPay: true })
+    expect(inTime.holdExpiresAt?.getTime()).toBe(holdExpiresAt.getTime())
+    const late = (await listMyBookings(fx.customerId, 'it', { today: TODAY, now: new Date(holdExpiresAt.getTime() + 1000) })).upcoming[0]
+    expect(late).toMatchObject({ status: 'pending', canPay: false })
+  })
+
+  it('has nothing to pay on a booking that is paid, and says which model each bike is (for its photo)', async () => {
+    await insertPaidBooking(fx, FAR, [3000])
+    const [booking] = (await listMyBookings(fx.customerId, 'it', { today: TODAY, now: NOW })).upcoming
+    expect(booking).toMatchObject({ status: 'confirmed', canPay: false, holdExpiresAt: null })
+    expect(booking.bikes[0].modelId).toBe(fx.modelId)
+  })
+
   it('shows the refund of a bike that was cancelled', async () => {
     const paid = await insertPaidBooking(fx, FAR, [3000, 4000])
     await db.update(bikeReservations).set({ status: 'cancelled' }).where(eq(bikeReservations.id, paid.reservationIds[0]))

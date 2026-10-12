@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { formatPrice } from '@/lib/money'
-import { fill, formatDay, formatDays, formatDeadline } from './format'
+import { fill, formatDay, formatDays, formatDeadline, formatTime } from './format'
 
 describe('formatPrice: an amount the way each language writes it', () => {
   it('drops the cents on a round amount and keeps them otherwise', () => {
@@ -55,5 +55,13 @@ describe('the year, and the deadline of a refund', () => {
     expect(formatDeadline(new Date('2031-12-08T08:00:00Z'), 'it')).toMatch(/8 dicembre.+09[:.]00/)
     expect(formatDeadline(new Date('2031-07-08T07:00:00Z'), 'en')).toMatch(/8 July.+09:00/)
     expect(formatDeadline(new Date('2031-07-08T07:00:00Z'), 'de')).toMatch(/8\. Juli.+09:00/)
+  })
+})
+
+describe('formatTime: the hour in Rome, whatever the clock of the server', () => {
+  it('writes 24-hour time in the time of the shop, in summer and in winter', () => {
+    expect(formatTime(new Date('2031-07-01T12:05:00Z'), 'it')).toBe('14:05') // CEST, +2
+    expect(formatTime(new Date('2031-12-01T12:05:00Z'), 'en')).toBe('13:05') // CET, +1
+    expect(formatTime(new Date('2031-12-01T08:00:00Z'), 'de')).toBe('09:00')
   })
 })
