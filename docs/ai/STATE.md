@@ -119,6 +119,18 @@ cliente (`customer_id`, CHECK) e ha `amount_cents` (centesimi, mai float), preco
 manutenzioni non contano. **L'account cliente (fetta 2) mostrerà solo le prenotazioni online**, mai quelle
 inserite dal pannello (`kind` ≠ `counter_rental`), anche per la stessa persona (Kevin, 2026-10-02). Un cliente
 con noleggi non si cancella.
+**Prenotazione online: il motore del pagamento (fetta 3b, `lib/booking/`, solo `staging`).** Scritto contro l'interfaccia `PaymentGateway`
+(`lib/booking/payments/`): la gateway **finta** (`fake.ts`, paga senza soldi) esiste solo fuori dalla produzione, perché `getPaymentGateway()`
+**in produzione senza Stripe lancia** (`PaymentsNotConfiguredError`) e `fake-guard.test.ts` fa fallire la CI se un file fuori da
+`payments/index.ts` la importa: nessuno prenota gratis per sbaglio (Kevin, 2026-10-07). Le regole che il codice non dice da solo:
+**una bici `held` si libera solo dopo che la gateway ha detto che quella sessione non si può più pagare** (`settleHold`: prima chiude la
+sessione, poi libera; se la trova pagata conferma), mai a tempo; **mai tenere soldi senza una bici** (il pagamento arrivato quando il posto non c'è
+più prima riassegna le stesse bici, poi rimborsa tutto, e la prenotazione viene **prenotata per il rimborso** — `failed_refunded` — *prima* che
+si muova un centesimo, così non si danno bici e soldi insieme); **un rimborso per bici** (`booking_refunds.reservation_id` unico), nella stessa
+istruzione che controlla stato della bici, importo ≤ prezzo della bici e somma ≤ totale. **Trappola**: due chiamate che arrivano insieme
+(webhook e pagina di ritorno) sono normali; ogni passo decisivo è un confronto-e-scambio su una riga (`reviveBooking`, `claimForRefund`,
+`confirmHold`), e chi perde risponde `incomplete` senza fare nulla. La 3c (pagina `/rent`, Account rents, azioni del pannello, pagina
+finta di pagamento, lavoro del worker che chiama `settleOverdueHolds`) e la 3d (Stripe vero, webhook, `expires_at` ≥ 31 minuti) non ci sono ancora.
 
 ## Infrastruttura dei media
 

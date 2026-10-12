@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { randomUUID } from 'node:crypto'
 import { eq, inArray } from 'drizzle-orm'
 import type { User } from '@supabase/supabase-js'
-import { db, bikeReservations, bookings, customers } from '@/lib/db'
+import { db, bikeReservations, bookingRefunds, bookings, customers } from '@/lib/db'
 import { buildAccountExport, getCustomerLanguage, releaseCustomerOfAccount } from '@/lib/auth/account-data'
 import { createFixture, insertBooking, insertOnlineLine, reservationValues, type Fixture } from './fixtures'
 
@@ -24,6 +24,13 @@ async function customerOf(userId: string, overrides: Partial<typeof customers.$i
 }
 
 afterEach(async () => {
+  // A refund points at a bike and a booking: it goes first.
+  if (made.length) {
+    await db.delete(bookingRefunds).where(inArray(
+      bookingRefunds.bookingId,
+      db.select({ id: bookings.id }).from(bookings).where(inArray(bookings.customerId, made)),
+    ))
+  }
   for (const fixture of fixtures.splice(0)) await fixture.cleanup()
   if (made.length) {
     const ids = made.splice(0)
@@ -116,6 +123,19 @@ describe('buildAccountExport', () => {
     id, email, created_at: '2026-10-01T00:00:00Z', last_sign_in_at: '2026-10-07T00:00:00Z',
     identities: [{ provider: 'email' }, { provider: 'google' }],
   }) as unknown as User
+
+  it('includes the refunds of the customer, in euros, without internal ids', async () => {
+    const userId = randomUUID()
+    const customer = await customerOf(userId)
+    const fixture = await createFixture(1)
+    fixtures.push(fixture)
+    const range = { startsOn: '2031-12-01', endsOn: '2031-12-03' }
+    const booking = await insertBooking(customer.id, range, { status: 'confirmed', totalCents: 4500 })
+    const line = await insertOnlineLine(booking, customer.id, fixture.unitIds[0], range, 'cancelled', 4500)
+    await db.insert(bookingRefunds).values({ reservationId: line, bookingId: booking, amountCents: 4500, reason: 'customer', status: 'succeeded' })
+    const data = await buildAccountExport(userFor(userId, 'giulia@example.test'))
+    expect(data.refunds).toEqual([{ amount: 45, status: 'succeeded', reason: 'customer', createdAt: expect.any(String) }])
+  })
 
   it('has everything about the person, the shop notes and the rentals included, and no ids', async () => {
     const userId = randomUUID()

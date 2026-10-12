@@ -1,0 +1,1 @@
+ALTER TABLE "booking_refunds" ADD COLUMN "attempts" integer DEFAULT 1 NOT NULL;

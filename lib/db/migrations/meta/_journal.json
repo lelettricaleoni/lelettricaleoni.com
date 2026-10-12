@@ -155,6 +155,20 @@
       "when": 1791445407498,
       "tag": "0021_phone_not_unique",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1791446988750,
+      "tag": "0022_booking_refunds",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1791449806111,
+      "tag": "0023_booking_refund_attempts",
+      "breakpoints": true
     }
   ]
 }
