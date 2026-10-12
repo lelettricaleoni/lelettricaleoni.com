@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import { after } from 'next/server'
 import { eq } from 'drizzle-orm'
 import { z } from 'zod'
 import { getDictionary, hasLocale } from '../../../dictionaries'
@@ -9,6 +10,7 @@ import { Flash } from '@/components/account/flash'
 import { db, customers } from '@/lib/db'
 import { getCurrentUser } from '@/lib/auth/current-user'
 import { fill, formatDays, formatDeadline } from '@/lib/booking/format'
+import { syncBookingLines } from '@/lib/booking/calendar-sync'
 import { getMyBooking } from '@/lib/booking/my-bookings'
 import { confirmMyBooking } from '@/lib/booking/rent-actions'
 import { formatPrice } from '@/lib/money'
@@ -36,7 +38,11 @@ export default async function RentPage({
   let banner: { error?: string; info?: string } = {}
   if (paid === '1') {
     const result = await confirmMyBooking(user, id)
-    if (result.status === 'confirmed') banner = { info: d.paid_confirmed }
+    if (result.status === 'confirmed') {
+      banner = { info: d.paid_confirmed }
+      // Now it is paid, it goes in the shop's calendar (after the page is sent; repeating it is harmless).
+      after(() => syncBookingLines(id))
+    }
     else if (result.status === 'in_progress') banner = { info: d.paid_waiting }
     else if (result.status === 'refunded') banner = { error: d.paid_refunded }
     else if (result.status === 'not_paid') banner = { error: d.paid_none }

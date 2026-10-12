@@ -2,11 +2,13 @@
 
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
+import { after } from 'next/server'
 import { z } from 'zod'
 import { getCurrentUser } from '@/lib/auth/current-user'
 import { languageOf } from '@/lib/auth/language'
 import { buildRange } from '@/lib/dates'
 import { cancelMyBike, payWithFakeCard, startCheckoutForUser } from '@/lib/booking/rent-actions'
+import { syncReservation } from '@/lib/integrations/google-calendar/sync'
 
 /*
  * The booking actions the pages call. Thin on purpose (docs: Server Actions are public POST endpoints): the person comes from the SESSION
@@ -86,6 +88,8 @@ export async function cancelBikeAction(reservationId: unknown, lang: unknown): P
   if (!user) return { status: 'login_required' }
 
   const result = await cancelMyBike(user, id.data)
+  // The shop's calendar loses the bike after the answer is sent (docs: after() runs once the response is finished).
+  if (result.status === 'cancelled') after(() => syncReservation(id.data))
   revalidatePath(`/${languageOf(lang)}/account/rents`, 'layout')
 
   switch (result.status) {

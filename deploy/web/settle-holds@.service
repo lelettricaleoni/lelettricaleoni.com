@@ -1,0 +1,9 @@
+[Unit]
+Description=End the unfinished payments of the %i site (frees the held bikes, confirms what was paid)
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+User=ubuntu
+ExecStart=/home/ubuntu/docker/web/run-cron.sh %i /api/cron/settle-holds
