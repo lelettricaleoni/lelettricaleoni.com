@@ -6,7 +6,8 @@
     "login": "Anmelden",
     "account": "Kontoeinstellungen",
     "panel": "Verwaltung",
-    "logout": "Abmelden"
+    "logout": "Abmelden",
+    "rents": "Deine Buchungen"
   },
   "hero": {
     "open_badge": "Wir haben geöffnet",
@@ -404,7 +405,9 @@
       "pay_again": "Erneut buchen",
       "pickup_note": "Abholung im Geschäft zur Öffnung am ersten Tag, Rückgabe bis zum Ladenschluss am letzten.",
       "back": "Alle Buchungen",
-      "not_found": "Diese Buchung gibt es nicht."
+      "not_found": "Diese Buchung gibt es nicht.",
+      "refund_line": "Erstattung: {amount}",
+      "help_email": "help@lelettricaleoni.com"
     }
   },
   "rent": {

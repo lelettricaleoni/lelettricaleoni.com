@@ -6,7 +6,8 @@
     "login": "Sign in",
     "account": "Account settings",
     "panel": "Admin panel",
-    "logout": "Sign out"
+    "logout": "Sign out",
+    "rents": "Your bookings"
   },
   "hero": {
     "open_badge": "We're open",
@@ -404,7 +405,9 @@
       "pay_again": "Book again",
       "pickup_note": "Pick up at the shop when it opens on the first day, return by closing time on the last.",
       "back": "All bookings",
-      "not_found": "This booking does not exist."
+      "not_found": "This booking does not exist.",
+      "refund_line": "Refund: {amount}",
+      "help_email": "help@lelettricaleoni.com"
     }
   },
   "rent": {

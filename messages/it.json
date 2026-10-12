@@ -6,7 +6,8 @@
     "login": "Accedi",
     "account": "Impostazioni account",
     "panel": "Pannello",
-    "logout": "Esci"
+    "logout": "Esci",
+    "rents": "Le tue prenotazioni"
   },
   "hero": {
     "open_badge": "Siamo aperti",
@@ -404,7 +405,9 @@
       "pay_again": "Prenota di nuovo",
       "pickup_note": "Ritiro in negozio all'apertura del primo giorno, riconsegna entro la chiusura dell'ultimo.",
       "back": "Tutte le prenotazioni",
-      "not_found": "Questa prenotazione non esiste."
+      "not_found": "Questa prenotazione non esiste.",
+      "refund_line": "Rimborso: {amount}",
+      "help_email": "help@lelettricaleoni.com"
     }
   },
   "rent": {

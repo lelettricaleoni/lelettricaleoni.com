@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { formatPrice } from '@/lib/money'
-import { formatDay, formatDays, fill } from './format'
+import { fill, formatDay, formatDays, formatDeadline } from './format'
 
 describe('formatPrice: an amount the way each language writes it', () => {
   it('drops the cents on a round amount and keeps them otherwise', () => {
@@ -36,5 +36,19 @@ describe('fill: the {placeholders} of a text', () => {
     expect(fill('{n} giorni', { n: 3 })).toBe('3 giorni')
     expect(fill('{a} e {b}', { a: 'x', b: 'y' })).toBe('x e y')
     expect(fill('{a} {zzz}', { a: 1 })).toBe('1 {zzz}')
+  })
+})
+
+describe('the year, and the deadline of a refund', () => {
+  it('writes the year when asked, for bookings that are not in the current season', () => {
+    expect(formatDays({ startsOn: '2031-11-03', endsOn: '2031-11-06' }, 'it', { year: true })).toMatch(/2031/)
+    expect(formatDays({ startsOn: '2031-11-03', endsOn: '2031-11-06' }, 'it')).not.toMatch(/2031/)
+  })
+
+  it('writes the deadline in the time of Rome, whatever the server clock', () => {
+    // 2031-12-08T08:00Z is 09:00 in Rome (winter time)
+    expect(formatDeadline(new Date('2031-12-08T08:00:00Z'), 'it')).toMatch(/8 dicembre.+09[:.]00/)
+    expect(formatDeadline(new Date('2031-07-08T07:00:00Z'), 'en')).toMatch(/8 July.+09:00/)
+    expect(formatDeadline(new Date('2031-07-08T07:00:00Z'), 'de')).toMatch(/8\. Juli.+09:00/)
   })
 })

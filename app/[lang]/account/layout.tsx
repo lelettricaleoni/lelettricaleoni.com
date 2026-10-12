@@ -43,11 +43,16 @@ export default async function AccountLayout({
         <div className="max-w-5xl mx-auto px-4 sm:px-6 grid gap-8 md:grid-cols-[13rem_minmax(0,1fr)]">
           <AccountNav
             lang={lang}
-            groupLabel={d.settings_title}
-            items={[
-              { href: `/${lang}/account/settings`, label: d.nav_profile },
-              { href: `/${lang}/account/settings/security`, label: d.nav_security },
-              { href: `/${lang}/account/settings/privacy`, label: d.nav_privacy },
+            groups={[
+              {
+                label: d.settings_title,
+                items: [
+                  { href: `/${lang}/account/settings`, label: d.nav_profile },
+                  { href: `/${lang}/account/settings/security`, label: d.nav_security },
+                  { href: `/${lang}/account/settings/privacy`, label: d.nav_privacy },
+                ],
+              },
+              { label: d.rents_group, items: [{ href: `/${lang}/account/rents`, label: d.nav_rents, prefix: true }] },
             ]}
           />
           <div className="max-w-2xl space-y-10">{children}</div>
