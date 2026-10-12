@@ -25,7 +25,7 @@ import type itMessages from '@/messages/it.json'
 type Lang = 'it' | 'en' | 'de'
 export type RentDict = (typeof itMessages)['rent']
 
-export type RentAccount = { kind: 'guest' } | { kind: 'staff' } | { kind: 'customer'; hasPhone: boolean }
+export type RentAccount = { kind: 'guest' } | { kind: 'customer'; hasPhone: boolean }
 
 const CALENDAR_LOCALE = { it: dpIt, en: dpEn, de: dpDe } as const
 
@@ -238,7 +238,6 @@ function PaySection({
   const [error, setError] = useState<string | null>(null)
   const [pending, startPay] = useTransition()
 
-  if (account.kind === 'staff') return <p className="rounded-lg border bg-muted/40 p-3 text-sm text-muted-foreground">{dict.staff_note}</p>
   if (account.kind === 'guest') {
     return (
       <div className="space-y-2">

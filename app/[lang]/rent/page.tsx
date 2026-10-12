@@ -7,7 +7,6 @@ import { Navbar } from '@/components/navbar'
 import { Footer } from '@/components/footer'
 import { RentFlow, type RentAccount } from '@/components/rent/rent-flow'
 import { db, customers } from '@/lib/db'
-import { hasAdminRole } from '@/lib/admin-users'
 import { getCurrentUser } from '@/lib/auth/current-user'
 import { listBookableBikes } from '@/lib/booking/catalog'
 import { paymentsAvailable } from '@/lib/booking/payments'
@@ -53,11 +52,8 @@ export default async function RentPage({
   const user = await getCurrentUser()
   let account: RentAccount = { kind: 'guest' }
   if (user) {
-    if (hasAdminRole(user)) account = { kind: 'staff' }
-    else {
-      const [customer] = await db.select({ phone: customers.phone }).from(customers).where(eq(customers.userId, user.id))
-      account = { kind: 'customer', hasPhone: Boolean(customer?.phone) }
-    }
+    const [customer] = await db.select({ phone: customers.phone }).from(customers).where(eq(customers.userId, user.id))
+    account = { kind: 'customer', hasPhone: Boolean(customer?.phone) }
   }
 
   return (

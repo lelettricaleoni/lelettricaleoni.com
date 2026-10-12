@@ -113,7 +113,7 @@ dopo il termine c'è scritto di contattare il negozio (`help@lelettricaleoni.com
 
 ### Iniziare il pagamento — Server Action `startCheckout`
 1. Controlla da capo, sul server: accesso e email confermata, date (da domani, fino a 180 giorni, `maxRentalDays` per riga), carrello (1–10 bici),
-   telefono valido (`libphonenumber-js`), consenso ai termini. Un amministratore non prenota.
+   telefono valido (`libphonenumber-js`), consenso ai termini. Un account del pannello prenota come ogni altro (Kevin, 2026-10-12: chi ha accesso al pannello ha gli stessi accessi pubblici degli altri account).
 2. Un cliente ha **al massimo una prenotazione `pending`**: avviarne un'altra fa scadere la precedente (e la sua sessione di Stripe). Se un cliente ha lasciato
    scadere 5 prenotazioni nell'ultima ora, per un'ora non può avviarne di nuove (contro chi tiene le bici per scherzo).
 3. Libera le righe `held` scadute; **ricalcola i prezzi** dal listino.

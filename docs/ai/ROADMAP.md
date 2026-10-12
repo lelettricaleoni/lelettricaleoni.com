@@ -43,7 +43,7 @@
   `deploy/web/`, **da installare sulla VM**: `settle-holds@staging.timer`), calendario del negozio dopo pagamento e annullamento, bozza dei termini
   (`/[lang]/terms`) e informativa aggiornata. **Resta**: 3d (`StripeGateway`, `stripe_events`,
   `POST /api/stripe/webhook`, `expires_at` ≥ 31 minuti, saldo di Stripe per i rimborsi, avviso a Kevin per i pagamenti tardivi: oggi solo un log). Per l'account cliente: collegare chi si registra a `customers` per email (`user_id`) e
-  mostrargli solo le prenotazioni online; gli account non admin oggi sono tutti di Kevin.
+  mostrargli solo le prenotazioni online; gli account del pannello valgono come tutti gli altri (Kevin, 2026-10-12).
   Il calendario di Kevin sta in `C:\AzureDevOps\firebase` (`app/rent/`, da portare ricollegandolo
   ai dati veri); il resto di quel repo (Firestore, Stripe di prova) non si riusa.
   **Date**: colonne `date`/`daterange` e stringhe `YYYY-MM-DD` (mai `Date` per un giorno di

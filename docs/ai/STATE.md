@@ -133,7 +133,7 @@ istruzione che controlla stato della bici, importo ≤ prezzo della bici e somma
 trova sempre per `customers.user_id` (mai da un id in ingresso: un id altrui risponde `not_found`); lingua e origine dei redirect non si prendono dal client.
 `settleOverdueHolds` lo chiama ogni minuto `POST /api/cron/settle-holds` (la sola route `api/` della fetta: a chiamare è un timer, non il nostro
 frontend), protetta da `CRON_SECRET` (`lib/cron-auth.ts`, confronto a tempo costante), da dentro il container via `run-cron.sh`; **il timer non è ancora
-installato sulla VM** e senza di lui i posti scaduti si liberano solo quando qualcuno apre `/rent`. Il telefono è obbligatorio per prenotare (si
+installato sulla VM** e senza di lui i posti scaduti si liberano solo quando qualcuno apre `/rent`. **Un account del pannello ha gli stessi accessi pubblici di ogni altro** (Kevin, 2026-10-12): prenota, annulla, vede Account rents, modifica il profilo, ha la sua scheda cliente; il ruolo aggiunge il pannello e non toglie nulla. Unica eccezione voluta: «Elimina account» nelle impostazioni, che toglierebbe anche l'accesso al pannello (lo staff si gestisce da `/manage/users`). Il telefono è obbligatorio per prenotare (si
 salva nel profilo solo se non ce n'è già uno). Un annullamento del pannello sulle prenotazioni online passa da `cancelOnlineReservation` (rimborso
 pieno, parziale o nullo, a scelta del negozio, a qualunque ora). La 3d (Stripe vero, webhook, `expires_at` ≥ 31 minuti) non c'è ancora.
 

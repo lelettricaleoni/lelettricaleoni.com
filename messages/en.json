@@ -448,7 +448,6 @@
     "pay": "Pay {total}",
     "paying": "One moment…",
     "hold_note": "The bikes are held for you for 30 minutes while you pay.",
-    "staff_note": "Shop accounts do not book: use the panel.",
     "errors": {
       "invalid_request": "Something went wrong: reload the page and try again.",
       "not_allowed": "This account cannot book. Confirm your email and try again.",

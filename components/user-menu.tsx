@@ -87,14 +87,12 @@ export function UserMenu({ lang, labels, user }: { lang: string; labels: UserMen
               {labels.account}
             </Link>
           </DropdownMenuItem>
-          {!hasAdminRole(user) && (
-            <DropdownMenuItem asChild className="cursor-pointer">
-              <Link href={`/${lang}/account/rents`}>
-                <LuCalendarDays />
-                {labels.rents}
-              </Link>
-            </DropdownMenuItem>
-          )}
+          <DropdownMenuItem asChild className="cursor-pointer">
+            <Link href={`/${lang}/account/rents`}>
+              <LuCalendarDays />
+              {labels.rents}
+            </Link>
+          </DropdownMenuItem>
           {hasAdminRole(user) && (
             <DropdownMenuItem asChild className="cursor-pointer">
               <Link href="/manage">

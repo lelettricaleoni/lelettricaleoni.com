@@ -83,10 +83,15 @@ describe('the booking actions of a signed-in person', () => {
       expect(await mine()).toHaveLength(0)
     })
 
-    it('does not book for staff, nor for an account whose email is not confirmed', async () => {
-      expect(await startCheckoutForUser(userOf({ app_metadata: { role: 'admin' } }), request(), gateway, { today: TODAY })).toEqual({ status: 'not_allowed' })
+    it('does not book for an account whose email is not confirmed', async () => {
       expect(await startCheckoutForUser(userOf({ email_confirmed_at: undefined }), request(), gateway, { today: TODAY })).toEqual({ status: 'not_allowed' })
       expect(await mine()).toHaveLength(0)
+    })
+
+    it('books for an account of the shop exactly as for any other: the role gives the panel and takes nothing from the public site', async () => {
+      const result = await startCheckoutForUser(userOf({ app_metadata: { role: 'admin' } }), request(), gateway, { today: TODAY })
+      expect(result.status).toBe('redirect')
+      expect(await mine()).toHaveLength(1)
     })
 
     it('asks for a phone when the profile has none, refuses one that is not valid, and saves a good one in the profile', async () => {
@@ -144,10 +149,16 @@ describe('the booking actions of a signed-in person', () => {
       expect(gateway.refundCount()).toBe(0)
     })
 
-    it('does not cancel anything for a person with no customer, nor for staff', async () => {
+    it('does not cancel anything for a person with no customer, nor for somebody else\'s bike (staff included: a role is not ownership)', async () => {
       const paid = await insertPaidBooking(fx, { startsOn: '2031-12-10', endsOn: '2031-12-13' }, [3000])
       expect(await cancelMyBike(userOf({ id: crypto.randomUUID(), email: 'nobody@example.test' }), paid.reservationIds[0], gateway)).toEqual({ status: 'not_found' })
-      expect(await cancelMyBike(userOf({ app_metadata: { role: 'admin' } }), paid.reservationIds[0], gateway)).toEqual({ status: 'not_found' })
+      expect(await cancelMyBike(userOf({ id: crypto.randomUUID(), email: 'staff@example.test', app_metadata: { role: 'admin' } }), paid.reservationIds[0], gateway)).toEqual({ status: 'not_found' })
+    })
+
+    it('lets an account of the shop cancel its own bike like anybody', async () => {
+      const paid = await insertPaidBooking(fx, { startsOn: '2031-12-10', endsOn: '2031-12-13' }, [3000])
+      const result = await cancelMyBike(userOf({ app_metadata: { role: 'admin' } }), paid.reservationIds[0], gateway)
+      expect(result.status).toBe('cancelled')
     })
 
     it('confirms their own paid booking when they land back from the payment page, and nobody else’s', async () => {

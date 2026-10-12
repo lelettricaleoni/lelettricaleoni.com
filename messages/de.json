@@ -448,7 +448,6 @@
     "pay": "{total} bezahlen",
     "paying": "Einen Moment…",
     "hold_note": "Die Fahrräder bleiben 30 Minuten für dich reserviert, während du bezahlst.",
-    "staff_note": "Mit einem Konto des Geschäfts wird nicht gebucht: nutze das Panel.",
     "errors": {
       "invalid_request": "Etwas ist schiefgegangen: Lade die Seite neu und versuche es erneut.",
       "not_allowed": "Mit diesem Konto kannst du nicht buchen. Bestätige deine E-Mail und versuche es erneut.",

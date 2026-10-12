@@ -448,7 +448,6 @@
     "pay": "Paga {total}",
     "paying": "Un momento…",
     "hold_note": "Le bici restano tue per 30 minuti mentre paghi.",
-    "staff_note": "Con un account del negozio non si prenota: usa il pannello.",
     "errors": {
       "invalid_request": "Qualcosa non è andato: ricarica la pagina e riprova.",
       "not_allowed": "Questo account non può prenotare. Conferma la tua email e riprova.",

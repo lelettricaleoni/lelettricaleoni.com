@@ -7,7 +7,6 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Flash, PageTitle } from '@/components/account/flash'
 import { db, customers } from '@/lib/db'
-import { hasAdminRole } from '@/lib/admin-users'
 import { getCurrentUser } from '@/lib/auth/current-user'
 import { ensureCustomerFor } from '@/lib/auth/ensure-customer'
 import { LANGUAGES, languageOf } from '@/lib/auth/language'
@@ -36,10 +35,9 @@ export default async function ProfilePage({
   // The layout has already sent somebody who is not signed in to the sign-in page.
   const user = (await getCurrentUser())!
 
-  const isAdmin = hasAdminRole(user)
   // The record normally exists from the first sign-in; this covers one that could not be made then.
-  if (!isAdmin) await ensureCustomerFor(user, { language: lang })
-  const [customer] = isAdmin ? [] : await db.select().from(customers).where(eq(customers.userId, user.id))
+  await ensureCustomerFor(user, { language: lang })
+  const [customer] = await db.select().from(customers).where(eq(customers.userId, user.id))
 
   const { error, saved } = await searchParams
   const d = (await getDictionary(lang)).account
@@ -55,11 +53,11 @@ export default async function ProfilePage({
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-1.5">
             <Label htmlFor="first_name">{d.first_name_label}</Label>
-            <Input id="first_name" name="first_name" required maxLength={80} defaultValue={customer?.firstName ?? ''} disabled={isAdmin} />
+            <Input id="first_name" name="first_name" required maxLength={80} defaultValue={customer?.firstName ?? ''} />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="last_name">{d.last_name_label}</Label>
-            <Input id="last_name" name="last_name" required maxLength={80} defaultValue={customer?.lastName ?? ''} disabled={isAdmin} />
+            <Input id="last_name" name="last_name" required maxLength={80} defaultValue={customer?.lastName ?? ''} />
           </div>
         </div>
         <div className="space-y-1.5">
@@ -68,12 +66,12 @@ export default async function ProfilePage({
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="phone">{d.phone_label}</Label>
-          <Input id="phone" name="phone" type="tel" autoComplete="tel" defaultValue={customer?.phone ?? ''} disabled={isAdmin} />
+          <Input id="phone" name="phone" type="tel" autoComplete="tel" defaultValue={customer?.phone ?? ''} />
           <p className="text-xs text-muted-foreground">{d.phone_hint}</p>
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="language">{d.language_label}</Label>
-          <Select name="language" defaultValue={languageOf(customer?.language ?? lang)} disabled={isAdmin}>
+          <Select name="language" defaultValue={languageOf(customer?.language ?? lang)}>
             <SelectTrigger id="language"><SelectValue /></SelectTrigger>
             <SelectContent>
               {LANGUAGES.map((code) => (
@@ -83,7 +81,7 @@ export default async function ProfilePage({
           </Select>
           <p className="text-xs text-muted-foreground">{d.language_hint}</p>
         </div>
-        {!isAdmin && <Button type="submit">{d.save}</Button>}
+        <Button type="submit">{d.save}</Button>
       </form>
     </>
   )
