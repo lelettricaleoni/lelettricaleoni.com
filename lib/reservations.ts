@@ -175,7 +175,8 @@ export type CancelResult = { status: 'cancelled' } | { status: 'not_found' }
 export async function cancelReservation(id: string): Promise<CancelResult> {
   const rows = await db.update(bikeReservations)
     .set({ status: 'cancelled' })
-    .where(and(eq(bikeReservations.id, id), eq(bikeReservations.status, 'confirmed')))
+    // A bike booked online is cancelled with its refund (lib/booking/refunds.ts), never by this: it would give no money back.
+    .where(and(eq(bikeReservations.id, id), eq(bikeReservations.status, 'confirmed'), ne(bikeReservations.kind, 'online_rental')))
     .returning({ id: bikeReservations.id })
   return rows.length > 0 ? { status: 'cancelled' } : { status: 'not_found' }
 }

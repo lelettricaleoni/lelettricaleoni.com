@@ -32,6 +32,13 @@ export const planMaintenanceSchema = z.object({
 
 export const updateMaintenanceSchema = z.object({ id, firstDay: day, lastDay: day })
 export const reservationIdSchema = z.object({ id })
+
+/** Cancelling a bike booked online: all of what it cost goes back, nothing, or an amount in euros as typed. */
+export const cancelOnlineSchema = z.discriminatedUnion('refund', [
+  z.object({ id, refund: z.literal('full') }),
+  z.object({ id, refund: z.literal('none') }),
+  z.object({ id, refund: z.literal('partial'), amount: z.number().positive('Enter an amount above zero').max(100000, 'The amount is too high') }),
+])
 export const moveReservationSchema = z.object({ id, bikeUnitId: id })
 export const occupiedRangesSchema = z.object({ bikeUnitId: id, excludeId: id.optional() })
 export const retireBikeSchema = z.object({ id, retiredOn: day })

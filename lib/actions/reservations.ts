@@ -4,10 +4,12 @@ import { getAdminUser } from '@/lib/supabase/server'
 import { buildRange, type DayRange } from '@/lib/dates'
 import { toCents } from '@/lib/money'
 import {
-  createRentalSchema, moveReservationSchema, occupiedRangesSchema, planMaintenanceSchema,
+  cancelOnlineSchema, createRentalSchema, moveReservationSchema, occupiedRangesSchema, planMaintenanceSchema,
   reservationIdSchema, updateMaintenanceSchema, type ActionInvalid,
 } from '@/lib/reservation-schemas'
 import * as reservations from '@/lib/reservations'
+import { cancelOnlineReservation, type CancelOnlineResult } from '@/lib/booking/refunds'
+import { PaymentsNotConfiguredError } from '@/lib/booking/payments'
 import { syncReservation } from '@/lib/integrations/google-calendar/sync'
 
 async function requireAdmin() {
@@ -63,6 +65,26 @@ export async function cancelReservationAction(input: unknown): Promise<reservati
   const result = await reservations.cancelReservation(parsed.data.id)
   if (result.status === 'cancelled') scheduleCalendarSync(parsed.data.id)
   return result
+}
+
+/**
+ * Cancels a bike booked online and gives back all of what it cost, part of it, or nothing (maintenance of the shop's choice, bad weather,
+ * an agreement with the customer). Unlike the customer, staff can do it at any time; the refund is recorded as theirs.
+ */
+export async function cancelOnlineAction(input: unknown): Promise<CancelOnlineResult | ActionInvalid> {
+  const admin = await getAdminUser()
+  if (!admin) throw new Error('Unauthorized')
+  const parsed = cancelOnlineSchema.safeParse(input)
+  if (!parsed.success) return invalid(parsed.error.issues[0]?.message ?? 'Invalid reservation')
+  const refundCents = parsed.data.refund === 'full' ? undefined : parsed.data.refund === 'none' ? 0 : toCents(parsed.data.amount)
+  try {
+    const result = await cancelOnlineReservation({ reservationId: parsed.data.id, actor: { kind: 'staff', userId: admin.id }, refundCents })
+    if (result.status === 'cancelled') scheduleCalendarSync(parsed.data.id)
+    return result
+  } catch (error) {
+    if (error instanceof PaymentsNotConfiguredError) return invalid('Online payments are not available on this site')
+    throw error
+  }
 }
 
 export async function moveReservationAction(input: unknown): Promise<reservations.MoveResult | ActionInvalid> {

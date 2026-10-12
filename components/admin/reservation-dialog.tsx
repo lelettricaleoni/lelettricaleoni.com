@@ -10,13 +10,13 @@ import {
   AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 import {
-  cancelReservationAction, getMoveCandidatesAction, getOccupiedRangesAction, moveReservationAction,
+  cancelOnlineAction, cancelReservationAction, getMoveCandidatesAction, getOccupiedRangesAction, moveReservationAction,
   updateMaintenanceAction,
 } from '@/lib/actions/reservations'
 import { occupiedDayRanges } from '@/lib/booking-grid'
 import { dayToDate, inclusiveEnd, isoDay, type DayRange } from '@/lib/dates'
 import { formatEuros } from '@/lib/money'
-import { cancelFeedback, maintenanceUpdateFeedback, moveFeedback, type Feedback } from '@/lib/reservation-feedback'
+import { cancelFeedback, cancelOnlineFeedback, maintenanceUpdateFeedback, moveFeedback, type Feedback } from '@/lib/reservation-feedback'
 import type { CustomerSummary } from '@/lib/customers'
 import type { GridReservation, GridUnit, MoveCandidate } from '@/lib/reservations'
 
@@ -50,6 +50,9 @@ function Body({ unit, reservation, onClose }: { unit: GridUnit; reservation: Gri
   const [mode, setMode] = useState<Mode>('view')
   const [confirmCancel, setConfirmCancel] = useState(false)
   const isMaintenance = reservation.kind === 'maintenance'
+  const isOnline = reservation.kind === 'online_rental'
+  const held = reservation.status === 'held'
+  const [refunding, setRefunding] = useState(false)
   const lastDay = inclusiveEnd(reservation.endsOn)
 
   function cancel() {
@@ -62,7 +65,7 @@ function Body({ unit, reservation, onClose }: { unit: GridUnit; reservation: Gri
   return (
     <>
       <DialogHeader>
-        <DialogTitle>{isMaintenance ? 'Maintenance' : (reservation.label ?? 'Rental')}</DialogTitle>
+        <DialogTitle>{isMaintenance ? 'Maintenance' : (reservation.label ?? (isOnline ? 'Online booking' : 'Rental'))}</DialogTitle>
         <DialogDescription>
           {unit.modelName} · {unit.sizeName} · {unit.versionName} · {unit.shortId}
           <br />
@@ -76,7 +79,21 @@ function Body({ unit, reservation, onClose }: { unit: GridUnit; reservation: Gri
         <p className="text-sm">Amount: <span className="font-medium">{formatEuros(reservation.amountCents)}</span></p>
       )}
 
-      {mode === 'view' && (
+      {isOnline && (
+        <p className="text-sm text-muted-foreground">
+          {held
+            ? 'Being paid: the bike is held until the customer pays or the time runs out.'
+            : 'Booked and paid on the site. Cancelling it gives money back.'}
+        </p>
+      )}
+
+      {mode === 'view' && isOnline && (
+        <div className="flex flex-wrap gap-2">
+          {!held && <Button variant="destructive" disabled={isPending} onClick={() => setRefunding(true)}>Cancel and refund…</Button>}
+        </div>
+      )}
+
+      {mode === 'view' && !isOnline && (
         <div className="flex flex-wrap gap-2">
           {isMaintenance
             ? <Button variant="outline" onClick={() => setMode('edit')}>Change dates</Button>
@@ -93,6 +110,8 @@ function Body({ unit, reservation, onClose }: { unit: GridUnit; reservation: Gri
         <EditMaintenance reservation={reservation} unitId={unit.id} onBack={() => setMode('view')} onDone={onClose} />
       )}
 
+      {isOnline && <RefundDialog reservation={reservation} open={refunding} onOpenChange={setRefunding} onDone={onClose} />}
+
       <AlertDialog open={confirmCancel} onOpenChange={setConfirmCancel}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -106,6 +125,67 @@ function Body({ unit, reservation, onClose }: { unit: GridUnit; reservation: Gri
         </AlertDialogContent>
       </AlertDialog>
     </>
+  )
+}
+
+/**
+ * Cancelling a bike booked online: how much goes back to the customer (all of it, part of it, none) is the shop's call, at any time.
+ * The answer is a toast; the dialog closes when it worked, and stays open when the refund failed (the bike is still booked then).
+ */
+function RefundDialog({
+  reservation, open, onOpenChange, onDone,
+}: { reservation: GridReservation; open: boolean; onOpenChange: (open: boolean) => void; onDone: () => void }) {
+  const [choice, setChoice] = useState<'full' | 'partial' | 'none'>('full')
+  const [amount, setAmount] = useState('')
+  const [pending, startTransition] = useTransition()
+  const price = reservation.amountCents ?? 0
+
+  function submit() {
+    startTransition(async () => {
+      const input = choice === 'partial'
+        ? { id: reservation.id, refund: 'partial' as const, amount: Number(amount.replace(',', '.')) }
+        : { id: reservation.id, refund: choice }
+      const result = await cancelOnlineAction(input)
+      if (report(cancelOnlineFeedback(result)) === 'close') onDone()
+    })
+  }
+
+  const options = [
+    { value: 'full' as const, label: `Refund in full (${formatEuros(price)})` },
+    { value: 'partial' as const, label: 'Refund part of it' },
+    { value: 'none' as const, label: 'No refund' },
+  ]
+
+  return (
+    <AlertDialog open={open} onOpenChange={onOpenChange}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Cancel this bike and refund?</AlertDialogTitle>
+          <AlertDialogDescription>The days become free again. The refund goes back to the customer's card.</AlertDialogDescription>
+        </AlertDialogHeader>
+        <div className="space-y-2">
+          {options.map((option) => (
+            <label key={option.value} className="flex cursor-pointer items-center gap-2 text-sm">
+              <input type="radio" name="refund" value={option.value} checked={choice === option.value} onChange={() => setChoice(option.value)} />
+              {option.label}
+            </label>
+          ))}
+          {choice === 'partial' && (
+            <div className="flex items-center gap-2 pl-6">
+              <input
+                inputMode="decimal" aria-label="Amount to refund, in euros" placeholder="0" value={amount} onChange={(e) => setAmount(e.target.value)}
+                className="h-9 w-28 rounded-md border bg-background px-3 text-sm"
+              />
+              <span className="text-sm text-muted-foreground">€ of {formatEuros(price)}</span>
+            </div>
+          )}
+        </div>
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={pending}>Keep it</AlertDialogCancel>
+          <AlertDialogAction disabled={pending} onClick={(event) => { event.preventDefault(); submit() }}>Cancel it</AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   )
 }
 
