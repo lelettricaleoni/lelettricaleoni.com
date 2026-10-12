@@ -22,16 +22,20 @@ const versionsOf = async () =>
 
 beforeEach(async () => {
   const [category] = await db.select().from(bikeCategories).limit(1)
-  sizeIds = (await db.select().from(bikeSizes).limit(3)).map((s) => s.id)
-  versionIds = (await db.select().from(bikeVersions).limit(2)).map((v) => v.id)
-  if (!category || sizeIds.length < 3 || versionIds.length < 2) throw new Error('the development database needs 3 sizes and 2 versions')
+  if (!category) throw new Error('the development database needs a bike category')
+  // Its own sizes and versions: the shop's real ones are few (one version today), and a test must not depend on what other tests left behind.
+  const tag = `db-test-${crypto.randomUUID()}`
+  sizeIds = (await db.insert(bikeSizes).values([1, 2, 3].map((n) => ({ name: `${tag}-s${n}` }))).returning()).map((s) => s.id)
+  versionIds = (await db.insert(bikeVersions).values([1, 2].map((n) => ({ name: `${tag}-v${n}` }))).returning()).map((v) => v.id)
   const [model] = await db.insert(bikeModels).values({ categoryId: category.id }).returning()
   modelId = model.id
 })
 
 afterEach(async () => {
-  // Sizes, versions and media go with the model (ON DELETE CASCADE).
+  // Sizes, versions and media of the model go with it (ON DELETE CASCADE); then the sizes and versions made for the test.
   await db.delete(bikeModels).where(eq(bikeModels.id, modelId))
+  await db.delete(bikeSizes).where(inArray(bikeSizes.id, sizeIds))
+  await db.delete(bikeVersions).where(inArray(bikeVersions.id, versionIds))
 })
 
 describe('syncModelSizesAndVersions', () => {

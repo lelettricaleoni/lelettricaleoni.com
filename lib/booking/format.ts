@@ -8,7 +8,9 @@ export function formatDays(range: DayRange, lang: Lang, options: { year?: boolea
   const format = new Intl.DateTimeFormat(INTL_LOCALE[lang], { ...(options.weekday ? { weekday: 'short' } : {}), day: 'numeric', month: 'short', ...(options.year ? { year: 'numeric' } : {}) })
   const first = dayToDate(range.startsOn)
   const last = dayToDate(inclusiveEnd(range.endsOn))
-  return first.getTime() === last.getTime() ? format.format(first) : format.formatRange(first, last)
+  if (first.getTime() === last.getTime()) return format.format(first)
+  // `formatRange` writes the weekday and the separator differently in Node and in the browser (a hydration mismatch): with the weekday the two days are written one by one.
+  return options.weekday ? `${format.format(first)} – ${format.format(last)}` : format.formatRange(first, last)
 }
 
 /** "lun 3 nov": one day with its weekday. */

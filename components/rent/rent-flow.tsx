@@ -72,8 +72,12 @@ export function RentFlow({
     setNotice(null)
   }
 
-  // Somebody else booked or freed a bike: read the page again (at most every two seconds: the channel is public).
-  const reload = useMemo(() => coalesce(() => router.refresh(), 2000), [router])
+  // Somebody else booked or freed a bike: read the page again. The channel is public (anybody who knows its name could ping it), so each
+  // visitor reads at most once every five seconds and never while the tab is hidden: on coming back the hook reads it once.
+  const reload = useMemo(
+    () => coalesce(() => { if (document.visibilityState === 'visible') router.refresh() }, 5000),
+    [router],
+  )
   useEffect(() => reload.cancel, [reload])
   useReservationsRealtime(reload)
 

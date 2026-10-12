@@ -1,5 +1,5 @@
-import { and, asc, eq, inArray } from 'drizzle-orm'
-import { db, bikeCategories, bikeModelTranslations, bikeModels, bikeSizes, bikeVersions } from '@/lib/db'
+import { and, asc, eq, exists, gt, inArray, isNull, or } from 'drizzle-orm'
+import { db, bikeCategories, bikeModelTranslations, bikeModels, bikeSizes, bikeUnits, bikeVersions } from '@/lib/db'
 import { daysBetween, type DayRange } from '@/lib/dates'
 import { safeErrorSummary } from '@/lib/safe-error'
 import { getFreeBikes } from './availability'
@@ -54,7 +54,7 @@ export async function settleHoldsQuietly(): Promise<void> {
  * Before counting, the bookings whose time has run out are settled, so bikes held for a payment that never came are free again
  * without waiting for the sweeper's next minute. That is a courtesy and never a reason to fail: an error there is logged and the page
  * is built with what the database says.
- * `includeUnavailable` keeps the published models with no bike free (with no variants), so the page can show them switched off.
+ * `includeUnavailable` keeps the published models that have bikes in the shop but none free for these days (with no variants), so the page can show them switched off.
  */
 export async function listBookableBikes(
   range: DayRange, lang: Locale, options: { includeUnavailable?: boolean } = {},
@@ -64,8 +64,15 @@ export async function listBookableBikes(
   const free = await getFreeBikes(range)
   const freeIds = [...new Set(free.map((row) => row.bikeModelId))]
   // By default only the models with a bike free; with `includeUnavailable` every published model, the ones with none free switched off.
+  // A model with no bike in the shop at all (none, or all retired by then) is not "taken": it does not exist for the customer.
   const modelIds = options.includeUnavailable
-    ? (await db.select({ id: bikeModels.id }).from(bikeModels).where(eq(bikeModels.isPublished, true))).map((row) => row.id)
+    ? (await db.select({ id: bikeModels.id }).from(bikeModels).where(and(
+      eq(bikeModels.isPublished, true),
+      exists(db.select({ id: bikeUnits.id }).from(bikeUnits).where(and(
+        eq(bikeUnits.bikeModelId, bikeModels.id),
+        or(isNull(bikeUnits.retiredOn), gt(bikeUnits.retiredOn, range.startsOn)),
+      ))),
+    ))).map((row) => row.id)
     : freeIds
   if (modelIds.length === 0) return []
 

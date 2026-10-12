@@ -25,6 +25,8 @@ describe('listBookableBikes', () => {
     if (extraVersions.length) {
       await db.delete(bikeUnits).where(inArray(bikeUnits.bikeVersionId, extraVersions))
     }
+    // The names point at the model too: they go first, or the fixture cannot remove it (and leaves a published test model on the site).
+    await db.delete(bikeModelTranslations).where(eq(bikeModelTranslations.bikeModelId, fx.modelId))
     await fx.cleanup()
     if (extraVersions.length) {
       await db.delete(bikeVersions).where(inArray(bikeVersions.id, extraVersions))
@@ -100,6 +102,12 @@ describe('listBookableBikes', () => {
 
   it('with includeUnavailable still leaves out a model that is not published', async () => {
     await db.update(bikeModels).set({ isPublished: false }).where(eq(bikeModels.id, fx.modelId))
+    const all = await listBookableBikes(RANGE, 'it', { includeUnavailable: true })
+    expect(all.find((entry) => entry.id === fx.modelId)).toBeUndefined()
+  })
+
+  it('with includeUnavailable leaves out a published model that has no bike in the shop at all', async () => {
+    await db.delete(bikeUnits).where(eq(bikeUnits.bikeModelId, fx.modelId))
     const all = await listBookableBikes(RANGE, 'it', { includeUnavailable: true })
     expect(all.find((entry) => entry.id === fx.modelId)).toBeUndefined()
   })

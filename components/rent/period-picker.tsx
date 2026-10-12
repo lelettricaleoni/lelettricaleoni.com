@@ -14,6 +14,7 @@ import type { RentDict } from './rent-flow'
 type Lang = 'it' | 'en' | 'de'
 
 const CALENDAR_LOCALE = { it: dpIt, en: dpEn, de: dpDe } as const
+const UNAVAILABLE: ReadonlySet<DayReason> = new Set(['no_bike', 'beyond_end', 'closed'])
 
 /**
  * The days of the stay. Two states of one component:
@@ -116,7 +117,9 @@ export function PeriodPicker({
               return check.ok ? formatDay(day, lang) : reasonText(day, check.reason)
             },
           }}
-          classNames={{ disabled: 'rounded-md bg-muted text-muted-foreground/60' }}
+          // Past and too-far days are only faded; a day the bike is taken (or out of reach of one bike) gets a grey box, which the legend explains.
+          modifiers={{ unavailable: (date) => { const check = isSelectable(isoDay(date), pickContext); return !check.ok && UNAVAILABLE.has(check.reason) } }}
+          modifiersClassNames={{ unavailable: 'rounded-md bg-muted' }}
           className="mx-auto p-0 [--cell-size:2.25rem] sm:[--cell-size:2.5rem]"
         />
       </div>

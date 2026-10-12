@@ -486,7 +486,7 @@
     "off_far": "{day}, zu weit in der Zukunft",
     "off_no_bike": "{day}, kein Fahrrad frei",
     "off_no_bike_model": "{day}, dieses Fahrrad ist nicht frei",
-    "off_beyond": "{day}, ein einzelnes Fahrrad reicht nicht so weit",
+    "off_beyond": "{day}, zu weit vom ersten Tag entfernt",
     "unavailable_dates": "An diesen Tagen nicht verfügbar",
     "see_all_free": "Alle in diesem Zeitraum freien Fahrräder ansehen",
     "see_all_bikes": "Alle Fahrräder ansehen",
