@@ -26,10 +26,11 @@ export interface UserMenuLabels {
 }
 
 // The site's own Button, so the bar follows the same rules as every other button (docs/design-rules, skill
-// `design-system`): a small button with rounded corners, the language one next to it in the same style. The one
-// filled button of the bar is the sign-in, in the Button's default colour (`primary`), because it is the one thing a visitor who is not signed in may want to do.
-const signInClass = buttonVariants({ size: 'sm', className: 'font-semibold' })
+// `design-system`): a small button with rounded corners, the language one next to it in the same style. The one filled button of the
+// bar is "Book" (navbar-end.tsx), so the sign-in is an outline one, like the account menu it turns into.
 // bg-transparent: the bar is translucent, and the outline button's own white fill showed as a box on it.
+// max-sm:hidden: on a phone the sign-in is in the menu (navbar-end.tsx), where there is room for it.
+const signInClass = cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'bg-transparent font-semibold max-sm:hidden')
 const accountClass = cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'bg-transparent gap-2 pl-1.5 pr-2.5 font-medium')
 
 /**
@@ -45,8 +46,8 @@ const accountClass = cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'bg-
 export function UserMenu({ lang, labels, user }: { lang: string; labels: UserMenuLabels; user: User | null | undefined }) {
   const logoutForm = useRef<HTMLFormElement>(null)
 
-  // A blank the size of the sign-in button: the bar does not move when the cookie has been read.
-  if (user === undefined) return <span className="h-9 w-[5.5rem]" aria-hidden />
+  // A blank the size of the button that will be here: the bar does not move when the cookie has been read.
+  if (user === undefined) return <span className="h-9 w-[4.5rem] sm:w-[5.5rem]" aria-hidden />
 
   if (user === null) {
     return (

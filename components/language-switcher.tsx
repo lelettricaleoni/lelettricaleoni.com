@@ -40,6 +40,37 @@ function Flag({ countryCode, label }: { countryCode: string; label: string }) {
 }
 
 /**
+ * The three languages side by side, for the menu of a phone, where a dropdown inside the drawer would open behind it. The current one
+ * is marked and is not a link to itself.
+ */
+export function LanguageLinks({ currentLang }: { currentLang: string }) {
+  const pathname = usePathname()
+  return (
+    <div className="grid grid-cols-3 gap-2">
+      {locales.map((locale) => {
+        const current = locale.code === currentLang
+        return (
+          <Link
+            key={locale.code}
+            href={switchLocalePath(pathname, locale.code)}
+            hrefLang={locale.code}
+            aria-label={locale.name}
+            aria-current={current ? 'true' : undefined}
+            onClick={() => {
+              if (!current) trackEvent('language_switch', { language: locale.code })
+            }}
+            className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'gap-1.5 text-xs font-semibold', current && 'border-primary text-primary')}
+          >
+            <Flag countryCode={locale.countryCode} label={locale.label} />
+            {locale.label}
+          </Link>
+        )
+      })}
+    </div>
+  )
+}
+
+/**
  * The language of the page: the current one on a small button, the three on a menu. Three side by side took the room
  * the account button needed. The other pages in each language are still declared to search engines through the
  * `hreflang` alternates in the metadata and the sitemap, so the links hiding in a closed menu lose nothing there.

@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect, useSyncExternalStore } from 'react'
+import { useState, useEffect, useSyncExternalStore, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import Link from 'next/link'
 import { LuMenu, LuX } from 'react-icons/lu'
@@ -7,13 +7,15 @@ import { usePathname } from 'next/navigation'
 
 interface MobileMenuProps {
   links: { href: string; label: string }[]
+  /** Below the links: what does not fit in the bar of a phone (the sign-in, the language). */
+  footer?: ReactNode
 }
 
 // No subscription needed: this never changes after the first client render,
 // it only ever tells React "server snapshot" vs "client snapshot" once.
 const noopSubscribe = () => () => {}
 
-export function MobileMenu({ links }: MobileMenuProps) {
+export function MobileMenu({ links, footer }: MobileMenuProps) {
   const [open, setOpen] = useState(false)
   // Portal target (document.body) doesn't exist during SSR. useSyncExternalStore
   // reports false for the server-rendered/hydration pass and true right after,
@@ -76,6 +78,7 @@ export function MobileMenu({ links }: MobileMenuProps) {
             </Link>
           ))}
         </nav>
+        {footer}
       </div>
     </>
   ) : null

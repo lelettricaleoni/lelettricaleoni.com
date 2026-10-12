@@ -7,7 +7,8 @@
     "account": "Account settings",
     "panel": "Admin panel",
     "logout": "Sign out",
-    "rents": "Your bookings"
+    "rents": "Your bookings",
+    "book": "Book"
   },
   "hero": {
     "open_badge": "We're open",
