@@ -4,7 +4,7 @@ import { db, bikeReservations, bookings } from '@/lib/db'
 import { FakeGateway } from '@/lib/booking/payments/fake'
 import { settleHold, settleOverdueHolds } from '@/lib/booking/settle'
 import { getFreeBikes } from '@/lib/booking/availability'
-import { createFixture, insertBooking, startPendingBooking, type Fixture } from './fixtures'
+import { createFixture, insertBooking, insertOnlineLine, startPendingBooking, type Fixture } from './fixtures'
 
 // A hook that runs once, right before expireBooking, to make something happen at the exact moment a real race would.
 const hooks = vi.hoisted(() => ({ beforeExpire: undefined as undefined | ((bookingId: string) => Promise<void>) }))
@@ -84,6 +84,10 @@ describe('settling a held booking', () => {
     // a bring-back attempt that died half way: the booking is pending again, paid, and holds only one of its two bikes
     const [firstLine] = await db.select().from(bikeReservations).where(eq(bikeReservations.bookingId, pending.bookingId))
     await db.update(bikeReservations).set({ status: 'expired' }).where(eq(bikeReservations.id, firstLine.id))
+    // its time has run out (a bring-back lasts a few minutes): only then is it ended, so a bring-back still going is never cut off
+    expect(await settleHold(pending.bookingId, gateway)).toBe('still_open')
+    expect((await bookingOf(pending.bookingId)).status).toBe('pending')
+    await makeOverdue(pending.bookingId)
     expect(await settleHold(pending.bookingId, gateway)).toBe('confirmed')
     expect((await bookingOf(pending.bookingId)).status).toBe('confirmed')
     const confirmed = (await db.select().from(bikeReservations).where(eq(bikeReservations.bookingId, pending.bookingId))).filter((l) => l.status === 'confirmed')
@@ -121,6 +125,15 @@ describe('settling a held booking', () => {
   })
 
   describe('the sweeper', () => {
+    it('also frees the held bikes of bookings that are not pending any more', async () => {
+      const closed = await insertBooking(fx.customerId, RANGE, { status: 'expired', lineCount: 1 })
+      const orphan = await insertOnlineLine(closed, fx.customerId, fx.unitIds[0], RANGE, 'held')
+      const swept = await settleOverdueHolds(gateway)
+      expect(swept.orphansFreed).toBeGreaterThanOrEqual(1)
+      const [row] = await db.select().from(bikeReservations).where(eq(bikeReservations.id, orphan))
+      expect(row.status).toBe('expired')
+    })
+
     it('settles the bookings whose time has run out and leaves the others', async () => {
       const late = await startPendingBooking(fx, gateway, RANGE, 1)
       const other = await createFixture(1)

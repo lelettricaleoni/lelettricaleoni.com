@@ -50,6 +50,11 @@ export interface RefundRequest {
   amountCents: number
 }
 
+/**
+ * `failed` means the refund was NOT created, with certainty: a card that cannot be refunded, a refusal. Anything uncertain (a timeout,
+ * a "key in use", a server error) must THROW instead, so the row stays pending and is asked again with the same key. A `failed` that
+ * hides a refund which then happens would be asked for again as a new attempt: a second refund.
+ */
 export type RefundResult =
   | { status: 'succeeded' | 'pending'; refundRef: string }
   | { status: 'failed'; reason: string }

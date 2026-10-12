@@ -195,6 +195,50 @@ describe('refunds and the cancellation of one online bike', () => {
       expect(gateway.refundCount()).toBe(0)
     })
 
+    it('a success is not lost when another caller wrote a failure for the same attempt in the meantime', async () => {
+      const paid = await insertPaidBooking(fx, FAR, [3000])
+      let release: () => void = () => {}
+      const gate = new Promise<void>((resolve) => { release = resolve })
+      let calls = 0
+      // The first call is slow and in the end succeeds; the second, at the same time, is answered with an error (what an adapter may
+      // do with "key in use" or a timeout). The row must end up recording the refund that really happened.
+      const stub = {
+        name: 'fake' as const,
+        createSession: gateway.createSession.bind(gateway),
+        getSession: gateway.getSession.bind(gateway),
+        expireSession: gateway.expireSession.bind(gateway),
+        refund: async () => {
+          calls++
+          if (calls === 1) { await gate; return { status: 'succeeded' as const, refundRef: 'ref_real' } }
+          return { status: 'failed' as const, reason: 'key in use' }
+        },
+      }
+      const request = {
+        bookingId: paid.bookingId, paymentRef: paid.paymentRef, reservationId: paid.reservationIds[0],
+        amountCents: 3000, reason: 'customer' as const, createdBy: null,
+      }
+      const first = issueRefund(request, stub)
+      while (calls < 1) await new Promise((resolve) => setTimeout(resolve, 10))
+      await issueRefund(request, stub) // gets the error and records a failure
+      release()
+      expect(await first).toEqual({ status: 'succeeded', refundRef: 'ref_real' })
+      expect(await refundsOf(paid.bookingId)).toMatchObject([{ status: 'succeeded', gatewayRefundId: 'ref_real' }])
+    })
+
+    it('a refund the gateway already created is never asked for again (its idempotency key does not last for ever)', async () => {
+      const paid = await insertPaidBooking(fx, FAR, [3000])
+      await db.insert(bookingRefunds).values({
+        reservationId: paid.reservationIds[0], bookingId: paid.bookingId, amountCents: 3000, reason: 'staff',
+        status: 'pending', gatewayRefundId: 'fake_re_created_1',
+      })
+      const result = await issueRefund({
+        bookingId: paid.bookingId, paymentRef: paid.paymentRef, reservationId: paid.reservationIds[0],
+        amountCents: 3000, reason: 'staff', createdBy: null,
+      }, gateway)
+      expect(result).toEqual({ status: 'pending', refundRef: 'fake_re_created_1' })
+      expect(gateway.refundCount()).toBe(0)
+    })
+
     it('a refund that already succeeded is not asked for again', async () => {
       const paid = await insertPaidBooking(fx, FAR, [3000])
       const request = {

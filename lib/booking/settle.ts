@@ -1,6 +1,6 @@
 import { safeErrorSummary } from '@/lib/safe-error'
 import { confirmBooking } from './confirm'
-import { expireBooking, findBooking, findOverduePending } from './holds'
+import { expireBooking, findBooking, findOverduePending, freeOrphanHeldBikes } from './holds'
 import { getPaymentGateway } from './payments'
 import type { PaymentGateway } from './payments/gateway'
 
@@ -40,7 +40,9 @@ export async function settleHold(bookingId: string, gateway: PaymentGateway = ge
     let confirmed = await confirmBooking(bookingId, gateway)
     if (confirmed.status === 'incomplete') {
       // Paid, pending, and holding fewer bikes than it needs (a bring-back that stopped half way). Left alone it would stay like this for
-      // ever: end it, and let the late-payment net decide between the bikes and the money.
+      // ever: end it, and let the late-payment net decide between the bikes and the money. But only once its time has run out: a
+      // bring-back lasts a few minutes, and before that another caller may well be in the middle of it.
+      if (booking.holdExpiresAt.getTime() > Date.now()) return 'still_open'
       await expireBooking(bookingId)
       confirmed = await confirmBooking(bookingId, gateway)
     }
@@ -54,9 +56,13 @@ export async function settleHold(bookingId: string, gateway: PaymentGateway = ge
 }
 
 /** What the sweeper runs: every pending booking whose time has run out. One that fails is reported and does not stop the others. */
-export async function settleOverdueHolds(gateway: PaymentGateway = getPaymentGateway()): Promise<{ settled: number; failed: number }> {
+export async function settleOverdueHolds(
+  gateway: PaymentGateway = getPaymentGateway(),
+): Promise<{ settled: number; failed: number; orphansFreed: number }> {
   let settled = 0
   let failed = 0
+  // First the held bikes of bookings that are already over (an insert that overlapped with the booking ending).
+  const orphansFreed = await freeOrphanHeldBikes()
   for (const { id } of await findOverduePending()) {
     try {
       await settleHold(id, gateway)
@@ -66,5 +72,5 @@ export async function settleOverdueHolds(gateway: PaymentGateway = getPaymentGat
       console.error('[booking] could not settle a hold', { bookingId: id, error: safeErrorSummary(error) })
     }
   }
-  return { settled, failed }
+  return { settled, failed, orphansFreed }
 }

@@ -3,7 +3,7 @@ import { eq, inArray, sql } from 'drizzle-orm'
 import { db, bikeReservations, bookings, customers } from '@/lib/db'
 import { getFreeBikes } from '@/lib/booking/availability'
 import {
-  confirmHold, expireBooking, findOverduePending, findPendingBooking, holdOneBike, startHold, type StartHoldInput,
+  confirmHold, expireBooking, findOverduePending, findPendingBooking, freeOrphanHeldBikes, holdOneBike, startHold, type StartHoldInput,
 } from '@/lib/booking/holds'
 import { createFixture, insertBooking, insertOnlineLine, type Fixture } from './fixtures'
 
@@ -170,6 +170,19 @@ describe('holding the bikes of a booking', () => {
       await db.delete(bikeReservations).where(eq(bikeReservations.bookingId, result.bookingId))
       await db.delete(bookings).where(eq(bookings.id, result.bookingId))
     }
+  })
+
+  it('frees a held bike whose booking is not pending any more (an insert that overlapped with the booking being ended), and only that', async () => {
+    const closed = await insertBooking(fx.customerId, RANGE, { status: 'expired', lineCount: 1 })
+    const orphan = await insertOnlineLine(closed, fx.customerId, fx.unitIds[0], RANGE, 'held')
+    const live = await startHold(input())
+    if (live.status !== 'held') throw new Error('setup')
+    expect(await free()).toBe(1) // the orphan and the live hold both keep a bike
+    expect(await freeOrphanHeldBikes()).toBeGreaterThanOrEqual(1)
+    const [row] = await db.select().from(bikeReservations).where(eq(bikeReservations.id, orphan))
+    expect(row.status).toBe('expired')
+    expect((await linesOf(live.bookingId)).every((line) => line.status === 'held')).toBe(true)
+    expect(await free()).toBe(2)
   })
 
   it('lists the pending bookings whose time has run out', async () => {

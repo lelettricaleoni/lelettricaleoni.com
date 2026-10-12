@@ -265,3 +265,16 @@ export async function claimForRefund(bookingId: string): Promise<boolean> {
     select (select count(*) from b)::int as bookings`)
   return row.bookings > 0
 }
+
+/**
+ * Frees the bikes still `held` for a booking that is not pending any more. It should not happen, and the statements that move a booking
+ * are built so it does not; but an insert that overlapped (READ COMMITTED) with the booking being ended can still land a row a moment
+ * after, and nothing else would ever free it: the constraint keeps counting a held bike as taken. The sweeper runs this every minute.
+ */
+export async function freeOrphanHeldBikes(): Promise<number> {
+  const rows = await db.execute<{ id: string }>(sql`
+    update bike_reservations set status = 'expired'
+    where status = 'held' and booking_id in (select id from bookings where status <> 'pending')
+    returning id`)
+  return rows.length
+}

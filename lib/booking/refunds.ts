@@ -1,4 +1,4 @@
-import { and, eq, sql } from 'drizzle-orm'
+import { and, eq, ne, sql } from 'drizzle-orm'
 import { db, bikeReservations, bookingRefunds, bookings } from '@/lib/db'
 import { getPaymentGateway } from './payments'
 import type { PaymentGateway } from './payments/gateway'
@@ -57,7 +57,11 @@ export async function issueRefund(input: IssueRefundInput, gateway: PaymentGatew
       const refundable = bike && bike.status === dueFrom && input.amountCents <= (bike.amountCents ?? 0)
       return { status: 'failed', reason: refundable ? 'over_total' : 'not_refundable' }
     }
-    if (existing.status === 'succeeded' && existing.gatewayRefundId) return { status: 'succeeded', refundRef: existing.gatewayRefundId }
+    // A refund the gateway has already created (done, or on its way) is never asked for again: its idempotency key does not last for
+    // ever (Stripe forgets it after a day), so a request made later would be a second refund.
+    if (existing.gatewayRefundId && (existing.status === 'succeeded' || existing.status === 'pending')) {
+      return { status: existing.status, refundRef: existing.gatewayRefundId }
+    }
     amountCents = existing.amountCents
     attempt = existing.attempts
     if (existing.status === 'failed') {
@@ -72,16 +76,18 @@ export async function issueRefund(input: IssueRefundInput, gateway: PaymentGatew
     }
   }
 
-  // The answer is written only onto the row of THIS attempt, still pending: a late answer never overwrites a newer one.
-  const thisAttempt = and(
-    eq(bookingRefunds.reservationId, input.reservationId), eq(bookingRefunds.status, 'pending'), eq(bookingRefunds.attempts, attempt),
-  )
   const result = await gateway.refund({ reservationId: input.reservationId, attempt, paymentRef: input.paymentRef, amountCents })
   if (result.status === 'failed') {
-    await db.update(bookingRefunds).set({ status: 'failed' }).where(thisAttempt)
+    // A failure is written only onto the row of THIS attempt, still pending: it never overwrites a newer answer.
+    await db.update(bookingRefunds).set({ status: 'failed' }).where(and(
+      eq(bookingRefunds.reservationId, input.reservationId), eq(bookingRefunds.status, 'pending'), eq(bookingRefunds.attempts, attempt),
+    ))
     return result
   }
-  await db.update(bookingRefunds).set({ status: result.status, gatewayRefundId: result.refundRef }).where(thisAttempt)
+  // A success is written onto the row whatever else happened to it meanwhile (another caller may have recorded a failure for the
+  // same request): the money moved, and the row must say so, or the next retry would refund the bike again.
+  await db.update(bookingRefunds).set({ status: result.status, gatewayRefundId: result.refundRef })
+    .where(and(eq(bookingRefunds.reservationId, input.reservationId), ne(bookingRefunds.status, 'succeeded')))
   return result
 }
 
