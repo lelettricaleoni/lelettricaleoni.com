@@ -242,7 +242,10 @@
     "contact_button": "Informationen anfordern",
     "contact_call": "Anrufen",
     "contact_email": "Schreiben",
-    "copyright_notice": "Die Fotos sind ausschließliches Eigentum von Lelettrica di Leoni Gabriele. Alle Rechte vorbehalten."
+    "copyright_notice": "Die Fotos sind ausschließliches Eigentum von Lelettrica di Leoni Gabriele. Alle Rechte vorbehalten.",
+    "book_title": "Online buchen",
+    "book_button": "Dieses Fahrrad buchen",
+    "book_hint": "Wähle das Datum und bezahle online: Du holst es im Geschäft in Dro ab."
   },
   "login": {
     "title": "Anmelden",

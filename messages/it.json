@@ -242,7 +242,10 @@
     "contact_button": "Richiedi informazioni",
     "contact_call": "Chiama",
     "contact_email": "Scrivi",
-    "copyright_notice": "Le foto sono proprietà esclusiva di Lelettrica di Leoni Gabriele. Tutti i diritti riservati."
+    "copyright_notice": "Le foto sono proprietà esclusiva di Lelettrica di Leoni Gabriele. Tutti i diritti riservati.",
+    "book_title": "Prenota online",
+    "book_button": "Prenota questa bici",
+    "book_hint": "Scegli le date e paga online: la ritiri in negozio a Dro."
   },
   "login": {
     "title": "Accedi",

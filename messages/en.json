@@ -242,7 +242,10 @@
     "contact_button": "Request information",
     "contact_call": "Call",
     "contact_email": "Email",
-    "copyright_notice": "Photos are the exclusive property of Lelettrica di Leoni Gabriele. All rights reserved."
+    "copyright_notice": "Photos are the exclusive property of Lelettrica di Leoni Gabriele. All rights reserved.",
+    "book_title": "Book online",
+    "book_button": "Book this bike",
+    "book_hint": "Choose your dates and pay online: you pick it up at the shop in Dro."
   },
   "login": {
     "title": "Log in",
