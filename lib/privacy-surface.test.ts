@@ -47,6 +47,7 @@ const DECLARED_IN_THE_POLICY: Record<string, RegExp> = {
   'googletagmanager.com': /Google Analytics/, // analytics, with consent
   'googleapis.com': /Google/, // the sign-in (people), the calendar of the shop
   'arcgisonline.com': /Esri/, // the satellite imagery of the 3D map, loaded by the browser
+  'stripe.com': /Stripe/, // the payment page: the browser goes there to pay; the server talks to it through the SDK, which has no literal address in our code
 }
 
 /**

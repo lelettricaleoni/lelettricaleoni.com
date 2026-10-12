@@ -41,8 +41,8 @@
   pagamento). **Fetta 3c (le pagine, su `staging`, 2026-10-12)**: `/rent` (calendario, carrello di più bici, telefono, termini, «Paga»), pagina finta di pagamento, Account rents
   con «Annulla questa bici», «Cancel and refund…» nel pannello, `POST /api/cron/settle-holds` chiamato ogni minuto da un timer systemd (unità in
   `deploy/web/`, **da installare sulla VM**: `settle-holds@staging.timer`), calendario del negozio dopo pagamento e annullamento, bozza dei termini
-  (`/[lang]/terms`) e informativa aggiornata. **Resta**: 3d (`StripeGateway`, `stripe_events`,
-  `POST /api/stripe/webhook`, `expires_at` ≥ 31 minuti, saldo di Stripe per i rimborsi, avviso a Kevin per i pagamenti tardivi: oggi solo un log). Per l'account cliente: collegare chi si registra a `customers` per email (`user_id`) e
+  (`/[lang]/terms`) e informativa aggiornata. **Fetta 3d (Stripe, in codice il 2026-10-12)**: `StripeGateway`, `stripe_events`,
+  `POST /api/stripe/webhook`, sessione di almeno 31 minuti. **Restano**: la prova con Stripe vero (chiave di prova di Kevin: `stripe.live.test.ts` e una carta di prova su staging), l'endpoint e le chiavi sulla VM, e ciò che il codice non fa: il saldo di Stripe per i rimborsi non si controlla e l'avviso a Kevin per un pagamento tardivo o un rimborso fallito è solo un log (arriverà con la fetta 4). Per l'account cliente: collegare chi si registra a `customers` per email (`user_id`) e
   mostrargli solo le prenotazioni online; gli account del pannello valgono come tutti gli altri (Kevin, 2026-10-12).
   Il calendario di Kevin sta in `C:\AzureDevOps\firebase` (`app/rent/`, da portare ricollegandolo
   ai dati veri); il resto di quel repo (Firestore, Stripe di prova) non si riusa.
