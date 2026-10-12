@@ -161,7 +161,7 @@ function RefundDialog({
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>Cancel this bike and refund?</AlertDialogTitle>
-          <AlertDialogDescription>The days become free again. The refund goes back to the customer's card.</AlertDialogDescription>
+          <AlertDialogDescription>The days become free again. The refund goes back to the card the customer paid with.</AlertDialogDescription>
         </AlertDialogHeader>
         <div className="space-y-2">
           {options.map((option) => (

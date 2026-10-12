@@ -21,7 +21,7 @@ import * as reservations from '@/lib/reservations'
 import { syncReservation } from '@/lib/integrations/google-calendar/sync'
 import * as actions from './reservations'
 import {
-  cancelReservationAction, createRentalAction, getMoveCandidatesAction, getOccupiedRangesAction,
+  cancelOnlineAction, cancelReservationAction, createRentalAction, getMoveCandidatesAction, getOccupiedRangesAction,
   moveReservationAction, planMaintenanceAction, updateMaintenanceAction,
 } from './reservations'
 
@@ -97,6 +97,7 @@ describe('every action refuses anyone who is not an admin', () => {
   const calls: Record<string, () => Promise<unknown>> = {
     createRentalAction: () => createRentalAction(rentalInput()),
     cancelReservationAction: () => cancelReservationAction({ id: id() }),
+    cancelOnlineAction: () => cancelOnlineAction({ id: id(), refund: 'full' }),
     moveReservationAction: () => moveReservationAction({ id: id(), bikeUnitId: id() }),
     getMoveCandidatesAction: () => getMoveCandidatesAction({ id: id() }),
     planMaintenanceAction: () => planMaintenanceAction({ requestKey: id(), bikeUnitId: id(), firstDay: '2026-07-10', lastDay: '2026-07-10' }),

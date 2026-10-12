@@ -129,8 +129,13 @@ più prima riassegna le stesse bici, poi rimborsa tutto, e la prenotazione viene
 si muova un centesimo, così non si danno bici e soldi insieme); **un rimborso per bici** (`booking_refunds.reservation_id` unico), nella stessa
 istruzione che controlla stato della bici, importo ≤ prezzo della bici e somma ≤ totale. **Trappola**: due chiamate che arrivano insieme
 (webhook e pagina di ritorno) sono normali; ogni passo decisivo è un confronto-e-scambio su una riga (`reviveBooking`, `claimForRefund`,
-`confirmHold`), e chi perde risponde `incomplete` senza fare nulla. La 3c (pagina `/rent`, Account rents, azioni del pannello, pagina
-finta di pagamento, lavoro del worker che chiama `settleOverdueHolds`) e la 3d (Stripe vero, webhook, `expires_at` ≥ 31 minuti) non ci sono ancora.
+`confirmHold`), e chi perde risponde `incomplete` senza fare nulla. **3c (le pagine, `staging`)**: il cliente si
+trova sempre per `customers.user_id` (mai da un id in ingresso: un id altrui risponde `not_found`); lingua e origine dei redirect non si prendono dal client.
+`settleOverdueHolds` lo chiama ogni minuto `POST /api/cron/settle-holds` (la sola route `api/` della fetta: a chiamare è un timer, non il nostro
+frontend), protetta da `CRON_SECRET` (`lib/cron-auth.ts`, confronto a tempo costante), da dentro il container via `run-cron.sh`; **il timer non è ancora
+installato sulla VM** e senza di lui i posti scaduti si liberano solo quando qualcuno apre `/rent`. Il telefono è obbligatorio per prenotare (si
+salva nel profilo solo se non ce n'è già uno). Un annullamento del pannello sulle prenotazioni online passa da `cancelOnlineReservation` (rimborso
+pieno, parziale o nullo, a scelta del negozio, a qualunque ora). La 3d (Stripe vero, webhook, `expires_at` ≥ 31 minuti) non c'è ancora.
 
 ## Infrastruttura dei media
 

@@ -141,7 +141,7 @@
     "last_updated": "Last updated: October 2026",
     "controller_title": "Data Controller",
     "data_title": "Data Collected",
-    "data_body": "If you only browse: your IP address and the technical details of the request (browser, page requested), needed to show you the site and protect it from abuse. With your consent, Google Analytics (GA4) collects browsing data (pages visited, session duration, device type).\n\nIf you create an account: first name, last name, email address and password (which we keep only in encrypted form); optionally your phone number, and the language you prefer. If you sign in with Google we receive your first name, last name and email address from Google, not your password.\n\nIf you rent a bike, in the shop too: first and last name, your contact details (phone and email, if you give them), the details of the rental (dates, bike, amount) and, for the shop's own use, any practical notes (for example your helmet size).",
+    "data_body": "If you only browse: your IP address and the technical details of the request (browser, page requested), needed to show you the site and protect it from abuse. With your consent, Google Analytics (GA4) collects browsing data (pages visited, session duration, device type).\n\nIf you create an account: first name, last name, email address and password (which we keep only in encrypted form); your mobile number (optional for having an account, but we need it to book online), and the language you prefer. If you sign in with Google we receive your first name, last name and email address from Google, not your password.\n\nIf you rent a bike, in the shop too: first and last name, your contact details (phone and email, if you give them), the details of the rental (dates, bike, amount) and, if you book on the site, the status of the payment, its reference (never your card details) and any refunds, and, for the shop's own use, any practical notes (for example your helmet size).",
     "legal_basis_title": "Legal Basis",
     "legal_basis_body": "Managing your account and your rentals is based on the performance of a contract or of pre-contractual steps you asked for (Art. 6(1)(b) GDPR); keeping the data of rentals for the time the law requires is based on a legal obligation (point (c)). Protecting the site and the features you ask for, such as the maps, are based on our legitimate interest in giving you a safe and working site (point (f)). Statistical analysis with Google Analytics is based on your consent (point (a)), given through the cookie banner on your first visit and revocable at any time. The minimal signal without cookies, sent even to those who refuse, is based on our legitimate interest in obtaining aggregate statistical estimates of how the site is used (point (f)).",
     "cookies_title": "Cookies",
@@ -149,7 +149,7 @@
     "retention_title": "Data Retention",
     "retention_body": "Your account data stays as long as the account exists. If you delete it from the settings, we delete the account and, if you have no rentals, your customer record too; if you have already rented, the record with the data of those rentals stays in the shop's archive for the time needed for legal and accounting obligations, but is no longer linked to an account.\n\nData collected through Google Analytics is kept for 14 months, according to GA4's default configuration.",
     "third_parties_title": "Data Recipients",
-    "third_parties_body": "Browsing data is transmitted to Google LLC (1600 Amphitheatre Parkway, Mountain View, CA 94043, USA), acting as a data processor under Art. 28 GDPR. Google LLC participates in the EU-US Data Privacy Framework. More information: policies.google.com/privacy. This website is hosted on a server of Oracle Cloud Infrastructure located in Milan (Italy). Traffic goes through Cloudflare, Inc. (101 Townsend St, San Francisco, CA 94107, USA), which processes network data (IP address, HTTP headers) as part of its network and security services (DNS, protection against attacks, temporary storage of files). Cloudflare, Inc. participates in the EU-US Data Privacy Framework. More information: cloudflare.com/privacypolicy.\n\nTo manage accounts we use Supabase (Supabase Inc.), with the data stored in Ireland (EU). Service emails, such as the confirmation of your address and the recovery of your password, are sent through Resend (Resend, Inc., USA). If you choose to sign in with Google, Google LLC gives us the data listed above.",
+    "third_parties_body": "Browsing data is transmitted to Google LLC (1600 Amphitheatre Parkway, Mountain View, CA 94043, USA), acting as a data processor under Art. 28 GDPR. Google LLC participates in the EU-US Data Privacy Framework. More information: policies.google.com/privacy. This website is hosted on a server of Oracle Cloud Infrastructure located in Milan (Italy). Traffic goes through Cloudflare, Inc. (101 Townsend St, San Francisco, CA 94107, USA), which processes network data (IP address, HTTP headers) as part of its network and security services (DNS, protection against attacks, temporary storage of files). Cloudflare, Inc. participates in the EU-US Data Privacy Framework. More information: cloudflare.com/privacypolicy.\n\nTo manage accounts we use Supabase (Supabase Inc.), with the data stored in Ireland (EU). Service emails, such as the confirmation of your address and the recovery of your password, are sent through Resend (Resend, Inc., USA). If you choose to sign in with Google, Google LLC gives us the data listed above. To run the shop, bookings appear in the shop's calendar on Google (with the name of the person who booked, never amounts or notes).",
     "browser_title": "Services contacted by your browser",
     "browser_body": "When you open the 3D map of a route, your browser loads the imagery and the terrain directly from Esri (ArcGIS) and Cesium ion; when you click to load the map in the contact section, it loads it from Google Maps. These services receive your IP address and may set their own cookies.",
     "rights_title": "Your Rights",
@@ -476,5 +476,26 @@
       "not_payable": "This payment is not possible any more: time has run out.",
       "unknown": "This payment does not exist."
     }
+  },
+  "terms": {
+    "title": "Rental terms",
+    "meta_description": "The conditions for booking and renting a bike online from Lelettrica: payment, pickup, cancellation and refund.",
+    "last_updated": "Last updated: October 2026",
+    "draft_notice": "Draft awaiting review: these terms are not final yet.",
+    "seller_title": "Who rents to you",
+    "seller_body": "Lelettrica di Leoni Gabriele, Via Roma 90, 38074 Dro (TN), Italy. VAT no. 02622600225.\nPhone +39 338 123 2434, email info@lelettricaleoni.com.",
+    "booking_title": "How to book",
+    "booking_body": "You book on the site, with an account, by choosing the days and the bikes. Rentals are for whole days: from tomorrow up to 180 days from today, for at most 10 bikes at a time. Rentals for today are made at the shop.\nWe ask for a mobile number, which we will only use if there is a problem with the pickup.\nThe bikes you choose are held for you for 30 minutes, the time it takes to pay. If you do not complete the payment, they become available again.",
+    "payment_title": "Price and payment",
+    "payment_body": "The price is the one you see in the summary before you pay, in euros. You pay the full amount when you book. The booking is confirmed when the payment succeeds.",
+    "pickup_title": "Pickup and return",
+    "pickup_body": "You pick the bike up at the shop when it opens on the first day and bring it back by closing time on the last.",
+    "cancel_title": "Cancellation and refund",
+    "cancel_body": "You can cancel one bike at a time from your account. Up to 9:00 (Italian time) two days before the first day we refund the full amount of that bike, to the same payment method you used to book.\nAfter that you can no longer cancel on the site: write or call us and we will look at it case by case.",
+    "withdrawal_title": "Right of withdrawal",
+    "withdrawal_body": "A rental is a leisure service for a specific date: for this reason the 14-day right of withdrawal for distance contracts does not apply (art. 59, letter n, Italian Consumer Code). The cancellation with a refund described above still applies.",
+    "data_title": "Your data",
+    "data_body": "How we handle your data is explained in our",
+    "data_link": "privacy policy"
   }
 }
