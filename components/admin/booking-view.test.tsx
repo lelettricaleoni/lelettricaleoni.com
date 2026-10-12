@@ -56,6 +56,34 @@ describe('BookingView', () => {
     expect(html).toContain('bg-amber-300')
   })
 
+  describe('a rental taken online is told apart from one taken at the counter', () => {
+    const online = { ...rental, id: 'o1', kind: 'online_rental' as const, label: 'Anna Bianchi' }
+    const blockOf = (html: string, label: string) => html.split('<button').find((part) => part.includes(label)) ?? ''
+
+    it('draws it in the purple of the booking sections, and the counter rental stays blue', () => {
+      const html = render([unit('aaaaaaaa-0000', 'Mondraker', [rental, online])])
+      expect(blockOf(html, 'Anna Bianchi')).toContain('bg-brand-purple')
+      expect(blockOf(html, 'Anna Bianchi')).not.toContain('bg-[#366DA1]')
+      expect(blockOf(html, 'Mario Rossi')).toContain('bg-[#366DA1]')
+      expect(blockOf(html, 'Mario Rossi')).not.toContain('bg-brand-purple')
+    })
+
+    it('draws one that is still being paid lighter, with a dashed edge, so it is not mistaken for a booking that is confirmed', () => {
+      const html = render([unit('aaaaaaaa-0000', 'Mondraker', [{ ...online, status: 'held' as const }])])
+      const block = blockOf(html, 'Anna Bianchi')
+      expect(block).toContain('border-dashed')
+      expect(block).toContain('bg-brand-purple/20')
+      expect(block).not.toMatch(/bg-brand-purple /)
+    })
+
+    it('says what each colour is in the legend', () => {
+      const html = render([unit('aaaaaaaa-0000', 'Mondraker')])
+      expect(html).toContain('Counter rental')
+      expect(html).toContain('Online booking')
+      expect(html).toContain('Being paid')
+    })
+  })
+
   it('squares the edge of a reservation that continues from the previous month', () => {
     const clipped = { ...rental, startsOn: '2031-06-28', endsOn: '2031-07-03' }
     const html = render([unit('aaaaaaaa-0000', 'Mondraker', [clipped])])

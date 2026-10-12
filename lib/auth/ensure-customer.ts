@@ -1,12 +1,12 @@
 import type { User } from '@supabase/supabase-js'
-import { hasAdminRole } from '@/lib/admin-users'
 import { safeErrorSummary } from '@/lib/safe-error'
 import { linkCustomerToAccount, syncCustomerEmail } from './customer-link'
 import { namesFromAccount } from './identity'
 import { parseLanguage } from './language'
 
 /**
- * Makes sure a customer account has its customer record (lib/auth/customer-link.ts). A failure here must
+ * Makes sure an account has its customer record (lib/auth/customer-link.ts), staff accounts included: an account of the shop
+ * uses the public site exactly as any other (books, cancels, sees its bookings). A failure here must
  * never keep a person out: they are signed in, and the account page tries again.
  *
  * `offered.phone` is a number the sign-in provider gave (Google, lib/auth/google-phone.ts); `offered.language` the language the person was visiting in.
@@ -16,7 +16,6 @@ import { parseLanguage } from './language'
  * `customers`; it may only ever be called by code that has just verified that user itself.
  */
 export async function ensureCustomerFor(user: User, offered: { phone?: string | null; language?: string | null } = {}): Promise<void> {
-  if (hasAdminRole(user)) return
   try {
     await linkCustomerToAccount({
       userId: user.id,

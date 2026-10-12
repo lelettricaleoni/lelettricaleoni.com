@@ -113,4 +113,50 @@ describe('which gateway an environment gets', () => {
       expect(paymentsAvailable()).toBe(true)
     }
   })
+
+  describe('with a Stripe key', () => {
+    afterEach(() => vi.restoreAllMocks())
+
+    it('gives Stripe in production for a live key, and keeps the fake out of it', () => {
+      vi.stubEnv('APP_ENV', 'production')
+      vi.stubEnv('STRIPE_SECRET_KEY', 'sk_live_abc')
+      expect(getPaymentGateway().name).toBe('stripe')
+      expect(getPaymentGateway()).toBe(getPaymentGateway())
+      expect(paymentsAvailable()).toBe(true)
+      expect(() => getFakeGateway()).toThrow(PaymentsNotConfiguredError)
+    })
+
+    it('gives Stripe on staging for a test key, and then the fake payment page is gone', () => {
+      vi.stubEnv('APP_ENV', 'staging')
+      vi.stubEnv('STRIPE_SECRET_KEY', 'sk_test_abc')
+      expect(getPaymentGateway().name).toBe('stripe')
+      expect(() => getFakeGateway()).toThrow(PaymentsNotConfiguredError)
+    })
+
+    it('does not take bookings in production on a test key: nobody would pay them', () => {
+      const log = vi.spyOn(console, 'error').mockImplementation(() => undefined)
+      vi.stubEnv('APP_ENV', 'production')
+      vi.stubEnv('STRIPE_SECRET_KEY', 'sk_test_abc')
+      expect(() => getPaymentGateway()).toThrow(PaymentsNotConfiguredError)
+      expect(paymentsAvailable()).toBe(false)
+      expect(log).toHaveBeenCalled()
+    })
+
+    it('does not use a live key outside production: a test booking must not charge a card', () => {
+      vi.spyOn(console, 'error').mockImplementation(() => undefined)
+      for (const env of ['staging', 'development']) {
+        vi.stubEnv('APP_ENV', env)
+        vi.stubEnv('STRIPE_SECRET_KEY', 'sk_live_abc')
+        expect(getPaymentGateway().name).toBe('fake')
+      }
+    })
+
+    it('treats a malformed key as no key, and never writes the key in the log', () => {
+      const log = vi.spyOn(console, 'error').mockImplementation(() => undefined)
+      vi.stubEnv('APP_ENV', 'production')
+      vi.stubEnv('STRIPE_SECRET_KEY', 'pk_live_not_a_secret_key')
+      expect(() => getPaymentGateway()).toThrow(PaymentsNotConfiguredError)
+      expect(JSON.stringify(log.mock.calls)).not.toContain('pk_live_not_a_secret_key')
+    })
+  })
 })

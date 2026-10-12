@@ -7,7 +7,8 @@
     "account": "Impostazioni account",
     "panel": "Pannello",
     "logout": "Esci",
-    "rents": "Le tue prenotazioni"
+    "rents": "Le tue prenotazioni",
+    "book": "Prenota"
   },
   "hero": {
     "open_badge": "Siamo aperti",
@@ -149,9 +150,9 @@
     "retention_title": "Conservazione dei dati",
     "retention_body": "I dati del tuo account restano finché l'account esiste. Se lo elimini dalle impostazioni, cancelliamo l'account e, se non hai noleggi, anche la tua scheda cliente; se hai già fatto dei noleggi, la scheda con i dati di quei noleggi resta nell'archivio del negozio per il tempo necessario agli obblighi di legge e contabili, ma non è più collegata a un account.\n\nI dati raccolti tramite Google Analytics vengono conservati per 14 mesi, secondo la configurazione predefinita di GA4.",
     "third_parties_title": "Destinatari dei dati",
-    "third_parties_body": "I dati di navigazione sono trasmessi a Google LLC (1600 Amphitheatre Parkway, Mountain View, CA 94043, USA), che agisce in qualità di responsabile del trattamento ai sensi dell'art. 28 GDPR. Google LLC aderisce al Data Privacy Framework EU-USA. Ulteriori informazioni: policies.google.com/privacy. Il sito è ospitato su un server di Oracle Cloud Infrastructure situato a Milano (Italia). Il traffico passa da Cloudflare, Inc. (101 Townsend St, San Francisco, CA 94107, USA), che elabora i dati di rete (indirizzo IP, header HTTP) nell’ambito dei servizi di rete e di sicurezza (DNS, protezione da attacchi, memorizzazione temporanea dei file). Cloudflare, Inc. aderisce al Data Privacy Framework EU-USA. Ulteriori informazioni: cloudflare.com/privacypolicy.\n\nPer gestire gli account usiamo Supabase (Supabase Inc.), con i dati conservati in Irlanda (UE). Le email di servizio, come la conferma dell'indirizzo e il recupero della password, sono inviate tramite Resend (Resend, Inc., USA). Se scegli di accedere con Google, Google LLC ci comunica i dati indicati sopra. Per organizzare il negozio, le prenotazioni compaiono nel calendario del negozio su Google (con il nome di chi ha prenotato, mai importi né note).",
+    "third_parties_body": "I dati di navigazione sono trasmessi a Google LLC (1600 Amphitheatre Parkway, Mountain View, CA 94043, USA), che agisce in qualità di responsabile del trattamento ai sensi dell'art. 28 GDPR. Google LLC aderisce al Data Privacy Framework EU-USA. Ulteriori informazioni: policies.google.com/privacy. Il sito è ospitato su un server di Oracle Cloud Infrastructure situato a Milano (Italia). Il traffico passa da Cloudflare, Inc. (101 Townsend St, San Francisco, CA 94107, USA), che elabora i dati di rete (indirizzo IP, header HTTP) nell’ambito dei servizi di rete e di sicurezza (DNS, protezione da attacchi, memorizzazione temporanea dei file). Cloudflare, Inc. aderisce al Data Privacy Framework EU-USA. Ulteriori informazioni: cloudflare.com/privacypolicy.\n\nPer gestire gli account usiamo Supabase (Supabase Inc.), con i dati conservati in Irlanda (UE). Le email di servizio, come la conferma dell'indirizzo e il recupero della password, sono inviate tramite Resend (Resend, Inc., USA). Se scegli di accedere con Google, Google LLC ci comunica i dati indicati sopra. Per organizzare il negozio, le prenotazioni compaiono nel calendario del negozio su Google (con il nome di chi ha prenotato, mai importi né note). I pagamenti con carta si fanno su una pagina di Stripe (Stripe Payments Europe, Ltd., Irlanda, che può avvalersi di altre società del gruppo Stripe, anche negli USA): i dati della carta li riceve Stripe e non passano mai dal nostro sito. A Stripe comunichiamo il tuo indirizzo email, l'importo e la descrizione delle bici prenotate; Stripe li tratta secondo la propria informativa (stripe.com/privacy).",
     "browser_title": "Servizi contattati dal tuo browser",
-    "browser_body": "Quando apri la mappa 3D di un percorso, il tuo browser carica le immagini e il terreno direttamente da Esri (ArcGIS) e da Cesium ion; quando clicchi per caricare la mappa nella sezione dei contatti, la carica da Google Maps. Questi servizi ricevono il tuo indirizzo IP e possono impostare propri cookie.",
+    "browser_body": "Quando apri la mappa 3D di un percorso, il tuo browser carica le immagini e il terreno direttamente da Esri (ArcGIS) e da Cesium ion; quando clicchi per caricare la mappa nella sezione dei contatti, la carica da Google Maps. Questi servizi ricevono il tuo indirizzo IP e possono impostare propri cookie. Quando paghi, il tuo browser è sulla pagina di Stripe, che riceve il tuo indirizzo IP e può impostare propri cookie.",
     "rights_title": "Diritti dell'interessato",
     "rights_body": "Ai sensi degli artt. 15–22 GDPR hai il diritto di: accedere ai tuoi dati, richiederne la rettifica o la cancellazione, limitarne il trattamento, opporti al trattamento, richiedere la portabilità dei dati e revocare il consenso in qualsiasi momento. Dalle impostazioni dell'account puoi anche correggere i tuoi dati, scaricarne una copia ed eliminare l'account da solo. Hai inoltre il diritto di proporre reclamo al Garante per la protezione dei dati personali. Per esercitare questi diritti scrivi a:",
     "contact_title": "Contatti",
@@ -439,6 +440,7 @@
     "summary_no_bikes": "Nessuna bici scelta",
     "total": "Totale",
     "pickup_note": "Ritiro in negozio all'apertura del primo giorno, riconsegna entro la chiusura dell'ultimo.",
+    "invoice_note": "Il noleggio online è riservato ai privati. Per noleggiare con fattura chiamaci o scrivici:",
     "login_cta": "Accedi per prenotare",
     "login_hint": "Serve un account. Dopo l'accesso torni qui con la scelta già fatta.",
     "phone_label": "Cellulare",
@@ -448,7 +450,6 @@
     "pay": "Paga {total}",
     "paying": "Un momento…",
     "hold_note": "Le bici restano tue per 30 minuti mentre paghi.",
-    "staff_note": "Con un account del negozio non si prenota: usa il pannello.",
     "errors": {
       "invalid_request": "Qualcosa non è andato: ricarica la pagina e riprova.",
       "not_allowed": "Questo account non può prenotare. Conferma la tua email e riprova.",
@@ -487,7 +488,9 @@
     "booking_title": "Come si prenota",
     "booking_body": "Prenoti dal sito, con un account, scegliendo i giorni e le bici. Si noleggia per giorni interi: da domani fino a 180 giorni da oggi, per al massimo 10 bici alla volta. I noleggi di oggi si fanno in negozio.\nTi chiediamo un numero di cellulare, che useremo solo se c'è un problema con il ritiro.\nLe bici che scegli restano tue per 30 minuti, il tempo di pagare. Se non completi il pagamento, tornano disponibili.",
     "payment_title": "Prezzo e pagamento",
-    "payment_body": "Il prezzo è quello che vedi nel riepilogo prima di pagare, in euro. Si paga l'intero importo al momento della prenotazione. La prenotazione è confermata quando il pagamento va a buon fine.",
+    "payment_body": "Il prezzo è quello che vedi nel riepilogo prima di pagare, in euro. Si paga l'intero importo al momento della prenotazione. La prenotazione è confermata quando il pagamento va a buon fine. I prezzi comprendono l'IVA.",
+    "invoice_title": "Fattura",
+    "invoice_body": "Il noleggio online è riservato ai privati e non prevede la fattura. Se ti serve la fattura, il noleggio si fa con noi: chiamaci in negozio al +39 338 123 2434 o scrivici a info@lelettricaleoni.com.",
     "pickup_title": "Ritiro e riconsegna",
     "pickup_body": "Ritiri la bici in negozio all'apertura del primo giorno e la riconsegni entro la chiusura dell'ultimo.",
     "cancel_title": "Annullamento e rimborso",

@@ -46,8 +46,6 @@ export async function updateAccountAction(formData: FormData) {
   const lang = langOf(formData)
   const user = await signedInUser(lang, SETTINGS(lang))
   const back = (query: string, to = lang) => redirect(`${SETTINGS(to)}?${query}`)
-  if (hasAdminRole(user)) return back('error=save_failed')
-
   const parsed = customerSchema.safeParse({
     firstName: field(formData, 'first_name'),
     lastName: field(formData, 'last_name'),

@@ -25,7 +25,7 @@ import type itMessages from '@/messages/it.json'
 type Lang = 'it' | 'en' | 'de'
 export type RentDict = (typeof itMessages)['rent']
 
-export type RentAccount = { kind: 'guest' } | { kind: 'staff' } | { kind: 'customer'; hasPhone: boolean }
+export type RentAccount = { kind: 'guest' } | { kind: 'customer'; hasPhone: boolean }
 
 const CALENDAR_LOCALE = { it: dpIt, en: dpEn, de: dpDe } as const
 
@@ -155,6 +155,12 @@ export function RentFlow({
           </div>
         )}
         <p className="text-xs text-muted-foreground">{dict.pickup_note}</p>
+        <p className="text-xs text-muted-foreground">
+          {dict.invoice_note}{' '}
+          <a href="tel:+393381232434" className="font-medium text-primary hover:underline">+39 338 123 2434</a>
+          {' · '}
+          <a href="mailto:info@lelettricaleoni.com" className="font-medium text-primary hover:underline">info@lelettricaleoni.com</a>
+        </p>
         {range && lines.length > 0 && (
           <PaySection lang={lang} dict={dict} termsHref={termsHref} account={account} range={range} cart={cart} total={total} loginHref={`/${lang}/login?next=${encodeURIComponent(currentHref)}`} />
         )}
@@ -238,7 +244,6 @@ function PaySection({
   const [error, setError] = useState<string | null>(null)
   const [pending, startPay] = useTransition()
 
-  if (account.kind === 'staff') return <p className="rounded-lg border bg-muted/40 p-3 text-sm text-muted-foreground">{dict.staff_note}</p>
   if (account.kind === 'guest') {
     return (
       <div className="space-y-2">

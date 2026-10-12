@@ -8,7 +8,7 @@ const res = (startsOn: string, endsOn: string, id = 'r1') => ({
 describe('layoutBlocks', () => {
   it('places a reservation inside the month on its columns', () => {
     expect(layoutBlocks('2031-07', [res('2031-07-10', '2031-07-13')])).toEqual([
-      { reservationId: 'r1', kind: 'counter_rental', label: 'Rossi', startColumn: 10, span: 3, clippedStart: false, clippedEnd: false },
+      { reservationId: 'r1', kind: 'counter_rental', status: 'confirmed', label: 'Rossi', startColumn: 10, span: 3, clippedStart: false, clippedEnd: false },
     ])
   })
 

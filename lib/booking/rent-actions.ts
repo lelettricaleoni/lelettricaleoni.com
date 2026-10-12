@@ -2,7 +2,6 @@ import type { User } from '@supabase/supabase-js'
 import { and, asc, eq, isNull } from 'drizzle-orm'
 import { getCountries, parsePhoneNumberFromString, type CountryCode } from 'libphonenumber-js'
 import { db, bikeReservations, bikeUnits, customers, type Booking, type Customer } from '@/lib/db'
-import { hasAdminRole } from '@/lib/admin-users'
 import { ensureCustomerFor } from '@/lib/auth/ensure-customer'
 import { SITE_URL } from '@/lib/auth/urls'
 import { languageOf } from '@/lib/auth/language'
@@ -21,14 +20,13 @@ import { settleHold } from './settle'
  * What a signed-in person can do with a booking, written so the Server Actions are thin. EVERYTHING here takes the person from the
  * session (the `user` the caller has just read from it), never from a form: the customer is found by `user.id`, and a booking or a bike
  * that is not theirs is answered as "not found", exactly as one that does not exist — a stranger learns nothing, even with a real id.
- * Staff do not book or cancel as customers.
+ * An account of the shop is a person like any other here: its role gives it the panel, and takes nothing away from the public site.
  */
 
 const COUNTRIES = new Set<string>(getCountries())
 
-/** The customer of the person, or null: none yet, or staff (they have no customer). */
+/** The customer of the person, or null: none yet. */
 async function customerOf(user: User): Promise<Customer | null> {
-  if (hasAdminRole(user)) return null
   const [row] = await db.select().from(customers).where(eq(customers.userId, user.id))
   return row ?? null
 }
@@ -68,7 +66,7 @@ export type StartCheckoutOutcome =
   | { status: 'not_allowed' | 'terms_required' | 'needs_phone' | 'invalid_phone' }
 
 /**
- * From "Pay" on the summary to the payment page. The person must be a confirmed customer (not staff) who accepted the terms and has a
+ * From "Pay" on the summary to the payment page. The person must be a confirmed customer who accepted the terms and has a
  * phone: the one in the profile, or the one given now, which is checked and saved in the profile.
  */
 export async function startCheckoutForUser(
@@ -76,7 +74,7 @@ export async function startCheckoutForUser(
   /** For tests only: what day it is. The real one is Rome's today, and no request can say another. */
   options: { today?: IsoDate } = {},
 ): Promise<StartCheckoutOutcome> {
-  if (hasAdminRole(user) || !user.email || !user.email_confirmed_at) return { status: 'not_allowed' }
+  if (!user.email || !user.email_confirmed_at) return { status: 'not_allowed' }
   if (!request.acceptTerms) return { status: 'terms_required' }
   const language = languageOf(request.language)
 

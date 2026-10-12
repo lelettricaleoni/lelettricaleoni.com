@@ -133,9 +133,22 @@ istruzione che controlla stato della bici, importo ≤ prezzo della bici e somma
 trova sempre per `customers.user_id` (mai da un id in ingresso: un id altrui risponde `not_found`); lingua e origine dei redirect non si prendono dal client.
 `settleOverdueHolds` lo chiama ogni minuto `POST /api/cron/settle-holds` (la sola route `api/` della fetta: a chiamare è un timer, non il nostro
 frontend), protetta da `CRON_SECRET` (`lib/cron-auth.ts`, confronto a tempo costante), da dentro il container via `run-cron.sh`; **il timer non è ancora
-installato sulla VM** e senza di lui i posti scaduti si liberano solo quando qualcuno apre `/rent`. Il telefono è obbligatorio per prenotare (si
+installato sulla VM** e senza di lui i posti scaduti si liberano solo quando qualcuno apre `/rent`. **Un account del pannello ha gli stessi accessi pubblici di ogni altro** (Kevin, 2026-10-12): prenota, annulla, vede Account rents, modifica il profilo, ha la sua scheda cliente; il ruolo aggiunge il pannello e non toglie nulla. Unica eccezione voluta: «Elimina account» nelle impostazioni, che toglierebbe anche l'accesso al pannello (lo staff si gestisce da `/manage/users`). Il telefono è obbligatorio per prenotare (si
 salva nel profilo solo se non ce n'è già uno). Un annullamento del pannello sulle prenotazioni online passa da `cancelOnlineReservation` (rimborso
-pieno, parziale o nullo, a scelta del negozio, a qualunque ora). La 3d (Stripe vero, webhook, `expires_at` ≥ 31 minuti) non c'è ancora.
+pieno, parziale o nullo, a scelta del negozio, a qualunque ora). **3d (Stripe, `staging`)**: `StripeGateway` (`lib/booking/payments/stripe.ts`, SDK ufficiale `stripe`) sta dietro la stessa porta; `getPaymentGateway()` lo dà
+dove c'è `STRIPE_SECRET_KEY` **del tipo giusto** (`sk_live_` solo in produzione, `sk_test_` altrove: l'altra viene ignorata con una riga nel log, quindi
+su staging una chiave vera non addebita nulla e in produzione una di prova non fa prenotare), altrimenti la finta fuori produzione e il rifiuto in
+produzione. Solo carte (`allowed_payment_method_types: ['card']`: i portafogli sono carte, e un metodo che salda dopo giorni non regge un posto tenuto 30
+minuti). La sessione di Stripe dura **almeno 31 minuti** (il minimo di Stripe è 30, il posto 30): chiude `settleHold`. Chiavi di idempotenza: sessione =
+`checkout-<bookingKey>`, rimborso = `refund-<prenotazione>-<tentativo>`. Una `expire` rifiutata si legge di nuovo la sessione: pagata o già scaduta →
+`not_open`; ancora aperta o un errore di rete → eccezione (non si liberano bici sulla fiducia). Un rimborso è `failed` solo se Stripe lo rifiuta
+(`StripeInvalidRequestError`, con il solo codice, mai il messaggio); ogni altra cosa lancia. **Webhook**: `POST /api/stripe/webhook` (`lib/booking/stripe-webhook.ts`:
+firma sul corpo grezzo, 400 se non è genuina, 503 senza segreto, 500 se il lavoro fallisce così Stripe ritenta) e `lib/booking/stripe-events.ts`: ogni evento si
+scrive in `stripe_events` (migrazione `0024`) e uno già finito è un doppione; `checkout.session.completed` → `confirmBooking` (che rilegge la sessione da
+Stripe: l'evento non basta), `checkout.session.expired` → `settleHold`, `refund.created/updated/failed` allineano `booking_refunds` (un fallimento di un
+tentativo vecchio non tocca quello nuovo, e un rimborso riuscito non torna mai a fallito; un rimborso fatto a mano dal pannello di Stripe viene solo loggato).
+Eventi da abilitare sull'endpoint e variabili: `docs/environment-variables.md`. Provato con un client finto e con firme vere (`generateTestHeaderString`);
+contro Stripe vero esiste `stripe.live.test.ts` (`LIVE_STRIPE=1` con una chiave di prova).
 
 ## Infrastruttura dei media
 

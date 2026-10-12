@@ -7,7 +7,8 @@
     "account": "Kontoeinstellungen",
     "panel": "Verwaltung",
     "logout": "Abmelden",
-    "rents": "Deine Buchungen"
+    "rents": "Deine Buchungen",
+    "book": "Buchen"
   },
   "hero": {
     "open_badge": "Wir haben geöffnet",
@@ -149,9 +150,9 @@
     "retention_title": "Datenspeicherung",
     "retention_body": "Die Daten Ihres Kontos bleiben bestehen, solange das Konto existiert. Wenn Sie es in den Einstellungen löschen, löschen wir das Konto und, wenn Sie keine Vermietungen haben, auch Ihren Kundeneintrag; wenn Sie schon gemietet haben, bleibt der Eintrag mit den Daten dieser Vermietungen für die Dauer der gesetzlichen und buchhalterischen Pflichten im Archiv des Geschäfts, ist aber nicht mehr mit einem Konto verknüpft.\n\nDie über Google Analytics erhobenen Daten werden gemäß der Standardkonfiguration von GA4 14 Monate lang gespeichert.",
     "third_parties_title": "Datenempfänger",
-    "third_parties_body": "Browsing-Daten werden an Google LLC (1600 Amphitheatre Parkway, Mountain View, CA 94043, USA) übermittelt, die gemäß Art. 28 DSGVO als Auftragsverarbeiter tätig ist. Google LLC nimmt am EU-US Data Privacy Framework teil. Weitere Informationen: policies.google.com/privacy. Diese Website wird auf einem Server von Oracle Cloud Infrastructure in Mailand (Italien) gehostet. Der Datenverkehr läuft über Cloudflare, Inc. (101 Townsend St, San Francisco, CA 94107, USA), die im Rahmen ihrer Netzwerk- und Sicherheitsdienste (DNS, Schutz vor Angriffen, zeitweise Speicherung von Dateien) Netzwerkdaten (IP-Adresse, HTTP-Header) verarbeitet. Cloudflare, Inc. nimmt am EU-US Data Privacy Framework teil. Weitere Informationen: cloudflare.com/privacypolicy.\n\nZur Verwaltung der Konten nutzen wir Supabase (Supabase Inc.), wobei die Daten in Irland (EU) gespeichert werden. Service-E-Mails, etwa die Bestätigung Ihrer Adresse und die Wiederherstellung Ihres Passworts, werden über Resend (Resend, Inc., USA) versendet. Wenn Sie sich mit Google anmelden, übermittelt uns Google LLC die oben genannten Daten. Zur Organisation des Geschäfts erscheinen Buchungen im Kalender des Geschäfts bei Google (mit dem Namen der buchenden Person, nie Beträge oder Notizen).",
+    "third_parties_body": "Browsing-Daten werden an Google LLC (1600 Amphitheatre Parkway, Mountain View, CA 94043, USA) übermittelt, die gemäß Art. 28 DSGVO als Auftragsverarbeiter tätig ist. Google LLC nimmt am EU-US Data Privacy Framework teil. Weitere Informationen: policies.google.com/privacy. Diese Website wird auf einem Server von Oracle Cloud Infrastructure in Mailand (Italien) gehostet. Der Datenverkehr läuft über Cloudflare, Inc. (101 Townsend St, San Francisco, CA 94107, USA), die im Rahmen ihrer Netzwerk- und Sicherheitsdienste (DNS, Schutz vor Angriffen, zeitweise Speicherung von Dateien) Netzwerkdaten (IP-Adresse, HTTP-Header) verarbeitet. Cloudflare, Inc. nimmt am EU-US Data Privacy Framework teil. Weitere Informationen: cloudflare.com/privacypolicy.\n\nZur Verwaltung der Konten nutzen wir Supabase (Supabase Inc.), wobei die Daten in Irland (EU) gespeichert werden. Service-E-Mails, etwa die Bestätigung Ihrer Adresse und die Wiederherstellung Ihres Passworts, werden über Resend (Resend, Inc., USA) versendet. Wenn Sie sich mit Google anmelden, übermittelt uns Google LLC die oben genannten Daten. Zur Organisation des Geschäfts erscheinen Buchungen im Kalender des Geschäfts bei Google (mit dem Namen der buchenden Person, nie Beträge oder Notizen). Kartenzahlungen erfolgen auf einer Seite von Stripe (Stripe Payments Europe, Ltd., Irland, die weitere Gesellschaften der Stripe-Gruppe, auch in den USA, einsetzen kann): Die Kartendaten erhält Stripe, sie laufen nie über unsere Website. Stripe erhält von uns Ihre E-Mail-Adresse, den Betrag und die Beschreibung der gebuchten Fahrräder; Stripe verarbeitet sie nach der eigenen Datenschutzerklärung (stripe.com/privacy).",
     "browser_title": "Von Ihrem Browser kontaktierte Dienste",
-    "browser_body": "Wenn Sie die 3D-Karte einer Route öffnen, lädt Ihr Browser die Bilder und das Gelände direkt von Esri (ArcGIS) und Cesium ion; wenn Sie anklicken, um die Karte im Kontaktbereich zu laden, lädt er sie von Google Maps. Diese Dienste erhalten Ihre IP-Adresse und können eigene Cookies setzen.",
+    "browser_body": "Wenn Sie die 3D-Karte einer Route öffnen, lädt Ihr Browser die Bilder und das Gelände direkt von Esri (ArcGIS) und Cesium ion; wenn Sie anklicken, um die Karte im Kontaktbereich zu laden, lädt er sie von Google Maps. Diese Dienste erhalten Ihre IP-Adresse und können eigene Cookies setzen. Beim Bezahlen befindet sich Ihr Browser auf einer Seite von Stripe, die Ihre IP-Adresse erhält und eigene Cookies setzen kann.",
     "rights_title": "Betroffenenrechte",
     "rights_body": "Gemäß Art. 15–22 DSGVO haben Sie das Recht auf: Auskunft, Berichtigung oder Löschung Ihrer Daten, Einschränkung der Verarbeitung, Widerspruch, Datenübertragbarkeit sowie jederzeitigen Widerruf Ihrer Einwilligung. In den Kontoeinstellungen können Sie Ihre Daten außerdem selbst berichtigen, eine Kopie herunterladen und das Konto löschen. Sie haben zudem das Recht, bei der italienischen Datenschutzbehörde (Garante per la protezione dei dati personali) Beschwerde einzulegen. Zur Ausübung dieser Rechte wenden Sie sich an:",
     "contact_title": "Kontakt",
@@ -439,6 +440,7 @@
     "summary_no_bikes": "Kein Fahrrad gewählt",
     "total": "Gesamt",
     "pickup_note": "Abholung im Geschäft zur Öffnung am ersten Tag, Rückgabe bis zum Ladenschluss am letzten.",
+    "invoice_note": "Online mieten können nur Privatpersonen. Für eine Miete mit Rechnung rufen Sie uns an oder schreiben Sie uns:",
     "login_cta": "Anmelden und buchen",
     "login_hint": "Dafür brauchst du ein Konto. Nach der Anmeldung kommst du mit deiner Auswahl hierher zurück.",
     "phone_label": "Handynummer",
@@ -448,7 +450,6 @@
     "pay": "{total} bezahlen",
     "paying": "Einen Moment…",
     "hold_note": "Die Fahrräder bleiben 30 Minuten für dich reserviert, während du bezahlst.",
-    "staff_note": "Mit einem Konto des Geschäfts wird nicht gebucht: nutze das Panel.",
     "errors": {
       "invalid_request": "Etwas ist schiefgegangen: Lade die Seite neu und versuche es erneut.",
       "not_allowed": "Mit diesem Konto kannst du nicht buchen. Bestätige deine E-Mail und versuche es erneut.",
@@ -487,7 +488,9 @@
     "booking_title": "So buchen Sie",
     "booking_body": "Sie buchen auf der Website, mit einem Konto, indem Sie die Tage und die Fahrräder wählen. Vermietet wird für ganze Tage: ab morgen bis zu 180 Tage ab heute, für höchstens 10 Fahrräder auf einmal. Mieten für heute werden im Geschäft abgeschlossen.\nWir fragen nach einer Handynummer, die wir nur verwenden, wenn es ein Problem bei der Abholung gibt.\nDie gewählten Fahrräder werden 30 Minuten lang für Sie reserviert, so lange haben Sie Zeit zum Bezahlen. Schließen Sie die Zahlung nicht ab, werden sie wieder frei.",
     "payment_title": "Preis und Zahlung",
-    "payment_body": "Der Preis ist der, den Sie vor der Zahlung in der Zusammenfassung sehen, in Euro. Der gesamte Betrag wird bei der Buchung bezahlt. Die Buchung ist bestätigt, wenn die Zahlung erfolgreich war.",
+    "payment_body": "Der Preis ist der, den Sie vor der Zahlung in der Zusammenfassung sehen, in Euro. Der gesamte Betrag wird bei der Buchung bezahlt. Die Buchung ist bestätigt, wenn die Zahlung erfolgreich war. Die Preise verstehen sich inklusive Mehrwertsteuer.",
+    "invoice_title": "Rechnung",
+    "invoice_body": "Die Online-Miete steht nur Privatpersonen offen und ist ohne Rechnung. Wenn Sie eine Rechnung brauchen, wird die Miete direkt mit uns vereinbart: Rufen Sie das Geschäft unter +39 338 123 2434 an oder schreiben Sie an info@lelettricaleoni.com.",
     "pickup_title": "Abholung und Rückgabe",
     "pickup_body": "Sie holen das Fahrrad am ersten Tag zur Öffnung im Geschäft ab und geben es am letzten Tag bis Ladenschluss zurück.",
     "cancel_title": "Stornierung und Erstattung",

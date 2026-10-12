@@ -51,6 +51,7 @@ export default async function TermsPage({ params }: { params: Promise<{ lang: st
     [t.seller_title, t.seller_body],
     [t.booking_title, t.booking_body],
     [t.payment_title, t.payment_body],
+    [t.invoice_title, t.invoice_body],
     [t.pickup_title, t.pickup_body],
     [t.cancel_title, t.cancel_body],
     [t.withdrawal_title, t.withdrawal_body],

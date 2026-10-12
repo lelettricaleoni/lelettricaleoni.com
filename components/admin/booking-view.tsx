@@ -155,10 +155,27 @@ export function BookingView({ month, today, units, models }: BookingViewProps) {
   )
 }
 
+/**
+ * What the colour of a block says: who made the booking (the shop at the counter, a customer on the site) and whether it is settled.
+ * The purple is the one reserved for bookings (design-system); a customer still paying shows lighter and dashed, because that bike is
+ * only being held and may be given up in a few minutes.
+ */
+function blockColour(block: { kind: string; status: string }): string {
+  if (block.kind === 'maintenance') return 'bg-amber-300 text-amber-950'
+  if (block.kind === 'online_rental') {
+    return block.status === 'held'
+      ? 'border border-dashed border-brand-purple bg-brand-purple/20 text-brand-purple'
+      : 'bg-brand-purple text-white'
+  }
+  return 'bg-[#366DA1] text-white'
+}
+
 function Legend() {
   return (
     <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
-      <span className="flex items-center gap-1.5"><span className="inline-block size-3 rounded-sm bg-[#366DA1]" />Rental</span>
+      <span className="flex items-center gap-1.5"><span className="inline-block size-3 rounded-sm bg-[#366DA1]" />Counter rental</span>
+      <span className="flex items-center gap-1.5"><span className="inline-block size-3 rounded-sm bg-brand-purple" />Online booking</span>
+      <span className="flex items-center gap-1.5"><span className="inline-block size-3 rounded-sm border border-dashed border-brand-purple bg-brand-purple/20" />Being paid</span>
       <span className="flex items-center gap-1.5"><span className="inline-block size-3 rounded-sm bg-amber-300" />Maintenance</span>
     </div>
   )
@@ -217,7 +234,7 @@ function UnitRow({ unit, month, days, today, onSelect, onPlanMaintenance, onAddR
             title={block.label ?? undefined}
             className={cn(
               'z-[1] my-1 cursor-pointer truncate px-1.5 text-left text-xs leading-7',
-              block.kind === 'maintenance' ? 'bg-amber-300 text-amber-950' : 'bg-[#366DA1] text-white',
+              blockColour(block),
               block.clippedStart ? 'rounded-l-none' : 'rounded-l-md',
               block.clippedEnd ? 'rounded-r-none' : 'rounded-r-md',
             )}

@@ -41,9 +41,9 @@
   pagamento). **Fetta 3c (le pagine, su `staging`, 2026-10-12)**: `/rent` (calendario, carrello di più bici, telefono, termini, «Paga»), pagina finta di pagamento, Account rents
   con «Annulla questa bici», «Cancel and refund…» nel pannello, `POST /api/cron/settle-holds` chiamato ogni minuto da un timer systemd (unità in
   `deploy/web/`, **da installare sulla VM**: `settle-holds@staging.timer`), calendario del negozio dopo pagamento e annullamento, bozza dei termini
-  (`/[lang]/terms`) e informativa aggiornata. **Resta**: 3d (`StripeGateway`, `stripe_events`,
-  `POST /api/stripe/webhook`, `expires_at` ≥ 31 minuti, saldo di Stripe per i rimborsi, avviso a Kevin per i pagamenti tardivi: oggi solo un log). Per l'account cliente: collegare chi si registra a `customers` per email (`user_id`) e
-  mostrargli solo le prenotazioni online; gli account non admin oggi sono tutti di Kevin.
+  (`/[lang]/terms`) e informativa aggiornata. **Fetta 3d (Stripe, in codice il 2026-10-12)**: `StripeGateway`, `stripe_events`,
+  `POST /api/stripe/webhook`, sessione di almeno 31 minuti. **Restano**: la prova con Stripe vero (chiave di prova di Kevin: `stripe.live.test.ts` e una carta di prova su staging), l'endpoint e le chiavi sulla VM, e ciò che il codice non fa: il saldo di Stripe per i rimborsi non si controlla e l'avviso a Kevin per un pagamento tardivo o un rimborso fallito è solo un log (arriverà con la fetta 4). Per l'account cliente: collegare chi si registra a `customers` per email (`user_id`) e
+  mostrargli solo le prenotazioni online; gli account del pannello valgono come tutti gli altri (Kevin, 2026-10-12).
   Il calendario di Kevin sta in `C:\AzureDevOps\firebase` (`app/rent/`, da portare ricollegandolo
   ai dati veri); il resto di quel repo (Firestore, Stripe di prova) non si riusa.
   **Date**: colonne `date`/`daterange` e stringhe `YYYY-MM-DD` (mai `Date` per un giorno di
@@ -157,6 +157,13 @@
   `/manage/users` (gestione staff) resta admin-only per sempre, non è coinvolta.
 
 ## Scartato
+
+- **App e servizi fiscali di Stripe per l'IVA (VAT IT, Stripe Tax)** — valutati il 2026-10-12 e scartati: servono a chi vende in più paesi (OSS, aliquote
+  diverse, rimborsi IVA), e il noleggio avviene a Dro con una sola aliquota italiana. Non fanno la fattura elettronica né i corrispettivi. Kevin: **regime
+  ordinario, online solo ai privati e senza fattura** (chi la vuole noleggia in negozio: nota nel riepilogo di `/rent` e nei termini). **Aperto, da chiedere al
+  commercialista prima del rilascio**: come si certificano e registrano i corrispettivi delle prenotazioni online (un interpello dell'Agenzia, il n. 324 del 2020,
+  dice che un servizio fisico prenotato online non gode dell'esonero dell'e-commerce di beni: con ogni probabilità serve il documento commerciale o la trasmissione dei
+  corrispettivi). Da parte nostra, se serve: un riepilogo esportabile di incassi, rimborsi e commissioni Stripe.
 
 - **Caricare `gtag.js` solo dopo il consenso (Consent Mode «di base»)** — valutato e scartato da Kevin il 2026-10-07: si tiene la modalità **avanzata**, che Google
   documenta e raccomanda. Prima di ogni scelta Google riceve un ping senza cookie (data e ora, browser, referrer, un numero casuale, lo stato del consenso, più l'indirizzo IP

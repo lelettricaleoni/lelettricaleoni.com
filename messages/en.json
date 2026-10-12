@@ -7,7 +7,8 @@
     "account": "Account settings",
     "panel": "Admin panel",
     "logout": "Sign out",
-    "rents": "Your bookings"
+    "rents": "Your bookings",
+    "book": "Book"
   },
   "hero": {
     "open_badge": "We're open",
@@ -149,9 +150,9 @@
     "retention_title": "Data Retention",
     "retention_body": "Your account data stays as long as the account exists. If you delete it from the settings, we delete the account and, if you have no rentals, your customer record too; if you have already rented, the record with the data of those rentals stays in the shop's archive for the time needed for legal and accounting obligations, but is no longer linked to an account.\n\nData collected through Google Analytics is kept for 14 months, according to GA4's default configuration.",
     "third_parties_title": "Data Recipients",
-    "third_parties_body": "Browsing data is transmitted to Google LLC (1600 Amphitheatre Parkway, Mountain View, CA 94043, USA), acting as a data processor under Art. 28 GDPR. Google LLC participates in the EU-US Data Privacy Framework. More information: policies.google.com/privacy. This website is hosted on a server of Oracle Cloud Infrastructure located in Milan (Italy). Traffic goes through Cloudflare, Inc. (101 Townsend St, San Francisco, CA 94107, USA), which processes network data (IP address, HTTP headers) as part of its network and security services (DNS, protection against attacks, temporary storage of files). Cloudflare, Inc. participates in the EU-US Data Privacy Framework. More information: cloudflare.com/privacypolicy.\n\nTo manage accounts we use Supabase (Supabase Inc.), with the data stored in Ireland (EU). Service emails, such as the confirmation of your address and the recovery of your password, are sent through Resend (Resend, Inc., USA). If you choose to sign in with Google, Google LLC gives us the data listed above. To run the shop, bookings appear in the shop's calendar on Google (with the name of the person who booked, never amounts or notes).",
+    "third_parties_body": "Browsing data is transmitted to Google LLC (1600 Amphitheatre Parkway, Mountain View, CA 94043, USA), acting as a data processor under Art. 28 GDPR. Google LLC participates in the EU-US Data Privacy Framework. More information: policies.google.com/privacy. This website is hosted on a server of Oracle Cloud Infrastructure located in Milan (Italy). Traffic goes through Cloudflare, Inc. (101 Townsend St, San Francisco, CA 94107, USA), which processes network data (IP address, HTTP headers) as part of its network and security services (DNS, protection against attacks, temporary storage of files). Cloudflare, Inc. participates in the EU-US Data Privacy Framework. More information: cloudflare.com/privacypolicy.\n\nTo manage accounts we use Supabase (Supabase Inc.), with the data stored in Ireland (EU). Service emails, such as the confirmation of your address and the recovery of your password, are sent through Resend (Resend, Inc., USA). If you choose to sign in with Google, Google LLC gives us the data listed above. To run the shop, bookings appear in the shop's calendar on Google (with the name of the person who booked, never amounts or notes). Card payments are made on a page of Stripe (Stripe Payments Europe, Ltd., Ireland, which may use other companies of the Stripe group, also in the USA): Stripe receives the card details, and they never pass through our site. We give Stripe your email address, the amount and the description of the bikes you book; Stripe handles them under its own privacy policy (stripe.com/privacy).",
     "browser_title": "Services contacted by your browser",
-    "browser_body": "When you open the 3D map of a route, your browser loads the imagery and the terrain directly from Esri (ArcGIS) and Cesium ion; when you click to load the map in the contact section, it loads it from Google Maps. These services receive your IP address and may set their own cookies.",
+    "browser_body": "When you open the 3D map of a route, your browser loads the imagery and the terrain directly from Esri (ArcGIS) and Cesium ion; when you click to load the map in the contact section, it loads it from Google Maps. These services receive your IP address and may set their own cookies. When you pay, your browser is on a page of Stripe, which receives your IP address and may set its own cookies.",
     "rights_title": "Your Rights",
     "rights_body": "Under Arts. 15–22 GDPR you have the right to: access your data, request its rectification or erasure, restrict its processing, object to processing, request data portability, and withdraw consent at any time. From your account settings you can also correct your data, download a copy of it and delete the account yourself. You also have the right to lodge a complaint with the Italian data protection authority (Garante per la protezione dei dati personali). To exercise these rights, contact us at:",
     "contact_title": "Contact",
@@ -439,6 +440,7 @@
     "summary_no_bikes": "No bike chosen",
     "total": "Total",
     "pickup_note": "Pick up at the shop when it opens on the first day, return by closing time on the last.",
+    "invoice_note": "Online rentals are for private customers. To rent with an invoice, call or write to us:",
     "login_cta": "Sign in to book",
     "login_hint": "An account is needed. After signing in you come back here with your choice kept.",
     "phone_label": "Mobile phone",
@@ -448,7 +450,6 @@
     "pay": "Pay {total}",
     "paying": "One moment…",
     "hold_note": "The bikes are held for you for 30 minutes while you pay.",
-    "staff_note": "Shop accounts do not book: use the panel.",
     "errors": {
       "invalid_request": "Something went wrong: reload the page and try again.",
       "not_allowed": "This account cannot book. Confirm your email and try again.",
@@ -487,7 +488,9 @@
     "booking_title": "How to book",
     "booking_body": "You book on the site, with an account, by choosing the days and the bikes. Rentals are for whole days: from tomorrow up to 180 days from today, for at most 10 bikes at a time. Rentals for today are made at the shop.\nWe ask for a mobile number, which we will only use if there is a problem with the pickup.\nThe bikes you choose are held for you for 30 minutes, the time it takes to pay. If you do not complete the payment, they become available again.",
     "payment_title": "Price and payment",
-    "payment_body": "The price is the one you see in the summary before you pay, in euros. You pay the full amount when you book. The booking is confirmed when the payment succeeds.",
+    "payment_body": "The price is the one you see in the summary before you pay, in euros. You pay the full amount when you book. The booking is confirmed when the payment succeeds. Prices include VAT.",
+    "invoice_title": "Invoice",
+    "invoice_body": "Online rentals are for private customers and come without an invoice. If you need an invoice, the rental is arranged with us: call the shop on +39 338 123 2434 or write to info@lelettricaleoni.com.",
     "pickup_title": "Pickup and return",
     "pickup_body": "You pick the bike up at the shop when it opens on the first day and bring it back by closing time on the last.",
     "cancel_title": "Cancellation and refund",

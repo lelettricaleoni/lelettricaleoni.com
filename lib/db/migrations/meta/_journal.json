@@ -169,6 +169,13 @@
       "when": 1791449806111,
       "tag": "0023_booking_refund_attempts",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1791794105870,
+      "tag": "0024_stripe_events",
+      "breakpoints": true
     }
   ]
 }
