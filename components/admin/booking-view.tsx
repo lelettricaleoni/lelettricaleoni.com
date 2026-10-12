@@ -14,7 +14,7 @@ import {
 } from '@/lib/dates'
 import type { GridReservation, GridUnit } from '@/lib/reservations'
 import type { RentalOption } from '@/lib/rental-options'
-import { useReservationsRealtime } from '@/components/admin/use-reservations-realtime'
+import { useReservationsRealtime } from '@/components/use-reservations-realtime'
 import { RentalForm } from '@/components/admin/rental-form'
 import { MaintenanceForm } from '@/components/admin/maintenance-form'
 import { ReservationDialog } from '@/components/admin/reservation-dialog'

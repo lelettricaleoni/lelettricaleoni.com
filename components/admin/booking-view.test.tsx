@@ -4,7 +4,7 @@ import { renderToStaticMarkup } from 'react-dom/server'
 
 // The component reads the router and opens a Realtime channel: neither exists outside the browser.
 vi.mock('next/navigation', () => ({ useRouter: () => ({ refresh: vi.fn() }) }))
-vi.mock('@/components/admin/use-reservations-realtime', () => ({ useReservationsRealtime: vi.fn() }))
+vi.mock('@/components/use-reservations-realtime', () => ({ useReservationsRealtime: vi.fn() }))
 
 import { BookingView } from './booking-view'
 import type { GridUnit } from '@/lib/reservations'

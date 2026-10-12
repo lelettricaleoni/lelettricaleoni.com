@@ -3,9 +3,9 @@ import { dayToDate, inclusiveEnd, type DayRange, type IsoDate } from '@/lib/date
 type Lang = 'it' | 'en' | 'de'
 const INTL_LOCALE = { it: 'it-IT', en: 'en-GB', de: 'de-DE' } as const
 
-/** "3 – 5 nov": the first and the last day of a stay, both included, in the language of the page (`year`: "3 – 5 nov 2031"). */
-export function formatDays(range: DayRange, lang: Lang, options: { year?: boolean } = {}): string {
-  const format = new Intl.DateTimeFormat(INTL_LOCALE[lang], { day: 'numeric', month: 'short', ...(options.year ? { year: 'numeric' } : {}) })
+/** "3 – 5 nov": the first and the last day of a stay, both included, in the language of the page (`year`: "3 – 5 nov 2031", `weekday`: "lun 3 – mer 5 nov"). */
+export function formatDays(range: DayRange, lang: Lang, options: { year?: boolean; weekday?: boolean } = {}): string {
+  const format = new Intl.DateTimeFormat(INTL_LOCALE[lang], { ...(options.weekday ? { weekday: 'short' } : {}), day: 'numeric', month: 'short', ...(options.year ? { year: 'numeric' } : {}) })
   const first = dayToDate(range.startsOn)
   const last = dayToDate(inclusiveEnd(range.endsOn))
   return first.getTime() === last.getTime() ? format.format(first) : format.formatRange(first, last)

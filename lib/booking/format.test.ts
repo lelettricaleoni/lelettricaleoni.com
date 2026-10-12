@@ -25,6 +25,11 @@ describe('formatDays: the first and last day, both included', () => {
     expect(formatDays({ startsOn: '2031-10-30', endsOn: '2031-11-03' }, 'it')).toMatch(/30 ott.+2 nov/i)
   })
 
+  it('can put the weekday on both ends', () => {
+    expect(formatDays({ startsOn: '2031-11-03', endsOn: '2031-11-06' }, 'it', { weekday: true })).toMatch(/lun.+3.+mer.+5.+nov/i)
+    expect(formatDays({ startsOn: '2031-11-03', endsOn: '2031-11-06' }, 'en', { weekday: true })).toMatch(/Mon.+3.+Wed.+5.+Nov/)
+  })
+
   it('writes one day with its weekday, for the places that have room', () => {
     expect(formatDay('2031-11-03', 'it')).toMatch(/lun/i)
     expect(formatDay('2031-11-03', 'en')).toMatch(/Mon/)

@@ -3,7 +3,7 @@ import { useEffect, useRef } from 'react'
 import { createSupabaseBrowserClient } from '@/lib/supabase/client'
 
 /**
- * Calls `onChange` when a reservation changes anywhere, when the connection comes back after a
+ * Calls `onChange` when a reservation changes anywhere (the panel calendar and the public booking page use it), when the connection comes back after a
  * drop, and when the tab becomes visible again. The ping carries no data worth trusting: the
  * caller just reloads what it shows.
  */
