@@ -176,6 +176,13 @@
       "when": 1791794105870,
       "tag": "0024_stripe_events",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1791819814023,
+      "tag": "0025_shop_hours",
+      "breakpoints": true
     }
   ]
 }
