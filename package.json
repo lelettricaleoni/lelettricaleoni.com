@@ -57,7 +57,7 @@
     "fast-xml-parser": "^5.11.2",
     "framer-motion": "^13.5.1",
     "hls.js": "^1.7.3",
-    "ioredis": "^5.11.1",
+    "ioredis": "^6.0.0",
     "jose": "^5.10.0",
     "libheif-js": "^1.23.5",
     "libphonenumber-js": "^1.13.14",
