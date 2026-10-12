@@ -158,6 +158,13 @@
 
 ## Scartato
 
+- **App e servizi fiscali di Stripe per l'IVA (VAT IT, Stripe Tax)** — valutati il 2026-10-12 e scartati: servono a chi vende in più paesi (OSS, aliquote
+  diverse, rimborsi IVA), e il noleggio avviene a Dro con una sola aliquota italiana. Non fanno la fattura elettronica né i corrispettivi. Kevin: **regime
+  ordinario, online solo ai privati e senza fattura** (chi la vuole noleggia in negozio: nota nel riepilogo di `/rent` e nei termini). **Aperto, da chiedere al
+  commercialista prima del rilascio**: come si certificano e registrano i corrispettivi delle prenotazioni online (un interpello dell'Agenzia, il n. 324 del 2020,
+  dice che un servizio fisico prenotato online non gode dell'esonero dell'e-commerce di beni: con ogni probabilità serve il documento commerciale o la trasmissione dei
+  corrispettivi). Da parte nostra, se serve: un riepilogo esportabile di incassi, rimborsi e commissioni Stripe.
+
 - **Caricare `gtag.js` solo dopo il consenso (Consent Mode «di base»)** — valutato e scartato da Kevin il 2026-10-07: si tiene la modalità **avanzata**, che Google
   documenta e raccomanda. Prima di ogni scelta Google riceve un ping senza cookie (data e ora, browser, referrer, un numero casuale, lo stato del consenso, più l'indirizzo IP
   di ogni richiesta), e Oracle e Cloudflare ricevono comunque l'IP per consegnare il sito. L'informativa lo dichiara (`privacy.cookies_body` e `legal_basis_body`, con un test).

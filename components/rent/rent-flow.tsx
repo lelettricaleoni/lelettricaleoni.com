@@ -155,6 +155,12 @@ export function RentFlow({
           </div>
         )}
         <p className="text-xs text-muted-foreground">{dict.pickup_note}</p>
+        <p className="text-xs text-muted-foreground">
+          {dict.invoice_note}{' '}
+          <a href="tel:+393381232434" className="font-medium text-primary hover:underline">+39 338 123 2434</a>
+          {' · '}
+          <a href="mailto:info@lelettricaleoni.com" className="font-medium text-primary hover:underline">info@lelettricaleoni.com</a>
+        </p>
         {range && lines.length > 0 && (
           <PaySection lang={lang} dict={dict} termsHref={termsHref} account={account} range={range} cart={cart} total={total} loginHref={`/${lang}/login?next=${encodeURIComponent(currentHref)}`} />
         )}
