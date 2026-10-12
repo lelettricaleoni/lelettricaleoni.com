@@ -1,5 +1,5 @@
-import { asc, eq, inArray } from 'drizzle-orm'
-import { db, bikeCategories, bikeModelTranslations, bikeModels, bikeSizes, bikeVersions } from '@/lib/db'
+import { and, asc, eq, exists, gt, inArray, isNull, or } from 'drizzle-orm'
+import { db, bikeCategories, bikeModelTranslations, bikeModels, bikeSizes, bikeUnits, bikeVersions } from '@/lib/db'
 import { daysBetween, type DayRange } from '@/lib/dates'
 import { safeErrorSummary } from '@/lib/safe-error'
 import { getFreeBikes } from './availability'
@@ -37,6 +37,16 @@ export interface BookableModel {
   variants: BookableVariant[]
 }
 
+/** Settles the bookings whose time has run out so held bikes are free again at once. A courtesy, never a reason to fail: an error is logged. */
+export async function settleHoldsQuietly(): Promise<void> {
+  if (!paymentsAvailable()) return
+  try {
+    await settleOverdueHolds()
+  } catch (error) {
+    console.error('[booking] could not settle the holds before listing', { error: safeErrorSummary(error) })
+  }
+}
+
 /**
  * The published models that have a bike free for the whole of `range`, with their sizes and versions, how many are free of each, and
  * the price of the stay: what the booking page shows. The price is the server's (`stayPriceCents`), the same that will be charged.
@@ -44,18 +54,26 @@ export interface BookableModel {
  * Before counting, the bookings whose time has run out are settled, so bikes held for a payment that never came are free again
  * without waiting for the sweeper's next minute. That is a courtesy and never a reason to fail: an error there is logged and the page
  * is built with what the database says.
+ * `includeUnavailable` keeps the published models that have bikes in the shop but none free for these days (with no variants), so the page can show them switched off.
  */
-export async function listBookableBikes(range: DayRange, lang: Locale): Promise<BookableModel[]> {
-  if (paymentsAvailable()) {
-    try {
-      await settleOverdueHolds()
-    } catch (error) {
-      console.error('[booking] could not settle the holds before listing', { error: safeErrorSummary(error) })
-    }
-  }
+export async function listBookableBikes(
+  range: DayRange, lang: Locale, options: { includeUnavailable?: boolean } = {},
+): Promise<BookableModel[]> {
+  await settleHoldsQuietly()
 
   const free = await getFreeBikes(range)
-  const modelIds = [...new Set(free.map((row) => row.bikeModelId))]
+  const freeIds = [...new Set(free.map((row) => row.bikeModelId))]
+  // By default only the models with a bike free; with `includeUnavailable` every published model, the ones with none free switched off.
+  // A model with no bike in the shop at all (none, or all retired by then) is not "taken": it does not exist for the customer.
+  const modelIds = options.includeUnavailable
+    ? (await db.select({ id: bikeModels.id }).from(bikeModels).where(and(
+      eq(bikeModels.isPublished, true),
+      exists(db.select({ id: bikeUnits.id }).from(bikeUnits).where(and(
+        eq(bikeUnits.bikeModelId, bikeModels.id),
+        or(isNull(bikeUnits.retiredOn), gt(bikeUnits.retiredOn, range.startsOn)),
+      ))),
+    ))).map((row) => row.id)
+    : freeIds
   if (modelIds.length === 0) return []
 
   const models = await db
@@ -108,4 +126,22 @@ export async function listBookableBikes(range: DayRange, lang: Locale): Promise<
       variants,
     }
   })
+}
+
+export interface FocusModel { id: string; name: string; categoryName: string; maxDays: number }
+
+/** The model a person arrived from (`/rent?model=…`): only a published one, or null (an old or typed link falls back to booking by days). */
+export async function getFocusModel(modelId: string, lang: Locale): Promise<FocusModel | null> {
+  const [row] = await db
+    .select({ id: bikeModels.id, category: bikeCategories })
+    .from(bikeModels)
+    .innerJoin(bikeCategories, eq(bikeCategories.id, bikeModels.categoryId))
+    .where(and(eq(bikeModels.id, modelId), eq(bikeModels.isPublished, true)))
+  if (!row) return null
+  const names = await db
+    .select({ locale: bikeModelTranslations.locale, name: bikeModelTranslations.name })
+    .from(bikeModelTranslations)
+    .where(eq(bikeModelTranslations.bikeModelId, modelId))
+  const name = (names.find((entry) => entry.locale === lang) ?? names.find((entry) => entry.locale === 'it') ?? names[0])?.name ?? row.category.name
+  return { id: row.id, name, categoryName: row.category.name, maxDays: row.category.maxRentalDays }
 }

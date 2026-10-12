@@ -1,25 +1,26 @@
 'use client'
 
-import { useEffect, useState, useTransition } from 'react'
+import { useEffect, useMemo, useState, useTransition, type ReactNode } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import type { DateRange } from 'react-day-picker'
-import { de as dpDe, enGB as dpEn, it as dpIt } from 'react-day-picker/locale'
-import { LuMinus, LuPlus } from 'react-icons/lu'
 import { Button } from '@/components/ui/button'
-import { Calendar } from '@/components/ui/calendar'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { startCheckoutAction, type StartCheckoutActionResult } from '@/lib/actions/rent'
-import { cartLines, cartTotalCents, quantityOf, sanitizeCart, totalBikes, withQuantity } from '@/lib/booking/cart'
-import type { BookableModel } from '@/lib/booking/catalog'
+import { useReservationsRealtime } from '@/components/use-reservations-realtime'
+import { cartLines, cartTotalCents, sanitizeCart } from '@/lib/booking/cart'
+import type { BookableModel, FocusModel } from '@/lib/booking/catalog'
+import type { UnitBusy } from '@/lib/booking/day-availability'
 import { fill, formatDays } from '@/lib/booking/format'
 import { rentHref } from '@/lib/booking/rent-url'
-import { MAX_BIKES_PER_BOOKING, type BikeSpec, type CartItem } from '@/lib/booking/rules'
-import { daysBetween, dayToDate, exclusiveEnd, inclusiveEnd, isoDay, type DayRange, type IsoDate } from '@/lib/dates'
+import type { CartItem } from '@/lib/booking/rules'
+import { coalesce } from '@/lib/coalesce'
+import { daysBetween, inclusiveEnd, type DayRange, type IsoDate } from '@/lib/dates'
 import { formatPrice } from '@/lib/money'
 import { cn } from '@/lib/utils'
+import { ModelCard } from './model-card'
+import { PeriodPicker } from './period-picker'
 import type itMessages from '@/messages/it.json'
 
 type Lang = 'it' | 'en' | 'de'
@@ -27,17 +28,19 @@ export type RentDict = (typeof itMessages)['rent']
 
 export type RentAccount = { kind: 'guest' } | { kind: 'customer'; hasPhone: boolean }
 
-const CALENDAR_LOCALE = { it: dpIt, en: dpEn, de: dpDe } as const
-
 /**
  * The booking page: when, which bikes, and the summary with the payment. The days live in the ADDRESS and change it through the router
  * (the server then counts the bikes free for them); the cart lives here and is copied into the address as it changes, without leaving
  * the page, so Back works and a link can be shared. Remounted by the page whenever the days change (`key`), which clears the cart.
  *
+ * Two ways in (`mode`): by days (`/rent`: the period first, then the models free in it) and by bike (`/rent?model=…`: one model, and the
+ * picker greys out the days that bike is taken). While the page is open it follows the bookings of everybody else: when a bike is taken
+ * or freed the page is read again (`router.refresh`), the picker greys the new day and a cart line that is no longer free leaves the cart.
+ *
  * What is shown is an estimate: the server prices, checks and holds when the person pays.
  */
 export function RentFlow({
-  lang, dict, termsHref, range, initialCart, focusModelId, models, minDay, maxDay, account,
+  lang, dict, termsHref, range, initialCart, focusModelId, mode, focus, units, models, media, minDay, maxDay, account,
 }: {
   lang: Lang
   dict: RentDict
@@ -45,7 +48,12 @@ export function RentFlow({
   range: DayRange | null
   initialCart: CartItem[]
   focusModelId: string | null
+  mode: 'days' | 'bike'
+  focus: FocusModel | null
+  units: UnitBusy[]
   models: BookableModel[]
+  /** The photo of each model, by id (server components, so they cannot be made here). */
+  media: Record<string, ReactNode>
   minDay: IsoDate
   maxDay: IsoDate
   account: RentAccount
@@ -53,72 +61,83 @@ export function RentFlow({
   const router = useRouter()
   const [navigating, startNavigation] = useTransition()
   const [cart, setCart] = useState<CartItem[]>(() => sanitizeCart(initialCart, models))
-  const [draft, setDraft] = useState<DateRange | undefined>(
-    range ? { from: dayToDate(range.startsOn), to: dayToDate(inclusiveEnd(range.endsOn)) } : undefined,
-  )
-  const wide = useWideScreen()
+  const [notice, setNotice] = useState<string | null>(null)
 
-  function changeDays(next: DateRange | undefined) {
-    setDraft(next)
-    // Two different days chosen: the stay is complete. One day only is a stay too, once the person taps it again (or the range closes on it).
-    if (next?.from && next.to) {
-      const startsOn = isoDay(next.from)
-      const endsOn = exclusiveEnd(isoDay(next.to))
-      startNavigation(() => router.push(rentHref(lang, { range: { startsOn, endsOn }, cart: [], focusModelId }), { scroll: false }))
-    }
+  function changeDays(next: DayRange) {
+    startNavigation(() => router.push(rentHref(lang, { range: next, cart: [], focusModelId }), { scroll: false }))
   }
 
   function changeCart(next: CartItem[]) {
     setCart(next)
-    // Same page, new address: the cart is kept in it. (Native History API: Next.js syncs it with `useSearchParams`.)
-    window.history.replaceState(null, '', rentHref(lang, { range, cart: next, focusModelId }))
+    setNotice(null)
   }
+
+  // Somebody else booked or freed a bike: read the page again. The channel is public (anybody who knows its name could ping it), so each
+  // visitor reads at most once every five seconds and never while the tab is hidden: on coming back the hook reads it once.
+  const reload = useMemo(
+    () => coalesce(() => { if (document.visibilityState === 'visible') router.refresh() }, 5000),
+    [router],
+  )
+  useEffect(() => reload.cancel, [reload])
+  useReservationsRealtime(reload)
+
+  // New numbers from the server: what is no longer free leaves the cart, and the person is told. (Adjusted while rendering, not in an effect:
+  // the cart is state derived from `models`, and React wants that settled before painting.)
+  const [seenModels, setSeenModels] = useState(models)
+  if (seenModels !== models) {
+    setSeenModels(models)
+    const next = sanitizeCart(cart, models)
+    if (JSON.stringify(next) !== JSON.stringify(cart)) {
+      setCart(next)
+      setNotice(dict.cart_changed)
+    }
+  }
+
+  // The cart is kept in the address (a link, Back and a reload keep it).
+  useEffect(() => {
+    window.history.replaceState(null, '', rentHref(lang, { range, cart, focusModelId }))
+  }, [lang, range, cart, focusModelId])
 
   const days = range ? daysBetween(range.startsOn, range.endsOn) : 0
   const lines = cartLines(cart, models)
   const total = cartTotalCents(lines)
-  const ordered = [...models].sort((a, b) => Number(b.id === focusModelId) - Number(a.id === focusModelId))
+  const shown = (mode === 'bike' ? models.filter((model) => model.id === focus?.id) : [...models])
+    // The models with a bike free first, the switched-off ones after.
+    .sort((a, b) => Number(b.totalFree > 0) - Number(a.totalFree > 0))
   const currentHref = rentHref(lang, { range, cart, focusModelId: null })
+  const allHref = rentHref(lang, { range, cart: [], focusModelId: null })
 
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start">
       <div className="space-y-6">
         <section className="rounded-xl border bg-card p-4 shadow-sm sm:p-6" aria-labelledby="rent-when">
+          {mode === 'bike' && focus && (
+            <div className="mb-4 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b pb-4">
+              <p className="text-sm text-muted-foreground">
+                {dict.bike_mode_label} <strong className="font-semibold text-foreground">{focus.name}</strong> · {focus.categoryName}
+              </p>
+              <Link href={allHref} className="text-sm font-medium text-primary hover:underline">
+                {range ? dict.see_all_free : dict.see_all_bikes}
+              </Link>
+            </div>
+          )}
           <h2 id="rent-when" className="text-lg font-semibold text-foreground">{dict.dates_title}</h2>
-          <p className="mt-1 text-sm text-muted-foreground">{dict.dates_hint}</p>
-          <div className="mt-4 overflow-x-auto">
-            <Calendar
-              mode="range"
-              selected={draft}
-              onSelect={changeDays}
-              numberOfMonths={wide ? 2 : 1}
-              locale={CALENDAR_LOCALE[lang]}
-              defaultMonth={draft?.from ?? dayToDate(minDay)}
-              startMonth={dayToDate(minDay)}
-              endMonth={dayToDate(maxDay)}
-              disabled={{ before: dayToDate(minDay), after: dayToDate(maxDay) }}
-              className="mx-auto rounded-md border"
-            />
-          </div>
-          <p className="mt-3 text-sm" aria-live="polite">
-            {range ? (
-              <span className="font-medium text-foreground">
-                {formatDays(range, lang)} · {days === 1 ? dict.days_one : fill(dict.days_other, { n: days })}
-              </span>
-            ) : (
-              <span className="text-muted-foreground">{dict.dates_prompt}</span>
-            )}
-          </p>
+          <p className="mt-1 mb-4 text-sm text-muted-foreground">{dict.dates_hint}</p>
+          <PeriodPicker
+            lang={lang} dict={dict} units={units} range={range} minDay={minDay} maxDay={maxDay}
+            maxDays={mode === 'bike' ? (focus?.maxDays ?? null) : null} mode={mode} pending={navigating} onChange={changeDays}
+          />
         </section>
 
         <section className={cn('rounded-xl border bg-card p-4 shadow-sm transition-opacity sm:p-6', navigating && 'opacity-60')} aria-labelledby="rent-which">
           <h2 id="rent-which" className="text-lg font-semibold text-foreground">{dict.bikes_title}</h2>
           {!range && <p className="mt-2 text-sm text-muted-foreground">{dict.bikes_need_dates}</p>}
-          {range && ordered.length === 0 && <p className="mt-2 text-sm text-muted-foreground">{dict.bikes_none}</p>}
-          {range && ordered.length > 0 && (
-            <div className="mt-4 space-y-4">
-              {ordered.map((model) => (
-                <ModelCard key={model.id} model={model} lang={lang} dict={dict} cart={cart} onChange={changeCart} />
+          {range && shown.length === 0 && <p className="mt-2 text-sm text-muted-foreground">{dict.bikes_none}</p>}
+          {notice && <p role="status" className="mt-3 rounded-lg border bg-muted p-3 text-sm text-foreground">{notice}</p>}
+          {range && shown.length > 0 && (
+            <div className="mt-4 grid gap-4 sm:grid-cols-2">
+              {shown.map((model) => (
+                <ModelCard key={model.id} model={model} lang={lang} dict={dict} cart={cart} media={media[model.id]} onChange={changeCart} />
               ))}
             </div>
           )}
@@ -166,67 +185,6 @@ export function RentFlow({
         )}
       </aside>
     </div>
-  )
-}
-
-/** A model: its name, the price of the stay for one bike, and a row with a counter for every size (and version) that has a bike free. */
-function ModelCard({
-  model, lang, dict, cart, onChange,
-}: { model: BookableModel; lang: Lang; dict: RentDict; cart: CartItem[]; onChange: (next: CartItem[]) => void }) {
-  const [, priceTail] = dict.price_each.split('{price}')
-  return (
-    <article className="rounded-xl border p-4">
-      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-        <h3 className="font-semibold text-foreground">{model.name}</h3>
-        {model.stayPriceCents !== null && (
-          <p className="text-sm text-muted-foreground">
-            <strong className="font-semibold text-primary">{formatPrice(model.stayPriceCents, lang)}</strong>
-            {fill(priceTail, { days: model.days === 1 ? dict.days_one : fill(dict.days_other, { n: model.days }) })}
-          </p>
-        )}
-      </div>
-      {model.tooLong ? (
-        <p className="mt-2 text-sm text-muted-foreground">{fill(dict.too_long, { max: model.maxDays })}</p>
-      ) : (
-        <ul className="mt-2 divide-y">
-          {model.variants.flatMap((variant) =>
-            variant.versions.map((version) => {
-              const spec: BikeSpec = { bikeModelId: model.id, bikeSizeId: variant.sizeId, bikeVersionId: version.versionId }
-              const quantity = quantityOf(cart, spec)
-              const full = totalBikes(cart) >= MAX_BIKES_PER_BOOKING
-              return (
-                <li key={`${variant.sizeId}.${version.versionId}`} className="flex items-center justify-between gap-3 py-3">
-                  <div>
-                    <p className="text-sm font-medium text-foreground">
-                      {fill(dict.size_label, { size: variant.sizeName })}
-                      {variant.chooseVersion && ` · ${version.versionName}`}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {version.free === 1 ? dict.free_one : fill(dict.free_other, { n: version.free })}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      type="button" variant="outline" size="icon" className="size-9" aria-label={dict.fewer}
-                      disabled={quantity === 0} onClick={() => onChange(withQuantity(cart, spec, quantity - 1, version.free))}
-                    >
-                      <LuMinus />
-                    </Button>
-                    <span className="w-6 text-center text-sm font-semibold tabular-nums" aria-live="polite">{quantity}</span>
-                    <Button
-                      type="button" variant="outline" size="icon" className="size-9" aria-label={dict.more}
-                      disabled={quantity >= version.free || full} onClick={() => onChange(withQuantity(cart, spec, quantity + 1, version.free))}
-                    >
-                      <LuPlus />
-                    </Button>
-                  </div>
-                </li>
-              )
-            }),
-          )}
-        </ul>
-      )}
-    </article>
   )
 }
 
@@ -301,17 +259,4 @@ function PaySection({
       <p className="text-xs text-muted-foreground">{dict.hold_note}</p>
     </div>
   )
-}
-
-/** Two months side by side only where there is room; one month on a phone. Starts at one so the server and the first paint agree. */
-function useWideScreen() {
-  const [wide, setWide] = useState(false)
-  useEffect(() => {
-    const query = window.matchMedia('(min-width: 768px)')
-    const update = () => setWide(query.matches)
-    update()
-    query.addEventListener('change', update)
-    return () => query.removeEventListener('change', update)
-  }, [])
-  return wide
 }

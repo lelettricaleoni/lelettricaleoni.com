@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { eq, inArray, sql } from 'drizzle-orm'
 import { db, bikeCategories, bikeModelTranslations, bikeModels, bikeReservations, bikeUnits, bikeVersions, bookings } from '@/lib/db'
-import { listBookableBikes } from '@/lib/booking/catalog'
+import { getFocusModel, listBookableBikes } from '@/lib/booking/catalog'
 import { createFixture, insertBooking, insertOnlineLine, type Fixture } from './fixtures'
 
 const RANGE = { startsOn: '2031-11-03', endsOn: '2031-11-06' } // 3 days
@@ -25,6 +25,8 @@ describe('listBookableBikes', () => {
     if (extraVersions.length) {
       await db.delete(bikeUnits).where(inArray(bikeUnits.bikeVersionId, extraVersions))
     }
+    // The names point at the model too: they go first, or the fixture cannot remove it (and leaves a published test model on the site).
+    await db.delete(bikeModelTranslations).where(eq(bikeModelTranslations.bikeModelId, fx.modelId))
     await fx.cleanup()
     if (extraVersions.length) {
       await db.delete(bikeVersions).where(inArray(bikeVersions.id, extraVersions))
@@ -88,5 +90,32 @@ describe('listBookableBikes', () => {
     await db.update(bookings).set({ holdExpiresAt: sql`now() - interval '1 minute'` }).where(eq(bookings.id, overdue))
     expect((await mine())?.totalFree).toBe(3)
     expect((await db.select().from(bookings).where(eq(bookings.id, overdue)))[0].status).toBe('expired')
+  })
+
+  it('with includeUnavailable keeps a published model with no bike free, switched off', async () => {
+    const booking = await insertBooking(fx.customerId, RANGE)
+    for (const unitId of fx.unitIds) await insertOnlineLine(booking, fx.customerId, unitId, RANGE, 'held')
+    expect(await mine()).toBeUndefined()
+    const all = await listBookableBikes(RANGE, 'it', { includeUnavailable: true })
+    expect(all.find((entry) => entry.id === fx.modelId)).toMatchObject({ totalFree: 0, variants: [], tooLong: false })
+  })
+
+  it('with includeUnavailable still leaves out a model that is not published', async () => {
+    await db.update(bikeModels).set({ isPublished: false }).where(eq(bikeModels.id, fx.modelId))
+    const all = await listBookableBikes(RANGE, 'it', { includeUnavailable: true })
+    expect(all.find((entry) => entry.id === fx.modelId)).toBeUndefined()
+  })
+
+  it('with includeUnavailable leaves out a published model that has no bike in the shop at all', async () => {
+    await db.delete(bikeUnits).where(eq(bikeUnits.bikeModelId, fx.modelId))
+    const all = await listBookableBikes(RANGE, 'it', { includeUnavailable: true })
+    expect(all.find((entry) => entry.id === fx.modelId)).toBeUndefined()
+  })
+
+  it('getFocusModel gives the name, category and limit of a published model, and nothing for an unpublished or unknown one', async () => {
+    expect(await getFocusModel(fx.modelId, 'it')).toMatchObject({ id: fx.modelId, name: 'Bici di prova', maxDays: 3 })
+    expect(await getFocusModel(crypto.randomUUID(), 'it')).toBeNull()
+    await db.update(bikeModels).set({ isPublished: false }).where(eq(bikeModels.id, fx.modelId))
+    expect(await getFocusModel(fx.modelId, 'it')).toBeNull()
   })
 })
