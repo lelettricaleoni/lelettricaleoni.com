@@ -4,6 +4,8 @@ import type { GridReservation, ReservationKind } from '@/lib/reservations'
 export interface GridBlock {
   reservationId: string
   kind: ReservationKind
+  /** `held`: a customer who is still paying for it. */
+  status: GridReservation['status']
   label: string | null
   /** 1-based column of the first visible day (the label column is not counted). */
   startColumn: number
@@ -34,6 +36,7 @@ export function layoutBlocks(month: IsoMonth, reservations: GridReservation[]): 
     blocks.push({
       reservationId: reservation.id,
       kind: reservation.kind,
+      status: reservation.status,
       label: reservation.label,
       startColumn: startIndex + 1,
       span,
