@@ -1,7 +1,7 @@
 'use client'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LuHouse, LuMap, LuUsers, LuCodeXml, LuLogOut, LuBike, LuSlidersHorizontal, LuWarehouse, LuCalendarDays, LuContact, LuPlug } from 'react-icons/lu'
+import { LuHouse, LuMap, LuUsers, LuCodeXml, LuLogOut, LuBike, LuSlidersHorizontal, LuWarehouse, LuCalendarDays, LuContact, LuPlug, LuClock } from 'react-icons/lu'
 import { logoutAction } from '@/lib/actions/auth'
 import { cn } from '@/lib/utils'
 import type { AdminUserSummary } from '@/lib/admin-users'
@@ -30,6 +30,7 @@ export const navGroups: NavGroup[] = [
     { href: '/manage/bikes/shop', label: 'Shop', icon: LuWarehouse },
     { href: '/manage/bookings', label: 'Bookings', icon: LuCalendarDays },
     { href: '/manage/customers', label: 'Customers', icon: LuContact },
+    { href: '/manage/hours', label: 'Opening hours', icon: LuClock },
     { href: '/manage/bikes/options', label: 'Bike options', icon: LuSlidersHorizontal },
   ] },
   { label: 'System', items: [
