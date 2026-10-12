@@ -6,7 +6,7 @@ import { NavbarEnd } from './navbar-end'
 interface NavbarProps {
   lang: string
   dict: {
-    nav: { services: string; pricing: string; contact: string; login: string; account: string; panel: string; logout: string }
+    nav: { services: string; pricing: string; contact: string; login: string; account: string; rents: string; panel: string; logout: string }
     routes?: { nav_label: string }
     bikes?: { nav_label: string }
   }

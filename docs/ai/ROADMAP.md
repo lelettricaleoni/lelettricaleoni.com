@@ -38,8 +38,10 @@
   una «porta» per il pagamento con una finta solo fuori produzione, poi Stripe vero. **Solo `staging`; in produzione decide Kevin, e non senza Stripe.**
   **Fetta 3b (il motore del pagamento dietro la porta, senza pagine): piano in `docs/superpowers/plans/2026-10-08-booking-slice3b-payment-core.md`, fatta su `staging`**
   (finta + fabbrica che rifiuta in produzione, rimborsi per bici, conferma, pagamento tardivo, scadenza senza vendere due volte una bici pagata, inizio del
-  pagamento). **Restano**: 3c (pagina `/rent`, Account rents, azioni del pannello con `cancelOnlineReservation`, pagina finta di pagamento, lavoro del worker che
-  chiama `settleOverdueHolds` ogni minuto, sincronizzazione con Google Calendar dopo conferma e annullamento, termini) e 3d (`StripeGateway`, `stripe_events`,
+  pagamento). **Fetta 3c (le pagine, su `staging`, 2026-10-12)**: `/rent` (calendario, carrello di più bici, telefono, termini, «Paga»), pagina finta di pagamento, Account rents
+  con «Annulla questa bici», «Cancel and refund…» nel pannello, `POST /api/cron/settle-holds` chiamato ogni minuto da un timer systemd (unità in
+  `deploy/web/`, **da installare sulla VM**: `settle-holds@staging.timer`), calendario del negozio dopo pagamento e annullamento, bozza dei termini
+  (`/[lang]/terms`) e informativa aggiornata. **Resta**: 3d (`StripeGateway`, `stripe_events`,
   `POST /api/stripe/webhook`, `expires_at` ≥ 31 minuti, saldo di Stripe per i rimborsi, avviso a Kevin per i pagamenti tardivi: oggi solo un log). Per l'account cliente: collegare chi si registra a `customers` per email (`user_id`) e
   mostrargli solo le prenotazioni online; gli account non admin oggi sono tutti di Kevin.
   Il calendario di Kevin sta in `C:\AzureDevOps\firebase` (`app/rent/`, da portare ricollegandolo
@@ -64,7 +66,11 @@
   comunque (`docs/google-login-setup.md`). **Al rilascio della fetta 2 va applicata in produzione la migrazione `0017`** (lingua del cliente), con la riga nel
   tracking, come le altre (STATE: «Si applica così»).
   **Bloccante per la fetta 3 (prenotazione e pagamento online): una pagina dei termini e condizioni di noleggio**
-  (Kevin, 2026-10-07). Oggi non esiste (`/it/terms` risponde «Pagina non trovata»). Parte dalle regole già decise:
+  (Kevin, 2026-10-07). **Dal 2026-10-12 esiste una bozza** (`/[lang]/terms`, tre lingue, con l'avviso «bozza da far rivedere» in cima: si toglie con la
+  revisione) scritta solo sulle regole già decise; `lib/booking/terms-text.test.ts` fa fallire la CI se i numeri nel testo (30 minuti, 180 giorni,
+  10 bici, le 9:00) non sono più quelli del codice. **Al rilascio**: link nel footer e riga in `app/sitemap.ts` (oggi non ci sono apposta), nome
+  del fornitore dei pagamenti nell'informativa (la 3d), «Sie» o «du» in tedesco da decidere (l'informativa e i termini usano «Sie», le pagine `/rent`
+  e Account «du»). Regole già decise:
   pagamento intero, rimborso intero fino a 48 ore prima, solo giorni interi. **Da decidere con Kevin prima di scriverla:**
   cauzione (se e quanto), danni, furto e smarrimento, età minima e casco, mancata presentazione, maltempo, orari di ritiro e
   riconsegna. Il diritto di recesso (servizi del tempo libero con data precisa) va comunicato: **da far confermare** da chi

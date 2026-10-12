@@ -16,6 +16,9 @@ import { getSuggestedRoutesForBike } from '@/lib/routes-data'
 import { BikeSuggestedRoutes } from '@/components/bike-suggested-routes'
 import { priceForDay, afternoonPriceFor } from '@/lib/bike-pricing'
 import { buildSocialMetadata } from '@/lib/metadata'
+import { Button } from '@/components/ui/button'
+import { paymentsAvailable } from '@/lib/booking/payments'
+import { rentHref } from '@/lib/booking/rent-url'
 
 // TODO: Cache Components adoption. Refactor this route so this opt-out can be removed.
 // See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
@@ -178,6 +181,17 @@ export default async function BikeDetailPage({
           </div>
 
           <BikeSuggestedRoutes routes={suggestedRoutes} lang={lang} dict={dict} title={d.suggested_routes_title} />
+
+          {/* Where a person cannot pay (production, until Stripe is there) the button does not exist. */}
+          {paymentsAvailable() && (
+            <div className="space-y-2">
+              <h2 className="text-lg font-bold text-[#1e3a5f]">{d.book_title}</h2>
+              <Button asChild size="lg">
+                <Link href={rentHref(lang, { range: null, cart: [], focusModelId: model.id })}>{d.book_button}</Link>
+              </Button>
+              <p className="text-sm text-muted-foreground">{d.book_hint}</p>
+            </div>
+          )}
 
           <div className="space-y-2">
             <h2 className="text-lg font-bold text-[#1e3a5f]">{d.contact_button}</h2>

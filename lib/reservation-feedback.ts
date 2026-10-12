@@ -1,4 +1,6 @@
 import { inclusiveEnd } from '@/lib/dates'
+import { formatEuros } from '@/lib/money'
+import type { CancelOnlineResult } from '@/lib/booking/refunds'
 import type { ActionInvalid } from '@/lib/reservation-schemas'
 import type {
   CancelResult, CreateRentalResult, MaintenanceResult, MoveResult, ReservationSummary, RestoreResult,
@@ -37,6 +39,31 @@ export function cancelFeedback(result: CancelResult | ActionInvalid, what: 'rent
   switch (result.status) {
     case 'cancelled':
       return { tone: 'success', message: what === 'rental' ? 'Rental cancelled' : 'Maintenance cancelled' }
+    case 'not_found':
+      return { tone: 'stale', message: STALE }
+    case 'invalid':
+      return { tone: 'error', message: result.message }
+  }
+}
+
+export function cancelOnlineFeedback(result: CancelOnlineResult | ActionInvalid): Feedback {
+  switch (result.status) {
+    case 'cancelled':
+      if (result.refundedCents === 0) return { tone: 'success', message: 'Bike cancelled, nothing refunded' }
+      return {
+        tone: 'success',
+        message: result.refund === 'pending'
+          ? `Bike cancelled, ${formatEuros(result.refundedCents)} on its way back`
+          : `Bike cancelled, ${formatEuros(result.refundedCents)} refunded`,
+      }
+    case 'refund_failed':
+      return { tone: 'error', message: 'The refund failed: the bike is still booked. Try again' }
+    case 'invalid_amount':
+      return { tone: 'error', message: 'That amount is more than the bike cost' }
+    case 'too_late':
+      // Staff are never late: the deadline is for customers.
+      return { tone: 'error', message: 'This cannot be cancelled now' }
+    case 'already_cancelled':
     case 'not_found':
       return { tone: 'stale', message: STALE }
     case 'invalid':

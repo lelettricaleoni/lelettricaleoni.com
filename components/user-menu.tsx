@@ -1,7 +1,7 @@
 'use client'
 import { useRef } from 'react'
 import Link from 'next/link'
-import { LuChevronDown, LuLayoutDashboard, LuLogOut, LuUserRound } from 'react-icons/lu'
+import { LuCalendarDays, LuChevronDown, LuLayoutDashboard, LuLogOut, LuUserRound } from 'react-icons/lu'
 import type { User } from '@supabase/supabase-js'
 import { hasAdminRole } from '@/lib/admin-users'
 import { namesFromAccount } from '@/lib/auth/identity'
@@ -20,6 +20,7 @@ import {
 export interface UserMenuLabels {
   login: string
   account: string
+  rents: string
   panel: string
   logout: string
 }
@@ -86,6 +87,14 @@ export function UserMenu({ lang, labels, user }: { lang: string; labels: UserMen
               {labels.account}
             </Link>
           </DropdownMenuItem>
+          {!hasAdminRole(user) && (
+            <DropdownMenuItem asChild className="cursor-pointer">
+              <Link href={`/${lang}/account/rents`}>
+                <LuCalendarDays />
+                {labels.rents}
+              </Link>
+            </DropdownMenuItem>
+          )}
           {hasAdminRole(user) && (
             <DropdownMenuItem asChild className="cursor-pointer">
               <Link href="/manage">

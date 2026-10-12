@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import {
   createRentalSchema, planMaintenanceSchema, updateMaintenanceSchema, moveReservationSchema, occupiedRangesSchema,
-  retireBikeSchema, bikeUnitIdSchema, searchCustomersSchema,
+  retireBikeSchema, bikeUnitIdSchema, searchCustomersSchema, cancelOnlineSchema,
 } from './reservation-schemas'
 
 const id = () => crypto.randomUUID()
@@ -77,5 +77,21 @@ describe('retiring a bike', () => {
   it('needs just the bike to bring it back', () => {
     expect(bikeUnitIdSchema.safeParse({ id: id() }).success).toBe(true)
     expect(bikeUnitIdSchema.safeParse({ id: 'nope' }).success).toBe(false)
+  })
+})
+
+describe('cancelOnlineSchema', () => {
+  it('takes a bike and one of three refunds: all of it, nothing, or an amount in euros', () => {
+    expect(cancelOnlineSchema.safeParse({ id: id(), refund: 'full' }).success).toBe(true)
+    expect(cancelOnlineSchema.safeParse({ id: id(), refund: 'none' }).success).toBe(true)
+    expect(cancelOnlineSchema.safeParse({ id: id(), refund: 'partial', amount: 12.5 }).success).toBe(true)
+  })
+
+  it('wants an amount above zero for a partial refund, and no other kind of refund', () => {
+    expect(cancelOnlineSchema.safeParse({ id: id(), refund: 'partial' }).success).toBe(false)
+    expect(cancelOnlineSchema.safeParse({ id: id(), refund: 'partial', amount: 0 }).success).toBe(false)
+    expect(cancelOnlineSchema.safeParse({ id: id(), refund: 'partial', amount: -5 }).success).toBe(false)
+    expect(cancelOnlineSchema.safeParse({ id: id(), refund: 'half' }).success).toBe(false)
+    expect(cancelOnlineSchema.safeParse({ id: 'nope', refund: 'full' }).success).toBe(false)
   })
 })

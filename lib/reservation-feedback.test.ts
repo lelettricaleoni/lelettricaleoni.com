@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest'
+import { formatEuros } from './money'
 import {
   rentalFeedback, cancelFeedback, moveFeedback, maintenancePlanFeedback, maintenanceUpdateFeedback, deleteBikeFeedback,
-  retireFeedback, restoreFeedback,
+  retireFeedback, restoreFeedback, cancelOnlineFeedback,
 } from './reservation-feedback'
 
 const existing = { id: 'r1', bikeUnitId: 'u1', kind: 'counter_rental' as const, startsOn: '2031-07-10', endsOn: '2031-07-13', label: 'Rossi' }
@@ -123,5 +124,29 @@ describe('retiring and restoring a bike', () => {
   it('passes a validation message through', () => {
     expect(retireFeedback({ status: 'invalid', message: 'That is not a valid date' }, '2031-07-11'))
       .toEqual({ tone: 'error', message: 'That is not a valid date' })
+  })
+})
+
+describe('cancelOnlineFeedback', () => {
+  it('says what went back to the customer: the amount, or nothing', () => {
+    expect(cancelOnlineFeedback({ status: 'cancelled', refundedCents: 3000, bookingCancelled: false, refund: 'succeeded' }))
+      .toEqual({ tone: 'success', message: `Bike cancelled, ${formatEuros(3000)} refunded` })
+    expect(cancelOnlineFeedback({ status: 'cancelled', refundedCents: 1550, bookingCancelled: true, refund: 'pending' }))
+      .toEqual({ tone: 'success', message: `Bike cancelled, ${formatEuros(1550)} on its way back` })
+    expect(cancelOnlineFeedback({ status: 'cancelled', refundedCents: 0, bookingCancelled: true, refund: 'none' }))
+      .toEqual({ tone: 'success', message: 'Bike cancelled, nothing refunded' })
+  })
+
+  it('keeps the dialog open when the refund failed, because the bike is still booked', () => {
+    expect(cancelOnlineFeedback({ status: 'refund_failed', reason: 'x' }))
+      .toEqual({ tone: 'error', message: 'The refund failed: the bike is still booked. Try again' })
+    expect(cancelOnlineFeedback({ status: 'invalid_amount' }))
+      .toEqual({ tone: 'error', message: 'That amount is more than the bike cost' })
+  })
+
+  it('closes the dialog when somebody else already cancelled the bike or it is gone', () => {
+    expect(cancelOnlineFeedback({ status: 'already_cancelled' }).tone).toBe('stale')
+    expect(cancelOnlineFeedback({ status: 'not_found' }).tone).toBe('stale')
+    expect(cancelOnlineFeedback({ status: 'invalid', message: 'Invalid reservation' })).toEqual({ tone: 'error', message: 'Invalid reservation' })
   })
 })

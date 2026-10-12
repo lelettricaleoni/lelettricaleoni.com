@@ -1,5 +1,5 @@
 import 'server-only'
-import { timingSafeEqual } from 'node:crypto'
+import { isCronRequest } from '@/lib/cron-auth'
 import { syncNow } from '@/lib/integrations/google-calendar/sync'
 
 /*
@@ -12,15 +12,8 @@ export interface CronResponse {
   body: Record<string, unknown>
 }
 
-function sameSecret(header: string | null, secret: string | undefined): boolean {
-  if (!secret) return false  // no secret configured: nobody gets in
-  const given = Buffer.from(header ?? '')
-  const expected = Buffer.from(`Bearer ${secret}`)
-  return given.length === expected.length && timingSafeEqual(given, expected)
-}
-
 export async function runDailyCheck(authorization: string | null, secret: string | undefined): Promise<CronResponse> {
-  if (!sameSecret(authorization, secret)) return { status: 401, body: { error: 'Unauthorized' } }
+  if (!isCronRequest(authorization, secret)) return { status: 401, body: { error: 'Unauthorized' } }
   try {
     const result = await syncNow()
     if (result.status === 'off') return { status: 200, body: { status: 'off' } }

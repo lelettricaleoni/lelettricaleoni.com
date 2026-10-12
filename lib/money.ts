@@ -15,3 +15,12 @@ const eurosWithCents = new Intl.NumberFormat('it-IT', { style: 'currency', curre
 export function formatEuros(cents: number): string {
   return (cents % 100 === 0 ? euros : eurosWithCents).format(cents / 100)
 }
+
+const INTL_LOCALE = { it: 'it-IT', en: 'en-GB', de: 'de-DE' } as const
+
+/** The same, in the language of a public page: "24 €" in Italian and German, "€24" in English. */
+export function formatPrice(cents: number, lang: keyof typeof INTL_LOCALE): string {
+  return new Intl.NumberFormat(INTL_LOCALE[lang], {
+    style: 'currency', currency: 'EUR', minimumFractionDigits: cents % 100 === 0 ? 0 : 2,
+  }).format(cents / 100)
+}

@@ -6,7 +6,7 @@ import {
   getMoveCandidates, getOccupiedRanges, moveReservation, planMaintenance, updateMaintenance,
   type CreateRentalInput,
 } from '@/lib/reservations'
-import { createFixture, type Fixture } from './fixtures'
+import { createFixture, insertPaidBooking, type Fixture } from './fixtures'
 
 const RANGE = { startsOn: '2031-07-10', endsOn: '2031-07-13' }
 
@@ -218,6 +218,19 @@ describe('cancelReservation and moveReservation', () => {
     } finally {
       await other.cleanup()
     }
+  })
+})
+
+describe('the panel cancel and an online booking', () => {
+  let fx: Fixture
+  beforeEach(async () => { fx = await createFixture(1) })
+  afterEach(async () => { await fx.cleanup() })
+
+  it('does not cancel a bike booked online the old way: that would give no refund and leave its booking confirmed', async () => {
+    const paid = await insertPaidBooking(fx, { startsOn: '2031-12-10', endsOn: '2031-12-13' }, [3000])
+    expect(await cancelReservation(paid.reservationIds[0])).toEqual({ status: 'not_found' })
+    const [row] = await db.select().from(bikeReservations).where(eq(bikeReservations.id, paid.reservationIds[0]))
+    expect(row.status).toBe('confirmed')
   })
 })
 
