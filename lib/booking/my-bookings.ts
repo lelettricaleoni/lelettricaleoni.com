@@ -11,6 +11,8 @@ type Lang = 'it' | 'en' | 'de'
 export interface MyBike {
   reservationId: string
   status: 'held' | 'confirmed' | 'cancelled' | 'expired'
+  /** For its photo. */
+  modelId: string
   modelName: string
   sizeName: string
   versionName: string
@@ -32,6 +34,10 @@ export interface MyBooking {
   lastDay: IsoDate
   createdAt: Date
   totalCents: number
+  /** While the booking waits for its payment: the moment the bikes are given up. Otherwise null. */
+  holdExpiresAt: Date | null
+  /** Waiting for payment and the bikes are still held: "Complete payment" can be offered. */
+  canPay: boolean
   bikes: MyBike[]
 }
 
@@ -83,12 +89,15 @@ async function load(customerId: string, lang: Lang, options: Options, onlyBookin
     lastDay: inclusiveEnd(booking.endsOn),
     createdAt: booking.createdAt,
     totalCents: booking.totalCents,
+    holdExpiresAt: booking.status === 'pending' ? booking.holdExpiresAt : null,
+    canPay: booking.status === 'pending' && booking.holdExpiresAt.getTime() > now.getTime(),
     bikes: lines.filter((line) => line.bookingId === booking.id).map((line): MyBike => {
       const own = names.filter((entry) => entry.modelId === line.modelId)
       const refund = refunds.find((entry) => entry.reservationId === line.id)
       return {
         reservationId: line.id,
         status: line.status as MyBike['status'],
+        modelId: line.modelId,
         modelName: (own.find((entry) => entry.locale === lang) ?? own.find((entry) => entry.locale === 'it') ?? own[0])?.name ?? '',
         sizeName: line.sizeName,
         versionName: line.versionName,

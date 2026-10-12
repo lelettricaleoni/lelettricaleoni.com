@@ -23,6 +23,11 @@ export function fill(text: string, values: Record<string, string | number>): str
   return text.replace(/\{(\w+)\}/g, (whole, name: string) => (name in values ? String(values[name]) : whole))
 }
 
+/** "09:15": the time of a moment in Rome, whatever clock the server has. */
+export function formatTime(moment: Date, lang: Lang): string {
+  return new Intl.DateTimeFormat(INTL_LOCALE[lang], { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Europe/Rome' }).format(moment)
+}
+
 /** "mon 8 December, 09:00": a moment, always in the time of Rome (the shop's), whatever clock the server has. */
 export function formatDeadline(moment: Date, lang: Lang): string {
   return new Intl.DateTimeFormat(INTL_LOCALE[lang], {

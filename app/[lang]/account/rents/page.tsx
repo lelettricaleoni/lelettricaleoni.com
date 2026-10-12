@@ -4,6 +4,7 @@ import { eq } from 'drizzle-orm'
 import { getDictionary, hasLocale } from '../../dictionaries'
 import { BookingCard } from '@/components/account/booking-parts'
 import { PageTitle } from '@/components/account/flash'
+import { getModelMedia } from '@/components/bike-model-media'
 import { Button } from '@/components/ui/button'
 import { db, customers } from '@/lib/db'
 import { getCurrentUser } from '@/lib/auth/current-user'
@@ -22,6 +23,8 @@ export default async function RentsPage({ params }: { params: Promise<{ lang: st
 
   const [customer] = await db.select({ id: customers.id }).from(customers).where(eq(customers.userId, user.id))
   const { upcoming, past } = customer ? await listMyBookings(customer.id, lang) : { upcoming: [], past: [] }
+  // The first photo of every bike model that appears, so a booking is recognised at a glance.
+  const media = await getModelMedia([...upcoming, ...past].flatMap((booking) => booking.bikes.map((bike) => ({ id: bike.modelId, name: bike.modelName }))))
 
   return (
     <>
@@ -36,13 +39,13 @@ export default async function RentsPage({ params }: { params: Promise<{ lang: st
           {upcoming.length > 0 && (
             <section className="space-y-3">
               <h2 className="text-lg font-semibold text-foreground">{d.upcoming}</h2>
-              {upcoming.map((booking) => <BookingCard key={booking.id} booking={booking} lang={lang} dict={d} />)}
+              {upcoming.map((booking) => <BookingCard key={booking.id} booking={booking} lang={lang} dict={d} media={media} />)}
             </section>
           )}
           {past.length > 0 && (
             <section className="space-y-3">
               <h2 className="text-lg font-semibold text-foreground">{d.past}</h2>
-              {past.map((booking) => <BookingCard key={booking.id} booking={booking} lang={lang} dict={d} />)}
+              {past.map((booking) => <BookingCard key={booking.id} booking={booking} lang={lang} dict={d} media={media} />)}
             </section>
           )}
         </>

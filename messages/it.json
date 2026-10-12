@@ -411,7 +411,19 @@
       "back": "Tutte le prenotazioni",
       "not_found": "Questa prenotazione non esiste.",
       "refund_line": "Rimborso: {amount}",
-      "help_email": "help@lelettricaleoni.com"
+      "help_email": "help@lelettricaleoni.com",
+      "pay_now": "Completa il pagamento",
+      "pay_until": "Le bici restano tue fino alle {time}.",
+      "pay_expired": "Il tempo per pagare è finito e le bici sono state liberate.",
+      "pay_errors": {
+        "expired": "Il tempo per pagare è finito e le bici sono state liberate. Puoi prenotare di nuovo.",
+        "closed": "Questa prenotazione non è più da pagare.",
+        "in_progress": "Stiamo ancora preparando il pagamento. Riprova fra un istante.",
+        "payments_unavailable": "I pagamenti non sono ancora attivi.",
+        "not_found": "Questa prenotazione non esiste.",
+        "login_required": "La sessione è scaduta. Accedi di nuovo.",
+        "invalid_request": "Qualcosa non è andato: ricarica la pagina e riprova."
+      }
     }
   },
   "rent": {
@@ -449,7 +461,7 @@
     "terms_link": "termini di noleggio",
     "pay": "Paga {total}",
     "paying": "Un momento…",
-    "hold_note": "Le bici restano tue per 30 minuti mentre paghi.",
+    "hold_note": "Le bici restano tue per 15 minuti mentre paghi.",
     "errors": {
       "invalid_request": "Qualcosa non è andato: ricarica la pagina e riprova.",
       "not_allowed": "Questo account non può prenotare. Conferma la tua email e riprova.",
@@ -501,7 +513,7 @@
     "seller_title": "Chi noleggia",
     "seller_body": "Lelettrica di Leoni Gabriele, Via Roma 90, 38074 Dro (TN), Italia. P.IVA 02622600225.\nTelefono +39 338 123 2434, email info@lelettricaleoni.com.",
     "booking_title": "Come si prenota",
-    "booking_body": "Prenoti dal sito, con un account, scegliendo i giorni e le bici. Si noleggia per giorni interi: da domani fino a 180 giorni da oggi, per al massimo 10 bici alla volta. I noleggi di oggi si fanno in negozio.\nTi chiediamo un numero di cellulare, che useremo solo se c'è un problema con il ritiro.\nLe bici che scegli restano tue per 30 minuti, il tempo di pagare. Se non completi il pagamento, tornano disponibili.",
+    "booking_body": "Prenoti dal sito, con un account, scegliendo i giorni e le bici. Si noleggia per giorni interi: da domani fino a 180 giorni da oggi, per al massimo 10 bici alla volta. I noleggi di oggi si fanno in negozio.\nTi chiediamo un numero di cellulare, che useremo solo se c'è un problema con il ritiro.\nLe bici che scegli restano tue per 15 minuti, il tempo di pagare. Se non completi il pagamento, tornano disponibili.",
     "payment_title": "Prezzo e pagamento",
     "payment_body": "Il prezzo è quello che vedi nel riepilogo prima di pagare, in euro. Si paga l'intero importo al momento della prenotazione. La prenotazione è confermata quando il pagamento va a buon fine. I prezzi comprendono l'IVA.",
     "invoice_title": "Fattura",

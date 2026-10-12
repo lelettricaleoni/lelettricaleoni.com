@@ -3,11 +3,11 @@ import type { CheckoutSession, CreateSessionInput, ExpireResult, PaymentGateway,
 
 /*
  * Stripe behind the payment seam (./gateway.ts). Checkout is Stripe's own page: no card data, and no Stripe script, ever reaches our
- * pages. Only cards are offered, as a filter on what Checkout would offer (Apple Pay and Google Pay are cards): a card pays at once, and the bikes are held for 30 minutes, so
+ * pages. Only cards are offered, as a filter on what Checkout would offer (Apple Pay and Google Pay are cards): a card pays at once, and the bikes are held for a few minutes only (`HOLD_MINUTES`), so
  * a method that settles days later (a bank debit) cannot be offered.
  */
 
-/** Stripe's minimum for a session is 30 minutes and our hold is exactly 30: ask for one minute more, and `settleHold` closes it on time. */
+/** Stripe's minimum for a session is 30 minutes and our hold is shorter: the session is opened for 31, and `settleHold` closes it when the hold ends. */
 const MIN_SESSION_MINUTES = 31
 
 /** The languages Checkout speaks that we do too; anything else lets Stripe look at the browser. */

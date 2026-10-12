@@ -5,7 +5,7 @@ import { db, bikeCategories, bikeModels, bikeReservations, bookings, customers }
 import { FakeGateway } from '@/lib/booking/payments/fake'
 import { getFakeGateway } from '@/lib/booking/payments'
 import {
-  abandonMyCheckout, cancelMyBike, confirmMyBooking, payWithFakeCard, startCheckoutForUser, type StartCheckoutRequest,
+  abandonMyCheckout, cancelMyBike, confirmMyBooking, payWithFakeCard, resumeMyCheckout, startCheckoutForUser, type StartCheckoutRequest,
 } from '@/lib/booking/rent-actions'
 import { parseRentState } from '@/lib/booking/rent-url'
 import { SITE_URL } from '@/lib/auth/urls'
@@ -197,6 +197,60 @@ describe('the booking actions of a signed-in person', () => {
       const result = await abandonMyCheckout(userOf(), booking.id, '//evil.example', gateway)
       if (result.status !== 'abandoned') throw new Error('expected abandoned')
       expect(result.href.startsWith('/it/rent')).toBe(true)
+    })
+
+    describe('completing a payment that was left open ("Complete payment")', () => {
+      it('sends the person back to the payment page of their own booking while there is time, and changes nothing', async () => {
+        const pending = await startPendingBooking(fx, gateway, STAY, 1)
+        const result = await resumeMyCheckout(userOf(), pending.bookingId, gateway)
+        expect(result).toEqual({ status: 'redirect', url: expect.stringMatching(/^\/it\/rent\/fake-checkout\/fake_cs_/) })
+        expect((await mine())[0].status).toBe('pending')
+      })
+
+      it('does nothing for somebody else’s booking, and says what it says of one that does not exist', async () => {
+        const pending = await startPendingBooking(fx, gateway, STAY, 1)
+        const other = await otherCustomer()
+        expect(await resumeMyCheckout(userOf({ id: other.userId! }), pending.bookingId, gateway)).toEqual({ status: 'not_found' })
+        expect(await resumeMyCheckout(userOf(), crypto.randomUUID(), gateway)).toEqual({ status: 'not_found' })
+        expect((await mine())[0].status).toBe('pending')
+      })
+
+      it('when the time is up it ends the wait, closing the payment page first, and says it is over', async () => {
+        const pending = await startPendingBooking(fx, gateway, STAY, 1)
+        const later = new Date(Date.now() + 60 * 60_000)
+        expect(await resumeMyCheckout(userOf(), pending.bookingId, gateway, later)).toEqual({ status: 'expired' })
+        expect((await mine())[0].status).toBe('expired')
+        expect(await gateway.getSession(pending.sessionId)).toEqual({ status: 'expired' })
+      })
+
+      it('when the time is up but it was paid in the meantime, the money is not thrown away', async () => {
+        const pending = await startPendingBooking(fx, gateway, STAY, 1)
+        gateway.pay(pending.sessionId)
+        const later = new Date(Date.now() + 60 * 60_000)
+        expect(await resumeMyCheckout(userOf(), pending.bookingId, gateway, later)).toEqual({ status: 'paid' })
+        expect((await mine())[0].status).toBe('confirmed')
+      })
+
+      it('says it is paid when it was paid and the booking is not confirmed yet (the page it goes to confirms it)', async () => {
+        const pending = await startPendingBooking(fx, gateway, STAY, 1)
+        gateway.pay(pending.sessionId)
+        expect(await resumeMyCheckout(userOf(), pending.bookingId, gateway)).toEqual({ status: 'paid' })
+      })
+
+      it('a payment page that the gateway already closed ends the wait', async () => {
+        const pending = await startPendingBooking(fx, gateway, STAY, 1)
+        await gateway.expireSession(pending.sessionId)
+        expect(await resumeMyCheckout(userOf(), pending.bookingId, gateway)).toEqual({ status: 'expired' })
+        expect((await mine())[0].status).toBe('expired')
+      })
+
+      it('a booking that is over (expired, cancelled) is closed, and a confirmed one is paid', async () => {
+        const pending = await startPendingBooking(fx, gateway, STAY, 1)
+        await db.update(bookings).set({ status: 'expired' }).where(eq(bookings.id, pending.bookingId))
+        expect(await resumeMyCheckout(userOf(), pending.bookingId, gateway)).toEqual({ status: 'closed' })
+        await db.update(bookings).set({ status: 'confirmed' }).where(eq(bookings.id, pending.bookingId))
+        expect(await resumeMyCheckout(userOf(), pending.bookingId, gateway)).toEqual({ status: 'paid' })
+      })
     })
 
     it('backing out of somebody else’s payment page does nothing', async () => {

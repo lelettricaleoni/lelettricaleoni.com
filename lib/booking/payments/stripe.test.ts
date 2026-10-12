@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 import Stripe from 'stripe'
 import { StripeGateway, stripeKeyMode } from './stripe'
 import type { CreateSessionInput } from './gateway'
+import { HOLD_MINUTES } from '@/lib/booking/rules'
 
 /*
  * The Stripe gateway against a client that never touches the network (the actions must not, in tests): what we ASK of Stripe, and how
@@ -57,10 +58,10 @@ describe('opening a payment session', () => {
     expect(options).toEqual({ idempotencyKey: 'checkout-key-1' })
   })
 
-  it('gives Stripe at least 31 minutes, because its minimum is 30 and the bikes are held for exactly 30', async () => {
+  it('gives Stripe at least 31 minutes, because its minimum is 30 and the bikes are held for less (the hold closes the session itself)', async () => {
     const { stripe, sessions } = client()
     sessions.create.mockResolvedValue({ id: 'cs_1', url: 'https://x.test/p' })
-    await new StripeGateway(stripe, () => NOW).createSession(input({ expiresAt: new Date(NOW.getTime() + 30 * 60_000) }))
+    await new StripeGateway(stripe, () => NOW).createSession(input({ expiresAt: new Date(NOW.getTime() + HOLD_MINUTES * 60_000) }))
     expect(sessions.create.mock.calls[0][0].expires_at).toBe(Math.floor(NOW.getTime() / 1000) + 31 * 60)
   })
 

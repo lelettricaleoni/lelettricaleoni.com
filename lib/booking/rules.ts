@@ -1,8 +1,13 @@
 import { z } from 'zod'
 import { addDaysTo, daysBetween, inclusiveEnd, isValidDay, type IsoDate } from '@/lib/dates'
 
-/** How long the bikes of a booking are kept while the person pays: the minimum of a Stripe Checkout session. */
-export const HOLD_MINUTES = 30
+/**
+ * How long the bikes of a booking are kept while the person pays. Fifteen minutes is plenty to type a card (and a 3-D Secure check), and a
+ * shop with few bikes cannot leave them blocked for longer by somebody who never came back. Stripe's own minimum for a Checkout session is
+ * 30 minutes, which is no obstacle: the session is opened for 31 and `settleHold` closes it when OUR time is up (lib/booking/payments/stripe.ts),
+ * so nobody can pay after the bikes were given up, and a payment that lands in the very last moment is confirmed or refunded (lib/booking/settle.ts).
+ */
+export const HOLD_MINUTES = 15
 export const MAX_BIKES_PER_BOOKING = 10
 /** The last day of a stay may be at most this many days from today. Only for the public page: the panel has no limit. */
 export const MAX_DAYS_AHEAD = 180

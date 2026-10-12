@@ -4,9 +4,10 @@ import { after } from 'next/server'
 import { eq } from 'drizzle-orm'
 import { z } from 'zod'
 import { getDictionary, hasLocale } from '../../../dictionaries'
-import { StatusBadge } from '@/components/account/booking-parts'
+import { PaymentStrip, StatusBadge } from '@/components/account/booking-parts'
 import { CancelBikeButton } from '@/components/account/cancel-bike-button'
 import { Flash } from '@/components/account/flash'
+import { getModelMedia } from '@/components/bike-model-media'
 import { db, customers } from '@/lib/db'
 import { getCurrentUser } from '@/lib/auth/current-user'
 import { fill, formatDays, formatDeadline } from '@/lib/booking/format'
@@ -51,6 +52,7 @@ export default async function RentPage({
   const [customer] = await db.select({ id: customers.id }).from(customers).where(eq(customers.userId, user.id))
   const booking = customer ? await getMyBooking(customer.id, id, lang) : null
   if (!booking) notFound()
+  const media = await getModelMedia(booking.bikes.map((bike) => ({ id: bike.modelId, name: bike.modelName })))
 
   const cancelLabels = {
     button: d.cancel_bike, title: d.cancel_title, body: d.cancel_body, confirm: d.cancel_confirm, keep: d.cancel_keep,
@@ -70,10 +72,13 @@ export default async function RentPage({
         </p>
       </div>
       <Flash error={banner.error} info={banner.info} />
+      <PaymentStrip booking={booking} lang={lang} dict={d} className="rounded-xl border bg-card p-4 shadow-sm" />
 
-      <ul className="divide-y rounded-xl border bg-card shadow-sm">
+      <ul className="grid gap-4 sm:grid-cols-2">
         {booking.bikes.map((bike) => (
-          <li key={bike.reservationId} className="space-y-3 p-4">
+          <li key={bike.reservationId} className="overflow-hidden rounded-xl border bg-card shadow-sm">
+            <div className="relative h-40 overflow-hidden bg-white">{media[bike.modelId]}</div>
+            <div className="space-y-3 p-4">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <p className="font-medium text-foreground">{fill(d.bike_line, { model: bike.modelName, size: bike.sizeName })}</p>
@@ -99,6 +104,7 @@ export default async function RentPage({
                 {fill(d.cancel_late, { deadline: formatDeadline(bike.refundableUntil, lang), email: d.help_email })}
               </p>
             )}
+            </div>
           </li>
         ))}
       </ul>

@@ -7,7 +7,7 @@ import { z } from 'zod'
 import { getCurrentUser } from '@/lib/auth/current-user'
 import { languageOf } from '@/lib/auth/language'
 import { buildRange } from '@/lib/dates'
-import { cancelMyBike, payWithFakeCard, startCheckoutForUser } from '@/lib/booking/rent-actions'
+import { cancelMyBike, payWithFakeCard, resumeMyCheckout, startCheckoutForUser } from '@/lib/booking/rent-actions'
 import { syncReservation } from '@/lib/integrations/google-calendar/sync'
 
 /*
@@ -98,6 +98,23 @@ export async function cancelBikeAction(reservationId: unknown, lang: unknown): P
     case 'not_found': case 'already_cancelled': return { status: result.status }
     default: return { status: 'refund_failed' }
   }
+}
+
+export type ResumeCheckoutActionResult = { status: 'invalid_request' | 'login_required' | 'not_found' | 'expired' | 'closed' | 'in_progress' | 'payments_unavailable' }
+
+/** "Complete payment": back to the payment page of a booking still waiting for it, or the reason there is nothing to pay any more. */
+export async function resumeCheckoutAction(bookingId: unknown, lang: unknown): Promise<ResumeCheckoutActionResult> {
+  const id = idSchema.safeParse(bookingId)
+  if (!id.success) return { status: 'invalid_request' }
+  const user = await getCurrentUser()
+  if (!user) return { status: 'login_required' }
+
+  const result = await resumeMyCheckout(user, id.data)
+  // `redirect` throws: nothing after it runs.
+  if (result.status === 'redirect') redirect(result.url)
+  if (result.status === 'paid') redirect(`/${languageOf(lang)}/account/rents/${id.data}?paid=1`)
+  // Not revalidated on purpose: the booking leaves the list once it has ended, and with it the words that say why (they are under the button).
+  return { status: result.status }
 }
 
 export type FakePayActionResult = { status: 'invalid_request' | 'login_required' | 'not_found' | 'unavailable' | 'not_payable' }
