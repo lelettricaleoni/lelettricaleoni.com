@@ -1,17 +1,19 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { eq } from 'drizzle-orm'
 import type { User } from '@supabase/supabase-js'
 import { db, bikeCategories, bikeModels, bikeReservations, bookings, customers } from '@/lib/db'
 import { FakeGateway } from '@/lib/booking/payments/fake'
+import { getFakeGateway } from '@/lib/booking/payments'
 import {
-  abandonMyCheckout, cancelMyBike, confirmMyBooking, startCheckoutForUser, type StartCheckoutRequest,
+  abandonMyCheckout, cancelMyBike, confirmMyBooking, payWithFakeCard, startCheckoutForUser, type StartCheckoutRequest,
 } from '@/lib/booking/rent-actions'
 import { parseRentState } from '@/lib/booking/rent-url'
+import { SITE_URL } from '@/lib/auth/urls'
 import { createFixture, insertPaidBooking, startPendingBooking, type Fixture } from './fixtures'
 
 const STAY = { startsOn: '2031-11-03', endsOn: '2031-11-06' }
 const TODAY = '2031-10-01'
-const ORIGIN = 'https://staging.example.test'
+const ORIGIN = SITE_URL
 
 describe('the booking actions of a signed-in person', () => {
   let fx: Fixture
@@ -40,7 +42,7 @@ describe('the booking actions of a signed-in person', () => {
   })
 
   const request = (overrides: Partial<StartCheckoutRequest> = {}): StartCheckoutRequest => ({
-    bookingKey: crypto.randomUUID(), range: STAY, language: 'it', acceptTerms: true, today: TODAY, origin: ORIGIN,
+    bookingKey: crypto.randomUUID(), range: STAY, language: 'it', acceptTerms: true,
     cart: [{ bikeModelId: fx.modelId, bikeSizeId: fx.sizeId, bikeVersionId: fx.versionId, quantity: 1 }],
     ...overrides,
   })
@@ -49,7 +51,7 @@ describe('the booking actions of a signed-in person', () => {
 
   describe('starting a payment', () => {
     it('sends the person to pay, with the pages to come back to on this site', async () => {
-      const result = await startCheckoutForUser(userOf(), request(), gateway)
+      const result = await startCheckoutForUser(userOf(), request(), gateway, { today: TODAY })
       if (result.status !== 'redirect') throw new Error(`expected redirect, got ${result.status}`)
       expect(result.url).toMatch(/^\/it\/rent\/fake-checkout\/fake_cs_/)
       const [booking] = await mine()
@@ -59,45 +61,62 @@ describe('the booking actions of a signed-in person', () => {
       expect(session?.cancelUrl).toBe(`${ORIGIN}/it/rent/cancelled/${booking.id}`)
     })
 
+    it('is not talked into another site, or another path, by the language it is given: only the three languages exist', async () => {
+      const result = await startCheckoutForUser(userOf(), request({ language: '//evil.example/x' }), gateway, { today: TODAY })
+      if (result.status !== 'redirect') throw new Error(`expected redirect, got ${result.status}`)
+      expect(result.url).toMatch(/^\/it\/rent\/fake-checkout\//)
+      const [booking] = await mine()
+      expect(booking.language).toBe('it')
+      const session = gateway.describe(booking.stripeSessionId!)
+      expect(session?.successUrl).toBe(`${ORIGIN}/it/account/rents/${booking.id}?paid=1`)
+      expect(session?.cancelUrl).toBe(`${ORIGIN}/it/rent/cancelled/${booking.id}`)
+    })
+
+    it('does not accept as today a day the caller makes up: from tomorrow is from tomorrow in Rome', async () => {
+      // no `today` option: the real today decides, so a stay in 2031 is far beyond the 180 days
+      expect(await startCheckoutForUser(userOf(), request(), gateway)).toEqual({ status: 'invalid', reason: 'too_far' })
+      expect(await mine()).toHaveLength(0)
+    })
+
     it('does not book without the terms being accepted', async () => {
-      expect(await startCheckoutForUser(userOf(), request({ acceptTerms: false }), gateway)).toEqual({ status: 'terms_required' })
+      expect(await startCheckoutForUser(userOf(), request({ acceptTerms: false }), gateway, { today: TODAY })).toEqual({ status: 'terms_required' })
       expect(await mine()).toHaveLength(0)
     })
 
     it('does not book for staff, nor for an account whose email is not confirmed', async () => {
-      expect(await startCheckoutForUser(userOf({ app_metadata: { role: 'admin' } }), request(), gateway)).toEqual({ status: 'not_allowed' })
-      expect(await startCheckoutForUser(userOf({ email_confirmed_at: undefined }), request(), gateway)).toEqual({ status: 'not_allowed' })
+      expect(await startCheckoutForUser(userOf({ app_metadata: { role: 'admin' } }), request(), gateway, { today: TODAY })).toEqual({ status: 'not_allowed' })
+      expect(await startCheckoutForUser(userOf({ email_confirmed_at: undefined }), request(), gateway, { today: TODAY })).toEqual({ status: 'not_allowed' })
       expect(await mine()).toHaveLength(0)
     })
 
     it('asks for a phone when the profile has none, refuses one that is not valid, and saves a good one in the profile', async () => {
       await db.update(customers).set({ phone: null }).where(eq(customers.id, fx.customerId))
-      expect(await startCheckoutForUser(userOf(), request(), gateway)).toEqual({ status: 'needs_phone' })
-      expect(await startCheckoutForUser(userOf(), request({ phone: '12' }), gateway)).toEqual({ status: 'invalid_phone' })
+      expect(await startCheckoutForUser(userOf(), request(), gateway, { today: TODAY })).toEqual({ status: 'needs_phone' })
+      expect(await startCheckoutForUser(userOf(), request({ phone: '12' }), gateway, { today: TODAY })).toEqual({ status: 'invalid_phone' })
       expect(await mine()).toHaveLength(0)
-      const result = await startCheckoutForUser(userOf(), request({ phone: '348 765 4321', phoneCountry: 'IT' }), gateway)
+      const result = await startCheckoutForUser(userOf(), request({ phone: '348 765 4321', phoneCountry: 'IT' }), gateway, { today: TODAY })
       expect(result.status).toBe('redirect')
       expect((await customerRow()).phone).toBe('+393487654321')
     })
 
     it('never replaces the phone the profile already has: that is for the account settings', async () => {
-      await startCheckoutForUser(userOf(), request({ phone: '+393489999999' }), gateway)
+      await startCheckoutForUser(userOf(), request({ phone: '+393489999999' }), gateway, { today: TODAY })
       expect((await customerRow()).phone).toBe('+393481234567')
     })
 
     it('passes on what the engine says: a bike that is not free, a stay too long, a page that does not exist in production', async () => {
       const tooMany = request({ cart: [{ bikeModelId: fx.modelId, bikeSizeId: fx.sizeId, bikeVersionId: fx.versionId, quantity: 4 }] })
-      expect(await startCheckoutForUser(userOf(), tooMany, gateway)).toEqual({ status: 'bike_unavailable', lineIndex: 3 })
-      expect(await startCheckoutForUser(userOf(), request({ range: { startsOn: '2031-11-03', endsOn: '2031-11-09' } }), gateway))
+      expect(await startCheckoutForUser(userOf(), tooMany, gateway, { today: TODAY })).toEqual({ status: 'bike_unavailable', lineIndex: 3 })
+      expect(await startCheckoutForUser(userOf(), request({ range: { startsOn: '2031-11-03', endsOn: '2031-11-09' } }), gateway, { today: TODAY }))
         .toMatchObject({ status: 'too_many_days', maxDays: 3 })
     })
 
     it('says a booking already paid is paid', async () => {
       const same = request()
-      const first = await startCheckoutForUser(userOf(), same, gateway)
+      const first = await startCheckoutForUser(userOf(), same, gateway, { today: TODAY })
       if (first.status !== 'redirect') throw new Error('setup')
       gateway.pay(first.url.split('/').pop()!)
-      const again = await startCheckoutForUser(userOf(), same, gateway)
+      const again = await startCheckoutForUser(userOf(), same, gateway, { today: TODAY })
       expect(again).toMatchObject({ status: 'already_paid' })
     })
   })
@@ -147,7 +166,7 @@ describe('the booking actions of a signed-in person', () => {
     })
 
     it('backing out of the payment page frees the bikes at once and brings the cart back', async () => {
-      const started = await startCheckoutForUser(userOf(), request({ cart: [{ bikeModelId: fx.modelId, bikeSizeId: fx.sizeId, bikeVersionId: fx.versionId, quantity: 2 }] }), gateway)
+      const started = await startCheckoutForUser(userOf(), request({ cart: [{ bikeModelId: fx.modelId, bikeSizeId: fx.sizeId, bikeVersionId: fx.versionId, quantity: 2 }] }), gateway, { today: TODAY })
       if (started.status !== 'redirect') throw new Error('setup')
       const [booking] = await mine()
       const result = await abandonMyCheckout(userOf(), booking.id, 'it', gateway)
@@ -158,6 +177,15 @@ describe('the booking actions of a signed-in person', () => {
       expect(parseRentState(back)).toMatchObject({
         range: STAY, cart: [{ bikeModelId: fx.modelId, bikeSizeId: fx.sizeId, bikeVersionId: fx.versionId, quantity: 2 }],
       })
+    })
+
+    it('backing out never sends anyone to another site: the language is one of the three', async () => {
+      const started = await startCheckoutForUser(userOf(), request(), gateway, { today: TODAY })
+      if (started.status !== 'redirect') throw new Error('setup')
+      const [booking] = await mine()
+      const result = await abandonMyCheckout(userOf(), booking.id, '//evil.example', gateway)
+      if (result.status !== 'abandoned') throw new Error('expected abandoned')
+      expect(result.href.startsWith('/it/rent')).toBe(true)
     })
 
     it('backing out of somebody else’s payment page does nothing', async () => {
@@ -173,6 +201,49 @@ describe('the booking actions of a signed-in person', () => {
       const result = await abandonMyCheckout(userOf(), pending.bookingId, 'it', gateway)
       expect(result.status).toBe('paid')
       expect((await mine())[0].status).toBe('confirmed')
+    })
+  })
+
+  describe('paying with the card that is not one (staging and a laptop only)', () => {
+    afterEach(() => vi.unstubAllEnvs())
+
+    it('pays the session of their own booking and says where to go next, as a path of this site', async () => {
+      const fake = getFakeGateway()
+      const started = await startCheckoutForUser(userOf(), request(), fake, { today: TODAY })
+      if (started.status !== 'redirect') throw new Error('setup')
+      const [booking] = await mine()
+      const result = await payWithFakeCard(userOf(), booking.stripeSessionId!)
+      expect(result).toEqual({ status: 'paid', next: `/it/account/rents/${booking.id}?paid=1` })
+      expect((await fake.getSession(booking.stripeSessionId!)).status).toBe('paid')
+    })
+
+    it('does not pay the session of somebody else', async () => {
+      const fake = getFakeGateway()
+      const pending = await startPendingBooking(fx, fake, STAY, 1)
+      const [other] = await db.insert(customers).values({ firstName: 'db-test', lastName: `other-${crypto.randomUUID()}`, userId: crypto.randomUUID() }).returning()
+      strangers.push(other.id)
+      expect(await payWithFakeCard(userOf({ id: other.userId! }), pending.sessionId)).toEqual({ status: 'not_found' })
+      expect((await fake.getSession(pending.sessionId)).status).toBe('open')
+    })
+
+    it('knows no such session', async () => {
+      expect(await payWithFakeCard(userOf(), 'fake_cs_nobody')).toEqual({ status: 'not_found' })
+    })
+
+    it('does not exist in production: nothing is paid, and nothing is said about sessions', async () => {
+      const fake = getFakeGateway()
+      const pending = await startPendingBooking(fx, fake, STAY, 1)
+      vi.stubEnv('APP_ENV', 'production')
+      expect(await payWithFakeCard(userOf(), pending.sessionId)).toEqual({ status: 'unavailable' })
+      vi.unstubAllEnvs()
+      expect((await fake.getSession(pending.sessionId)).status).toBe('open')
+    })
+
+    it('says a session that cannot be paid any more (closed, already paid) is not payable', async () => {
+      const fake = getFakeGateway()
+      const pending = await startPendingBooking(fx, fake, STAY, 1)
+      await fake.expireSession(pending.sessionId)
+      expect(await payWithFakeCard(userOf(), pending.sessionId)).toEqual({ status: 'not_payable' })
     })
   })
 })

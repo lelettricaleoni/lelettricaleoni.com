@@ -4,12 +4,14 @@ import { getCountries, parsePhoneNumberFromString, type CountryCode } from 'libp
 import { db, bikeReservations, bikeUnits, customers, type Booking, type Customer } from '@/lib/db'
 import { hasAdminRole } from '@/lib/admin-users'
 import { ensureCustomerFor } from '@/lib/auth/ensure-customer'
+import { SITE_URL } from '@/lib/auth/urls'
+import { languageOf } from '@/lib/auth/language'
 import { DEFAULT_PHONE_COUNTRY } from '@/lib/customer'
-import type { DayRange, IsoDate } from '@/lib/dates'
+import { todayInRome, type DayRange, type IsoDate } from '@/lib/dates'
 import { beginCheckout, type BeginCheckoutResult } from './checkout'
 import { confirmBooking } from './confirm'
 import { findBooking } from './holds'
-import { getPaymentGateway, PaymentsNotConfiguredError } from './payments'
+import { getFakeGateway, getPaymentGateway, PaymentsNotConfiguredError } from './payments'
 import type { PaymentGateway } from './payments/gateway'
 import { cancelOnlineReservation, type CancelOnlineResult } from './refunds'
 import { rentHref, type RentState } from './rent-url'
@@ -57,10 +59,8 @@ export interface StartCheckoutRequest {
   phone?: string | null
   phoneCountry?: string | null
   acceptTerms: boolean
+  /** The language of the page: anything that is not one of the three is Italian (it ends up in addresses). */
   language: string
-  today: IsoDate
-  /** The address of this site, for the pages the payment sends the person back to. */
-  origin: string
 }
 
 export type StartCheckoutOutcome =
@@ -71,11 +71,16 @@ export type StartCheckoutOutcome =
  * From "Pay" on the summary to the payment page. The person must be a confirmed customer (not staff) who accepted the terms and has a
  * phone: the one in the profile, or the one given now, which is checked and saved in the profile.
  */
-export async function startCheckoutForUser(user: User, request: StartCheckoutRequest, gateway?: PaymentGateway): Promise<StartCheckoutOutcome> {
+export async function startCheckoutForUser(
+  user: User, request: StartCheckoutRequest, gateway?: PaymentGateway,
+  /** For tests only: what day it is. The real one is Rome's today, and no request can say another. */
+  options: { today?: IsoDate } = {},
+): Promise<StartCheckoutOutcome> {
   if (hasAdminRole(user) || !user.email || !user.email_confirmed_at) return { status: 'not_allowed' }
   if (!request.acceptTerms) return { status: 'terms_required' }
+  const language = languageOf(request.language)
 
-  await ensureCustomerFor(user, { language: request.language })
+  await ensureCustomerFor(user, { language })
   const customer = await customerOf(user)
   if (!customer) return { status: 'not_allowed' }
 
@@ -94,14 +99,14 @@ export async function startCheckoutForUser(user: User, request: StartCheckoutReq
     bookingKey: request.bookingKey,
     customerId: customer.id,
     customerEmail: user.email,
-    language: request.language,
+    language,
     startsOn: request.range.startsOn,
     endsOn: request.range.endsOn,
     cart: request.cart,
-    today: request.today,
+    today: options.today ?? todayInRome(),
     urls: (bookingId) => ({
-      successUrl: `${request.origin}/${request.language}/account/rents/${bookingId}?paid=1`,
-      cancelUrl: `${request.origin}/${request.language}/rent/cancelled/${bookingId}`,
+      successUrl: `${SITE_URL}/${language}/account/rents/${bookingId}?paid=1`,
+      cancelUrl: `${SITE_URL}/${language}/rent/cancelled/${bookingId}`,
     }),
   }, gateway)
 }
@@ -155,7 +160,7 @@ export async function abandonMyCheckout(user: User, bookingId: string, lang: str
   if (payments && own.booking.status === 'pending') await settleHold(bookingId, payments)
   const after = await findBooking(bookingId)
   if (after?.status === 'confirmed') return { status: 'paid' }
-  return { status: 'abandoned', href: rentHref(lang, await stateOfBooking(own.booking)) }
+  return { status: 'abandoned', href: rentHref(languageOf(lang), await stateOfBooking(own.booking)) }
 }
 
 /** The booking page's state that made this booking: its days and its bikes (the first ones made, whatever happened to them since). */
@@ -174,4 +179,25 @@ async function stateOfBooking(booking: Booking): Promise<RentState> {
     else cart.push({ bikeModelId: line.modelId, bikeSizeId: line.sizeId, bikeVersionId: line.versionId, quantity: 1 })
   }
   return { range: { startsOn: booking.startsOn, endsOn: booking.endsOn }, cart, focusModelId: null }
+}
+
+export type FakePayResult = { status: 'paid'; next: string } | { status: 'not_found' | 'unavailable' | 'not_payable' }
+
+/**
+ * What the staging payment page does instead of a card form: pays the session of the person's own booking, and says where they go next
+ * (a path of this site). Where there is no fake gateway (production) it says "unavailable" and nothing else, so nothing is paid there.
+ */
+export async function payWithFakeCard(user: User, sessionId: string): Promise<FakePayResult> {
+  let fake
+  try {
+    fake = getFakeGateway()
+  } catch (error) {
+    if (error instanceof PaymentsNotConfiguredError) return { status: 'unavailable' }
+    throw error
+  }
+  const session = fake.describe(sessionId)
+  if (!session || !(await ownBooking(user, session.bookingId))) return { status: 'not_found' }
+  if (!fake.pay(sessionId)) return { status: 'not_payable' }
+  const next = new URL(session.successUrl)
+  return { status: 'paid', next: `${next.pathname}${next.search}` }
 }

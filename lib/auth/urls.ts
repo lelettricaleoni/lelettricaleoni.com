@@ -4,7 +4,8 @@ import type { AuthErrorCode, AuthInfoCode } from './errors'
  * The addresses the sign-in actions send people to, and the one an email link comes back through. Kept out of
  * the `'use server'` files: everything those export is a Server Action, callable from the browser.
  */
-const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000').replace(/\/$/, '')
+/** The address of this site, from its own configuration: never from a request, which anybody can make say anything. */
+export const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000').replace(/\/$/, '')
 
 export function loginUrl(lang: string, params: { error?: AuthErrorCode; info?: AuthInfoCode; tab?: string; next?: string }): string {
   const query = new URLSearchParams()
