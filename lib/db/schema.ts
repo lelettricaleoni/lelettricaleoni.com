@@ -292,6 +292,16 @@ export const bookingRefunds = pgTable('booking_refunds', {
   createdAt:       timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [index('booking_refunds_booking_idx').on(t.bookingId)])
 
+// The events Stripe sent to the webhook, one row per event id: an event that is already here is not worked on twice (Stripe sends
+// the same one again when it does not get an answer in time, and sometimes just because). `processedAt` stays empty until the work
+// is done, so an event that was recorded and then crashed is picked up again by Stripe's next attempt.
+export const stripeEvents = pgTable('stripe_events', {
+  id:          text('id').primaryKey(),
+  type:        text('type').notNull(),
+  receivedAt:  timestamp('received_at', { withTimezone: true }).notNull().defaultNow(),
+  processedAt: timestamp('processed_at', { withTimezone: true }),
+})
+
 export type BookingRefund = typeof bookingRefunds.$inferSelect
 export type NewBookingRefund = typeof bookingRefunds.$inferInsert
 
