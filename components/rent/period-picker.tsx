@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Calendar } from '@/components/ui/calendar'
 import { canBook, pickDay, rangeToSelection, selectionToRange, shiftRange } from '@/lib/booking/period-selection'
 import { isSelectable, type DayReason, type PickContext, type UnitBusy } from '@/lib/booking/day-availability'
+import { isClosedOn, type ShopSchedule } from '@/lib/shop-schedule'
 import { fill, formatDay, formatDays } from '@/lib/booking/format'
 import { daysBetween, dayToDate, isoDay, type DayRange, type IsoDate } from '@/lib/dates'
 import type { RentDict } from './rent-flow'
@@ -25,11 +26,13 @@ const UNAVAILABLE: ReadonlySet<DayReason> = new Set(['no_bike', 'beyond_end', 'c
  * again when the person pays. The days live in the address: choosing a stay hands it up (`onChange`), and the page does the navigation.
  */
 export function PeriodPicker({
-  lang, dict, units, range, minDay, maxDay, maxDays, mode, pending, onChange,
+  lang, dict, units, schedule, range, minDay, maxDay, maxDays, mode, pending, onChange,
 }: {
   lang: Lang
   dict: RentDict
   units: UnitBusy[]
+  /** When the shop is open: a closed day cannot be the first or the last day (a stay may go through one). */
+  schedule: ShopSchedule
   range: DayRange | null
   minDay: IsoDate
   maxDay: IsoDate
@@ -43,14 +46,17 @@ export function PeriodPicker({
   const [selection, setSelection] = useState(() => rangeToSelection(range))
   const wide = useWideScreen()
 
-  const base = useMemo(() => ({ units, minDay, maxDay, maxDays }), [units, minDay, maxDay, maxDays])
+  const base = useMemo(
+    () => ({ units, minDay, maxDay, maxDays, isClosed: (day: IsoDate) => isClosedOn(schedule, day) }),
+    [units, schedule, minDay, maxDay, maxDays],
+  )
   // While only the first day is chosen the last one is limited by it (and by how far one bike can go).
   const pickContext: PickContext = { ...base, start: selection.start !== null && selection.end === null ? selection.start : null }
 
   function reasonText(day: IsoDate, reason: DayReason): string {
     const key = {
-      past: 'off_past', too_far: 'off_far', closed: 'off_past', no_bike: mode === 'bike' ? 'off_no_bike_model' : 'off_no_bike', beyond_end: 'off_beyond',
-    }[reason] as 'off_past' | 'off_far' | 'off_no_bike' | 'off_no_bike_model' | 'off_beyond'
+      past: 'off_past', too_far: 'off_far', closed: 'off_closed', no_bike: mode === 'bike' ? 'off_no_bike_model' : 'off_no_bike', beyond_end: 'off_beyond',
+    }[reason] as 'off_past' | 'off_far' | 'off_closed' | 'off_no_bike' | 'off_no_bike_model' | 'off_beyond'
     return fill(dict[key], { day: formatDay(day, lang) })
   }
 

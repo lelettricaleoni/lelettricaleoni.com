@@ -423,7 +423,8 @@
         "not_found": "Questa prenotazione non esiste.",
         "login_required": "La sessione è scaduta. Accedi di nuovo.",
         "invalid_request": "Qualcosa non è andato: ricarica la pagina e riprova."
-      }
+      },
+      "pickup_when": "Ritiro {pickupDay}, orario {pickupHours}. Riconsegna {returnDay}, orario {returnHours}. Entro la chiusura del negozio: le bici vanno ricaricate e non si riconsegnano il giorno dopo. Per accordi diversi, chiamaci."
     }
   },
   "rent": {
@@ -478,7 +479,8 @@
       "too_many_attempts": "Troppi tentativi di fila. Riprova fra un'ora.",
       "try_again": "Non siamo riusciti a tenerti le bici. Riprova.",
       "payments_unavailable": "I pagamenti non sono ancora attivi.",
-      "generic": "Non siamo riusciti a procedere. Riprova."
+      "generic": "Non siamo riusciti a procedere. Riprova.",
+      "closed_day": "Il negozio è chiuso il primo o l'ultimo giorno: scegli altre date."
     },
     "fake": {
       "title": "Pagamento di prova",
@@ -492,8 +494,8 @@
     "day_before": "Giorno prima",
     "day_after": "Giorno dopo",
     "change_days": "Cambia",
-    "legend_off_days": "I giorni in grigio non si possono scegliere: non c'è nessuna bici libera.",
-    "legend_off_bike": "I giorni in grigio non si possono scegliere: questa bici non è libera.",
+    "legend_off_days": "I giorni in grigio non si possono scegliere: il negozio è chiuso o non c'è nessuna bici libera.",
+    "legend_off_bike": "I giorni in grigio non si possono scegliere: il negozio è chiuso o questa bici non è libera.",
     "off_past": "{day}, non si prenota più",
     "off_far": "{day}, troppo avanti",
     "off_no_bike": "{day}, nessuna bici libera",
@@ -503,7 +505,9 @@
     "see_all_free": "Vedi tutte le bici libere in questo periodo",
     "see_all_bikes": "Vedi tutte le bici",
     "bike_mode_label": "Stai prenotando",
-    "cart_changed": "Qualcuno ha appena prenotato: abbiamo aggiornato la tua scelta."
+    "cart_changed": "Qualcuno ha appena prenotato: abbiamo aggiornato la tua scelta.",
+    "off_closed": "{day}, il negozio è chiuso",
+    "pickup_when": "Ritiro {pickupDay}, orario {pickupHours}. Riconsegna {returnDay}, orario {returnHours}. Entro la chiusura del negozio: le bici vanno ricaricate e non si riconsegnano il giorno dopo. Per accordi diversi, chiamaci."
   },
   "terms": {
     "title": "Termini di noleggio",

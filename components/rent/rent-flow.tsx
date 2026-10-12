@@ -13,11 +13,13 @@ import { cartLines, cartTotalCents, sanitizeCart } from '@/lib/booking/cart'
 import type { BookableModel, FocusModel } from '@/lib/booking/catalog'
 import type { UnitBusy } from '@/lib/booking/day-availability'
 import { fill, formatDays } from '@/lib/booking/format'
+import { pickupText } from '@/lib/booking/pickup-text'
 import { rentHref } from '@/lib/booking/rent-url'
 import type { CartItem } from '@/lib/booking/rules'
 import { coalesce } from '@/lib/coalesce'
 import { daysBetween, inclusiveEnd, type DayRange, type IsoDate } from '@/lib/dates'
 import { formatPrice } from '@/lib/money'
+import type { ShopSchedule } from '@/lib/shop-schedule'
 import { cn } from '@/lib/utils'
 import { ModelCard } from './model-card'
 import { PeriodPicker } from './period-picker'
@@ -40,7 +42,7 @@ export type RentAccount = { kind: 'guest' } | { kind: 'customer'; hasPhone: bool
  * What is shown is an estimate: the server prices, checks and holds when the person pays.
  */
 export function RentFlow({
-  lang, dict, termsHref, range, initialCart, focusModelId, mode, focus, units, models, media, minDay, maxDay, account,
+  lang, dict, termsHref, range, initialCart, focusModelId, mode, focus, units, schedule, models, media, minDay, maxDay, account,
 }: {
   lang: Lang
   dict: RentDict
@@ -51,6 +53,7 @@ export function RentFlow({
   mode: 'days' | 'bike'
   focus: FocusModel | null
   units: UnitBusy[]
+  schedule: ShopSchedule
   models: BookableModel[]
   /** The photo of each model, by id (server components, so they cannot be made here). */
   media: Record<string, ReactNode>
@@ -124,7 +127,7 @@ export function RentFlow({
           <h2 id="rent-when" className="text-lg font-semibold text-foreground">{dict.dates_title}</h2>
           <p className="mt-1 mb-4 text-sm text-muted-foreground">{dict.dates_hint}</p>
           <PeriodPicker
-            lang={lang} dict={dict} units={units} range={range} minDay={minDay} maxDay={maxDay}
+            lang={lang} dict={dict} units={units} schedule={schedule} range={range} minDay={minDay} maxDay={maxDay}
             maxDays={mode === 'bike' ? (focus?.maxDays ?? null) : null} mode={mode} pending={navigating} onChange={changeDays}
           />
         </section>
@@ -173,7 +176,7 @@ export function RentFlow({
             <span className="text-xl font-bold tabular-nums text-primary">{formatPrice(total, lang)}</span>
           </div>
         )}
-        <p className="text-xs text-muted-foreground">{dict.pickup_note}</p>
+        <p className="text-xs text-muted-foreground">{range ? pickupText(range, schedule, lang, dict) : dict.pickup_note}</p>
         <p className="text-xs text-muted-foreground">
           {dict.invoice_note}{' '}
           <a href="tel:+393381232434" className="font-medium text-primary hover:underline">+39 338 123 2434</a>
@@ -230,7 +233,8 @@ function PaySection({
       })
       // Reaching this line means it did not redirect to the payment page: there is something to say.
       if (result.status === 'login_required') { router.push(`/${lang}/login?next=${encodeURIComponent(rentHref(lang, { range, cart, focusModelId: null }))}`); return }
-      const key = result.status in dict.errors ? (result.status as keyof RentDict['errors']) : 'generic'
+      const key = result.status === 'invalid' && result.reason === 'closed_day' ? 'closed_day'
+        : result.status in dict.errors ? (result.status as keyof RentDict['errors']) : 'generic'
       setError(fill(dict.errors[key], { max: 'maxDays' in result ? result.maxDays : '' }))
     })
   }

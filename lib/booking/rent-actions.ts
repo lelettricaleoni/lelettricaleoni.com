@@ -13,6 +13,8 @@ import { findBooking } from './holds'
 import { getFakeGateway, getPaymentGateway, PaymentsNotConfiguredError } from './payments'
 import type { PaymentGateway } from './payments/gateway'
 import { cancelOnlineReservation, type CancelOnlineResult } from './refunds'
+import { isClosedOn, type ShopSchedule } from '@/lib/shop-schedule'
+import { loadShopSchedule } from '@/lib/shop-schedule-data'
 import { rentHref, type RentState } from './rent-url'
 import { settleHold } from './settle'
 
@@ -72,7 +74,7 @@ export type StartCheckoutOutcome =
 export async function startCheckoutForUser(
   user: User, request: StartCheckoutRequest, gateway?: PaymentGateway,
   /** For tests only: what day it is. The real one is Rome's today, and no request can say another. */
-  options: { today?: IsoDate } = {},
+  options: { today?: IsoDate; schedule?: ShopSchedule } = {},
 ): Promise<StartCheckoutOutcome> {
   if (!user.email || !user.email_confirmed_at) return { status: 'not_allowed' }
   if (!request.acceptTerms) return { status: 'terms_required' }
@@ -93,6 +95,7 @@ export async function startCheckoutForUser(
       .where(and(eq(customers.id, customer.id), isNull(customers.phone)))
   }
 
+  const schedule = options.schedule ?? await loadShopSchedule()
   return beginCheckout({
     bookingKey: request.bookingKey,
     customerId: customer.id,
@@ -102,6 +105,8 @@ export async function startCheckoutForUser(
     endsOn: request.range.endsOn,
     cart: request.cart,
     today: options.today ?? todayInRome(),
+    // Read now, from the database: a stay that starts or ends on a day the shop is closed is refused, whatever the address says.
+    isClosed: (day) => isClosedOn(schedule, day),
     urls: (bookingId) => ({
       successUrl: `${SITE_URL}/${language}/account/rents/${bookingId}?paid=1`,
       cancelUrl: `${SITE_URL}/${language}/rent/cancelled/${bookingId}`,

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { formatPrice } from '@/lib/money'
-import { fill, formatDay, formatDays, formatDeadline, formatTime } from './format'
+import { fill, formatDay, formatDays, formatDeadline, formatHours, formatTime } from './format'
 
 describe('formatPrice: an amount the way each language writes it', () => {
   it('drops the cents on a round amount and keeps them otherwise', () => {
@@ -63,5 +63,18 @@ describe('formatTime: the hour in Rome, whatever the clock of the server', () =>
     expect(formatTime(new Date('2031-07-01T12:05:00Z'), 'it')).toBe('14:05') // CEST, +2
     expect(formatTime(new Date('2031-12-01T12:05:00Z'), 'en')).toBe('13:05') // CET, +1
     expect(formatTime(new Date('2031-12-01T08:00:00Z'), 'de')).toBe('09:00')
+  })
+})
+
+describe('formatHours: the ranges of a day, in the language of the page', () => {
+  const day = [{ opensAt: '09:00', closesAt: '13:00' }, { opensAt: '14:00', closesAt: '19:00' }]
+  it('joins the ranges with the "and" of each language', () => {
+    expect(formatHours(day, 'it')).toBe('09:00–13:00 e 14:00–19:00')
+    expect(formatHours(day, 'en')).toBe('09:00–13:00 and 14:00–19:00')
+    expect(formatHours(day, 'de')).toBe('09:00–13:00 und 14:00–19:00')
+  })
+  it('writes one range alone, and nothing for a day with none', () => {
+    expect(formatHours([day[0]], 'it')).toBe('09:00–13:00')
+    expect(formatHours([], 'it')).toBe('')
   })
 })

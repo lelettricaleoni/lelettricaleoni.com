@@ -16,19 +16,25 @@ export const ABANDONED_LIMIT = 5
 
 export type StayCheck =
   | { ok: true; days: number }
-  | { ok: false; reason: 'invalid_date' | 'not_a_range' | 'too_soon' | 'too_far' }
+  | { ok: false; reason: 'invalid_date' | 'not_a_range' | 'too_soon' | 'too_far' | 'closed_day' }
 
 /**
  * Whether the days of an online booking are acceptable, and how many there are. `endsOn` is exclusive, as in the database.
  * Online you book from tomorrow: today's rentals are made at the counter. The category's own limit (`maxRentalDays`) is
  * checked when the price is asked (lib/booking/pricing.ts), because it belongs to each bike.
  */
-export function checkStay(startsOn: string, endsOn: string, today: IsoDate): StayCheck {
+export function checkStay(
+  startsOn: string, endsOn: string, today: IsoDate,
+  /** The days the shop is closed: a stay may not start or end on one (it may go through one: the bike stays with the customer). */
+  options: { isClosed?: (day: IsoDate) => boolean } = {},
+): StayCheck {
   if (!isValidDay(startsOn) || !isValidDay(endsOn)) return { ok: false, reason: 'invalid_date' }
   const days = daysBetween(startsOn, endsOn)
   if (days < 1) return { ok: false, reason: 'not_a_range' }
   if (daysBetween(today, startsOn) < 1) return { ok: false, reason: 'too_soon' }
   if (daysBetween(addDaysTo(today, MAX_DAYS_AHEAD), inclusiveEnd(endsOn)) > 0) return { ok: false, reason: 'too_far' }
+  // The bike is picked up in the shop on the first day and brought back to it on the last.
+  if (options.isClosed?.(startsOn) || options.isClosed?.(inclusiveEnd(endsOn))) return { ok: false, reason: 'closed_day' }
   return { ok: true, days }
 }
 

@@ -1,4 +1,5 @@
 import { dayToDate, inclusiveEnd, type DayRange, type IsoDate } from '@/lib/dates'
+import type { HoursRange } from '@/lib/shop-schedule'
 
 type Lang = 'it' | 'en' | 'de'
 const INTL_LOCALE = { it: 'it-IT', en: 'en-GB', de: 'de-DE' } as const
@@ -16,6 +17,12 @@ export function formatDays(range: DayRange, lang: Lang, options: { year?: boolea
 /** "lun 3 nov": one day with its weekday. */
 export function formatDay(day: IsoDate, lang: Lang): string {
   return new Intl.DateTimeFormat(INTL_LOCALE[lang], { weekday: 'short', day: 'numeric', month: 'short' }).format(dayToDate(day))
+}
+
+/** "09:00–13:00 and 14:00–19:00": the ranges a shop is open in a day, joined with the "and" of the language of the page. */
+export function formatHours(ranges: HoursRange[], lang: Lang): string {
+  return new Intl.ListFormat(INTL_LOCALE[lang], { style: 'long', type: 'conjunction' })
+    .format(ranges.map((range) => `${range.opensAt}–${range.closesAt}`))
 }
 
 /** Puts values into the `{name}` places of a text from `messages/*.json`; a name it does not know is left as it is. */

@@ -423,7 +423,8 @@
         "not_found": "Diese Buchung gibt es nicht.",
         "login_required": "Deine Sitzung ist abgelaufen. Melde dich erneut an.",
         "invalid_request": "Etwas ist schiefgelaufen: Lade die Seite neu und versuche es erneut."
-      }
+      },
+      "pickup_when": "Abholung am {pickupDay}, geöffnet {pickupHours}. Rückgabe am {returnDay}, geöffnet {returnHours}. Bis zum Ladenschluss: Die Fahrräder müssen geladen werden und werden nicht erst am nächsten Tag zurückgegeben. Für andere Absprachen ruf uns an."
     }
   },
   "rent": {
@@ -478,7 +479,8 @@
       "too_many_attempts": "Zu viele Versuche hintereinander. Versuche es in einer Stunde erneut.",
       "try_again": "Wir konnten die Fahrräder nicht für dich reservieren. Versuche es erneut.",
       "payments_unavailable": "Zahlungen sind noch nicht aktiv.",
-      "generic": "Wir konnten nicht fortfahren. Versuche es erneut."
+      "generic": "Wir konnten nicht fortfahren. Versuche es erneut.",
+      "closed_day": "Das Geschäft ist am ersten oder letzten Tag geschlossen: Wähle andere Tage."
     },
     "fake": {
       "title": "Testzahlung",
@@ -492,8 +494,8 @@
     "day_before": "Vortag",
     "day_after": "Folgetag",
     "change_days": "Ändern",
-    "legend_off_days": "Graue Tage können nicht gewählt werden: Kein Fahrrad ist frei.",
-    "legend_off_bike": "Graue Tage können nicht gewählt werden: Dieses Fahrrad ist nicht frei.",
+    "legend_off_days": "Graue Tage können nicht gewählt werden: Das Geschäft ist geschlossen oder kein Fahrrad ist frei.",
+    "legend_off_bike": "Graue Tage können nicht gewählt werden: Das Geschäft ist geschlossen oder dieses Fahrrad ist nicht frei.",
     "off_past": "{day}, nicht mehr buchbar",
     "off_far": "{day}, zu weit in der Zukunft",
     "off_no_bike": "{day}, kein Fahrrad frei",
@@ -503,7 +505,9 @@
     "see_all_free": "Alle in diesem Zeitraum freien Fahrräder ansehen",
     "see_all_bikes": "Alle Fahrräder ansehen",
     "bike_mode_label": "Du buchst",
-    "cart_changed": "Jemand hat gerade gebucht: Wir haben deine Auswahl aktualisiert."
+    "cart_changed": "Jemand hat gerade gebucht: Wir haben deine Auswahl aktualisiert.",
+    "off_closed": "{day}, das Geschäft ist geschlossen",
+    "pickup_when": "Abholung am {pickupDay}, geöffnet {pickupHours}. Rückgabe am {returnDay}, geöffnet {returnHours}. Bis zum Ladenschluss: Die Fahrräder müssen geladen werden und werden nicht erst am nächsten Tag zurückgegeben. Für andere Absprachen ruf uns an."
   },
   "terms": {
     "title": "Mietbedingungen",

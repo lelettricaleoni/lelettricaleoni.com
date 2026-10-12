@@ -423,7 +423,8 @@
         "not_found": "This booking does not exist.",
         "login_required": "Your session has expired. Sign in again.",
         "invalid_request": "Something went wrong: reload the page and try again."
-      }
+      },
+      "pickup_when": "Pickup on {pickupDay}, open {pickupHours}. Return on {returnDay}, open {returnHours}. By the shop's closing time: the bikes have to be recharged and are not returned the next day. For other arrangements, call us."
     }
   },
   "rent": {
@@ -478,7 +479,8 @@
       "too_many_attempts": "Too many attempts in a row. Try again in an hour.",
       "try_again": "We could not hold the bikes for you. Try again.",
       "payments_unavailable": "Payments are not active yet.",
-      "generic": "We could not go on. Try again."
+      "generic": "We could not go on. Try again.",
+      "closed_day": "The shop is closed on the first or the last day: choose other dates."
     },
     "fake": {
       "title": "Test payment",
@@ -492,8 +494,8 @@
     "day_before": "Day before",
     "day_after": "Day after",
     "change_days": "Change",
-    "legend_off_days": "Grey days cannot be chosen: no bike is free.",
-    "legend_off_bike": "Grey days cannot be chosen: this bike is not free.",
+    "legend_off_days": "Grey days cannot be chosen: the shop is closed or no bike is free.",
+    "legend_off_bike": "Grey days cannot be chosen: the shop is closed or this bike is not free.",
     "off_past": "{day}, no longer bookable",
     "off_far": "{day}, too far ahead",
     "off_no_bike": "{day}, no bike free",
@@ -503,7 +505,9 @@
     "see_all_free": "See all the bikes free in this period",
     "see_all_bikes": "See all bikes",
     "bike_mode_label": "You are booking",
-    "cart_changed": "Someone has just booked: we have updated your choice."
+    "cart_changed": "Someone has just booked: we have updated your choice.",
+    "off_closed": "{day}, the shop is closed",
+    "pickup_when": "Pickup on {pickupDay}, open {pickupHours}. Return on {returnDay}, open {returnHours}. By the shop's closing time: the bikes have to be recharged and are not returned the next day. For other arrangements, call us."
   },
   "terms": {
     "title": "Rental terms",
