@@ -29,6 +29,7 @@
 - Picking the end before the start, or the same day twice (Task 2).
 - Shifting the period by one day into a place that is not bookable must be refused, not clamped (Task 2).
 - A link with `model=<uuid>` of an unpublished or unknown model must fall back to the by-days mode, not break (Task 3).
+- A bike taken by somebody else while the page is open: the page updates by itself (Realtime), the picker greys the day, and a cart line that is no longer free leaves the cart with a notice (Task 6).
 - A model with no bike free in the period stays on the page, switched off, and cannot be added to the cart (Tasks 3 and 5).
 - An old link with a cart in the address and a period that is no longer free: the cart is cleaned by `sanitizeCart` as today (Task 6).
 
@@ -713,14 +714,14 @@ git commit -m "Rent: busy periods of every bike, models kept when none is free, 
 
 ---
 
-### Task 4: Messages (three languages) and the pickup text
+### Task 4: Messages (three languages), the pickup text and the privacy line for Realtime
 
 **Files:**
 - Modify: `messages/it.json`, `messages/en.json`, `messages/de.json` (`rent.*`, `account.rents.pickup_note`, `terms.pickup_body`)
 - Test: `lib/booking/terms-text.test.ts` (existing, keep green); `lib/i18n-keys.test.ts` if there is one (keys equal across languages)
 
 **Interfaces:**
-- Produces new `rent` keys (all three languages, same names): `day_before`, `day_after`, `change_days`, `legend_off_days`, `legend_off_bike`, `off_past`, `off_far`, `off_no_bike`, `off_no_bike_model`, `off_beyond`, `unavailable_dates`, `see_all_free`, `see_all_bikes`, `bike_mode_label`, `period_summary`. Texts with `{day}` take the day written by `formatDay`. `pickup_note`, `account.rents.pickup_note` and `terms.pickup_body` change.
+- Produces new `rent` keys (all three languages, same names): `day_before`, `day_after`, `change_days`, `legend_off_days`, `legend_off_bike`, `off_past`, `off_far`, `off_no_bike`, `off_no_bike_model`, `off_beyond`, `unavailable_dates`, `see_all_free`, `see_all_bikes`, `bike_mode_label`, `period_summary`. Texts with `{day}` take the day written by `formatDay`. `cart_changed` ("Qualcuno ha appena prenotato: abbiamo aggiornato la tua scelta."). `pickup_note`, `account.rents.pickup_note` and `terms.pickup_body` change. **Privacy** (Kevin: real-time updates on the page): the public page now keeps the browser connected to Supabase Realtime (the same public channel the panel calendar listens to, a bare ping with no personal data), so Supabase receives the visitor's IP; `privacy.third_parties_body` (it/en/de) gets one sentence saying so, `privacy.last_updated` moves to today, and the inventory in `.claude/skills/privacy-cookies/SKILL.md` gets the line. No cookie or storage for a guest; `lib/privacy-surface.test.ts` stays green.
 
 - [ ] **Step 1: Write the new texts** (Italian is the reference; English and German say the same; German uses "du", like the other booking pages)
 
@@ -820,6 +821,7 @@ git commit -m "Rent: the period picker (month and compact bar) and the card of a
 - Consumes: Tasks 1–5.
 - Produces: `RentFlow` props gain `mode: 'days' | 'bike'`, `focus: FocusModel | null`, `units: UnitBusy[]`, `media: Record<string, ReactNode>`; `focusModelId` stays for the address.
 
+- [ ] **Step 0: Real-time availability.** `RentFlow` calls `useReservationsRealtime(refresh)` (`components/admin/use-reservations-realtime.ts`, moved to `lib/` or imported as it is) with `refresh = coalesce(() => router.refresh(), 2000)` (`lib/coalesce.ts`: the channel is public, so the reload has a ceiling). `router.refresh()` re-renders the server page: fresh `units` (the picker greys the new day at once) and fresh `models`. An effect on `models` re-runs `sanitizeCart` on the cart; when something left it, the address is updated and `dict.cart_changed` is shown in an `aria-live` notice. The same hook reloads when the connection comes back and when the tab becomes visible again.
 - [ ] **Step 1: The page.**
   - `const focus = state.focusModelId ? await getFocusModel(state.focusModelId, lang) : null`; `mode = focus ? 'bike' : 'days'`.
   - `units = await getUnitBusyIntervals({ modelId: focus?.id, window: { startsOn: minDay, endsOn: addDaysTo(today, MAX_DAYS_AHEAD + 1) } })`.
