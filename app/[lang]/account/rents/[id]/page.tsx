@@ -13,8 +13,10 @@ import { getCurrentUser } from '@/lib/auth/current-user'
 import { fill, formatDays, formatDeadline } from '@/lib/booking/format'
 import { syncBookingLines } from '@/lib/booking/calendar-sync'
 import { getMyBooking } from '@/lib/booking/my-bookings'
+import { pickupText } from '@/lib/booking/pickup-text'
 import { confirmMyBooking } from '@/lib/booking/rent-actions'
 import { formatPrice } from '@/lib/money'
+import { loadShopSchedule } from '@/lib/shop-schedule-data'
 
 export const instant = false
 
@@ -52,6 +54,7 @@ export default async function RentPage({
   const [customer] = await db.select({ id: customers.id }).from(customers).where(eq(customers.userId, user.id))
   const booking = customer ? await getMyBooking(customer.id, id, lang) : null
   if (!booking) notFound()
+  const schedule = await loadShopSchedule()
   const media = await getModelMedia(booking.bikes.map((bike) => ({ id: bike.modelId, name: bike.modelName })))
 
   const cancelLabels = {
@@ -113,7 +116,7 @@ export default async function RentPage({
         <span className="font-semibold text-foreground">{d.total}</span>
         <span className="text-xl font-bold tabular-nums text-primary">{formatPrice(booking.totalCents, lang)}</span>
       </div>
-      <p className="text-sm text-muted-foreground">{d.pickup_note}</p>
+      <p className="text-sm text-muted-foreground">{pickupText({ startsOn: booking.startsOn, endsOn: booking.endsOn }, schedule, lang, d)}</p>
     </>
   )
 }

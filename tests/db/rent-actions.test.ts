@@ -9,6 +9,7 @@ import {
 } from '@/lib/booking/rent-actions'
 import { parseRentState } from '@/lib/booking/rent-url'
 import { SITE_URL } from '@/lib/auth/urls'
+import type { ShopSchedule } from '@/lib/shop-schedule'
 import { createFixture, insertPaidBooking, startPendingBooking, type Fixture } from './fixtures'
 
 const STAY = { startsOn: '2031-11-03', endsOn: '2031-11-06' }
@@ -76,6 +77,32 @@ describe('the booking actions of a signed-in person', () => {
       // no `today` option: the real today decides, so a stay in 2031 is far beyond the 180 days
       expect(await startCheckoutForUser(userOf(), request(), gateway)).toEqual({ status: 'invalid', reason: 'too_far' })
       expect(await mine()).toHaveLength(0)
+    })
+
+    describe('with the days the shop is closed', () => {
+      // STAY is Monday 3 to Wednesday 5 November 2031.
+      const DAY = [{ opensAt: '09:00', closesAt: '19:00' }]
+      const openExcept = (...closedWeekdays: number[]): ShopSchedule =>
+        ({ weekly: Object.fromEntries([1, 2, 3, 4, 5, 6, 7].map((weekday) => [weekday, closedWeekdays.includes(weekday) ? [] : DAY])), closures: [] })
+
+      it('refuses a stay whose first day is closed, and holds nothing', async () => {
+        const result = await startCheckoutForUser(userOf(), request(), gateway, { today: TODAY, schedule: openExcept(1) })
+        expect(result).toEqual({ status: 'invalid', reason: 'closed_day' })
+        expect(await mine()).toHaveLength(0)
+      })
+
+      it('refuses a stay whose last day is closed, even by a closure that is not a weekday', async () => {
+        const closure: ShopSchedule = { ...openExcept(), closures: [{ startsOn: '2031-11-05', endsOn: '2031-11-06' }] }
+        const result = await startCheckoutForUser(userOf(), request(), gateway, { today: TODAY, schedule: closure })
+        expect(result).toEqual({ status: 'invalid', reason: 'closed_day' })
+        expect(await mine()).toHaveLength(0)
+      })
+
+      it('lets a stay through a day that is closed in the middle', async () => {
+        const result = await startCheckoutForUser(userOf(), request(), gateway, { today: TODAY, schedule: openExcept(2) })
+        expect(result.status).toBe('redirect')
+        expect(await mine()).toHaveLength(1)
+      })
     })
 
     it('does not book without the terms being accepted', async () => {

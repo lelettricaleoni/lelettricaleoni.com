@@ -15,6 +15,8 @@ import { paymentsAvailable } from '@/lib/booking/payments'
 import { parseRentState } from '@/lib/booking/rent-url'
 import { MAX_DAYS_AHEAD, checkStay } from '@/lib/booking/rules'
 import { addDaysTo, todayInRome } from '@/lib/dates'
+import { isClosedOn } from '@/lib/shop-schedule'
+import { loadShopSchedule } from '@/lib/shop-schedule-data'
 
 // Reads the session cookie and the database on every request.
 export const instant = false
@@ -48,7 +50,8 @@ export default async function RentPage({
   const state = parseRentState(await searchParams)
   const today = todayInRome()
   // A stay outside what can be booked (an old link, a typed address) is ignored, not guessed at.
-  const stay = state.range ? checkStay(state.range.startsOn, state.range.endsOn, today) : null
+  const schedule = await loadShopSchedule()
+  const stay = state.range ? checkStay(state.range.startsOn, state.range.endsOn, today, { isClosed: (day) => isClosedOn(schedule, day) }) : null
   const range = stay?.ok ? state.range : null
   const minDay = addDaysTo(today, 1)
   const maxDay = addDaysTo(today, MAX_DAYS_AHEAD)
@@ -87,6 +90,7 @@ export default async function RentPage({
             mode={mode}
             focus={focus}
             units={units}
+            schedule={schedule}
             models={models}
             media={media}
             minDay={minDay}

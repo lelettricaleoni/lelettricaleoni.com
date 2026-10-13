@@ -1,7 +1,7 @@
 import { sql } from 'drizzle-orm'
 import {
   pgTable, text, integer, numeric, boolean,
-  timestamp, uuid, pgEnum, index, unique, uniqueIndex, date, jsonb
+  timestamp, uuid, pgEnum, index, unique, uniqueIndex, date, jsonb, smallint, time
 } from 'drizzle-orm/pg-core'
 
 export const difficultyEnum = pgEnum('difficulty', ['easy', 'medium', 'hard', 'expert'])
@@ -304,6 +304,25 @@ export const stripeEvents = pgTable('stripe_events', {
 
 export type BookingRefund = typeof bookingRefunds.$inferSelect
 export type NewBookingRefund = typeof bookingRefunds.$inferInsert
+
+// When the shop is open: one row per range of opening time (two rows in the same weekday are the lunch break); a weekday with no row is
+// closed. ISO weekday (1 = Monday … 7 = Sunday) and the clock of Rome, no time zone in the data. The CHECKs (weekday 1..7, opens before it
+// closes) are in the migration: this version of Drizzle has no table-level `check()` builder (see `media` below).
+export const shopOpeningHours = pgTable('shop_opening_hours', {
+  id:       uuid('id').primaryKey().defaultRandom(),
+  weekday:  smallint('weekday').notNull(),
+  opensAt:  time('opens_at').notNull(),
+  closesAt: time('closes_at').notNull(),
+})
+
+// Days the shop is closed (a holiday, a trip): `starts_on` included and `ends_on` EXCLUDED, like every period in the database. `reason`
+// is for the staff and is never shown to a customer.
+export const shopClosures = pgTable('shop_closures', {
+  id:       uuid('id').primaryKey().defaultRandom(),
+  startsOn: date('starts_on', { mode: 'string' }).notNull(),
+  endsOn:   date('ends_on', { mode: 'string' }).notNull(),
+  reason:   text('reason'),
+})
 
 // Generalized from route_photos on 2026-09-17 to also hold bike model
 // media. Exactly one of routeId/bikeModelId is set, enforced by a CHECK

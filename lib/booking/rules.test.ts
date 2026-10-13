@@ -24,6 +24,29 @@ describe('checkStay', () => {
     expect(checkStay('2031-02-30', '2031-03-05', TODAY)).toEqual({ ok: false, reason: 'invalid_date' })
   })
 
+  describe('with the days the shop is closed', () => {
+    const closed = new Set(['2031-07-04'])
+    const isClosed = (day: string) => closed.has(day)
+
+    it('refuses a stay that starts or ends on a closed day', () => {
+      expect(checkStay('2031-07-04', '2031-07-06', TODAY, { isClosed })).toEqual({ ok: false, reason: 'closed_day' })
+      expect(checkStay('2031-07-02', '2031-07-05', TODAY, { isClosed })).toEqual({ ok: false, reason: 'closed_day' }) // last day included: the 4th
+    })
+
+    it('lets a stay go through a closed day: the bike stays with the customer', () => {
+      expect(checkStay('2031-07-02', '2031-07-07', TODAY, { isClosed })).toEqual({ ok: true, days: 5 })
+    })
+
+    it('says what is wrong with the dates first, and only then that a day is closed', () => {
+      expect(checkStay('2031-07-04', '2031-07-04', TODAY, { isClosed })).toEqual({ ok: false, reason: 'not_a_range' })
+      expect(checkStay('2031-06-30', '2031-07-05', TODAY, { isClosed })).toEqual({ ok: false, reason: 'too_soon' })
+    })
+
+    it('knows no closed day when it is not told about any', () => {
+      expect(checkStay('2031-07-04', '2031-07-06', TODAY)).toEqual({ ok: true, days: 2 })
+    })
+  })
+
   it('allows the last day to be 180 days from today, and not one more', () => {
     // today + 180 = 2031-12-28; the end is exclusive, so 2031-12-29 is the latest end.
     expect(checkStay('2031-12-26', '2031-12-29', TODAY)).toEqual({ ok: true, days: 3 })
