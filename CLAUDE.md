@@ -47,11 +47,17 @@ importato qui sopra. Non duplicarli in questo file.
   chiamare è qualcosa che *non* è il nostro frontend — un servizio esterno, un webhook, il
   video worker — perché le Server Action si invocano con un id generato al build e non sono
   un'interfaccia pubblica stabile. Per tutto ciò che parte dal nostro client, Server Action.
-- **Nessun dettaglio infrastrutturale nei testi che l'utente legge.** L'interfaccia dice
-  cosa succede e perché conta per chi la usa, mai dove finiscono i file o con quale
-  tecnologia: "Foto su R2, video su MinIO" non aiuta nessuno a caricare un video, e invecchia
-  male — quella riga è rimasta a nominare MinIO per un giorno dopo che era stato spento.
-  Vale per il pannello quanto per le pagine pubbliche.
+- **Nessuna specifica del software nei testi che l'utente legge** (Kevin, 2026-10-13: «non scrivere
+  specifiche del software nella pagina effettiva del sito, al massimo come commento nel codice»).
+  L'interfaccia dice cosa succede e perché conta per chi la usa, mai dove finiscono i file, con
+  quale tecnologia, in quale formato o da quale servizio: "Foto su R2, video su MinIO" non aiuta
+  nessuno a caricare un video, e invecchia male — quella riga è rimasta a nominare MinIO per un
+  giorno dopo che era stato spento; "un file JSON" è "un file che puoi conservare". Nomi di
+  librerie, API, formati, servizi e stati del sistema stanno nei commenti, non sulla pagina.
+  Vale per il pannello quanto per le pagine pubbliche. Eccezioni volute: l'informativa privacy e
+  i termini (nominare i fornitori che trattano i dati è un obbligo) e la pagina `Dev` del
+  pannello (la diagnostica dello sviluppatore). Il test `lib/ui-text-jargon.test.ts` controlla
+  `messages/*.json`.
 - **Codice in inglese**: path URL, identificatori, funzioni, commenti. Vale anche per i
   testi dell'interfaccia del pannello admin (etichette, bottoni, titoli) — il pannello non
   è mai tradotto, a differenza del sito pubblico. Solo i contenuti di

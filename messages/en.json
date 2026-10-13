@@ -335,7 +335,7 @@
     "privacy_title": "Data and privacy",
     "privacy_subtitle": "A copy of your data, and the option to delete the account.",
     "export_title": "Your data",
-    "export_hint": "Download a copy of what we hold about you (account, profile and rentals) as a JSON file.",
+    "export_hint": "Download a copy of what we hold about you (account, profile and rentals) as a file you can keep.",
     "export_button": "Download my data",
     "delete_title": "Delete account",
     "delete_hint": "The account is deleted and you will not be able to sign in again. If you have already rented, the shop keeps the data of those rentals as described in the privacy policy; if you have not, your customer record is deleted too.",
