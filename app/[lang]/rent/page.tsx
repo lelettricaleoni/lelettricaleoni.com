@@ -15,6 +15,7 @@ import { paymentsAvailable } from '@/lib/booking/payments'
 import { parseRentState } from '@/lib/booking/rent-url'
 import { MAX_DAYS_AHEAD, checkStay } from '@/lib/booking/rules'
 import { addDaysTo, todayInRome } from '@/lib/dates'
+import { firstBookableDay } from '@/lib/booking/period-selection'
 import { isClosedOn } from '@/lib/shop-schedule'
 import { loadShopSchedule } from '@/lib/shop-schedule-data'
 
@@ -52,13 +53,17 @@ export default async function RentPage({
   // A stay outside what can be booked (an old link, a typed address) is ignored, not guessed at.
   const schedule = await loadShopSchedule()
   const stay = state.range ? checkStay(state.range.startsOn, state.range.endsOn, today, { isClosed: (day) => isClosedOn(schedule, day) }) : null
-  const range = stay?.ok ? state.range : null
+  const requested = stay?.ok ? state.range : null
   const minDay = addDaysTo(today, 1)
   const maxDay = addDaysTo(today, MAX_DAYS_AHEAD)
   const focus = state.focusModelId ? await getFocusModel(state.focusModelId, lang) : null
   const mode = focus ? 'bike' : 'days'
   // The busy periods of the bikes (of the model, by bike) for everything that can be booked: the picker greys the days in the browser.
   const units = await getUnitBusyIntervals({ modelId: focus?.id, window: { startsOn: minDay, endsOn: addDaysTo(maxDay, 1) } })
+  // Nothing chosen (or a link that cannot be used): the page opens on tomorrow, or the first day after it that can be booked, so there are
+  // results at once. A link that names a period keeps it.
+  const firstDay = requested ? null : firstBookableDay({ units, minDay, maxDay, isClosed: (day) => isClosedOn(schedule, day) })
+  const range = requested ?? (firstDay ? { startsOn: firstDay, endsOn: addDaysTo(firstDay, 1) } : null)
   // Every published model, the ones with no bike free for the days switched off; the cart and the summary use them all.
   const models = range ? await listBookableBikes(range, lang, { includeUnavailable: true }) : []
   const media = await getModelMedia(models)

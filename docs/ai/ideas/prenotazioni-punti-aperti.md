@@ -4,6 +4,13 @@
 > dice **chi deve decidere o fare**, **perché** e **dove sta il resto** (spec, piano, codice). Quando una voce è chiusa, si sposta in fondo con la data.
 > Tutto il lavoro di prenotazione è su `staging`; **in produzione decide solo Kevin** (vedi «Per il rilascio»).
 
+## Da fare (Kevin, nel pannello di Supabase)
+
+- [ ] **L'accesso con Google da `staging` rimanda a `localhost`** (visto il 2026-10-13). Il codice è giusto (l'immagine di staging è costruita con `NEXT_PUBLIC_SITE_URL=https://staging.lelettricaleoni.com`
+  e il ritorno è `https://staging.lelettricaleoni.com/auth/callback`): è Supabase che, se l'indirizzo non è tra quelli consentiti, ripiega sul suo indirizzo predefinito. Nel progetto Supabase di **sviluppo**
+  (lo usa anche staging): Authentication → URL Configuration → **Redirect URLs**: aggiungere `https://staging.lelettricaleoni.com/**` (e controllare che il **Site URL** non sia `localhost`).
+  Stessa cosa per le email di conferma e di recupero password. Al rilascio, lo stesso per il progetto di produzione con `https://www.lelettricaleoni.com/**`.
+
 ## Da decidere (Kevin)
 
 - [ ] **Orari scritti a mano sul sito.** Home (`info.hours_value`), mappa, dati strutturati in `app/[lang]/layout.tsx` (due fasce), descrizioni per i motori

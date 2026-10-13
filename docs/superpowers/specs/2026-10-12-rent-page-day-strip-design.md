@@ -45,6 +45,11 @@ non decide. Scartati: due pagine separate (selettore, carrello e pagamento dupli
 Il periodo e il carrello restano nell'indirizzo (`from`, `to`, `b`, `model`), come oggi: un aggiornamento della pagina o un link condiviso li conserva.
 
 ### Il selettore del periodo (`components/rent/period-picker.tsx`)
+> **Rifatto il 2026-10-13 sulla richiesta di Kevin** («non ti avevo chiesto la barra come calendario?»): la barra è quella di Kevin, una **striscia di sette giorni con una freccia per lato**
+> (una settimana alla volta, i giorni della settimana allineati dal lunedì, il giorno scelto in un cerchio pieno) e **sotto la freccia che apre il mese** (`period-strip.ts`). Due tocchi fanno il
+> periodo, come nella sua barra; i giorni grigi dicono perché. La pagina si apre **già su domani** (o sul primo giorno dopo domani in cui si può prenotare: `firstBookableDay`), così ci sono subito
+> dei risultati. Il testo che segue, con il mese che si richiude in una riga e «giorno prima / giorno dopo», è **superato**: era una mia reinterpretazione, non quello che Kevin voleva.
+
 **Non copia la barra del repo `firebase`** (Kevin, 2026-10-12: va riadattata, e forse non è nemmeno la navigazione ottimale). Quella barra mostra una settimana
 alla volta: va bene per chi sa già le date e per spostarsi di pochi giorni, ma nel modo per bici serve capire **quando** una bici è libera, e con sette giorni
 alla volta servono molti tocchi (e a 180 giorni di distanza, ancora di più). Il mese dà il colpo d'occhio che manca. Scelta: **un solo componente con due

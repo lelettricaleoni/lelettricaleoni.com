@@ -491,9 +491,6 @@
       "not_payable": "Diese Zahlung ist nicht mehr möglich: Die Zeit ist abgelaufen.",
       "unknown": "Diese Zahlung gibt es nicht."
     },
-    "day_before": "Vortag",
-    "day_after": "Folgetag",
-    "change_days": "Ändern",
     "legend_off_days": "Graue Tage können nicht gewählt werden: Das Geschäft ist geschlossen oder kein Fahrrad ist frei.",
     "legend_off_bike": "Graue Tage können nicht gewählt werden: Das Geschäft ist geschlossen oder dieses Fahrrad ist nicht frei.",
     "off_past": "{day}, nicht mehr buchbar",
@@ -507,7 +504,11 @@
     "bike_mode_label": "Du buchst",
     "cart_changed": "Jemand hat gerade gebucht: Wir haben deine Auswahl aktualisiert.",
     "off_closed": "{day}, das Geschäft ist geschlossen",
-    "pickup_when": "Abholung am {pickupDay}, geöffnet {pickupHours}. Rückgabe am {returnDay}, geöffnet {returnHours}. Bis zum Ladenschluss: Die Fahrräder müssen geladen werden und werden nicht erst am nächsten Tag zurückgegeben. Für andere Absprachen ruf uns an."
+    "pickup_when": "Abholung am {pickupDay}, geöffnet {pickupHours}. Rückgabe am {returnDay}, geöffnet {returnHours}. Bis zum Ladenschluss: Die Fahrräder müssen geladen werden und werden nicht erst am nächsten Tag zurückgegeben. Für andere Absprachen ruf uns an.",
+    "week_before": "Vorherige Woche",
+    "week_after": "Nächste Woche",
+    "show_month": "Monat anzeigen",
+    "show_week": "Woche anzeigen"
   },
   "terms": {
     "title": "Mietbedingungen",

@@ -1,5 +1,5 @@
 import { addDaysTo, exclusiveEnd, inclusiveEnd, type DayRange, type IsoDate } from '@/lib/dates'
-import { freeForRange, isSelectable, type PickContext } from './day-availability'
+import { isSelectable, type PickContext } from './day-availability'
 
 /*
  * What the picker keeps while a person chooses the days: the first and the last day, both included (as people say them). The stay the
@@ -29,20 +29,13 @@ export function rangeToSelection(range: DayRange | null): Selection {
   return range ? { start: range.startsOn, end: inclusiveEnd(range.endsOn) } : EMPTY_SELECTION
 }
 
-export function shiftRange(range: DayRange, by: number): DayRange {
-  return { startsOn: addDaysTo(range.startsOn, by), endsOn: addDaysTo(range.endsOn, by) }
-}
-
 /**
- * Whether a whole stay can be booked: both ends are days that can be chosen (the last one given the first, so the category's limit and the
- * reach of one bike count), and one bike is free all the way. A day in the middle may be one the shop is closed.
+ * The day the booking page opens on, so that there are results at once: the first day, from tomorrow on, that can be chosen as a first
+ * day (the shop is open and a bike is free), or null when there is none in the whole window.
  */
-export function canBook(range: DayRange, ctx: Omit<PickContext, 'start'>): boolean {
-  const first = range.startsOn
-  const last = inclusiveEnd(range.endsOn)
-  return (
-    isSelectable(first, { ...ctx, start: null }).ok &&
-    isSelectable(last, { ...ctx, start: first }).ok &&
-    freeForRange(ctx.units, range).length > 0
-  )
+export function firstBookableDay(ctx: Pick<PickContext, 'units' | 'minDay' | 'maxDay' | 'isClosed'>): IsoDate | null {
+  for (let day = ctx.minDay; day <= ctx.maxDay; day = addDaysTo(day, 1)) {
+    if (isSelectable(day, { ...ctx, start: null, maxDays: null }).ok) return day
+  }
+  return null
 }
