@@ -58,8 +58,19 @@ Tutto con uno script in `scripts/` (o nello scratchpad se si usa una volta sola)
 ## Cosa non fa
 Non tocca produzione, non copia segreti, non sposta file dai bucket senza che Kevin decida (decisione 3), non rende il test un duplicato continuo (è una copia a un istante: si rifà quando serve).
 
-## Scelte per Kevin
-1. **Dati personali**: (a) solo il catalogo, **senza** clienti e prenotazioni (consigliato per la prova del catalogo e dei prezzi); (b) anche i 3 clienti e le 4 prenotazioni **anonimi**; (c) tutto com'è, con nomi veri (sconsigliato).
-2. **Foto e video**: (a) copiare i file da un bucket all'altro (serve l'accesso a entrambi: lo fai tu o mi dai un modo senza mostrare le chiavi in chat); (b) leggerli dal dominio di produzione solo in lettura; (c) lasciarli rotti per ora.
-3. **Prova delle migrazioni**: (a) branch di Supabase a pagamento; (b) Postgres locale; (c) saltare e provarle solo sulle copie dei dati.
-4. **Quando**: ora (cancella i dati di prova di sviluppo che si vedono nel pannello) o dopo che hai provato la pagina di prenotazione sul ramo di lavoro?
+## Risposte di Kevin (2026-10-13) e come si procede
+- **Dati**: solo il catalogo (niente clienti né prenotazioni). **Foto e video**: si **copiano** nel bucket di sviluppo. **Migrazioni**: i due progetti Supabase sono separati; i dati di produzione si portano **nello schema
+  già migrato del test** (`0026`), cioè «le migrazioni si applicano ai dati»; **produzione non si tocca**.
+- Produzione si **legge** con l'MCP (`execute_sql`, sola lettura): non c'è una connessione diretta sul PC e i dati sono piccoli (circa 100 KB). Ogni tabella passa come un unico `jsonb` e si inserisce con
+  `jsonb_populate_recordset`: le colonne che il test ha in più (`bike_models.color`) restano vuote e le riempie lo stesso calcolo della `0026`; quelle che ha solo produzione
+  (`route_translations.start_point_label`: nel codice non esiste) si lasciano. **Controllo**: l'impronta (`md5`) di ogni tabella in produzione e nel test, sulle colonne comuni.
+- I file si scaricano dal dominio pubblico di produzione (solo lettura, senza chiavi) e si caricano nel bucket di sviluppo con le chiavi di sviluppo.
+
+## Avanzamento
+- [ ] 1 Copia di sicurezza dei dati di sviluppo (`temp/`, fuori da git) e elenco di ciò che dipende dal catalogo (prenotazioni, ecc.)
+- [ ] 2 Svuotare le prenotazioni di prova di sviluppo e il catalogo di sviluppo (ordine inverso delle chiavi esterne)
+- [ ] 3 Inserire le righe di produzione, tabella per tabella (ordine delle chiavi esterne); colori dei modelli come nella `0026`
+- [ ] 4 Impronte uguali tabella per tabella
+- [ ] 5 Copiare i file (foto con le loro versioni, flussi video, GPX) nel bucket di sviluppo; controllo a campione
+- [ ] 6 Controllo a occhio: home, `/it/bikes`, `/it/routes`, `/rent`, `/manage/bikes` sul test contro produzione; `npm run test:db` ancora verde
+- [ ] 7 Lo script resta riusabile? (per rifare la copia quando serve: oggi è un passaggio a mano con l'MCP; se Kevin mette una connessione di sola lettura a produzione in `.env.local` si può trasformare in uno script)
