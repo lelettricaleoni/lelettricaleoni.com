@@ -335,7 +335,7 @@
     "privacy_title": "Daten und Datenschutz",
     "privacy_subtitle": "Eine Kopie deiner Daten und die Möglichkeit, das Konto zu löschen.",
     "export_title": "Deine Daten",
-    "export_hint": "Lade eine Kopie dessen herunter, was wir über dich gespeichert haben (Konto, Profil und Vermietungen), als JSON-Datei.",
+    "export_hint": "Lade eine Kopie dessen herunter, was wir über dich gespeichert haben (Konto, Profil und Vermietungen), als Datei, die du aufbewahren kannst.",
     "export_button": "Meine Daten herunterladen",
     "delete_title": "Konto löschen",
     "delete_hint": "Das Konto wird gelöscht und du kannst dich nicht mehr anmelden. Wenn du schon gemietet hast, bewahrt das Geschäft die Daten dieser Vermietungen auf, wie in der Datenschutzerklärung beschrieben; wenn nicht, wird auch dein Kundeneintrag gelöscht.",

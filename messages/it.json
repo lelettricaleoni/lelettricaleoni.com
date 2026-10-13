@@ -335,7 +335,7 @@
     "privacy_title": "Dati e privacy",
     "privacy_subtitle": "Una copia dei tuoi dati, e la possibilità di eliminare l’account.",
     "export_title": "I tuoi dati",
-    "export_hint": "Scarica una copia di ciò che abbiamo su di te (account, profilo e noleggi) in un file JSON.",
+    "export_hint": "Scarica una copia di ciò che abbiamo su di te (account, profilo e noleggi) in un file che puoi conservare.",
     "export_button": "Scarica i miei dati",
     "delete_title": "Elimina account",
     "delete_hint": "L’account viene cancellato e non potrai più accedere. Se hai già fatto dei noleggi, il negozio conserva i dati di quei noleggi come descritto nell’informativa privacy; se non ne hai, cancelliamo anche la tua scheda cliente.",
