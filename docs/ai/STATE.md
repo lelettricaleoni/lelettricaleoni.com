@@ -88,6 +88,7 @@ con due bici libere: lo coprono `request_key` e l'avviso di doppione. Una bici s
 sito pubblico conta le bici con `inGarage()`, in SQL perché gira dentro `'use cache'`. Il campanello
 Realtime parte da un trigger e non porta dati personali; il canale è pubblico, quindi i ricaricamenti
 sono limitati (`lib/coalesce.ts`). Dettagli: spec e piano in `docs/superpowers/`.
+**Pagina `/rent` (2026-10-12).** Il selettore dei giorni gira nel browser su periodi occupati per bici fisica (`lib/booking/day-availability.ts`, `busy-intervals.ts`); il server ricontrolla al pagamento. La pagina segue il canale Realtime `reservations` (pubblico: un campanello senza dati), quindi **il browser di ogni visitatore, anche senza account, è collegato a Supabase** (riceve l'IP: dichiarato nell'informativa) e si rilegge al massimo ogni 5 s e mai a scheda nascosta. Il posto si tiene **15 minuti** (`HOLD_MINUTES`): la sessione Stripe si apre per 31 (il minimo è 30) e `settleHold` la chiude allo scadere. Orari e chiusure del negozio stanno in `shop_opening_hours` / `shop_closures` (`/manage/hours`, letti a ogni richiesta, mai in cache): un primo o un ultimo giorno chiuso non si prenota (`checkStay`, `closed_day`), uno in mezzo sì; gli orari scritti a mano sul sito **non** leggono quella tabella.
 **Integrazioni (`/manage/integrations`, 2026-10-05).** Un registro nel codice (`lib/integrations/registry.ts`), un catalogo e una pagina per
 integrazione (Overview, Setup guide, Settings con la guida accanto al modulo, Activity), tutto in inglese. La tabella `integrations` ha una riga per
 integrazione: impostazioni non segrete in `config`, il segreto in `secret_encrypted`, **cifrato con `jose` (A256GCM)** con la chiave di
@@ -236,6 +237,8 @@ quota del terreno sotto il tracciato e ridisegna lì traccia, marker e telecamer
 **I tile della mappa passano dal server** invece che dal browser, per non esporre la chiave
 CARTO.
 
+**`partialPrefetching: false` in `next.config.ts`** (Next 16.4, 2026-10-12): con Cache Components acceso la 16.4 chiede di scegliere; `false` tiene il prefetching di prima. Adottarlo cambia ciò che ogni `<Link>` scarica ed è una decisione a parte (`node_modules/next/dist/docs/01-app/02-guides/adopting-partial-prefetching.md`).
+
 **Build e dev girano con `--webpack`**, non con Turbopack: `next.config.ts` mappa
 `import cesium` su `window.Cesium` per evitare che SWC analizzi shader GLSL con sequenze di
 escape ottali. Sotto Turbopack quella configurazione viene ignorata.
@@ -258,6 +261,8 @@ per richiesta, e un errore non va mai ingoiato dentro una funzione `"use cache"`
 contenuto con la versione precedente** (sitemap, titoli, link a bici e percorsi, riferimenti ai media), non il
 codice HTTP: la differenza è venuta da lì. **Un nome di prova non ha il CORS dei media**: i video «spariscono» solo nel
 browser, l'HTML è identico (vedi `docs/environment-variables.md`).
+
+**Una cartella di lavoro con `node_modules` in giunzione usa la versione di Next della cartella principale**, non quella del suo `package.json`: dopo un aggiornamento di Next si lavora in una cartella con la propria installazione (`npm ci`), mai `npm install` dentro la giunzione. Le PR di Dependabot puntano a `main` (base vecchia): gli aggiornamenti si fanno da `staging`. I test del database (`tests/db`) creano da sé ciò che serve e tolgono ciò che creano: ne esisteva uno che passava solo grazie agli avanzi di un altro (modelli pubblicati `db-test-*` rimasti sullo stesso database di staging).
 
 **Su Windows con Git Bash**: `ssh-keyscan` non regge lo scambio di chiavi della VM (l'impronta si legge da
 `/etc/ssh/ssh_host_ed25519_key.pub` via ssh) e un argomento che inizia con `/` viene convertito in un percorso di Git:
