@@ -508,7 +508,10 @@
     "week_before": "Settimana prima",
     "week_after": "Settimana dopo",
     "show_month": "Mostra il mese",
-    "show_week": "Mostra la settimana"
+    "show_week": "Mostra la settimana",
+    "bikes_one": "1 bici",
+    "bikes_other": "{n} bici",
+    "continue": "Continua"
   },
   "terms": {
     "title": "Termini di noleggio",

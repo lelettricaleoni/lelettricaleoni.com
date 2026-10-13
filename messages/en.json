@@ -508,7 +508,10 @@
     "week_before": "Previous week",
     "week_after": "Next week",
     "show_month": "Show the month",
-    "show_week": "Show the week"
+    "show_week": "Show the week",
+    "bikes_one": "1 bike",
+    "bikes_other": "{n} bikes",
+    "continue": "Continue"
   },
   "terms": {
     "title": "Rental terms",

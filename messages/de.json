@@ -508,7 +508,10 @@
     "week_before": "Vorherige Woche",
     "week_after": "Nächste Woche",
     "show_month": "Monat anzeigen",
-    "show_week": "Woche anzeigen"
+    "show_week": "Woche anzeigen",
+    "bikes_one": "1 Fahrrad",
+    "bikes_other": "{n} Fahrräder",
+    "continue": "Weiter"
   },
   "terms": {
     "title": "Mietbedingungen",

@@ -90,6 +90,13 @@ export function PeriodPicker({
 
   return (
     <div className="space-y-3" aria-busy={pending}>
+      <div className="flex min-h-9 items-center justify-between gap-2">
+        {!expanded && <p className="text-base font-semibold capitalize text-foreground" aria-live="polite">{title}</p>}
+        <Button type="button" variant="ghost" size="sm" className="ml-auto" aria-expanded={expanded} onClick={() => setExpanded((open) => !open)}>
+          {expanded ? <LuChevronUp /> : <LuChevronDown />} {expanded ? dict.show_week : dict.show_month}
+        </Button>
+      </div>
+
       {expanded ? (
         <div className="overflow-x-auto">
           <Calendar
@@ -117,8 +124,7 @@ export function PeriodPicker({
           />
         </div>
       ) : (
-        <div className="mx-auto max-w-xl space-y-2">
-          <p className="text-center text-sm font-medium capitalize text-foreground" aria-live="polite">{title}</p>
+        <div>
           <div className="flex items-stretch gap-1 sm:gap-2">
             <Button
               type="button" variant="outline" size="icon" className="h-auto w-8 shrink-0 sm:w-10" aria-label={dict.week_before}
@@ -167,22 +173,18 @@ export function PeriodPicker({
         </div>
       )}
 
-      <div className="flex justify-center">
-        <Button type="button" variant="ghost" size="sm" aria-expanded={expanded} onClick={() => setExpanded((open) => !open)}>
-          {expanded ? <LuChevronUp /> : <LuChevronDown />} {expanded ? dict.show_week : dict.show_month}
-        </Button>
+      <div className="space-y-1">
+        <p className="text-sm" aria-live="polite">
+          {chosen ? (
+            <span className="font-semibold text-foreground">
+              {formatDays(chosen, lang, { weekday: true })} · {daysBetween(chosen.startsOn, chosen.endsOn) === 1 ? dict.days_one : fill(dict.days_other, { n: daysBetween(chosen.startsOn, chosen.endsOn) })}
+            </span>
+          ) : (
+            <span className="text-muted-foreground">{dict.dates_prompt}</span>
+          )}
+        </p>
+        <p className="text-xs text-muted-foreground">{dict.dates_hint} {mode === 'bike' ? dict.legend_off_bike : dict.legend_off_days}</p>
       </div>
-
-      <p className="text-center text-sm" aria-live="polite">
-        {chosen ? (
-          <span className="font-medium text-foreground">
-            {formatDays(chosen, lang, { weekday: true })} · {daysBetween(chosen.startsOn, chosen.endsOn) === 1 ? dict.days_one : fill(dict.days_other, { n: daysBetween(chosen.startsOn, chosen.endsOn) })}
-          </span>
-        ) : (
-          <span className="text-muted-foreground">{dict.dates_prompt}</span>
-        )}
-      </p>
-      <p className="text-center text-xs text-muted-foreground">{mode === 'bike' ? dict.legend_off_bike : dict.legend_off_days}</p>
     </div>
   )
 }
