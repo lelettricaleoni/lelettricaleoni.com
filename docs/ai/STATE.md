@@ -38,7 +38,9 @@ SHA) e chiama `deploy/web/deploy.sh` con una chiave SSH a comando forzato. Il co
 vecchio (stesso alias), il vecchio si ferma solo quando il nuovo è `healthy` e `/api/health?deep=1` risponde; il
 precedente resta fermo per `deploy.sh rollback <env>`. Produzione si accende con la variabile `DEPLOY_PRODUCTION=true`.
 **Cron**: il controllo di Google Calendar è un timer systemd (`google-calendar-check.timer`, 03:00 UTC) che chiama
-`run-cron.sh` dentro il container.
+`run-cron.sh` dentro il container. Il **posto tenuto** (15 minuti) lo libera `settle-holds@staging.timer`, ogni minuto, che chiama
+`/api/cron/settle-holds` allo stesso modo (installato il 2026-10-13; **per la produzione va installato `settle-holds@production.timer` al rilascio**). I file di
+unità stanno in `deploy/web/` e si copiano a mano in `/etc/systemd/system` (poi `daemon-reload` e `enable --now`).
 
 **Capacità**: un processo Node per ambiente, quindi una CPU. Misurato il 2026-10-06 con 25 richieste in parallelo:
 43 req/s sulla home, 6 sulle bici, 4 sui percorsi; da solo i tempi sono uguali a Vercel (232 contro 242 ms di primo
