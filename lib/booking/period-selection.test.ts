@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import type { PickContext, UnitBusy } from './day-availability'
-import { EMPTY_SELECTION, canBook, pickDay, rangeToSelection, selectionToRange, shiftRange } from './period-selection'
+import type { UnitBusy } from './day-availability'
+import { EMPTY_SELECTION, firstBookableDay, pickDay, rangeToSelection, selectionToRange } from './period-selection'
 
 describe('pickDay', () => {
   it('the first tap starts, the second ends', () => {
@@ -34,40 +34,26 @@ describe('selection and range', () => {
   })
 })
 
-describe('shiftRange', () => {
-  it('moves the whole stay, keeping its length', () => {
-    expect(shiftRange({ startsOn: '2031-11-03', endsOn: '2031-11-06' }, 1)).toEqual({ startsOn: '2031-11-04', endsOn: '2031-11-07' })
-    expect(shiftRange({ startsOn: '2031-11-03', endsOn: '2031-11-06' }, -1)).toEqual({ startsOn: '2031-11-02', endsOn: '2031-11-05' })
-    expect(shiftRange({ startsOn: '2031-10-30', endsOn: '2031-11-02' }, 3)).toEqual({ startsOn: '2031-11-02', endsOn: '2031-11-05' })
-  })
-})
-
-describe('canBook', () => {
+describe('firstBookableDay: the day the page opens on', () => {
   const unit = (id: string, busy: [string, string][] = [], retiredOn: string | null = null): UnitBusy => ({
     unitId: id, modelId: 'm', sizeId: 's', versionId: 'v', retiredOn, busy: busy.map(([startsOn, endsOn]) => ({ startsOn, endsOn })),
   })
-  const ctx = (units: UnitBusy[], maxDays: number | null = null): Omit<PickContext, 'start'> =>
-    ({ units, minDay: '2031-11-03', maxDay: '2031-11-20', maxDays })
-  const stay = (a: string, b: string) => ({ startsOn: a, endsOn: b })
+  const ctx = (units: UnitBusy[], isClosed?: (day: string) => boolean) => ({ units, minDay: '2031-11-03', maxDay: '2031-11-10', isClosed })
 
-  it('is true when a bike is free for the whole stay', () => {
-    expect(canBook(stay('2031-11-04', '2031-11-07'), ctx([unit('A')]))).toBe(true)
+  it('is tomorrow (the first day that can be booked) when a bike is free then', () => {
+    expect(firstBookableDay(ctx([unit('A')]))).toBe('2031-11-03')
   })
-  it('is false when no single bike covers it, even if every day has some bike', () => {
-    const units = [unit('A', [['2031-11-05', '2031-12-01']]), unit('B', [['2031-11-01', '2031-11-05']])]
-    expect(canBook(stay('2031-11-03', '2031-11-07'), ctx(units))).toBe(false)
+  it('is the next day when tomorrow has no bike free', () => {
+    expect(firstBookableDay(ctx([unit('A', [['2031-11-01', '2031-11-05']])]))).toBe('2031-11-05')
   })
-  it('is false before the first sellable day and past the last', () => {
-    expect(canBook(stay('2031-11-02', '2031-11-04'), ctx([unit('A')]))).toBe(false)
-    expect(canBook(stay('2031-11-20', '2031-11-22'), ctx([unit('A')]))).toBe(false)
+  it('is the next day when the shop is closed tomorrow', () => {
+    expect(firstBookableDay(ctx([unit('A')], (day) => day === '2031-11-03'))).toBe('2031-11-04')
   })
-  it('is false past the days the category allows', () => {
-    expect(canBook(stay('2031-11-04', '2031-11-08'), ctx([unit('A')], 3))).toBe(false)
-    expect(canBook(stay('2031-11-04', '2031-11-07'), ctx([unit('A')], 3))).toBe(true)
+  it('is null when nothing can be booked in the whole window', () => {
+    expect(firstBookableDay(ctx([unit('A', [['2031-11-01', '2031-12-01']])]))).toBeNull()
+    expect(firstBookableDay(ctx([]))).toBeNull()
   })
-  it('does not look at a closed day in the middle, only at the two ends', () => {
-    const closedMiddle = { ...ctx([unit('A')]), isClosed: (day: string) => day === '2031-11-05' }
-    expect(canBook(stay('2031-11-04', '2031-11-07'), closedMiddle)).toBe(true)
-    expect(canBook(stay('2031-11-05', '2031-11-07'), closedMiddle)).toBe(false)
+  it('does not go past the last day that can be booked', () => {
+    expect(firstBookableDay({ units: [unit('A')], minDay: '2031-11-10', maxDay: '2031-11-09' })).toBeNull()
   })
 })

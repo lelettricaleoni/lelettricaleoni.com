@@ -491,9 +491,6 @@
       "not_payable": "Questo pagamento non è più possibile: il tempo è scaduto.",
       "unknown": "Questo pagamento non esiste."
     },
-    "day_before": "Giorno prima",
-    "day_after": "Giorno dopo",
-    "change_days": "Cambia",
     "legend_off_days": "I giorni in grigio non si possono scegliere: il negozio è chiuso o non c'è nessuna bici libera.",
     "legend_off_bike": "I giorni in grigio non si possono scegliere: il negozio è chiuso o questa bici non è libera.",
     "off_past": "{day}, non si prenota più",
@@ -507,7 +504,11 @@
     "bike_mode_label": "Stai prenotando",
     "cart_changed": "Qualcuno ha appena prenotato: abbiamo aggiornato la tua scelta.",
     "off_closed": "{day}, il negozio è chiuso",
-    "pickup_when": "Ritiro {pickupDay}, orario {pickupHours}. Riconsegna {returnDay}, orario {returnHours}. Entro la chiusura del negozio: le bici vanno ricaricate e non si riconsegnano il giorno dopo. Per accordi diversi, chiamaci."
+    "pickup_when": "Ritiro {pickupDay}, orario {pickupHours}. Riconsegna {returnDay}, orario {returnHours}. Entro la chiusura del negozio: le bici vanno ricaricate e non si riconsegnano il giorno dopo. Per accordi diversi, chiamaci.",
+    "week_before": "Settimana prima",
+    "week_after": "Settimana dopo",
+    "show_month": "Mostra il mese",
+    "show_week": "Mostra la settimana"
   },
   "terms": {
     "title": "Termini di noleggio",

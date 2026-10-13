@@ -491,9 +491,6 @@
       "not_payable": "This payment is not possible any more: time has run out.",
       "unknown": "This payment does not exist."
     },
-    "day_before": "Day before",
-    "day_after": "Day after",
-    "change_days": "Change",
     "legend_off_days": "Grey days cannot be chosen: the shop is closed or no bike is free.",
     "legend_off_bike": "Grey days cannot be chosen: the shop is closed or this bike is not free.",
     "off_past": "{day}, no longer bookable",
@@ -507,7 +504,11 @@
     "bike_mode_label": "You are booking",
     "cart_changed": "Someone has just booked: we have updated your choice.",
     "off_closed": "{day}, the shop is closed",
-    "pickup_when": "Pickup on {pickupDay}, open {pickupHours}. Return on {returnDay}, open {returnHours}. By the shop's closing time: the bikes have to be recharged and are not returned the next day. For other arrangements, call us."
+    "pickup_when": "Pickup on {pickupDay}, open {pickupHours}. Return on {returnDay}, open {returnHours}. By the shop's closing time: the bikes have to be recharged and are not returned the next day. For other arrangements, call us.",
+    "week_before": "Previous week",
+    "week_after": "Next week",
+    "show_month": "Show the month",
+    "show_week": "Show the week"
   },
   "terms": {
     "title": "Rental terms",
