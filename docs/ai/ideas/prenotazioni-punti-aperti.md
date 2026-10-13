@@ -4,13 +4,6 @@
 > dice **chi deve decidere o fare**, **perché** e **dove sta il resto** (spec, piano, codice). Quando una voce è chiusa, si sposta in fondo con la data.
 > Tutto il lavoro di prenotazione è su `staging`; **in produzione decide solo Kevin** (vedi «Per il rilascio»).
 
-## Da fare (Kevin, nel pannello di Supabase)
-
-- [ ] **L'accesso con Google da `staging` rimanda a `localhost`** (visto il 2026-10-13). Il codice è giusto (l'immagine di staging è costruita con `NEXT_PUBLIC_SITE_URL=https://staging.lelettricaleoni.com`
-  e il ritorno è `https://staging.lelettricaleoni.com/auth/callback`): è Supabase che, se l'indirizzo non è tra quelli consentiti, ripiega sul suo indirizzo predefinito. Nel progetto Supabase di **sviluppo**
-  (lo usa anche staging): Authentication → URL Configuration → **Redirect URLs**: aggiungere `https://staging.lelettricaleoni.com/**` (e controllare che il **Site URL** non sia `localhost`).
-  Stessa cosa per le email di conferma e di recupero password. Al rilascio, lo stesso per il progetto di produzione con `https://www.lelettricaleoni.com/**`.
-
 ## Da decidere (Kevin)
 
 - [ ] **Orari scritti a mano sul sito.** Home (`info.hours_value`), mappa, dati strutturati in `app/[lang]/layout.tsx` (due fasce), descrizioni per i motori
@@ -66,6 +59,9 @@
 
 ## Fatto di recente (per non rifarlo)
 
+- 2026-10-13 — **L'accesso con Google da `staging` finiva su `localhost`**: non era Supabase (avevo sbagliato a dirlo) ma `app/auth/callback/route.ts`, che costruiva il ritorno dall'origine della
+  richiesta, e dietro il tunnel quella è `https://0.0.0.0:3000`. Ora usa `SITE_URL` (`lib/auth/callback-route.test.ts`). Nel pannello di Supabase **non** serve toccare nulla per questo; al rilascio
+  invece l'indirizzo di produzione va comunque tra i Redirect URLs del suo progetto.
 - 2026-10-13 — Timer `settle-holds@staging.timer` installato sulla VM (ogni minuto, prova: parte da solo e risponde `200 done`). File in `deploy/web/`, copiati a mano in `/etc/systemd/system`.
 - 2026-10-12 — Pagina `/rent` con selettore dei giorni, due modi, aggiornamento in tempo reale (#330). «Le tue prenotazioni» con foto e «Completa il pagamento», attesa a 15 minuti (#331).
   Orari e chiusure dal pannello (#332). Next 16.4.0 (#333). Documenti (#334).

@@ -7,6 +7,7 @@ import { destinationFor } from '@/lib/auth/destination'
 import { ensureCustomerFor } from '@/lib/auth/ensure-customer'
 import { fetchGooglePhone, REQUEST_GOOGLE_PHONE } from '@/lib/auth/google-phone'
 import { getCustomerLanguage } from '@/lib/auth/account-data'
+import { SITE_URL } from '@/lib/auth/urls'
 
 /** The one-time-token types an email from this site can carry. */
 const OTP_TYPES: EmailOtpType[] = ['invite', 'recovery', 'signup', 'email', 'email_change']
@@ -17,13 +18,15 @@ function isOtpType(value: string | null): value is EmailOtpType {
 }
 
 export async function GET(request: NextRequest) {
-  const { searchParams, origin } = new URL(request.url)
+  const { searchParams } = new URL(request.url)
   const code = searchParams.get('code')
   const tokenHash = searchParams.get('token_hash')
   const type = searchParams.get('type')
   const requestedLang = searchParams.get('lang')
   const lang = requestedLang && LANGUAGES.includes(requestedLang) ? requestedLang : 'it'
-  // `next` is glued to the origin, and destinationFor only lets a path of this site through: see
+  // People are sent back to the address of the site from its own configuration, never to the origin of the request: behind the tunnel
+  // the container sees itself as https://0.0.0.0:3000, and that is where every sign-in used to end (lib/auth/callback-route.test.ts).
+  // `next` is glued to that address, and destinationFor only lets a path of this site through: see
   // lib/auth/next-path.ts. It also keeps a customer out of the panel.
   const next = searchParams.get('next')
 
@@ -73,9 +76,9 @@ export async function GET(request: NextRequest) {
         // Once signed in the site is in the language of the account's settings, unless they were going somewhere in particular.
         language = await getCustomerLanguage(user.id)
       }
-      return NextResponse.redirect(`${origin}${destinationFor(user, language ?? lang, next)}`)
+      return NextResponse.redirect(`${SITE_URL}${destinationFor(user, language ?? lang, next)}`)
     }
   }
 
-  return NextResponse.redirect(`${origin}/${lang}/login?error=invalid_link`)
+  return NextResponse.redirect(`${SITE_URL}/${lang}/login?error=invalid_link`)
 }

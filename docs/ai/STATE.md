@@ -266,6 +266,11 @@ browser, l'HTML è identico (vedi `docs/environment-variables.md`).
 
 **Una cartella di lavoro con `node_modules` in giunzione usa la versione di Next della cartella principale**, non quella del suo `package.json`: dopo un aggiornamento di Next si lavora in una cartella con la propria installazione (`npm ci`), mai `npm install` dentro la giunzione. Le PR di Dependabot puntano a `main` (base vecchia): gli aggiornamenti si fanno da `staging`. I test del database (`tests/db`) creano da sé ciò che serve e tolgono ciò che creano: ne esisteva uno che passava solo grazie agli avanzi di un altro (modelli pubblicati `db-test-*` rimasti sullo stesso database di staging).
 
+**Dietro il tunnel `request.url` dice `https://0.0.0.0:3000`**, l'indirizzo con cui il contenitore vede se stesso: un indirizzo costruito dall'origine della richiesta (un `NextResponse.redirect` in
+una rotta, un link in un'email) manda la gente dove nessuno può andare. Ha rotto l'accesso con Google su staging (visto il 2026-10-13: la risposta era `Location: https://0.0.0.0:3000/…`). Si usa
+`SITE_URL` (`lib/auth/urls.ts`, da `NEXT_PUBLIC_SITE_URL`, fissato alla build); `proxy.ts` risponde con indirizzi relativi e non ne soffre. Provare una rotta nuova su staging guardando l'header
+`Location`, non il browser.
+
 **Su Windows con Git Bash**: `ssh-keyscan` non regge lo scambio di chiavi della VM (l'impronta si legge da
 `/etc/ssh/ssh_host_ed25519_key.pub` via ssh) e un argomento che inizia con `/` viene convertito in un percorso di Git:
 `MSYS_NO_PATHCONV=1`. Un commento di un record DNS di Cloudflare non può superare 100 caratteri.
