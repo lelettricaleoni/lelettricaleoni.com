@@ -58,4 +58,3 @@
 - `docs/superpowers/plans/2026-10-13-contact-page.md`: pagina dei contatti come fonte unica (richiesta di Kevin).
 - `docs/superpowers/plans/2026-10-13-production-data-to-test.md`: dati di produzione sul test (richiesta di Kevin; aspetta le sue quattro scelte).
 - `docs/superpowers/plans/2026-10-13-hold-expiry-jobs.md`: un job per prenotazione al posto del timer al minuto (consigliato con la fetta 4).
-- `docs/superpowers/plans/2026-10-13-model-colors.md`: un colore per modello, primo uso Google Calendar (ramo a parte, aspetta le risposte di Kevin).
