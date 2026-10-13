@@ -58,3 +58,4 @@
 - `docs/superpowers/plans/2026-10-13-contact-page.md`: pagina dei contatti come fonte unica (richiesta di Kevin).
 - `docs/superpowers/plans/2026-10-13-production-data-to-test.md`: dati di produzione sul test (richiesta di Kevin; aspetta le sue quattro scelte).
 - `docs/superpowers/plans/2026-10-13-hold-expiry-jobs.md`: un job per prenotazione al posto del timer al minuto (consigliato con la fetta 4).
+- Ramo `feat/category-reorder` (PR a parte, piccola): elenco **trascinabile** delle categorie in `/manage/bikes/options` (Kevin: «voglio che sia trascinabile»); una categoria nuova va in fondo. Provato nel browser con una categoria di prova (poi cancellata); è già unito in questo ramo.
