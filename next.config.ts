@@ -5,6 +5,9 @@ const nextConfig: NextConfig = {
   // image's whole runtime. Vercel's own build never sets it, so nothing changes there.
   output: process.env.NEXT_OUTPUT === 'standalone' ? 'standalone' : undefined,
   cacheComponents: true,
+  // Next 16.4 asks for a choice. `false` keeps the prefetching we had; adopting Partial Prefetching changes what every <Link> downloads and is a
+  // decision of its own (node_modules/next/dist/docs/01-app/02-guides/adopting-partial-prefetching.md).
+  partialPrefetching: false,
   // The commit this build was made from (the deploy workflow passes it as APP_VERSION, see
   // the Dockerfile). With an id, a page opened before a deploy notices the new build on its
   // next navigation and loads it afresh, instead of running old scripts against a server
