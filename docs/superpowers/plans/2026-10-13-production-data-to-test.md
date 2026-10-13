@@ -66,11 +66,16 @@ Non tocca produzione, non copia segreti, non sposta file dai bucket senza che Ke
   (`route_translations.start_point_label`: nel codice non esiste) si lasciano. **Controllo**: l'impronta (`md5`) di ogni tabella in produzione e nel test, sulle colonne comuni.
 - I file si scaricano dal dominio pubblico di produzione (solo lettura, senza chiavi) e si caricano nel bucket di sviluppo con le chiavi di sviluppo.
 
-## Avanzamento
-- [ ] 1 Copia di sicurezza dei dati di sviluppo (`temp/`, fuori da git) e elenco di ciò che dipende dal catalogo (prenotazioni, ecc.)
-- [ ] 2 Svuotare le prenotazioni di prova di sviluppo e il catalogo di sviluppo (ordine inverso delle chiavi esterne)
-- [ ] 3 Inserire le righe di produzione, tabella per tabella (ordine delle chiavi esterne); colori dei modelli come nella `0026`
-- [ ] 4 Impronte uguali tabella per tabella
-- [ ] 5 Copiare i file (foto con le loro versioni, flussi video, GPX) nel bucket di sviluppo; controllo a campione
-- [ ] 6 Controllo a occhio: home, `/it/bikes`, `/it/routes`, `/rent`, `/manage/bikes` sul test contro produzione; `npm run test:db` ancora verde
-- [ ] 7 Lo script resta riusabile? (per rifare la copia quando serve: oggi è un passaggio a mano con l'MCP; se Kevin mette una connessione di sola lettura a produzione in `.env.local` si può trasformare in uno script)
+## Avanzamento (2026-10-13, fatto)
+- [x] 1 Copia di sicurezza dei dati di sviluppo in `temp/dev-backup-2026-10-13/` (JSON, 15 tabelle, fuori da git; script `scratchpad/dev-backup.mjs`)
+- [x] 2 Svuotati il catalogo di sviluppo e le sue prenotazioni di prova (restano i 5 clienti di prova e l'integrazione del calendario)
+- [x] 3 Inserite le righe di produzione: 6 categorie percorso, 7 categorie bici, 6 taglie, 4 versioni, 10 modelli, 30 traduzioni, 41 + 12 collegamenti, 23 bici, 12 percorsi, 36 traduzioni, 70 media
+- [x] 4 **Impronte uguali** (md5 sulle colonne comuni) tabella per tabella, nel test e in produzione: tutte
+- [x] 5 297 file (95 MB) copiati nel bucket di sviluppo con `scripts/copy-prod-media-to-test.mts` (ramo `chore/copy-prod-media-to-test`): foto con le loro versioni, flussi video, GPX. Quattro `master.m3u8` non esistono (i quattro video vecchi hanno solo `playlist.m3u8`): previsto
+- [x] 6 Controllo a occhio: `/it/rent` diviso per categoria con le foto vere, `/manage/bikes` per categoria; i file rispondono sul dominio di sviluppo
+- [~] 7 `npm run test:db` con i dati veri dentro: in corso
+- Colori dei modelli: assegnati con la regola della `0026` ai 10 modelli copiati.
+- **Da sapere**: in produzione tutte le 7 categorie hanno ordine 0 (finora non si poteva ordinarle): il test le mostra in ordine alfabetico; le trascini dal pannello (`Bike options → Categories`).
+- **Non copiato, apposta**: clienti, prenotazioni, utenti di accesso, `integrations`.
+- Il dato di produzione `route_translations.start_point_label` (colonna che il codice non conosce, tutta vuota) non si porta.
+- Rifare la copia: oggi i dati passano da un'estrazione a mano con l'MCP (leggi `jsonb` da produzione, `jsonb_populate_recordset` nel test) e le impronte; i file con lo script. Per uno script anche per i dati serve una connessione di sola lettura a produzione in `.env.local`.
