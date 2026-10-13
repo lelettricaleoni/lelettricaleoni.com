@@ -59,9 +59,11 @@
 
 ## Fatto di recente (per non rifarlo)
 
-- 2026-10-13 — **L'accesso con Google da `staging` finiva su `localhost`**: non era Supabase (avevo sbagliato a dirlo) ma `app/auth/callback/route.ts`, che costruiva il ritorno dall'origine della
-  richiesta, e dietro il tunnel quella è `https://0.0.0.0:3000`. Ora usa `SITE_URL` (`lib/auth/callback-route.test.ts`). Nel pannello di Supabase **non** serve toccare nulla per questo; al rilascio
-  invece l'indirizzo di produzione va comunque tra i Redirect URLs del suo progetto.
+- 2026-10-13 — **L'accesso con Google da `staging` finiva su `localhost`, per due cause una dopo l'altra.** (1) `app/auth/callback/route.ts` costruiva il ritorno dall'origine della richiesta, e dietro
+  il tunnel quella è `https://0.0.0.0:3000`: ora usa `SITE_URL` (`lib/auth/callback-route.test.ts`). (2) **Supabase non ammetteva l'indirizzo di staging** tra i *Redirect URLs* del progetto di sviluppo e
+  rimandava alla *Site URL* (`http://localhost:3000`): provato con un link di verifica sbagliato (vedi `docs/google-login-setup.md`, «Controlli rapidi»), staging e `www` tornavano a `localhost:3000`, mentre
+  `localhost:3000` e `:3001` erano ammessi. **Serve un'azione nel pannello di Supabase** (Authentication → URL Configuration → Redirect URLs: `https://staging.lelettricaleoni.com/**`); al rilascio lo stesso
+  per `https://www.lelettricaleoni.com/**` nel progetto di produzione.
 - 2026-10-13 — Timer `settle-holds@staging.timer` installato sulla VM (ogni minuto, prova: parte da solo e risponde `200 done`). File in `deploy/web/`, copiati a mano in `/etc/systemd/system`.
 - 2026-10-12 — Pagina `/rent` con selettore dei giorni, due modi, aggiornamento in tempo reale (#330). «Le tue prenotazioni» con foto e «Completa il pagamento», attesa a 15 minuti (#331).
   Orari e chiusure dal pannello (#332). Next 16.4.0 (#333). Documenti (#334).
