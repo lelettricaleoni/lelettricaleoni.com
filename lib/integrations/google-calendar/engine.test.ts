@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { applyReservation, reconcile, removeReservationEvent, type SyncApi } from './engine'
+import type { CalendarLabel } from './labels'
 import { eventIdFor, type CalendarEvent, type CalendarSettings, type ReservationForCalendar } from './events'
 
 const CAL = 'cal@group.calendar.google.com'
@@ -7,7 +8,7 @@ const settings = (overrides: Partial<CalendarSettings> = {}): CalendarSettings =
 
 const reservation = (id: string, overrides: Partial<ReservationForCalendar> = {}): ReservationForCalendar => ({
   id, kind: 'counter_rental', status: 'confirmed', startsOn: '2026-10-10', endsOn: '2026-10-13',
-  bikeLabel: 'Mondraker Arid S · M · Alu', shortId: 'aaaaaaaa', customerName: 'Mario Rossi', customerPhone: null, label: null,
+  bikeLabel: 'Mondraker Arid S · M · Alu', modelId: '99999999-9999-4999-8999-999999999999', modelColor: '#039be5', shortId: 'aaaaaaaa', customerName: 'Mario Rossi', customerPhone: null, label: null,
   ...overrides,
 })
 const ID1 = '11111111-1111-4111-8111-111111111111'
@@ -18,9 +19,12 @@ const ID3 = '33333333-3333-4333-8333-333333333333'
 function fakeCalendar(foreign: string[] = []) {
   const events = new Map<string, CalendarEvent | 'foreign'>(foreign.map((id) => [id, 'foreign' as const]))
   const calls: string[] = []
+  const written: boolean[] = []
+  let labels: CalendarLabel[] = []
   const api: SyncApi = {
-    async upsertEvent(calendarId, eventId, event) {
+    async upsertEvent(calendarId, eventId, event, withLabels) {
       calls.push(`upsert ${eventId}`)
+      written.push(withLabels)
       expect(calendarId).toBe(CAL)
       const existed = events.has(eventId)
       events.set(eventId, event)
@@ -35,8 +39,14 @@ function fakeCalendar(foreign: string[] = []) {
     async listManagedEventIds() {
       return [...events.entries()].filter(([, event]) => event !== 'foreign').map(([id]) => id)
     },
+    async readLabels() {
+      return labels
+    },
+    async writeLabels(_calendarId, next) {
+      labels = next
+    },
   }
-  return { api, events, calls }
+  return { api, events, calls, written }
 }
 
 describe('applyReservation', () => {
@@ -126,9 +136,9 @@ describe('reconcile', () => {
     const { api, events } = fakeCalendar()
     const failing: SyncApi = {
       ...api,
-      async upsertEvent(calendarId, eventId, event) {
+      async upsertEvent(calendarId, eventId, event, labels) {
         if (eventId === eventIdFor(ID1)) throw new Error('quota exceeded')
-        return api.upsertEvent(calendarId, eventId, event)
+        return api.upsertEvent(calendarId, eventId, event, labels)
       },
     }
     const report = await reconcile(failing, settings(), [reservation(ID1), reservation(ID2)], window, describeError)
@@ -149,5 +159,14 @@ describe('reconcile', () => {
   it('does nothing for no reservations and an empty calendar', async () => {
     const { api } = fakeCalendar()
     expect(await reconcile(api, settings(), [], window, describeError)).toEqual({ upserted: 0, removed: 0, failed: 0, firstError: null })
+  })
+})
+
+describe('the colour of the events', () => {
+  it('asks for the labels way only when the calendar has labels', async () => {
+    const { api, written } = fakeCalendar()
+    await applyReservation(api, settings(), reservation(ID1))
+    await applyReservation(api, settings({ labels: true }), reservation(ID2))
+    expect(written).toEqual([false, true])
   })
 })

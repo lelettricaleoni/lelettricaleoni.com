@@ -64,6 +64,9 @@ Le regole che ci riguardano:
 
 ## Avanzamento
 - [x] Domande risolte; prova dal vivo di lettura e scrittura (la scrittura aspetta il permesso).
-- [ ] T1 `lib/bike-colors.ts` + test · [ ] T2 migrazione `0026` · [ ] T3 `labels.ts` (unione delle etichette) + test · [ ] T4 `events.ts` (etichetta o colore fisso) + test
-- [ ] T5 `SyncApi`/client (`readLabels`, `writeLabels`, `eventLabelVersion`) + fake nel test del motore · [ ] T6 `sync.ts` (preparare le etichette, ripiego, avviso in Activity, `syncModelLabels`)
-- [ ] T7 azioni dei modelli + schema · [ ] T8 modulo del modello (campioni + colore a scelta) · [ ] T9 prova dal vivo con il permesso · [ ] T10 documenti (`STATE.md`, guida dell'integrazione, punti aperti), PR
+- [x] T1 `lib/bike-colors.ts` (12 colori, `nextModelColor`, `hexColorSchema`) + test · [x] T2 migrazione `0026` (colonna, CHECK, riempimento) applicata allo sviluppo; un test tiene l'elenco SQL uguale a quello del codice
+- [x] T3 `labels.ts` (`wantedLabels`, `mergeLabels`, limite 200, etichette non nostre conservate) + test · [x] T4 `events.ts` (etichetta o colore fisso, manutenzione grigia) + `fixed-colors.ts` (i colori fissi verificati sull'API) + test
+- [x] T5 `SyncApi`/client (`readLabels`, `writeLabels`, `eventLabelVersion`, ambito `calendar`) + fake nel test del motore · [x] T6 `sync.ts` (`prepareColours`: etichette prima di ogni sincronizzazione, ripiego e avviso in Activity, `syncModelLabels`) + test
+- [x] T7 azioni dei modelli (`color` nello schema, il nuovo modello prende il colore meno usato, `after(syncModelLabels)` dopo il salvataggio) · [x] T8 modulo del modello (campioni + «Other», provato a 1280 px)
+- [~] T9 prova dal vivo: scritta in `live.test.ts`, **aspetta che Kevin alzi il permesso** dell'account di servizio sul calendario di sviluppo (oggi 403 `requiredAccessLevel`, la lettura funziona)
+- [~] T10 documenti: `STATE.md` e guida dell'integrazione fatti; resta la PR (dopo la prova dal vivo) e `prenotazioni-punti-aperti.md` (per il rilascio: migrazione `0026` e il permesso sul calendario di produzione)

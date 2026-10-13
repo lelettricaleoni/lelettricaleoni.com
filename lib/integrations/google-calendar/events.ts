@@ -1,4 +1,6 @@
 import { daysBetween, inclusiveEnd, type IsoDate } from '@/lib/dates'
+import { MAINTENANCE_COLOR_ID, nearestGoogleColorId } from './fixed-colors'
+import { MAINTENANCE_LABEL_ID } from './labels'
 
 /*
  * What a reservation looks like as a Google Calendar event. Pure: no network, no database. The event is built
@@ -10,6 +12,11 @@ export interface CalendarSettings {
   calendarId: string
   includePhone: boolean
   includeMaintenance: boolean
+  /**
+   * Whether the calendar has our labels (the service account may define them): an event then takes the label of its model. Otherwise it takes
+   * the nearest of Google's fixed colours. Decided at each sync by `lib/integrations/google-calendar/sync.ts`; absent means the fixed colours.
+   */
+  labels?: boolean
 }
 
 export interface ReservationForCalendar {
@@ -22,6 +29,9 @@ export interface ReservationForCalendar {
   endsOn: IsoDate
   /** "Mondraker Arid S · M · Alu" */
   bikeLabel: string
+  /** The model of the bike and its colour (`#rrggbb`, or null: none), which colour the event. */
+  modelId: string
+  modelColor: string | null
   shortId: string
   customerName: string | null
   customerPhone: string | null
@@ -34,13 +44,13 @@ export interface CalendarEvent {
   description: string
   start: { date: IsoDate }
   end: { date: IsoDate }
+  /** Only where the calendar has labels (`settings.labels`): the id of the label, which is the id of the model. */
+  eventLabelId?: string
+  /** Only where it has not: one of Google's fixed colours. */
   colorId?: string
   reminders: { useDefault: false }
   extendedProperties: { private: { lelettricaManaged: 'true'; reservationId: string } }
 }
-
-/** Google's graphite: a maintenance stands out from the rentals, which keep the calendar's own colour. */
-const MAINTENANCE_COLOR = '8'
 
 /**
  * The reservation id without dashes. Google lets us choose the id of an event (a-v and 0-9, 5 to 1024
@@ -48,6 +58,16 @@ const MAINTENANCE_COLOR = '8'
  */
 export function eventIdFor(reservationId: string): string {
   return reservationId.split('-').join('').toLowerCase()
+}
+
+/**
+ * How the event is coloured. With labels: the label of the model (a rental) or the grey maintenance one; a model with no colour gets none and
+ * keeps the calendar's own. Without: the nearest fixed colour of Google to the model's, and graphite for a maintenance.
+ */
+function colourOf(reservation: ReservationForCalendar, isMaintenance: boolean, labels: boolean): Pick<CalendarEvent, 'eventLabelId' | 'colorId'> {
+  if (isMaintenance) return labels ? { eventLabelId: MAINTENANCE_LABEL_ID } : { colorId: MAINTENANCE_COLOR_ID }
+  if (!reservation.modelColor) return {}
+  return labels ? { eventLabelId: reservation.modelId } : { colorId: nearestGoogleColorId(reservation.modelColor) }
 }
 
 /** The event this reservation should have, or null when it should have none (cancelled, or maintenance switched off). */
@@ -79,7 +99,7 @@ export function wantedEvent(reservation: ReservationForCalendar, settings: Calen
     description: lines.join('\n'),
     start: { date: reservation.startsOn },
     end: { date: reservation.endsOn },
-    ...(isMaintenance ? { colorId: MAINTENANCE_COLOR } : {}),
+    ...colourOf(reservation, isMaintenance, settings.labels === true),
     reminders: { useDefault: false },
     extendedProperties: { private: { lelettricaManaged: 'true', reservationId: reservation.id } },
   }

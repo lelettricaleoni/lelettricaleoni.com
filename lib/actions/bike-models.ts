@@ -1,5 +1,6 @@
 'use server'
 import { updateTag, revalidatePath } from 'next/cache'
+import { after } from 'next/server'
 import { redirect } from 'next/navigation'
 import { eq, and, asc } from 'drizzle-orm'
 import { safeErrorSummary } from '@/lib/safe-error'
@@ -11,6 +12,8 @@ import { getVideoPresignedUploadUrl, getPhotoPresignedUploadUrl, deleteMediaFile
 import { photoSourceExtension, photoContentType } from '@/lib/media-client'
 import { needsRetranslation } from '@/lib/translations'
 import { BikeModelSchema, type BikeModelInput } from '@/lib/bike-model-schema'
+import { nextModelColor } from '@/lib/bike-colors'
+import { syncModelLabels } from '@/lib/integrations/google-calendar/sync'
 import { translateNameAndDescription } from '@/lib/translate-text'
 import {
   syncModelSizesAndVersions, replaceModelMedia, replaceModelTranslations, type ModelMediaItem,
@@ -43,6 +46,12 @@ export async function getBikeModelsForAdmin() {
     .orderBy(asc(bikeModels.displayOrder))
 }
 
+/** The colour a new model starts with: the one of the list used the least by the models there are (lib/bike-colors.ts). */
+export async function suggestBikeModelColor(): Promise<string> {
+  await requireAdmin()
+  return nextModelColor((await db.select({ color: bikeModels.color }).from(bikeModels)).map((row) => row.color))
+}
+
 export async function getBikeModelWithDetails(id: string) {
   await requireAdmin()
   const [model] = await db.select().from(bikeModels).where(eq(bikeModels.id, id))
@@ -67,6 +76,7 @@ function parseBikeModelForm(formData: FormData) {
     nameIt:         formData.get('nameIt'),
     descriptionIt:  formData.get('descriptionIt'),
     categoryId:     formData.get('categoryId'),
+    color:          formData.get('color') || undefined,
     priceAdjustmentPercent: formData.get('priceAdjustmentPercent') || undefined,
     batteryRange:   formData.get('batteryRange') || undefined,
     motor:          formData.get('motor') || undefined,
@@ -123,6 +133,7 @@ export async function createBikeModelAction(
   try {
     const [newModel] = await db.insert(bikeModels).values({
       categoryId:     modelData.categoryId,
+      color:          modelData.color ?? await suggestBikeModelColor(),
       priceAdjustmentPercent: modelData.priceAdjustmentPercent.toString(),
       batteryRange:   modelData.batteryRange || null,
       motor:          modelData.motor || null,
@@ -147,6 +158,7 @@ export async function createBikeModelAction(
 
   updateTag('bike-models')
   revalidatePath('/manage/bikes') // the admin list, see deleteBikeModelAction
+  after(syncModelLabels) // its label in the shop's calendar; never fails the save
   redirect('/manage/bikes')
 }
 
@@ -187,6 +199,8 @@ export async function updateBikeModelAction(
   try {
     await db.update(bikeModels).set({
       categoryId:     modelData.categoryId,
+      // A form with no colour (an old page) leaves the colour as it is.
+      ...(modelData.color ? { color: modelData.color } : {}),
       priceAdjustmentPercent: modelData.priceAdjustmentPercent.toString(),
       batteryRange:   modelData.batteryRange || null,
       motor:          modelData.motor || null,
@@ -220,6 +234,7 @@ export async function updateBikeModelAction(
   updateTag('bike-models')
   updateTag(`bike-model-${id}`)
   revalidatePath('/manage/bikes') // the admin list, see deleteBikeModelAction
+  after(syncModelLabels) // its label in the shop's calendar (name and colour); never fails the save
   redirect('/manage/bikes')
 }
 

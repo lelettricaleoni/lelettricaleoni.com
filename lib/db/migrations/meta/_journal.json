@@ -183,6 +183,13 @@
       "when": 1791819814023,
       "tag": "0025_shop_hours",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1791895421000,
+      "tag": "0026_model_color",
+      "breakpoints": true
     }
   ]
 }

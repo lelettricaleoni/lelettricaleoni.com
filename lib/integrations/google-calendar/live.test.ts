@@ -17,12 +17,12 @@ describe.skipIf(!process.env.LIVE_GOOGLE_CALENDAR)('Google Calendar, for real', 
     const secret = await getDecryptedSecret('google-calendar')
     if (!state || !secret) throw new Error('Google Calendar is not configured in this database')
     const key = JSON.parse(secret)
-    return { calendarId: String(state.config.calendarId), sync: createSyncApi(key), plain: createCalendarApi(key) }
+    return { calendarId: String(state.config.calendarId), sync: createSyncApi(key), plain: createCalendarApi(key), key }
   }
 
   const reservation = (id: string, overrides = {}) => ({
     id, kind: 'counter_rental' as const, status: 'confirmed' as const, startsOn: '2031-03-10', endsOn: '2031-03-13',
-    bikeLabel: 'Live check · M · Alu', shortId: 'livecheck', customerName: 'Live Check', customerPhone: '+390000000000', label: null,
+    bikeLabel: 'Live check · M · Alu', modelId: '99999999-9999-4999-8999-999999999999', modelColor: '#039be5', shortId: 'livecheck', customerName: 'Live Check', customerPhone: '+390000000000', label: null,
     ...overrides,
   })
   const settings = (calendarId: string) => ({ calendarId, includePhone: true, includeMaintenance: true })
@@ -64,6 +64,39 @@ describe.skipIf(!process.env.LIVE_GOOGLE_CALENDAR)('Google Calendar, for real', 
     } finally {
       await sync.removeEvent(calendarId, eventIdFor(id))
       await sync.removeEvent(calendarId, eventIdFor(orphan))
+    }
+  }, 60_000)
+
+  // Needs the service account to be an OWNER of the calendar (it defines the labels). Without it the label cannot be written: the test says so.
+  it('defines a label of ours, colours an event with it, and leaves every label it did not make', async () => {
+    const { mergeLabels } = await import('@/lib/integrations/google-calendar/labels')
+    const { eventIdFor, wantedEvent } = await import('@/lib/integrations/google-calendar/events')
+    const { auth: googleAuth, calendar: createCalendar } = await import('@googleapis/calendar')
+    const { calendarId, sync, key } = await open()
+    const raw = createCalendar({ version: 'v3', auth: new googleAuth.JWT({ email: key.client_email, key: key.private_key, scopes: ['https://www.googleapis.com/auth/calendar'] }) })
+    const labelId = crypto.randomUUID()
+    const id = crypto.randomUUID()
+    const before = await sync.readLabels(calendarId)
+    try {
+      await sync.writeLabels(calendarId, mergeLabels(before, [{ id: labelId, backgroundColor: '#8e24aa', name: 'Live check (safe to delete)' }]).labels)
+      const after = await sync.readLabels(calendarId)
+      expect(after.find((label) => label.id === labelId)).toMatchObject({ backgroundColor: '#8e24aa', name: 'Live check (safe to delete)' })
+      expect(after).toHaveLength(before.length + 1) // nothing of the others was lost
+
+      const settings = { calendarId, includePhone: false, includeMaintenance: true, labels: true }
+      const event = wantedEvent({ ...reservation(id), modelId: labelId, modelColor: '#8e24aa' }, settings)!
+      expect(event.eventLabelId).toBe(labelId)
+      expect(await sync.upsertEvent(calendarId, eventIdFor(id), event, true)).toBe('created')
+      // The typed client has no `eventLabelVersion` on a read: it is added to the parameters here.
+      const { data } = await raw.events.get(Object.assign({ calendarId, eventId: eventIdFor(id) }, { eventLabelVersion: 1 }))
+      expect(data.eventLabelId).toBe(labelId)
+
+      // Changing the colour of the label recolours the event: nothing is sent for the event.
+      await sync.writeLabels(calendarId, mergeLabels(after, [{ id: labelId, backgroundColor: '#e91e63', name: 'Live check (safe to delete)' }]).labels)
+      expect((await sync.readLabels(calendarId)).find((label) => label.id === labelId)?.backgroundColor).toBe('#e91e63')
+    } finally {
+      await sync.removeEvent(calendarId, eventIdFor(id))
+      await sync.writeLabels(calendarId, before).catch(() => {})
     }
   }, 60_000)
 })

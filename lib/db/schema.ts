@@ -126,6 +126,9 @@ export const bikeModels = pgTable('bike_models', {
   // drag alla volta nella lista admin — stesso meccanismo di
   // routes.displayOrder.
   displayOrder:   integer('display_order').notNull().default(0),
+  // The colour of the model, `#rrggbb` (refused otherwise: migration 0026): the colour of its bookings on Google Calendar. Null means none
+  // (a model made before 0026 and not given one); lib/bike-colors.ts gives a new model the colour used the least.
+  color:          text('color'),
   createdAt:      timestamp('created_at').notNull().defaultNow(),
   updatedAt:      timestamp('updated_at').notNull().defaultNow(),
 })
