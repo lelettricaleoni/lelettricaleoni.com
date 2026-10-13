@@ -85,13 +85,26 @@ export function PeriodPicker({
       ? `${month.format(firstShown)} – ${monthYear.format(lastShown)}`
       : `${monthYear.format(firstShown)} – ${monthYear.format(lastShown)}`
 
+  // The stay in words: under the bar of days, and in the top row when the month is open (where the month's name is already its caption).
+  const periodText = (
+    <p className="text-sm" aria-live="polite">
+      {chosen ? (
+        <span className="font-semibold text-foreground">
+          {formatDays(chosen, lang, { weekday: true })} · {daysBetween(chosen.startsOn, chosen.endsOn) === 1 ? dict.days_one : fill(dict.days_other, { n: daysBetween(chosen.startsOn, chosen.endsOn) })}
+        </span>
+      ) : (
+        <span className="text-muted-foreground">{dict.dates_prompt}</span>
+      )}
+    </p>
+  )
+
   const first = selection.start ? dayToDate(selection.start) : undefined
   const last = selection.end ? dayToDate(selection.end) : first
 
   return (
     <div className="space-y-3" aria-busy={pending}>
       <div className="flex min-h-9 items-center justify-between gap-2">
-        {!expanded && <p className="text-base font-semibold capitalize text-foreground" aria-live="polite">{title}</p>}
+        {expanded ? periodText : <p className="text-base font-semibold capitalize text-foreground" aria-live="polite">{title}</p>}
         <Button type="button" variant="ghost" size="sm" className="ml-auto" aria-expanded={expanded} onClick={() => setExpanded((open) => !open)}>
           {expanded ? <LuChevronUp /> : <LuChevronDown />} {expanded ? dict.show_week : dict.show_month}
         </Button>
@@ -119,8 +132,17 @@ export function PeriodPicker({
               },
             }}
             modifiers={{ unavailable: (date) => { const check = isSelectable(isoDay(date), pickContext); return !check.ok && UNAVAILABLE.has(check.reason) } }}
-            modifiersClassNames={{ unavailable: 'rounded-md bg-muted' }}
-            className="mx-auto p-0 [--cell-size:2.25rem] sm:[--cell-size:2.5rem]"
+            modifiersClassNames={{ unavailable: 'line-through' }}
+            showOutsideDays={false}
+            classNames={{
+              months: 'relative flex flex-col gap-6 md:flex-row md:gap-10',
+              month_caption: 'flex h-10 w-full items-center justify-center px-(--cell-size)',
+              caption_label: 'select-none text-base font-semibold capitalize',
+              weekday: 'flex-1 select-none text-xs font-medium text-muted-foreground',
+              week: 'mt-1 flex w-full',
+              today: '',
+            }}
+            className="mx-auto p-0 [--cell-size:2.25rem] sm:[--cell-size:2.75rem]"
           />
         </div>
       ) : (
@@ -149,14 +171,15 @@ export function PeriodPicker({
                     title={check.ok ? undefined : label}
                     onClick={() => tap(day)}
                     className={cn(
-                      'flex min-w-0 flex-col items-center gap-1 rounded-md border px-0 py-2 transition-colors sm:gap-1.5 sm:py-3',
+                      'flex h-16 min-w-0 flex-col items-center justify-center gap-0.5 rounded-lg border transition-colors sm:h-[4.5rem]',
                       check.ok && 'cursor-pointer bg-card hover:bg-accent',
-                      !check.ok && (grey ? 'bg-muted text-muted-foreground/60' : 'border-transparent text-muted-foreground/40'),
-                      inside && 'bg-accent',
+                      inside && 'border-transparent bg-accent text-primary',
+                      isEdge && 'border-primary bg-primary text-primary-foreground hover:bg-primary',
+                      !check.ok && (grey ? 'border-transparent text-muted-foreground/60' : 'border-transparent text-muted-foreground/40'),
                     )}
                   >
-                    <span className="text-[0.7rem] leading-none text-muted-foreground">{weekday.format(dayToDate(day))}</span>
-                    <span className={cn('flex size-7 items-center justify-center rounded-full text-sm sm:size-8', isEdge && 'bg-primary font-semibold text-primary-foreground')}>
+                    <span className={cn('text-xs leading-none', isEdge ? 'text-primary-foreground/80' : 'text-muted-foreground')}>{weekday.format(dayToDate(day))}</span>
+                    <span className={cn('text-lg font-semibold leading-tight', !check.ok && 'font-normal', grey && 'line-through')}>
                       {dayToDate(day).getDate()}
                     </span>
                   </button>
@@ -174,15 +197,7 @@ export function PeriodPicker({
       )}
 
       <div className="space-y-1">
-        <p className="text-sm" aria-live="polite">
-          {chosen ? (
-            <span className="font-semibold text-foreground">
-              {formatDays(chosen, lang, { weekday: true })} · {daysBetween(chosen.startsOn, chosen.endsOn) === 1 ? dict.days_one : fill(dict.days_other, { n: daysBetween(chosen.startsOn, chosen.endsOn) })}
-            </span>
-          ) : (
-            <span className="text-muted-foreground">{dict.dates_prompt}</span>
-          )}
-        </p>
+        {!expanded && periodText}
         <p className="text-xs text-muted-foreground">{dict.dates_hint} {mode === 'bike' ? dict.legend_off_bike : dict.legend_off_days}</p>
       </div>
     </div>

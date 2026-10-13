@@ -125,7 +125,7 @@ export function RentFlow({
 
   return (
     <div className="space-y-6">
-      <section className="rounded-xl border bg-card p-4 shadow-sm sm:p-5" aria-labelledby="rent-when">
+      <section className="mx-auto w-full max-w-3xl rounded-xl border bg-card p-4 shadow-sm sm:p-5" aria-labelledby="rent-when">
         <h2 id="rent-when" className="sr-only">{dict.dates_title}</h2>
         {mode === 'bike' && focus && (
           <div className="mb-3 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b pb-3">
