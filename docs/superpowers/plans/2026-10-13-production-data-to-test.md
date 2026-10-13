@@ -73,7 +73,7 @@ Non tocca produzione, non copia segreti, non sposta file dai bucket senza che Ke
 - [x] 4 **Impronte uguali** (md5 sulle colonne comuni) tabella per tabella, nel test e in produzione: tutte
 - [x] 5 297 file (95 MB) copiati nel bucket di sviluppo con `scripts/copy-prod-media-to-test.mts` (ramo `chore/copy-prod-media-to-test`): foto con le loro versioni, flussi video, GPX. Quattro `master.m3u8` non esistono (i quattro video vecchi hanno solo `playlist.m3u8`): previsto
 - [x] 6 Controllo a occhio: `/it/rent` diviso per categoria con le foto vere, `/manage/bikes` per categoria; i file rispondono sul dominio di sviluppo
-- [~] 7 `npm run test:db` con i dati veri dentro: in corso
+- [x] 7 `npm run test:db` con i dati veri dentro: 34 file, 374 test verdi (compresi i nuovi sull'ordine delle categorie)
 - Colori dei modelli: assegnati con la regola della `0026` ai 10 modelli copiati.
 - **Da sapere**: in produzione tutte le 7 categorie hanno ordine 0 (finora non si poteva ordinarle): il test le mostra in ordine alfabetico; le trascini dal pannello (`Bike options → Categories`).
 - **Non copiato, apposta**: clienti, prenotazioni, utenti di accesso, `integrations`.
