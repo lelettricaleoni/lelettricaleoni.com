@@ -4,6 +4,7 @@ import { db, bikeSizes, bikeVersions, bikeCategories, routeBikeCategories } from
 import { getAdminUser } from '@/lib/supabase/server'
 import { updateTag } from 'next/cache'
 import { renameRouteBikeCategory, deleteRouteBikeCategory } from '@/lib/route-bike-categories'
+import { nextCategoryOrder, reorderBikeCategories } from '@/lib/bike-categories'
 
 async function requireAdmin() {
   const user = await getAdminUser()
@@ -91,8 +92,17 @@ export async function listBikeCategories() {
 
 export async function createBikeCategoryAction(input: BikeCategoryInput) {
   await requireAdmin()
-  await db.insert(bikeCategories).values(input)
+  // A new category goes after the last one; where it stands is then changed by dragging it in the list.
+  await db.insert(bikeCategories).values({ ...input, displayOrder: await nextCategoryOrder() })
   updateTag('bike-options')
+}
+
+/** The categories in the order of the list the person dragged: the order the bikes are shown in, on the site and in the panel. */
+export async function reorderBikeCategoriesAction(orderedIds: string[]) {
+  await requireAdmin()
+  await reorderBikeCategories(orderedIds)
+  updateTag('bike-options')
+  updateTag('bike-models') // the models are listed by the order of their categories
 }
 
 export async function updateBikeCategoryAction(id: string, input: BikeCategoryInput) {
