@@ -8,7 +8,7 @@ export const instant = false
 
 /**
  * Where the payment page sends a person who went back without paying (`cancel_url`). The payment session is closed FIRST and the
- * bikes are freed at once (`abandonMyCheckout`), then the person goes back to the booking page with the cart as they left it. If they
+ * bikes are freed at once (`abandonMyCheckout`), then the person goes back to the checkout page with the booking as they left it. If they
  * had already paid, the booking is theirs and they go to see it. Only a booking of the signed-in person is touched.
  */
 export default async function CancelledPage({ params }: { params: Promise<{ lang: string; id: string }> }) {

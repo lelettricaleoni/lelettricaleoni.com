@@ -10,6 +10,7 @@
   (dicono «09:00–19:00» senza la pausa) e Google Business Profile non leggono la tabella `shop_opening_hours` (`/manage/hours`): un cambio di orari va fatto in
   due posti (`docs/contact-details.md`). Domanda: li facciamo leggere dalla tabella? (Un lavoro in più, poi si cambia in un posto solo; il Business Profile resta a mano.)
 - [ ] **Mancato ritiro.** Cosa succede se il cliente non ritira entro la chiusura del primo giorno (bici tenuta? pagamento perso? rimborso?). Va anche nei termini.
+  La pagina di prenotazione (2026-10-13, Kevin: «troppe informazioni testuali») non spiega più perché si riconsegna entro la chiusura (le bici vanno ricaricate, non si riconsegnano il giorno dopo) né «per accordi diversi, chiamaci»: dice solo giorni e orari. La spiegazione va nei termini.
 - [ ] **Termini di noleggio: sono una BOZZA** (`/it/terms`, `lib/booking/terms-text.test.ts` ne tiene i numeri). Mancano le decisioni di Kevin su: cauzione (se e quanto),
   danni, furto e smarrimento, età minima e casco, mancata presentazione, maltempo, orari di ritiro e riconsegna. Poi la revisione di chi rivede i testi (diritto di recesso per i
   servizi del tempo libero con data precisa: **da far confermare**). Il tedesco usa «Sie» nei termini e «du» nelle pagine di prenotazione: scegliere una forma (`STATE.md`).
@@ -36,6 +37,9 @@
 - [ ] **Fetta 5: appuntamenti di riparazione.** Mai iniziata; il viola del logo (`brand-purple`) è riservato a queste sezioni, dopo uno studio di dove e come.
 - [ ] **Matrice modelli × giorni** nella pagina `/rent`: scartata per ora (pesante per un negozio piccolo, difficile a 320 px); se serve si aggiunge sopra gli stessi dati (`busy-intervals.ts`).
 - [ ] **Una fonte sola per gli orari** (se la risposta sopra è sì): `loadShopSchedule()` per home, mappa e dati strutturati.
+- [ ] **Scadenza dei posti tenuti con un job per prenotazione** invece del timer al minuto (Kevin, 2026-10-13): piano e raccomandazione (farlo con la fetta 4, il worker senza chiavi, il controllo periodico resta come rete di sicurezza) in `docs/superpowers/plans/2026-10-13-hold-expiry-jobs.md`.
+- [ ] **Dati di produzione sul test** (Kevin, 2026-10-13): piano e quattro scelte in `docs/superpowers/plans/2026-10-13-production-data-to-test.md`.
+- [ ] **Pagina dei contatti** (Kevin, 2026-10-13): un posto solo per telefono, email, indirizzo e orari, linkato da tutto il sito. Piano e domande: `docs/superpowers/plans/2026-10-13-contact-page.md`. Chiude anche «Orari scritti a mano».
 - [ ] **Una pagina di aiuto** (`help@lelettricaleoni.com` esiste): come si prenota, accesso, annullamenti (ROADMAP «Un giorno»).
 
 ## Da guardare con gli occhi (non provato in un browser vero)

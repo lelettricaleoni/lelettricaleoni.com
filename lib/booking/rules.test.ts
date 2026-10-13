@@ -18,6 +18,11 @@ describe('checkStay', () => {
     expect(checkStay('2031-07-05', '2031-07-03', TODAY)).toEqual({ ok: false, reason: 'not_a_range' })
   })
 
+  it('allows seven days at most, for every bike, and refuses an eighth', () => {
+    expect(checkStay('2031-07-02', '2031-07-09', TODAY)).toEqual({ ok: true, days: 7 }) // the 2nd to the 8th
+    expect(checkStay('2031-07-02', '2031-07-10', TODAY)).toEqual({ ok: false, reason: 'too_long' })
+  })
+
   it('refuses what is not a day', () => {
     expect(checkStay('2031-7-2', '2031-07-05', TODAY)).toEqual({ ok: false, reason: 'invalid_date' })
     expect(checkStay('2031-07-02', 'tomorrow', TODAY)).toEqual({ ok: false, reason: 'invalid_date' })

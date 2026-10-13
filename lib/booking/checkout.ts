@@ -29,7 +29,7 @@ export interface BeginCheckoutInput {
 export type BeginCheckoutResult =
   | { status: 'redirect'; bookingId: string; url: string; holdExpiresAt: Date }
   | { status: 'already_paid'; bookingId: string }
-  | { status: 'invalid'; reason: 'cart' | 'invalid_date' | 'not_a_range' | 'too_soon' | 'too_far' | 'closed_day' }
+  | { status: 'invalid'; reason: 'cart' | 'invalid_date' | 'not_a_range' | 'too_soon' | 'too_far' | 'too_long' | 'closed_day' }
   | { status: 'unknown_bike' | 'bike_unavailable'; lineIndex: number }
   | { status: 'too_many_days'; lineIndex: number; maxDays: number }
   | { status: 'has_pending'; bookingId: string }

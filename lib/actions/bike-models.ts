@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation'
 import { eq, and, asc } from 'drizzle-orm'
 import { safeErrorSummary } from '@/lib/safe-error'
 import {
-  db, bikeModels, bikeModelTranslations, bikeModelSizes, bikeModelVersions, media,
+  db, bikeCategories, bikeModels, bikeModelTranslations, bikeModelSizes, bikeModelVersions, media,
 } from '@/lib/db'
 import { getAdminUser } from '@/lib/supabase/server'
 import { getVideoPresignedUploadUrl, getPhotoPresignedUploadUrl, deleteMediaFiles } from '@/lib/media'
@@ -34,13 +34,14 @@ async function requireAdmin() {
 export async function getBikeModelsForAdmin() {
   await requireAdmin()
   return db
-    .select({ model: bikeModels, name: bikeModelTranslations.name })
+    .select({ model: bikeModels, name: bikeModelTranslations.name, category: { id: bikeCategories.id, name: bikeCategories.name } })
     .from(bikeModels)
+    .innerJoin(bikeCategories, eq(bikeCategories.id, bikeModels.categoryId))
     .leftJoin(
       bikeModelTranslations,
       and(eq(bikeModelTranslations.bikeModelId, bikeModels.id), eq(bikeModelTranslations.locale, 'it'))
     )
-    .orderBy(asc(bikeModels.displayOrder))
+    .orderBy(asc(bikeCategories.displayOrder), asc(bikeCategories.name), asc(bikeCategories.id), asc(bikeModels.displayOrder), asc(bikeModels.createdAt))
 }
 
 export async function getBikeModelWithDetails(id: string) {
@@ -287,6 +288,7 @@ export async function getBikeModelVideoPresignedUploadUrlAction(
   return { url, key }
 }
 
+/** The order of the models of ONE category (the panel lists them by category): the others keep theirs. */
 export async function reorderBikeModelsAction(orderedIds: string[]) {
   await requireAdmin()
   for (let displayOrder = 0; displayOrder < orderedIds.length; displayOrder++) {

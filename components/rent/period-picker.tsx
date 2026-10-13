@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type ComponentProps } from 'react'
+import { type DayButton } from 'react-day-picker'
 import { de as dpDe, enGB as dpEn, it as dpIt } from 'react-day-picker/locale'
 import { LuChevronDown, LuChevronLeft, LuChevronRight, LuChevronUp } from 'react-icons/lu'
 import { Button } from '@/components/ui/button'
@@ -39,7 +40,7 @@ export function PeriodPicker({
   range: DayRange | null
   minDay: IsoDate
   maxDay: IsoDate
-  /** The category's limit in days when one bike is being booked; null when booking by days. */
+  /** The longest stay, in days: the days beyond it from the first one cannot be chosen. */
   maxDays: number | null
   mode: 'days' | 'bike'
   pending: boolean
@@ -134,15 +135,20 @@ export function PeriodPicker({
             modifiers={{ unavailable: (date) => { const check = isSelectable(isoDay(date), pickContext); return !check.ok && UNAVAILABLE.has(check.reason) } }}
             modifiersClassNames={{ unavailable: 'line-through' }}
             showOutsideDays={false}
+            components={{ DayButton: MonthDay }}
             classNames={{
-              months: 'relative flex flex-col gap-6 md:flex-row md:gap-10',
+              months: 'relative flex flex-col gap-8 md:flex-row md:gap-12',
               month_caption: 'flex h-10 w-full items-center justify-center px-(--cell-size)',
               caption_label: 'select-none text-base font-semibold capitalize',
-              weekday: 'flex-1 select-none text-xs font-medium text-muted-foreground',
+              weekday: 'flex-1 select-none text-xs font-normal text-muted-foreground',
               week: 'mt-1 flex w-full',
+              // The stay is a pale band from the first day to the last, with a filled circle on each end (the circles are the day buttons).
+              range_start: 'rounded-l-full bg-primary/10',
+              range_middle: 'bg-primary/10 first:rounded-l-full last:rounded-r-full',
+              range_end: 'rounded-r-full bg-primary/10',
               today: '',
             }}
-            className="mx-auto p-0 [--cell-size:2.25rem] sm:[--cell-size:2.75rem]"
+            className="mx-auto p-0 [--cell-size:2.25rem] min-[360px]:[--cell-size:2.5rem] sm:[--cell-size:2.75rem]"
           />
         </div>
       ) : (
@@ -196,10 +202,7 @@ export function PeriodPicker({
         </div>
       )}
 
-      <div className="space-y-1">
-        {!expanded && periodText}
-        <p className="text-xs text-muted-foreground">{dict.dates_hint} {mode === 'bike' ? dict.legend_off_bike : dict.legend_off_days}</p>
-      </div>
+      {!expanded && periodText}
     </div>
   )
 }
@@ -215,4 +218,30 @@ function useWideScreen() {
     return () => query.removeEventListener('change', update)
   }, [])
   return wide
+}
+
+/**
+ * A day of the open month: a round button (a filled one on the first and the last day of the stay; the band between them is drawn by the
+ * cell around it), faded when it cannot be chosen and struck through when the shop is closed or no bike is free.
+ */
+function MonthDay({ day, modifiers, className, ...props }: ComponentProps<typeof DayButton>) {
+  const ref = useRef<HTMLButtonElement>(null)
+  useEffect(() => { if (modifiers.focused) ref.current?.focus() }, [modifiers.focused])
+  const edge = modifiers.range_start || modifiers.range_end
+  return (
+    <button
+      ref={ref}
+      type="button"
+      data-day={day.date.toLocaleDateString()}
+      {...props}
+      className={cn(
+        'mx-auto flex size-(--cell-size) items-center justify-center rounded-full text-sm outline-none transition-colors focus-visible:ring-[3px] focus-visible:ring-ring/50',
+        modifiers.disabled ? 'cursor-default text-muted-foreground/40' : 'cursor-pointer',
+        !edge && !modifiers.disabled && 'hover:bg-accent',
+        edge && 'bg-primary font-semibold text-primary-foreground',
+        modifiers.unavailable && 'line-through',
+        className,
+      )}
+    />
+  )
 }

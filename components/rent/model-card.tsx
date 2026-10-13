@@ -2,7 +2,6 @@
 
 import type { ReactNode } from 'react'
 import { LuMinus, LuPlus } from 'react-icons/lu'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { quantityOf, totalBikes, withQuantity } from '@/lib/booking/cart'
 import type { BookableModel } from '@/lib/booking/catalog'
@@ -37,7 +36,6 @@ export function ModelCard({
         <div className={cn('relative aspect-[3/2] w-36 shrink-0 overflow-hidden bg-white sm:w-full', off && 'grayscale')}>{media}</div>
         <div className="flex min-w-0 flex-1 flex-col justify-center gap-1.5 p-3 sm:px-4 sm:pt-4 sm:pb-2">
           <h3 className="font-bold leading-tight text-foreground">{model.name}</h3>
-          <div><Badge variant="secondary" className="text-xs">{model.categoryName}</Badge></div>
           {model.stayPriceCents !== null && (
             <p className="text-sm text-muted-foreground">
               <strong className="text-base font-semibold text-primary">{formatPrice(model.stayPriceCents, lang)}</strong>

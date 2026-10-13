@@ -9,6 +9,8 @@ import { MAX_BIKES_PER_BOOKING, cartItemSchema, type CartItem } from './rules'
  *
  *   /it/rent?from=2031-11-03&to=2031-11-05&b=<model>.<size>.<version>.<quantity>,<model>.<size>.<version>.<quantity>
  *
+ * The checkout page (`/it/rent/checkout`) carries the same query: the days and the bikes of the booking, nothing else.
+ *
  * `from` and `to` are the first and the last day, both included, as people say them; inside, the end is exclusive like in the database.
  */
 
@@ -60,13 +62,22 @@ export function parseRentState(params: Params): RentState {
   }
 }
 
-/** The address of a state. Only what is there is written, so an empty state is the plain page. */
-export function rentHref(lang: string, state: RentState): string {
+function queryOf(state: RentState, options: { focus: boolean }): string {
   const query: string[] = []
   if (state.range) query.push(`from=${state.range.startsOn}`, `to=${inclusiveEnd(state.range.endsOn)}`)
   if (state.cart.length > 0) {
     query.push(`b=${state.cart.map((i) => `${i.bikeModelId}.${i.bikeSizeId}.${i.bikeVersionId}.${i.quantity}`).join(',')}`)
   }
-  if (state.focusModelId) query.push(`model=${state.focusModelId}`)
-  return `/${lang}/rent${query.length > 0 ? `?${query.join('&')}` : ''}`
+  if (options.focus && state.focusModelId) query.push(`model=${state.focusModelId}`)
+  return query.length > 0 ? `?${query.join('&')}` : ''
+}
+
+/** The address of a state. Only what is there is written, so an empty state is the plain page. */
+export function rentHref(lang: string, state: RentState): string {
+  return `/${lang}/rent${queryOf(state, { focus: true })}`
+}
+
+/** The address of the checkout page for a state: the same days and bikes (the model a person arrived from does not matter there). */
+export function checkoutHref(lang: string, state: RentState): string {
+  return `/${lang}/rent/checkout${queryOf(state, { focus: false })}`
 }

@@ -429,11 +429,9 @@
   },
   "rent": {
     "title": "Book a bike",
-    "subtitle": "Choose your dates and bikes, pay online and pick them up at the shop in Dro.",
     "meta_title": "Book a bike in Dro",
     "meta_description": "Choose your dates, sizes and bikes, pay online and pick them up at the shop in Dro, on Lake Garda.",
     "dates_title": "When",
-    "dates_hint": "You can book from tomorrow and up to 180 days from today. For today, come by the shop.",
     "dates_prompt": "Tap the first and the last day.",
     "days_one": "1 day",
     "days_other": "{n} days",
@@ -452,10 +450,8 @@
     "summary_no_dates": "Dates to choose",
     "summary_no_bikes": "No bike chosen",
     "total": "Total",
-    "pickup_note": "Pick up on the first day, return on the last: by the shop's closing time, because the bikes have to be recharged and are not returned the next day. For other arrangements, call us.",
-    "invoice_note": "Online rentals are for private customers. To rent with an invoice, call or write to us:",
-    "login_cta": "Sign in to book",
-    "login_hint": "An account is needed. After signing in you come back here with your choice kept.",
+    "pickup_note": "Pick up on the first day, return on the last, by the shop's closing time.",
+    "invoice_note": "Online for private customers only. For an invoice, call us:",
     "phone_label": "Mobile phone",
     "phone_hint": "We only use it if there is a problem with the pickup. We save it in your profile.",
     "terms_label": "I accept the {link}",
@@ -480,7 +476,8 @@
       "try_again": "We could not hold the bikes for you. Try again.",
       "payments_unavailable": "Payments are not active yet.",
       "generic": "We could not go on. Try again.",
-      "closed_day": "The shop is closed on the first or the last day: choose other dates."
+      "closed_day": "The shop is closed on the first or the last day: choose other dates.",
+      "stay_too_long": "Bikes can be rented for at most {max} days."
     },
     "fake": {
       "title": "Test payment",
@@ -491,8 +488,6 @@
       "not_payable": "This payment is not possible any more: time has run out.",
       "unknown": "This payment does not exist."
     },
-    "legend_off_days": "Grey days cannot be chosen: the shop is closed or no bike is free.",
-    "legend_off_bike": "Grey days cannot be chosen: the shop is closed or this bike is not free.",
     "off_past": "{day}, no longer bookable",
     "off_far": "{day}, too far ahead",
     "off_no_bike": "{day}, no bike free",
@@ -504,14 +499,19 @@
     "bike_mode_label": "You are booking",
     "cart_changed": "Someone has just booked: we have updated your choice.",
     "off_closed": "{day}, the shop is closed",
-    "pickup_when": "Pickup on {pickupDay}, open {pickupHours}. Return on {returnDay}, open {returnHours}. By the shop's closing time: the bikes have to be recharged and are not returned the next day. For other arrangements, call us.",
+    "pickup_when": "Pickup {pickupDay}, {pickupHours}.\nReturn {returnDay}, {returnHours}.",
     "week_before": "Previous week",
     "week_after": "Next week",
     "show_month": "Show the month",
     "show_week": "Show the week",
     "bikes_one": "1 bike",
     "bikes_other": "{n} bikes",
-    "continue": "Continue"
+    "continue": "Continue",
+    "checkout_title": "Confirm and pay",
+    "checkout_meta_title": "Confirm and pay for your booking",
+    "edit": "Edit",
+    "pickup_title": "Pickup and return",
+    "contact_title": "Contact"
   },
   "terms": {
     "title": "Rental terms",

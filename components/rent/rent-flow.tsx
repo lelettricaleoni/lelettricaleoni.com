@@ -4,20 +4,15 @@ import { useEffect, useMemo, useRef, useState, useTransition, type ReactNode } f
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
-import { Checkbox } from '@/components/ui/checkbox'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { startCheckoutAction, type StartCheckoutActionResult } from '@/lib/actions/rent'
 import { useReservationsRealtime } from '@/components/use-reservations-realtime'
 import { cartLines, cartTotalCents, sanitizeCart, totalBikes } from '@/lib/booking/cart'
 import type { BookableModel, FocusModel } from '@/lib/booking/catalog'
 import type { UnitBusy } from '@/lib/booking/day-availability'
 import { fill, formatDays } from '@/lib/booking/format'
-import { pickupText } from '@/lib/booking/pickup-text'
-import { rentHref } from '@/lib/booking/rent-url'
-import type { CartItem } from '@/lib/booking/rules'
+import { checkoutHref, rentHref } from '@/lib/booking/rent-url'
+import { MAX_RENTAL_DAYS, type CartItem } from '@/lib/booking/rules'
 import { coalesce } from '@/lib/coalesce'
-import { daysBetween, inclusiveEnd, type DayRange, type IsoDate } from '@/lib/dates'
+import { daysBetween, type DayRange, type IsoDate } from '@/lib/dates'
 import { formatPrice } from '@/lib/money'
 import type { ShopSchedule } from '@/lib/shop-schedule'
 import { cn } from '@/lib/utils'
@@ -28,10 +23,8 @@ import type itMessages from '@/messages/it.json'
 type Lang = 'it' | 'en' | 'de'
 export type RentDict = (typeof itMessages)['rent']
 
-export type RentAccount = { kind: 'guest' } | { kind: 'customer'; hasPhone: boolean }
-
 /**
- * The booking page: when, which bikes, and the summary with the payment. The days live in the ADDRESS and change it through the router
+ * The booking page: when, which bikes, and a short summary that leads to the checkout page (`checkout-form.tsx`: terms, details, payment). The days live in the ADDRESS and change it through the router
  * (the server then counts the bikes free for them); the cart lives here and is copied into the address as it changes, without leaving
  * the page, so Back works and a link can be shared. Remounted by the page whenever the days change (`key`), which clears the cart.
  *
@@ -42,11 +35,10 @@ export type RentAccount = { kind: 'guest' } | { kind: 'customer'; hasPhone: bool
  * What is shown is an estimate: the server prices, checks and holds when the person pays.
  */
 export function RentFlow({
-  lang, dict, termsHref, range, initialCart, focusModelId, mode, focus, units, schedule, models, media, minDay, maxDay, account,
+  lang, dict, range, initialCart, focusModelId, mode, focus, units, schedule, models, media, minDay, maxDay,
 }: {
   lang: Lang
   dict: RentDict
-  termsHref: string
   range: DayRange | null
   initialCart: CartItem[]
   focusModelId: string | null
@@ -59,7 +51,6 @@ export function RentFlow({
   media: Record<string, ReactNode>
   minDay: IsoDate
   maxDay: IsoDate
-  account: RentAccount
 }) {
   const router = useRouter()
   const [navigating, startNavigation] = useTransition()
@@ -104,10 +95,16 @@ export function RentFlow({
   const days = range ? daysBetween(range.startsOn, range.endsOn) : 0
   const lines = cartLines(cart, models)
   const total = cartTotalCents(lines)
-  const shown = (mode === 'bike' ? models.filter((model) => model.id === focus?.id) : [...models])
-    // The models with a bike free first, the switched-off ones after.
-    .sort((a, b) => Number(b.totalFree > 0) - Number(a.totalFree > 0))
-  const currentHref = rentHref(lang, { range, cart, focusModelId: null })
+  // The models come in the order of the panel: the categories as ordered there, and inside each its models as ordered there (a model with
+  // no bike free stays in its place, switched off).
+  const shown = mode === 'bike' ? models.filter((model) => model.id === focus?.id) : models
+  const sections: { id: string; name: string; models: BookableModel[] }[] = []
+  for (const model of shown) {
+    const section = sections.find((entry) => entry.id === model.categoryId)
+      ?? sections[sections.push({ id: model.categoryId, name: model.categoryName, models: [] }) - 1]
+    section.models.push(model)
+  }
+  const continueHref = checkoutHref(lang, { range, cart, focusModelId: null })
   const allHref = rentHref(lang, { range, cart: [], focusModelId: null })
 
   const count = totalBikes(cart)
@@ -139,7 +136,7 @@ export function RentFlow({
         )}
         <PeriodPicker
           lang={lang} dict={dict} units={units} schedule={schedule} range={range} minDay={minDay} maxDay={maxDay}
-          maxDays={mode === 'bike' ? (focus?.maxDays ?? null) : null} mode={mode} pending={navigating} onChange={changeDays}
+          maxDays={MAX_RENTAL_DAYS} mode={mode} pending={navigating} onChange={changeDays}
         />
       </section>
 
@@ -149,13 +146,16 @@ export function RentFlow({
           {!range && <p className="text-sm text-muted-foreground">{dict.bikes_need_dates}</p>}
           {range && shown.length === 0 && <p className="text-sm text-muted-foreground">{dict.bikes_none}</p>}
           {notice && <p role="status" className="rounded-lg border bg-muted p-3 text-sm text-foreground">{notice}</p>}
-          {range && shown.length > 0 && (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {shown.map((model) => (
-                <ModelCard key={model.id} model={model} lang={lang} dict={dict} cart={cart} media={media[model.id]} onChange={changeCart} />
-              ))}
+          {range && sections.map((section) => (
+            <div key={section.id} className="space-y-3">
+              {mode === 'days' && <h3 className="text-base font-semibold text-foreground">{section.name}</h3>}
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {section.models.map((model) => (
+                  <ModelCard key={model.id} model={model} lang={lang} dict={dict} cart={cart} media={media[model.id]} onChange={changeCart} />
+                ))}
+              </div>
             </div>
-          )}
+          ))}
         </section>
 
         <aside ref={summaryRef} id="rent-summary-box" className="scroll-mt-24 space-y-4 rounded-xl border bg-card p-4 shadow-sm sm:p-5 lg:sticky lg:top-24" aria-labelledby="rent-summary">
@@ -187,16 +187,11 @@ export function RentFlow({
               <span className="text-2xl font-bold tabular-nums text-primary">{formatPrice(total, lang)}</span>
             </div>
           )}
-          <p className="rounded-lg bg-muted p-3 text-xs leading-relaxed text-muted-foreground">{range ? pickupText(range, schedule, lang, dict) : dict.pickup_note}</p>
-          {range && lines.length > 0 && (
-            <PaySection lang={lang} dict={dict} termsHref={termsHref} account={account} range={range} cart={cart} total={total} loginHref={`/${lang}/login?next=${encodeURIComponent(currentHref)}`} />
+          {range && lines.length > 0 ? (
+            <Button asChild size="lg" className="w-full"><Link href={continueHref}>{dict.continue}</Link></Button>
+          ) : (
+            <Button size="lg" className="w-full" disabled>{dict.continue}</Button>
           )}
-          <p className="text-xs text-muted-foreground">
-            {dict.invoice_note}{' '}
-            <a href="tel:+393381232434" className="font-medium text-primary hover:underline">+39 338 123 2434</a>
-            {' · '}
-            <a href="mailto:info@lelettricaleoni.com" className="font-medium text-primary hover:underline">info@lelettricaleoni.com</a>
-          </p>
         </aside>
       </div>
 
@@ -209,83 +204,9 @@ export function RentFlow({
             <p className="text-xs text-muted-foreground">{count === 1 ? dict.bikes_one : fill(dict.bikes_other, { n: count })}</p>
             <p className="text-lg font-bold tabular-nums text-foreground">{formatPrice(total, lang)}</p>
           </div>
-          <Button asChild><a href="#rent-summary-box" tabIndex={summaryInView ? -1 : undefined}>{dict.continue}</a></Button>
+          <Button asChild><Link href={continueHref} tabIndex={summaryInView ? -1 : undefined}>{dict.continue}</Link></Button>
         </div>
       )}
-    </div>
-  )
-}
-
-/** The end of the summary: sign in, or (phone), the terms and Pay. */
-function PaySection({
-  lang, dict, termsHref, account, range, cart, total, loginHref,
-}: {
-  lang: Lang; dict: RentDict; termsHref: string; account: RentAccount; range: DayRange; cart: CartItem[]; total: number; loginHref: string
-}) {
-  const router = useRouter()
-  // The key of THIS booking: made when the summary opens, so a second click, a reload or a second tab ask for the same one.
-  const [bookingKey] = useState(() => crypto.randomUUID())
-  const [phone, setPhone] = useState('')
-  const [accepted, setAccepted] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [pending, startPay] = useTransition()
-
-  if (account.kind === 'guest') {
-    return (
-      <div className="space-y-2">
-        <Button asChild className="w-full"><Link href={loginHref}>{dict.login_cta}</Link></Button>
-        <p className="text-xs text-muted-foreground">{dict.login_hint}</p>
-      </div>
-    )
-  }
-
-  const needsPhone = !account.hasPhone
-  const ready = accepted && (!needsPhone || phone.trim().length > 0)
-  const [termsBefore, termsAfter] = dict.terms_label.split('{link}')
-
-  function pay() {
-    setError(null)
-    startPay(async () => {
-      const result: StartCheckoutActionResult = await startCheckoutAction({
-        bookingKey,
-        from: range.startsOn,
-        to: inclusiveEnd(range.endsOn),
-        cart,
-        lang,
-        phone: needsPhone ? phone : undefined,
-        phoneCountry: 'IT',
-        acceptTerms: accepted,
-      })
-      // Reaching this line means it did not redirect to the payment page: there is something to say.
-      if (result.status === 'login_required') { router.push(`/${lang}/login?next=${encodeURIComponent(rentHref(lang, { range, cart, focusModelId: null }))}`); return }
-      const key = result.status === 'invalid' && result.reason === 'closed_day' ? 'closed_day'
-        : result.status in dict.errors ? (result.status as keyof RentDict['errors']) : 'generic'
-      setError(fill(dict.errors[key], { max: 'maxDays' in result ? result.maxDays : '' }))
-    })
-  }
-
-  return (
-    <div className="space-y-4">
-      {needsPhone && (
-        <div className="space-y-1.5">
-          <Label htmlFor="rent-phone">{dict.phone_label}</Label>
-          <Input id="rent-phone" type="tel" autoComplete="tel" inputMode="tel" placeholder="+39" value={phone} onChange={(e) => setPhone(e.target.value)} maxLength={40} />
-          <p className="text-xs text-muted-foreground">{dict.phone_hint}</p>
-        </div>
-      )}
-      <div className="flex items-start gap-2">
-        <Checkbox id="rent-terms" checked={accepted} onCheckedChange={(value) => setAccepted(value === true)} className="mt-0.5" />
-        <Label htmlFor="rent-terms" className="text-sm font-normal leading-snug">
-          {termsBefore}
-          <Link href={termsHref} target="_blank" className="font-medium text-primary underline-offset-2 hover:underline">{dict.terms_link}</Link>
-          {termsAfter}
-        </Label>
-      </div>
-      {error && <div role="alert" className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</div>}
-      <Button type="button" className="w-full" size="lg" disabled={!ready || pending} onClick={pay}>
-        {pending ? dict.paying : fill(dict.pay, { total: formatPrice(total, lang) })}
-      </Button>
-      <p className="text-xs text-muted-foreground">{dict.hold_note}</p>
     </div>
   )
 }
