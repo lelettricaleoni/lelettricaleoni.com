@@ -61,4 +61,12 @@ describe('integration secrets encryption', () => {
   it('knows when it is configured', () => {
     expect(isEncryptionConfigured()).toBe(true)
   })
+
+  // Secrets already stored in the database were made by an earlier version of `jose` (5.10.0): a library upgrade must not make them unreadable.
+  // The key is a test key (bytes 1..32), the token was made by jose 5.10.0 with it.
+  it('reads a token made by jose 5, so an upgrade keeps the stored secrets readable', async () => {
+    process.env.INTEGRATIONS_ENCRYPTION_KEY = 'AQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyA='
+    const token = 'eyJhbGciOiJkaXIiLCJlbmMiOiJBMjU2R0NNIiwia2lkIjoidjEifQ..CvUlsRZFcGPNJ0MP.Zmk_mkNvVAdiZv6CvoksdAowOjUqF-E.4RouwqIdxRBh92lZZIrAtQ'
+    expect(await decryptSecret(token)).toBe('a secret made by jose 5')
+  })
 })
