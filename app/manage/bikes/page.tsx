@@ -5,6 +5,7 @@ import { getBikeModelsForAdmin } from '@/lib/actions/bike-models'
 import { getAdminUser } from '@/lib/supabase/server'
 import { BikeModelList } from '@/components/admin/bike-model-list'
 import { redirect } from 'next/navigation'
+import type { BikeModel } from '@/lib/db'
 
 // TODO: Cache Components adoption. Refactor this route so this opt-out can be removed.
 // See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
@@ -15,6 +16,13 @@ export default async function AdminBikeModelsPage() {
   if (!user) redirect('/manage/login')
 
   const models = await getBikeModelsForAdmin()
+  // Already in the order of the categories; the models of each keep the order they were given inside it.
+  const groups: { id: string; name: string; models: { model: BikeModel; name: string }[] }[] = []
+  for (const { model, name, category } of models) {
+    const group = groups.find((entry) => entry.id === category.id)
+      ?? groups[groups.push({ id: category.id, name: category.name, models: [] }) - 1]
+    group.models.push({ model, name: name ?? 'Untitled' })
+  }
 
   return (
     <div className="space-y-6 max-w-3xl">
@@ -30,9 +38,15 @@ export default async function AdminBikeModelsPage() {
       ) : (
         <>
           <p className="text-sm text-muted-foreground">
-            Drag to reorder. The order here is the order shown on the public bikes page.
+            Drag to reorder the models inside a category. The categories follow the order set in Bike options. The same order is used on the
+            public bikes page and when booking.
           </p>
-          <BikeModelList initialModels={models.map(({ model, name }) => ({ model, name: name ?? 'Untitled' }))} />
+          {groups.map((group) => (
+            <section key={group.id} className="space-y-3" aria-labelledby={`category-${group.id}`}>
+              <h2 id={`category-${group.id}`} className="text-lg font-semibold text-[#1e3a5f]">{group.name}</h2>
+              <BikeModelList initialModels={group.models} />
+            </section>
+          ))}
         </>
       )}
     </div>

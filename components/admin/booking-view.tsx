@@ -24,6 +24,8 @@ interface BookingViewProps {
   today: IsoDate
   units: GridUnit[]
   models: RentalOption[]
+  /** The days of the month on which the shop is closed (its weekly hours and its closures): painted red. */
+  closedDays: IsoDate[]
 }
 
 const LABEL_MIN = '11rem'
@@ -31,7 +33,7 @@ const LABEL_MIN = '11rem'
 const DAY_MIN = '5.5rem'
 const LABEL_COLUMN = `minmax(${LABEL_MIN}, 14rem)`
 
-export function BookingView({ month, today, units, models }: BookingViewProps) {
+export function BookingView({ month, today, units, models, closedDays }: BookingViewProps) {
   const router = useRouter()
   const [, startTransition] = useTransition()
   // Open with no bike (any free one of the kind chosen) or for one bike, from its own row.
@@ -39,6 +41,7 @@ export function BookingView({ month, today, units, models }: BookingViewProps) {
   const [selected, setSelected] = useState<{ unit: GridUnit; reservation: GridReservation } | null>(null)
   const [maintenanceUnit, setMaintenanceUnit] = useState<GridUnit | null>(null)
   const days = monthDays(month)
+  const closed = useMemo(() => new Set(closedDays), [closedDays])
 
   // router.refresh() re-runs this page's server component: the ping carries nothing to trust,
   // so the grid is simply read again. One reload per quarter of a second at most: a save asks
@@ -69,7 +72,7 @@ export function BookingView({ month, today, units, models }: BookingViewProps) {
         </div>
       </div>
 
-      <Legend />
+      <Legend showClosed={closedDays.length > 0} />
 
       {units.length === 0 ? (
         <p className="text-sm text-muted-foreground">No bikes in the shop yet. Add them in Shop first.</p>
@@ -85,7 +88,9 @@ export function BookingView({ month, today, units, models }: BookingViewProps) {
                   'border-b border-l p-1 text-center text-[10px] leading-tight text-muted-foreground',
                   isWeekendDay(day) && 'bg-muted/50',
                   day === today && 'bg-[#366DA1]/15 font-semibold text-foreground',
+                  closed.has(day) && 'bg-red-100 text-red-700',
                 )}
+                title={closed.has(day) ? 'Shop closed' : undefined}
               >
                 <div>{weekdayLetter(day)}</div>
                 <div className="text-xs">{dayOfMonth(day)}</div>
@@ -106,7 +111,7 @@ export function BookingView({ month, today, units, models }: BookingViewProps) {
                     {model.items.map((unit) => (
                       <UnitRow
                         key={unit.id}
-                        unit={unit} month={month} days={days} today={today}
+                        unit={unit} month={month} days={days} today={today} closed={closed}
                         onSelect={(reservation) => setSelected({ unit, reservation })}
                         onPlanMaintenance={() => setMaintenanceUnit(unit)}
                         onAddRental={() => setRental({ unit })}
@@ -170,13 +175,14 @@ function blockColour(block: { kind: string; status: string }): string {
   return 'bg-[#366DA1] text-white'
 }
 
-function Legend() {
+function Legend({ showClosed }: { showClosed: boolean }) {
   return (
     <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
       <span className="flex items-center gap-1.5"><span className="inline-block size-3 rounded-sm bg-[#366DA1]" />Counter rental</span>
       <span className="flex items-center gap-1.5"><span className="inline-block size-3 rounded-sm bg-brand-purple" />Online booking</span>
       <span className="flex items-center gap-1.5"><span className="inline-block size-3 rounded-sm border border-dashed border-brand-purple bg-brand-purple/20" />Being paid</span>
       <span className="flex items-center gap-1.5"><span className="inline-block size-3 rounded-sm bg-amber-300" />Maintenance</span>
+      {showClosed && <span className="flex items-center gap-1.5"><span className="inline-block size-3 rounded-sm border border-red-200 bg-red-100" />Shop closed</span>}
     </div>
   )
 }
@@ -186,12 +192,13 @@ interface UnitRowProps {
   month: IsoMonth
   days: IsoDate[]
   today: IsoDate
+  closed: ReadonlySet<IsoDate>
   onSelect: (reservation: GridReservation) => void
   onPlanMaintenance: () => void
   onAddRental: () => void
 }
 
-function UnitRow({ unit, month, days, today, onSelect, onPlanMaintenance, onAddRental }: UnitRowProps) {
+function UnitRow({ unit, month, days, today, closed, onSelect, onPlanMaintenance, onAddRental }: UnitRowProps) {
   const blocks = layoutBlocks(month, unit.reservations)
   const byId = new Map(unit.reservations.map((reservation) => [reservation.id, reservation]))
 
@@ -222,7 +229,7 @@ function UnitRow({ unit, month, days, today, onSelect, onPlanMaintenance, onAddR
         {days.map((day, i) => (
           <div
             key={day}
-            className={cn('border-l', isWeekendDay(day) && 'bg-muted/50', day === today && 'bg-[#366DA1]/10')}
+            className={cn('border-l', isWeekendDay(day) && 'bg-muted/50', day === today && 'bg-[#366DA1]/10', closed.has(day) && 'bg-red-50')}
             style={{ gridColumn: i + 1, gridRow: 1 }}
           />
         ))}

@@ -32,6 +32,15 @@ export function hoursOn(schedule: ShopSchedule, day: IsoDate): HoursRange[] {
 
 export const isClosedOn = (schedule: ShopSchedule, day: IsoDate) => hoursOn(schedule, day).length === 0
 
+/**
+ * The days among `days` on which the shop is closed, for a calendar that paints them. A shop with no weekly hours declared at all is not "closed
+ * every day": nothing is known, so nothing is painted.
+ */
+export function closedDaysAmong(schedule: ShopSchedule, days: IsoDate[]): IsoDate[] {
+  if (Object.values(schedule.weekly).every((ranges) => ranges.length === 0)) return []
+  return days.filter((day) => isClosedOn(schedule, day))
+}
+
 /** The last closing of the day ("by the end of the first day"), or null when the shop is closed. */
 export function closingTimeOn(schedule: ShopSchedule, day: IsoDate): string | null {
   const ranges = hoursOn(schedule, day)

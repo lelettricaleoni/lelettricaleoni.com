@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox'
 import { Switch } from '@/components/ui/switch'
 import { MediaUpload } from './media-upload'
+import { ModelColorField } from './model-color-field'
 import { submitKeepingFields } from '@/lib/submit-keeping-fields'
 import {
   getBikeModelPresignedUploadUrlAction, getBikeModelVideoPresignedUploadUrlAction,
@@ -25,11 +26,13 @@ interface BikeModelFormProps {
   photos?: Media[]
   selectedSizeIds?: string[]
   selectedVersionIds?: string[]
+  /** The colour a new model starts with (the one used the least); an old model has its own. */
+  suggestedColor?: string
 }
 
 export function BikeModelForm({
   action, categories, sizes, versions, model, translations, photos,
-  selectedSizeIds, selectedVersionIds,
+  selectedSizeIds, selectedVersionIds, suggestedColor,
 }: BikeModelFormProps) {
   const [state, formAction, isPending] = useActionState(action, {})
   const itTranslation = translations?.find((t) => t.locale === 'it')
@@ -38,6 +41,7 @@ export function BikeModelForm({
   const [descriptionIt, setDescriptionIt] = useState(itTranslation?.description ?? '')
   const [categoryId, setCategoryId] = useState(model?.categoryId ?? categories[0]?.id ?? '')
   const [priceAdjustmentPercent, setPriceAdjustmentPercent] = useState(model?.priceAdjustmentPercent && Number(model.priceAdjustmentPercent) !== 0 ? String(Number(model.priceAdjustmentPercent)) : '')
+  const [color, setColor] = useState(model?.color ?? suggestedColor ?? '#039be5')
   const [batteryRange, setBatteryRange] = useState(model?.batteryRange ?? '')
   const [motor, setMotor] = useState(model?.motor ?? '')
   const [gearCount, setGearCount] = useState(model?.gearCount ?? '')
@@ -104,6 +108,12 @@ export function BikeModelForm({
             Left empty, the prices are those of the category.
           </p>
           {state.errors?.priceAdjustmentPercent && <p className="text-xs text-destructive">{state.errors.priceAdjustmentPercent[0]}</p>}
+        </div>
+        <div className="space-y-1">
+          <Label>Colour</Label>
+          <ModelColorField value={color} onChange={setColor} />
+          <p className="text-xs text-muted-foreground">Tells this model apart in the shop&apos;s calendar: its bookings are shown in this colour.</p>
+          {state.errors?.color && <p className="text-xs text-destructive">{state.errors.color[0]}</p>}
         </div>
       </section>
 

@@ -429,11 +429,9 @@
   },
   "rent": {
     "title": "Fahrrad buchen",
-    "subtitle": "Wähle Datum und Fahrräder, bezahle online und hole sie im Geschäft in Dro ab.",
     "meta_title": "Fahrrad in Dro buchen",
     "meta_description": "Wähle Datum, Größe und Fahrräder, bezahle online und hole sie im Geschäft in Dro am Gardasee ab.",
     "dates_title": "Wann",
-    "dates_hint": "Du kannst ab morgen und bis zu 180 Tage im Voraus buchen. Für heute komm im Geschäft vorbei.",
     "dates_prompt": "Tippe auf den ersten und den letzten Tag.",
     "days_one": "1 Tag",
     "days_other": "{n} Tage",
@@ -452,10 +450,8 @@
     "summary_no_dates": "Datum wählen",
     "summary_no_bikes": "Kein Fahrrad gewählt",
     "total": "Gesamt",
-    "pickup_note": "Abholung am ersten Tag, Rückgabe am letzten: bis zum Ladenschluss, denn die Fahrräder müssen geladen werden und werden nicht erst am nächsten Tag zurückgegeben. Für andere Absprachen ruf uns an.",
-    "invoice_note": "Online mieten können nur Privatpersonen. Für eine Miete mit Rechnung rufen Sie uns an oder schreiben Sie uns:",
-    "login_cta": "Anmelden und buchen",
-    "login_hint": "Dafür brauchst du ein Konto. Nach der Anmeldung kommst du mit deiner Auswahl hierher zurück.",
+    "pickup_note": "Abholung am ersten Tag, Rückgabe am letzten, bis zum Ladenschluss.",
+    "invoice_note": "Online nur für Privatpersonen. Mit Rechnung rufen Sie uns an:",
     "phone_label": "Handynummer",
     "phone_hint": "Wir nutzen sie nur, wenn es ein Problem bei der Abholung gibt. Wir speichern sie in deinem Profil.",
     "terms_label": "Ich akzeptiere die {link}",
@@ -480,7 +476,8 @@
       "try_again": "Wir konnten die Fahrräder nicht für dich reservieren. Versuche es erneut.",
       "payments_unavailable": "Zahlungen sind noch nicht aktiv.",
       "generic": "Wir konnten nicht fortfahren. Versuche es erneut.",
-      "closed_day": "Das Geschäft ist am ersten oder letzten Tag geschlossen: Wähle andere Tage."
+      "closed_day": "Das Geschäft ist am ersten oder letzten Tag geschlossen: Wähle andere Tage.",
+      "stay_too_long": "Man kann höchstens {max} Tage mieten."
     },
     "fake": {
       "title": "Testzahlung",
@@ -491,8 +488,6 @@
       "not_payable": "Diese Zahlung ist nicht mehr möglich: Die Zeit ist abgelaufen.",
       "unknown": "Diese Zahlung gibt es nicht."
     },
-    "legend_off_days": "Graue Tage können nicht gewählt werden: Das Geschäft ist geschlossen oder kein Fahrrad ist frei.",
-    "legend_off_bike": "Graue Tage können nicht gewählt werden: Das Geschäft ist geschlossen oder dieses Fahrrad ist nicht frei.",
     "off_past": "{day}, nicht mehr buchbar",
     "off_far": "{day}, zu weit in der Zukunft",
     "off_no_bike": "{day}, kein Fahrrad frei",
@@ -504,11 +499,19 @@
     "bike_mode_label": "Du buchst",
     "cart_changed": "Jemand hat gerade gebucht: Wir haben deine Auswahl aktualisiert.",
     "off_closed": "{day}, das Geschäft ist geschlossen",
-    "pickup_when": "Abholung am {pickupDay}, geöffnet {pickupHours}. Rückgabe am {returnDay}, geöffnet {returnHours}. Bis zum Ladenschluss: Die Fahrräder müssen geladen werden und werden nicht erst am nächsten Tag zurückgegeben. Für andere Absprachen ruf uns an.",
+    "pickup_when": "Abholung {pickupDay}, {pickupHours}.\nRückgabe {returnDay}, {returnHours}.",
     "week_before": "Vorherige Woche",
     "week_after": "Nächste Woche",
     "show_month": "Monat anzeigen",
-    "show_week": "Woche anzeigen"
+    "show_week": "Woche anzeigen",
+    "bikes_one": "1 Fahrrad",
+    "bikes_other": "{n} Fahrräder",
+    "continue": "Weiter",
+    "checkout_title": "Bestätigen und bezahlen",
+    "checkout_meta_title": "Buchung bestätigen und bezahlen",
+    "edit": "Ändern",
+    "pickup_title": "Abholung und Rückgabe",
+    "contact_title": "Kontakt"
   },
   "terms": {
     "title": "Mietbedingungen",

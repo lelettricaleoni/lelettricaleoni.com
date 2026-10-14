@@ -15,7 +15,7 @@ import type { PaymentGateway } from './payments/gateway'
 import { cancelOnlineReservation, type CancelOnlineResult } from './refunds'
 import { isClosedOn, type ShopSchedule } from '@/lib/shop-schedule'
 import { loadShopSchedule } from '@/lib/shop-schedule-data'
-import { rentHref, type RentState } from './rent-url'
+import { checkoutHref, type RentState } from './rent-url'
 import { settleHold } from './settle'
 
 /*
@@ -154,7 +154,7 @@ export type AbandonMyCheckoutResult =
 /**
  * The person went back from the payment page. The session is closed on the gateway FIRST and only then are the bikes freed (`settleHold`:
  * a click on "back" must not leave the session payable from another tab), at once and not when the hold would have run out. If they had
- * already paid, the booking is confirmed instead. The cart comes back, as it was, in the address of the booking page.
+ * already paid, the booking is confirmed instead. The booking comes back, as it was, in the address of the checkout page.
  */
 export async function abandonMyCheckout(user: User, bookingId: string, lang: string, gateway?: PaymentGateway): Promise<AbandonMyCheckoutResult> {
   const own = await ownBooking(user, bookingId)
@@ -163,7 +163,7 @@ export async function abandonMyCheckout(user: User, bookingId: string, lang: str
   if (payments && own.booking.status === 'pending') await settleHold(bookingId, payments)
   const after = await findBooking(bookingId)
   if (after?.status === 'confirmed') return { status: 'paid' }
-  return { status: 'abandoned', href: rentHref(languageOf(lang), await stateOfBooking(own.booking)) }
+  return { status: 'abandoned', href: checkoutHref(languageOf(lang), await stateOfBooking(own.booking)) }
 }
 
 export type ResumeCheckoutResult =

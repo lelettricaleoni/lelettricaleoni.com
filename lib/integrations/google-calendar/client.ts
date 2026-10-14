@@ -5,8 +5,7 @@ import type { ServiceAccountKey } from './key'
 
 /*
  * The only file that talks to Google Calendar. The rest of the app depends on the small `CalendarApi` below,
- * so it can be tested without Google and so the real client can be swapped. Scope: events only (the least
- * that lets it create and remove events).
+ * so it can be tested without Google and so the real client can be swapped.
  */
 
 export interface CalendarApi {
@@ -21,7 +20,9 @@ function calendarClient(key: ServiceAccountKey) {
   const auth = new googleAuth.JWT({
     email: key.client_email,
     key: key.private_key,
-    scopes: ['https://www.googleapis.com/auth/calendar.events'],
+    // The labels of the calendar are part of the calendar itself, not of its events: reading and writing them takes this wider scope
+    // (what the service account may then do is still only what the calendar's owner shared with it).
+    scopes: ['https://www.googleapis.com/auth/calendar'],
   })
   return createCalendar({ version: 'v3', auth })
 }
@@ -147,20 +148,22 @@ export function createSyncApi(key: ServiceAccountKey): SyncApi {
   const calendar = calendarClient(key)
 
   return {
-    async upsertEvent(calendarId, eventId, event) {
+    async upsertEvent(calendarId, eventId, event, labels) {
+      // `eventLabelVersion: 1` is what makes Google read `eventLabelId` (and leave `colorId` alone); an event without a label then loses the one it had.
+      const version = labels ? { eventLabelVersion: 1 } : {}
       try {
-        await calendar.events.update({ calendarId, eventId, requestBody: { ...event, status: 'confirmed' } })
+        await calendar.events.update({ calendarId, eventId, ...version, requestBody: { ...event, status: 'confirmed' } })
         return 'updated'
       } catch (error) {
         if (httpStatus(error) !== 404) throw error
       }
       try {
-        await calendar.events.insert({ calendarId, requestBody: { ...event, id: eventId } })
+        await calendar.events.insert({ calendarId, ...version, requestBody: { ...event, id: eventId } })
         return 'created'
       } catch (error) {
         // Someone created it between our two calls: it exists now, so update it.
         if (httpStatus(error) !== 409) throw error
-        await calendar.events.update({ calendarId, eventId, requestBody: { ...event, status: 'confirmed' } })
+        await calendar.events.update({ calendarId, eventId, ...version, requestBody: { ...event, status: 'confirmed' } })
         return 'updated'
       }
     },
@@ -195,6 +198,16 @@ export function createSyncApi(key: ServiceAccountKey): SyncApi {
         pageToken = data.nextPageToken ?? undefined
       } while (pageToken)
       return ids
+    },
+
+    async readLabels(calendarId) {
+      const { data } = await calendar.calendars.get({ calendarId })
+      return (data.labelProperties?.eventLabels ?? []).flatMap((label) =>
+        label.id && label.backgroundColor ? [{ id: label.id, backgroundColor: label.backgroundColor, ...(label.name ? { name: label.name } : {}) }] : [])
+    },
+
+    async writeLabels(calendarId, labels) {
+      await calendar.calendars.patch({ calendarId, requestBody: { labelProperties: { eventLabels: labels } } })
     },
   }
 }

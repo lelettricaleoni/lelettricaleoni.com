@@ -91,6 +91,7 @@ sito pubblico conta le bici con `inGarage()`, in SQL perché gira dentro `'use c
 Realtime parte da un trigger e non porta dati personali; il canale è pubblico, quindi i ricaricamenti
 sono limitati (`lib/coalesce.ts`). Dettagli: spec e piano in `docs/superpowers/`.
 **Pagina `/rent` (2026-10-12).** Il selettore dei giorni gira nel browser su periodi occupati per bici fisica (`lib/booking/day-availability.ts`, `busy-intervals.ts`); il server ricontrolla al pagamento. La pagina segue il canale Realtime `reservations` (pubblico: un campanello senza dati), quindi **il browser di ogni visitatore, anche senza account, è collegato a Supabase** (riceve l'IP: dichiarato nell'informativa) e si rilegge al massimo ogni 5 s e mai a scheda nascosta. Il posto si tiene **15 minuti** (`HOLD_MINUTES`): la sessione Stripe si apre per 31 (il minimo è 30) e `settleHold` la chiude allo scadere. Orari e chiusure del negozio stanno in `shop_opening_hours` / `shop_closures` (`/manage/hours`, letti a ogni richiesta, mai in cache): un primo o un ultimo giorno chiuso non si prenota (`checkStay`, `closed_day`), uno in mezzo sì; gli orari scritti a mano sul sito **non** leggono quella tabella.
+**`/rent` ridisegnata e pagina di checkout (2026-10-13).** Pagare avviene su `/[lang]/rent/checkout`, non più dentro `/rent`: l'indirizzo porta gli stessi `from`/`to`/`b` (`checkoutHref`, senza il modello di provenienza) e la pagina li **ricontrolla su dati freschi**: un soggiorno non prenotabile, o un carrello rimasto vuoto, torna a `/rent`; una bici presa da altri nel frattempo esce dal carrello e la persona lo legge. Chi non ha l'accesso passa dal login e torna lì (`next`). Come `/rent`, non esiste dove i pagamenti non ci sono. **Il limite è di 7 giorni per tutte le bici** (`MAX_RENTAL_DAYS` in `lib/booking/rules.ts`, `too_long` in `checkStay`; solo online, al banco decide il negozio): `maxRentalDays` della categoria dice ormai solo fin dove arriva il suo listino. **I modelli sono ordinati per categoria** (`display_order` della categoria, poi nome e id, poi l'ordine del modello) sia sul sito sia in `/manage/bikes`; le categorie si trascinano da *Bike options → Categories* e una nuova va in fondo. Le sette categorie di produzione hanno tutte `display_order` 0: finché non si trascinano, l'ordine è alfabetico.
 **Integrazioni (`/manage/integrations`, 2026-10-05).** Un registro nel codice (`lib/integrations/registry.ts`), un catalogo e una pagina per
 integrazione (Overview, Setup guide, Settings con la guida accanto al modulo, Activity), tutto in inglese. La tabella `integrations` ha una riga per
 integrazione: impostazioni non segrete in `config`, il segreto in `secret_encrypted`, **cifrato con `jose` (A256GCM)** con la chiave di
@@ -108,6 +109,12 @@ cancellare due volte dà 410; `insert` su un id già cancellato dà 409; **`upda
 ripristina**. Gli eventi nostri hanno `extendedProperties.private.lelettricaManaged`, così il controllo (*Sync now* e il cron
 giornaliero, finestra da ieri a un anno) non tocca mai quelli messi a mano. `lib/integrations/google-calendar/live.test.ts` prova
 tutto contro il calendario vero (`LIVE_GOOGLE_CALENDAR=1`, saltato altrimenti). Nell'evento non entrano mai importo né note.
+**Colore per modello (2026-10-13).** `bike_models.color` (`#rrggbb`, CHECK nella `0026`; nuovo modello = il colore meno usato della tavolozza di `lib/bike-colors.ts`). Su Google ogni modello è
+un'**etichetta** del calendario (`labelProperties.eventLabels`, disponibili dal 2026-07-07: `id` = id del modello, nome = nome del modello, colore libero) e l'evento la sceglie con `eventLabelId` +
+`eventLabelVersion=1` (con quel parametro `colorId` è ignorato); la manutenzione ha un'etichetta grigia. **Per definire le etichette l'account di servizio deve essere `owner` del calendario**
+(«Apporta modifiche e gestisci condivisione»; con il solo «Apporta modifiche agli eventi» la scrittura dà 403 `requiredAccessLevel`): senza, `prepareColours` (`sync.ts`) ripiega sul colore fisso più vicino
+(`colorId`, `fixed-colors.ts`) e scrive in *Activity* cosa fare. Le etichette si riscrivono **sempre per intero** (Google sostituisce l'elenco): quelle che non sono nostre si conservano. Cambiare il colore
+di un'etichetta ricolora gli eventi da sola. L'ambito dell'account di servizio è `calendar` (non più `calendar.events`). Prova dal vivo: `live.test.ts`, serve il permesso `owner`.
 **RLS e funzione `rls_auto_enable()`** (chiusi gli avvisi di Supabase, 2026-10-05): sia produzione sia sviluppo/Preview hanno
 RLS su ogni tabella di `public` e l'event trigger `ensure_rls` (le tabelle nuove nascono chiuse; l'app si collega come
 `postgres` e l'RLS non la tocca); la funzione non è eseguibile da `anon` né da `authenticated`, e l'event trigger scatta lo
@@ -267,7 +274,7 @@ browser, l'HTML è identico (vedi `docs/environment-variables.md`).
 **Una cartella di lavoro con `node_modules` in giunzione usa la versione di Next della cartella principale**, non quella del suo `package.json`: dopo un aggiornamento di Next si lavora in una cartella con la propria installazione (`npm ci`), mai `npm install` dentro la giunzione. Le PR di Dependabot puntano a `main` (base vecchia): gli aggiornamenti si fanno da `staging`. I test del database (`tests/db`) creano da sé ciò che serve e tolgono ciò che creano: ne esisteva uno che passava solo grazie agli avanzi di un altro (modelli pubblicati `db-test-*` rimasti sullo stesso database di staging).
 
 **Dietro il tunnel `request.url` dice `https://0.0.0.0:3000`**, l'indirizzo con cui il contenitore vede se stesso: un indirizzo costruito dall'origine della richiesta (un `NextResponse.redirect` in
-una rotta, un link in un'email) manda la gente dove nessuno può andare. Ha rotto l'accesso con Google su staging (visto il 2026-10-13: la risposta era `Location: https://0.0.0.0:3000/…`). Si usa
+una rotta, un link in un'email) manda la gente dove nessuno può andare. Ha rotto l'accesso con Google su staging (visto il 2026-10-13: la risposta era `Location: https://0.0.0.0:3000/…`; una seconda causa, indipendente, era l'indirizzo di staging mancante tra i *Redirect URLs* di Supabase: `docs/google-login-setup.md`). Si usa
 `SITE_URL` (`lib/auth/urls.ts`, da `NEXT_PUBLIC_SITE_URL`, fissato alla build); `proxy.ts` risponde con indirizzi relativi e non ne soffre. Provare una rotta nuova su staging guardando l'header
 `Location`, non il browser.
 
@@ -382,7 +389,7 @@ sincronizzazione `main → staging` si fa da un ramo copia, con **merge commit**
 
 ## Debito noto
 
-- **Video.js v10 è stabile dal 2026-10-05** (10.0.1; era RC). `components/video-player.tsx` legge `selectError` da
+- **Video.js v10 è stabile dal 2026-10-05** (era RC; **10.1.0 dal 2026-10-14**, ricontrollato come sotto: video vero e manifest 404 si comportano come con la 10.0.1). `components/video-player.tsx` legge `selectError` da
   `@videojs/core/dom`, un dettaglio interno: ricontrollarlo a ogni aggiornamento, con un video vero (`playlist.m3u8`
   di un percorso) e con un manifest 404. Da `localhost` il dominio dei media non risponde (CORS ammette solo `www`):
   per provarlo in locale si intercetta la risposta aggiungendo `access-control-allow-origin`.

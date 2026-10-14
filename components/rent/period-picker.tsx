@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type ComponentProps } from 'react'
+import { type DayButton } from 'react-day-picker'
 import { de as dpDe, enGB as dpEn, it as dpIt } from 'react-day-picker/locale'
 import { LuChevronDown, LuChevronLeft, LuChevronRight, LuChevronUp } from 'react-icons/lu'
 import { Button } from '@/components/ui/button'
@@ -39,7 +40,7 @@ export function PeriodPicker({
   range: DayRange | null
   minDay: IsoDate
   maxDay: IsoDate
-  /** The category's limit in days when one bike is being booked; null when booking by days. */
+  /** The longest stay, in days: the days beyond it from the first one cannot be chosen. */
   maxDays: number | null
   mode: 'days' | 'bike'
   pending: boolean
@@ -85,11 +86,31 @@ export function PeriodPicker({
       ? `${month.format(firstShown)} – ${monthYear.format(lastShown)}`
       : `${monthYear.format(firstShown)} – ${monthYear.format(lastShown)}`
 
+  // The stay in words: under the bar of days, and in the top row when the month is open (where the month's name is already its caption).
+  const periodText = (
+    <p className="text-sm" aria-live="polite">
+      {chosen ? (
+        <span className="font-semibold text-foreground">
+          {formatDays(chosen, lang, { weekday: true })} · {daysBetween(chosen.startsOn, chosen.endsOn) === 1 ? dict.days_one : fill(dict.days_other, { n: daysBetween(chosen.startsOn, chosen.endsOn) })}
+        </span>
+      ) : (
+        <span className="text-muted-foreground">{dict.dates_prompt}</span>
+      )}
+    </p>
+  )
+
   const first = selection.start ? dayToDate(selection.start) : undefined
   const last = selection.end ? dayToDate(selection.end) : first
 
   return (
     <div className="space-y-3" aria-busy={pending}>
+      <div className="flex min-h-9 items-center justify-between gap-2">
+        {expanded ? periodText : <p className="text-base font-semibold capitalize text-foreground" aria-live="polite">{title}</p>}
+        <Button type="button" variant="ghost" size="sm" className="ml-auto" aria-expanded={expanded} onClick={() => setExpanded((open) => !open)}>
+          {expanded ? <LuChevronUp /> : <LuChevronDown />} {expanded ? dict.show_week : dict.show_month}
+        </Button>
+      </div>
+
       {expanded ? (
         <div className="overflow-x-auto">
           <Calendar
@@ -112,13 +133,26 @@ export function PeriodPicker({
               },
             }}
             modifiers={{ unavailable: (date) => { const check = isSelectable(isoDay(date), pickContext); return !check.ok && UNAVAILABLE.has(check.reason) } }}
-            modifiersClassNames={{ unavailable: 'rounded-md bg-muted' }}
-            className="mx-auto p-0 [--cell-size:2.25rem] sm:[--cell-size:2.5rem]"
+            modifiersClassNames={{ unavailable: 'line-through' }}
+            showOutsideDays={false}
+            components={{ DayButton: MonthDay }}
+            classNames={{
+              months: 'relative flex flex-col gap-8 md:flex-row md:gap-12',
+              month_caption: 'flex h-10 w-full items-center justify-center px-(--cell-size)',
+              caption_label: 'select-none text-base font-semibold capitalize',
+              weekday: 'flex-1 select-none text-xs font-normal text-muted-foreground',
+              week: 'mt-1 flex w-full',
+              // The stay is a pale band from the first day to the last, with a filled circle on each end (the circles are the day buttons).
+              range_start: 'rounded-l-full bg-primary/10',
+              range_middle: 'bg-primary/10 first:rounded-l-full last:rounded-r-full',
+              range_end: 'rounded-r-full bg-primary/10',
+              today: '',
+            }}
+            className="mx-auto p-0 [--cell-size:2.25rem] min-[360px]:[--cell-size:2.5rem] sm:[--cell-size:2.75rem]"
           />
         </div>
       ) : (
-        <div className="mx-auto max-w-xl space-y-2">
-          <p className="text-center text-sm font-medium capitalize text-foreground" aria-live="polite">{title}</p>
+        <div>
           <div className="flex items-stretch gap-1 sm:gap-2">
             <Button
               type="button" variant="outline" size="icon" className="h-auto w-8 shrink-0 sm:w-10" aria-label={dict.week_before}
@@ -143,14 +177,15 @@ export function PeriodPicker({
                     title={check.ok ? undefined : label}
                     onClick={() => tap(day)}
                     className={cn(
-                      'flex min-w-0 flex-col items-center gap-1 rounded-md border px-0 py-2 transition-colors sm:gap-1.5 sm:py-3',
+                      'flex h-16 min-w-0 flex-col items-center justify-center gap-0.5 rounded-lg border transition-colors sm:h-[4.5rem]',
                       check.ok && 'cursor-pointer bg-card hover:bg-accent',
-                      !check.ok && (grey ? 'bg-muted text-muted-foreground/60' : 'border-transparent text-muted-foreground/40'),
-                      inside && 'bg-accent',
+                      inside && 'border-transparent bg-accent text-primary',
+                      isEdge && 'border-primary bg-primary text-primary-foreground hover:bg-primary',
+                      !check.ok && (grey ? 'border-transparent text-muted-foreground/60' : 'border-transparent text-muted-foreground/40'),
                     )}
                   >
-                    <span className="text-[0.7rem] leading-none text-muted-foreground">{weekday.format(dayToDate(day))}</span>
-                    <span className={cn('flex size-7 items-center justify-center rounded-full text-sm sm:size-8', isEdge && 'bg-primary font-semibold text-primary-foreground')}>
+                    <span className={cn('text-xs leading-none', isEdge ? 'text-primary-foreground/80' : 'text-muted-foreground')}>{weekday.format(dayToDate(day))}</span>
+                    <span className={cn('text-lg font-semibold leading-tight', !check.ok && 'font-normal', grey && 'line-through')}>
                       {dayToDate(day).getDate()}
                     </span>
                   </button>
@@ -167,22 +202,7 @@ export function PeriodPicker({
         </div>
       )}
 
-      <div className="flex justify-center">
-        <Button type="button" variant="ghost" size="sm" aria-expanded={expanded} onClick={() => setExpanded((open) => !open)}>
-          {expanded ? <LuChevronUp /> : <LuChevronDown />} {expanded ? dict.show_week : dict.show_month}
-        </Button>
-      </div>
-
-      <p className="text-center text-sm" aria-live="polite">
-        {chosen ? (
-          <span className="font-medium text-foreground">
-            {formatDays(chosen, lang, { weekday: true })} · {daysBetween(chosen.startsOn, chosen.endsOn) === 1 ? dict.days_one : fill(dict.days_other, { n: daysBetween(chosen.startsOn, chosen.endsOn) })}
-          </span>
-        ) : (
-          <span className="text-muted-foreground">{dict.dates_prompt}</span>
-        )}
-      </p>
-      <p className="text-center text-xs text-muted-foreground">{mode === 'bike' ? dict.legend_off_bike : dict.legend_off_days}</p>
+      {!expanded && periodText}
     </div>
   )
 }
@@ -198,4 +218,30 @@ function useWideScreen() {
     return () => query.removeEventListener('change', update)
   }, [])
   return wide
+}
+
+/**
+ * A day of the open month: a round button (a filled one on the first and the last day of the stay; the band between them is drawn by the
+ * cell around it), faded when it cannot be chosen and struck through when the shop is closed or no bike is free.
+ */
+function MonthDay({ day, modifiers, className, ...props }: ComponentProps<typeof DayButton>) {
+  const ref = useRef<HTMLButtonElement>(null)
+  useEffect(() => { if (modifiers.focused) ref.current?.focus() }, [modifiers.focused])
+  const edge = modifiers.range_start || modifiers.range_end
+  return (
+    <button
+      ref={ref}
+      type="button"
+      data-day={day.date.toLocaleDateString()}
+      {...props}
+      className={cn(
+        'mx-auto flex size-(--cell-size) items-center justify-center rounded-full text-sm outline-none transition-colors focus-visible:ring-[3px] focus-visible:ring-ring/50',
+        modifiers.disabled ? 'cursor-default text-muted-foreground/40' : 'cursor-pointer',
+        !edge && !modifiers.disabled && 'hover:bg-accent',
+        edge && 'bg-primary font-semibold text-primary-foreground',
+        modifiers.unavailable && 'line-through',
+        className,
+      )}
+    />
+  )
 }

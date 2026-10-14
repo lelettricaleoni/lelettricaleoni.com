@@ -1,14 +1,11 @@
 import { notFound } from 'next/navigation'
 import { connection } from 'next/server'
 import type { Metadata } from 'next'
-import { eq } from 'drizzle-orm'
 import { getDictionary, hasLocale } from '../dictionaries'
 import { Navbar } from '@/components/navbar'
 import { Footer } from '@/components/footer'
 import { getModelMedia } from '@/components/bike-model-media'
-import { RentFlow, type RentAccount } from '@/components/rent/rent-flow'
-import { db, customers } from '@/lib/db'
-import { getCurrentUser } from '@/lib/auth/current-user'
+import { RentFlow } from '@/components/rent/rent-flow'
 import { getUnitBusyIntervals } from '@/lib/booking/busy-intervals'
 import { getFocusModel, listBookableBikes } from '@/lib/booking/catalog'
 import { paymentsAvailable } from '@/lib/booking/payments'
@@ -19,7 +16,7 @@ import { firstBookableDay } from '@/lib/booking/period-selection'
 import { isClosedOn } from '@/lib/shop-schedule'
 import { loadShopSchedule } from '@/lib/shop-schedule-data'
 
-// Reads the session cookie and the database on every request.
+// Reads the database on every request.
 export const instant = false
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
@@ -68,27 +65,16 @@ export default async function RentPage({
   const models = range ? await listBookableBikes(range, lang, { includeUnavailable: true }) : []
   const media = await getModelMedia(models)
 
-  const user = await getCurrentUser()
-  let account: RentAccount = { kind: 'guest' }
-  if (user) {
-    const [customer] = await db.select({ phone: customers.phone }).from(customers).where(eq(customers.userId, user.id))
-    account = { kind: 'customer', hasPhone: Boolean(customer?.phone) }
-  }
-
   return (
     <>
       <Navbar lang={lang} dict={dict} />
       <main className="w-full pb-16 pt-24">
         <div className="mx-auto max-w-6xl space-y-6 px-4 sm:px-6">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">{dict.rent.title}</h1>
-            <p className="mt-2 max-w-xl text-muted-foreground">{dict.rent.subtitle}</p>
-          </div>
+          <h1 className="text-3xl font-bold text-foreground">{dict.rent.title}</h1>
           <RentFlow
             key={range ? `${range.startsOn}_${range.endsOn}` : 'no-days'}
             lang={lang}
             dict={dict.rent}
-            termsHref={`/${lang}/terms`}
             range={range}
             initialCart={range ? state.cart : []}
             focusModelId={focus?.id ?? null}
@@ -100,7 +86,6 @@ export default async function RentPage({
             media={media}
             minDay={minDay}
             maxDay={maxDay}
-            account={account}
           />
         </div>
       </main>

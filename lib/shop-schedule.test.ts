@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { EMPTY_SCHEDULE, closingTimeOn, hoursOn, isClosedOn, isoWeekday, validateWeek, type ShopSchedule } from './shop-schedule'
+import { EMPTY_SCHEDULE, closedDaysAmong, closingTimeOn, hoursOn, isClosedOn, isoWeekday, validateWeek, type ShopSchedule } from './shop-schedule'
 
 const DAY = [{ opensAt: '09:00', closesAt: '13:00' }, { opensAt: '14:00', closesAt: '19:00' }]
 const week = (overrides: Record<number, { opensAt: string; closesAt: string }[]> = {}) =>
@@ -54,5 +54,20 @@ describe('validateWeek', () => {
   it('refuses ranges of one day that overlap, in any order', () => {
     expect(validateWeek(week({ 3: [{ opensAt: '09:00', closesAt: '14:00' }, { opensAt: '13:00', closesAt: '19:00' }] }))).toMatch(/overlap/)
     expect(validateWeek(week({ 3: [{ opensAt: '13:00', closesAt: '19:00' }, { opensAt: '09:00', closesAt: '14:00' }] }))).toMatch(/overlap/)
+  })
+})
+
+describe('closedDaysAmong', () => {
+  const days = ['2031-11-07', '2031-11-08', '2031-11-09', '2031-11-10']
+  it('lists the closed weekdays and the days inside a closure, in the order given', () => {
+    const s = schedule({ weekly: week({ 7: [] }), closures: [{ startsOn: '2031-11-10', endsOn: '2031-11-11' }] })
+    expect(closedDaysAmong(s, days)).toEqual(['2031-11-09', '2031-11-10'])
+  })
+  it('lists nothing when the shop is open on all of them', () => {
+    expect(closedDaysAmong(schedule(), days)).toEqual([])
+  })
+  it('paints nothing while no hours are declared at all (nothing is known)', () => {
+    expect(closedDaysAmong(EMPTY_SCHEDULE, days)).toEqual([])
+    expect(closedDaysAmong({ weekly: { 1: [] }, closures: [] }, days)).toEqual([])
   })
 })

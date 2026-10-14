@@ -41,8 +41,9 @@ importato qui sopra. Non duplicarli in questo file.
 - **Dopo aver aperto una PR non aspettare i check**: niente `gh pr checks --watch` né cicli
   di attesa che bloccano la sessione (Kevin, 2026-10-02). Passa ad altro e unisci dopo, oppure
   lancia in background un controllo che unisce solo se tutti i check passano sullo stesso
-  commit (`headRefOid`) e cancella il branch solo dopo aver letto `MERGED`. L'auto-merge di
-  GitHub non è abilitato sul repo.
+  commit (`headRefOid`) e cancella il branch solo dopo aver letto `MERGED`: è
+  `scripts/merge-when-green.sh <pr> <sha> <ramo>`. L'auto-merge di GitHub non è abilitato sul repo.
+  **Su `staging` si pubblica liberamente** (Kevin, 2026-10-13): PR e merge senza aspettare il suo via; `main` e produzione restano solo suoi.
 - **Server Action, non route handler.** Le rotte `app/api/` si aggiungono solo quando a
   chiamare è qualcosa che *non* è il nostro frontend — un servizio esterno, un webhook, il
   video worker — perché le Server Action si invocano con un id generato al build e non sono

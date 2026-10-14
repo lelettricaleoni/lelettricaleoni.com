@@ -26,7 +26,7 @@ export function Footer({ lang, dict }: FooterProps) {
 
   return (
     <footer className="bg-brand-dark text-white/80 py-12 mt-auto">
-      <div className="max-w-5xl mx-auto px-4 sm:px-6">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6">
         <div className="flex flex-col md:flex-row items-center justify-between gap-8 mb-8">
           {/* Logo */}
           <Link href={`/${lang}`}>

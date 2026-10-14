@@ -112,10 +112,37 @@ describe('listBookableBikes', () => {
     expect(all.find((entry) => entry.id === fx.modelId)).toBeUndefined()
   })
 
-  it('getFocusModel gives the name, category and limit of a published model, and nothing for an unpublished or unknown one', async () => {
-    expect(await getFocusModel(fx.modelId, 'it')).toMatchObject({ id: fx.modelId, name: 'Bici di prova', maxDays: 3 })
+  it('getFocusModel gives the name and category of a published model, and nothing for an unpublished or unknown one', async () => {
+    expect(await getFocusModel(fx.modelId, 'it')).toMatchObject({ id: fx.modelId, name: 'Bici di prova' })
     expect(await getFocusModel(crypto.randomUUID(), 'it')).toBeNull()
     await db.update(bikeModels).set({ isPublished: false }).where(eq(bikeModels.id, fx.modelId))
     expect(await getFocusModel(fx.modelId, 'it')).toBeNull()
+  })
+
+  it('lists the models by the order of their categories, and inside a category by the order of the models (Kevin, 2026-10-13)', async () => {
+    const other = await createFixture(1)
+    const third = await createFixture(1)
+    try {
+      const rows = await db.select({ id: bikeModels.id, categoryId: bikeModels.categoryId }).from(bikeModels)
+        .where(inArray(bikeModels.id, [fx.modelId, other.modelId, third.modelId]))
+      const category = (modelId: string) => rows.find((row) => row.id === modelId)!.categoryId
+      // `third` goes in the category of `other`, but is placed before it there; the category of `other` comes before the one of `fx`.
+      await db.update(bikeModels).set({ categoryId: category(other.modelId) }).where(eq(bikeModels.id, third.modelId))
+      await db.update(bikeCategories).set({ displayOrder: 90002 }).where(eq(bikeCategories.id, category(fx.modelId)))
+      await db.update(bikeCategories).set({ displayOrder: 90001 }).where(eq(bikeCategories.id, category(other.modelId)))
+      await db.update(bikeModels).set({ displayOrder: 5, isPublished: true }).where(eq(bikeModels.id, fx.modelId))
+      await db.update(bikeModels).set({ displayOrder: 9, isPublished: true }).where(eq(bikeModels.id, other.modelId))
+      await db.update(bikeModels).set({ displayOrder: 1, isPublished: true }).where(eq(bikeModels.id, third.modelId))
+
+      const mineIds = [fx.modelId, other.modelId, third.modelId]
+      const order = (await listBookableBikes(RANGE, 'it')).map((entry) => entry.id).filter((id) => mineIds.includes(id))
+      // Whatever the order of the models says (fx has 5, third 1, other 9), the category that comes first comes first.
+      expect(order).toEqual([third.modelId, other.modelId, fx.modelId])
+    } finally {
+      await db.delete(bikeUnits).where(inArray(bikeUnits.bikeModelId, [other.modelId, third.modelId]))
+      // The model of `third` sits in the category of `other`: it goes first.
+      await third.cleanup()
+      await other.cleanup()
+    }
   })
 })
