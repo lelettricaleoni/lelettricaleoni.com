@@ -109,6 +109,12 @@ cancellare due volte dà 410; `insert` su un id già cancellato dà 409; **`upda
 ripristina**. Gli eventi nostri hanno `extendedProperties.private.lelettricaManaged`, così il controllo (*Sync now* e il cron
 giornaliero, finestra da ieri a un anno) non tocca mai quelli messi a mano. `lib/integrations/google-calendar/live.test.ts` prova
 tutto contro il calendario vero (`LIVE_GOOGLE_CALENDAR=1`, saltato altrimenti). Nell'evento non entrano mai importo né note.
+**Colore per modello (2026-10-13).** `bike_models.color` (`#rrggbb`, CHECK nella `0026`; nuovo modello = il colore meno usato della tavolozza di `lib/bike-colors.ts`). Su Google ogni modello è
+un'**etichetta** del calendario (`labelProperties.eventLabels`, disponibili dal 2026-07-07: `id` = id del modello, nome = nome del modello, colore libero) e l'evento la sceglie con `eventLabelId` +
+`eventLabelVersion=1` (con quel parametro `colorId` è ignorato); la manutenzione ha un'etichetta grigia. **Per definire le etichette l'account di servizio deve essere `owner` del calendario**
+(«Apporta modifiche e gestisci condivisione»; con il solo «Apporta modifiche agli eventi» la scrittura dà 403 `requiredAccessLevel`): senza, `prepareColours` (`sync.ts`) ripiega sul colore fisso più vicino
+(`colorId`, `fixed-colors.ts`) e scrive in *Activity* cosa fare. Le etichette si riscrivono **sempre per intero** (Google sostituisce l'elenco): quelle che non sono nostre si conservano. Cambiare il colore
+di un'etichetta ricolora gli eventi da sola. L'ambito dell'account di servizio è `calendar` (non più `calendar.events`). Prova dal vivo: `live.test.ts`, serve il permesso `owner`.
 **RLS e funzione `rls_auto_enable()`** (chiusi gli avvisi di Supabase, 2026-10-05): sia produzione sia sviluppo/Preview hanno
 RLS su ogni tabella di `public` e l'event trigger `ensure_rls` (le tabelle nuove nascono chiuse; l'app si collega come
 `postgres` e l'RLS non la tocca); la funzione non è eseguibile da `anon` né da `authenticated`, e l'event trigger scatta lo

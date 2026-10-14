@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { MAINTENANCE_LABEL_ID } from './labels'
 import { eventIdFor, wantedEvent, type CalendarSettings, type ReservationForCalendar } from './events'
 
 const settings = (overrides: Partial<CalendarSettings> = {}): CalendarSettings => ({
@@ -7,7 +8,7 @@ const settings = (overrides: Partial<CalendarSettings> = {}): CalendarSettings =
 
 const rental = (overrides: Partial<ReservationForCalendar> = {}): ReservationForCalendar => ({
   id: '5f1b0c2e-8a3d-4e7f-9b21-0c4d6e8f1a23', kind: 'counter_rental', status: 'confirmed',
-  startsOn: '2026-10-10', endsOn: '2026-10-13', bikeLabel: 'Mondraker Arid S · M · Alu', shortId: 'aaaaaaaa',
+  startsOn: '2026-10-10', endsOn: '2026-10-13', bikeLabel: 'Mondraker Arid S · M · Alu', modelId: '99999999-9999-4999-8999-999999999999', modelColor: '#039be5', shortId: 'aaaaaaaa',
   customerName: 'Mario Rossi', customerPhone: '+393471234567', label: null, ...overrides,
 })
 
@@ -79,8 +80,8 @@ describe('wantedEvent for a maintenance', () => {
     const event = wantedEvent(maintenance(), settings())!
     expect(event.summary).toBe('Maintenance · Mondraker Arid S · M · Alu')
     expect(event.description).toContain('Reason: chain')
-    expect(event.colorId).toBeDefined()
-    expect(wantedEvent(rental(), settings())!.colorId).toBeUndefined()
+    expect(event.colorId).toBe('8') // graphite: no model has it
+    expect(wantedEvent(rental({ modelColor: null }), settings())!.colorId).toBeUndefined()
   })
 
   it('has no reason line when none was written', () => {
@@ -108,5 +109,39 @@ describe('wantedEvent for an online booking', () => {
   it('has no event for a bike that is only held, and none for one that expired: nobody has paid yet, or ever will', () => {
     expect(wantedEvent(rental({ kind: 'online_rental', status: 'held' }), settings())).toBeNull()
     expect(wantedEvent(rental({ kind: 'online_rental', status: 'expired' }), settings())).toBeNull()
+  })
+})
+
+describe('wantedEvent: the colour', () => {
+  const MODEL = '99999999-9999-4999-8999-999999999999'
+
+  it('takes the label of the model where the calendar has labels, and no fixed colour', () => {
+    const event = wantedEvent(rental({ modelId: MODEL, modelColor: '#039be5' }), settings({ labels: true }))!
+    expect(event.eventLabelId).toBe(MODEL)
+    expect(event.colorId).toBeUndefined()
+  })
+
+  it('takes the nearest fixed colour of Google where it has not', () => {
+    const red = wantedEvent(rental({ modelColor: '#d50000' }), settings())!
+    expect(red.colorId).toBe('11') // tomato
+    expect(red.eventLabelId).toBeUndefined()
+    expect(wantedEvent(rental({ modelColor: '#0b8043' }), settings())!.colorId).toBe('10') // basil
+  })
+
+  it('is the same for a rental at the counter and one online', () => {
+    const counter = wantedEvent(rental({ kind: 'counter_rental' }), settings({ labels: true }))!
+    const online = wantedEvent(rental({ kind: 'online_rental' }), settings({ labels: true }))!
+    expect(online.eventLabelId).toBe(counter.eventLabelId)
+  })
+
+  it("leaves a model with no colour with the calendar's own", () => {
+    expect(wantedEvent(rental({ modelColor: null }), settings({ labels: true }))).not.toHaveProperty('eventLabelId')
+    expect(wantedEvent(rental({ modelColor: null }), settings())).not.toHaveProperty('colorId')
+  })
+
+  it('gives a maintenance its own grey label, or graphite, whatever the model', () => {
+    const maintenance = rental({ kind: 'maintenance', label: 'Brakes' })
+    expect(wantedEvent(maintenance, settings({ labels: true }))!.eventLabelId).toBe(MAINTENANCE_LABEL_ID)
+    expect(wantedEvent(maintenance, settings())!.colorId).toBe('8')
   })
 })

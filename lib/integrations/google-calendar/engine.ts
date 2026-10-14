@@ -1,5 +1,6 @@
 import { eventIdFor, wantedEvent, type CalendarEvent, type CalendarSettings, type ReservationForCalendar } from '@/lib/integrations/google-calendar/events'
 import type { IsoDate } from '@/lib/dates'
+import type { CalendarLabel } from '@/lib/integrations/google-calendar/labels'
 
 /*
  * The sync logic, with no network of its own: it talks to Google through `SyncApi`, so it is tested against a
@@ -8,12 +9,19 @@ import type { IsoDate } from '@/lib/dates'
  */
 
 export interface SyncApi {
-  /** Creates the event, or updates it (also bringing back one that was deleted: Google allows it). */
-  upsertEvent(calendarId: string, eventId: string, event: CalendarEvent): Promise<'created' | 'updated'>
+  /**
+   * Creates the event, or updates it (also bringing back one that was deleted: Google allows it). `labels` is whether the event is written
+   * the labels way (Google then reads its `eventLabelId` and ignores `colorId`).
+   */
+  upsertEvent(calendarId: string, eventId: string, event: CalendarEvent, labels: boolean): Promise<'created' | 'updated'>
   /** "absent" when there was nothing to remove (Google says 404 or 410): that is a success. */
   removeEvent(calendarId: string, eventId: string): Promise<'removed' | 'absent'>
   /** The ids of OUR events (marked as managed) in the window: events added by hand are never listed. */
   listManagedEventIds(calendarId: string, from: IsoDate, to: IsoDate): Promise<string[]>
+  /** All the labels of the calendar, ours and the ones put by hand. Fails like any call when the service account cannot read them. */
+  readLabels(calendarId: string): Promise<CalendarLabel[]>
+  /** Replaces the WHOLE list of labels (Google keeps only what it is given); needs owner access to the calendar. */
+  writeLabels(calendarId: string, labels: CalendarLabel[]): Promise<void>
 }
 
 export type ApplyResult = 'created' | 'updated' | 'removed' | 'absent'
@@ -22,7 +30,7 @@ export type ApplyResult = 'created' | 'updated' | 'removed' | 'absent'
 export async function applyReservation(api: SyncApi, settings: CalendarSettings, reservation: ReservationForCalendar): Promise<ApplyResult> {
   const event = wantedEvent(reservation, settings)
   const eventId = eventIdFor(reservation.id)
-  return event ? api.upsertEvent(settings.calendarId, eventId, event) : api.removeEvent(settings.calendarId, eventId)
+  return event ? api.upsertEvent(settings.calendarId, eventId, event, settings.labels === true) : api.removeEvent(settings.calendarId, eventId)
 }
 
 /** For a reservation that is not in the database any more. */

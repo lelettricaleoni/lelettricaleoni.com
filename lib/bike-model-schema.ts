@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { hexColorSchema } from '@/lib/bike-colors'
 import { TRANSLATION_MAX_CHARS } from '@/lib/translate-text'
 
 /**
@@ -22,6 +23,8 @@ export const BikeModelSchema = z.object({
     .gt(-100, 'A discount cannot be 100% or more')
     .lte(300, 'A surcharge of more than 300% is probably a typing mistake')
     .default(0),
+  // The colour of the model (`#rrggbb`) in the shop's calendar. Absent: a new model gets the colour used the least, an old one keeps its own.
+  color:           hexColorSchema.optional(),
   batteryRange:    z.string().optional(),
   motor:           z.string().optional(),
   gearCount:       z.string().optional(),
