@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { parseRentState, rentHref } from './rent-url'
+import { checkoutHref, parseRentState, rentHref } from './rent-url'
 
 const MODEL = '3f2a1c9e-8b7d-4e6f-9a10-2b3c4d5e6f70'
 const SIZE = '0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d'
@@ -61,5 +61,8 @@ describe('the state of the booking page lives in the address', () => {
   it('writes only what is there: no days, no bikes, no empty parameters', () => {
     expect(rentHref('en', { range: null, cart: [], focusModelId: null })).toBe('/en/rent')
     expect(rentHref('de', { range: null, cart: [], focusModelId: MODEL })).toBe(`/de/rent?model=${MODEL}`)
+    // The checkout page keeps the days and the bikes and leaves out the model a person arrived from.
+    expect(checkoutHref('it', { range: { startsOn: '2031-11-03', endsOn: '2031-11-06' }, cart: [{ bikeModelId: MODEL, bikeSizeId: MODEL, bikeVersionId: MODEL, quantity: 2 }], focusModelId: MODEL }))
+      .toBe(`/it/rent/checkout?from=2031-11-03&to=2031-11-05&b=${MODEL}.${MODEL}.${MODEL}.2`)
   })
 })

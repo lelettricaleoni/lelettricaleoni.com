@@ -27,6 +27,8 @@ export interface BookableVariant {
 export interface BookableModel {
   id: string
   name: string
+  /** The category the booking page puts the model under (in the order the panel gave the categories). */
+  categoryId: string
   categoryName: string
   days: number
   /** The price of the whole stay for one bike, or null when the category does not rent that many days. */
@@ -81,7 +83,7 @@ export async function listBookableBikes(
     .from(bikeModels)
     .innerJoin(bikeCategories, eq(bikeCategories.id, bikeModels.categoryId))
     .where(inArray(bikeModels.id, modelIds))
-    .orderBy(asc(bikeModels.displayOrder), asc(bikeModels.createdAt))
+    .orderBy(asc(bikeCategories.displayOrder), asc(bikeCategories.name), asc(bikeCategories.id), asc(bikeModels.displayOrder), asc(bikeModels.createdAt))
   const names = await db
     .select({ modelId: bikeModelTranslations.bikeModelId, locale: bikeModelTranslations.locale, name: bikeModelTranslations.name })
     .from(bikeModelTranslations)
@@ -117,6 +119,7 @@ export async function listBookableBikes(
     return {
       id: model.id,
       name,
+      categoryId: model.category.id,
       categoryName: model.category.name,
       days,
       stayPriceCents: price,
@@ -128,7 +131,7 @@ export async function listBookableBikes(
   })
 }
 
-export interface FocusModel { id: string; name: string; categoryName: string; maxDays: number }
+export interface FocusModel { id: string; name: string; categoryName: string }
 
 /** The model a person arrived from (`/rent?model=…`): only a published one, or null (an old or typed link falls back to booking by days). */
 export async function getFocusModel(modelId: string, lang: Locale): Promise<FocusModel | null> {
@@ -143,5 +146,5 @@ export async function getFocusModel(modelId: string, lang: Locale): Promise<Focu
     .from(bikeModelTranslations)
     .where(eq(bikeModelTranslations.bikeModelId, modelId))
   const name = (names.find((entry) => entry.locale === lang) ?? names.find((entry) => entry.locale === 'it') ?? names[0])?.name ?? row.category.name
-  return { id: row.id, name, categoryName: row.category.name, maxDays: row.category.maxRentalDays }
+  return { id: row.id, name, categoryName: row.category.name }
 }

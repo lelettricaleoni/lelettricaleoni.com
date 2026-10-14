@@ -13,14 +13,14 @@ const spec = (bikeModelId: string, bikeSizeId: string, bikeVersionId: string) =>
 
 const models: BookableModel[] = [
   {
-    id: M1, name: 'Uproc', categoryName: 'eMTB', days: 3, stayPriceCents: 2400, maxDays: 7, tooLong: false, totalFree: 5,
+    id: M1, name: 'Uproc', categoryId: 'c1', categoryName: 'eMTB', days: 3, stayPriceCents: 2400, maxDays: 7, tooLong: false, totalFree: 5,
     variants: [
       { sizeId: SM, sizeName: 'M', chooseVersion: true, versions: [{ versionId: V1, versionName: 'Unisex', free: 2 }, { versionId: V2, versionName: 'Donna', free: 1 }] },
       { sizeId: SL, sizeName: 'L', chooseVersion: false, versions: [{ versionId: V1, versionName: 'Unisex', free: 2 }] },
     ],
   },
   {
-    id: M2, name: 'Gravel', categoryName: 'Gravel', days: 3, stayPriceCents: null, maxDays: 2, tooLong: true, totalFree: 3,
+    id: M2, name: 'Gravel', categoryId: 'c2', categoryName: 'Gravel', days: 3, stayPriceCents: null, maxDays: 2, tooLong: true, totalFree: 3,
     variants: [{ sizeId: SM, sizeName: 'M', chooseVersion: false, versions: [{ versionId: V1, versionName: 'Unisex', free: 3 }] }],
   },
 ]

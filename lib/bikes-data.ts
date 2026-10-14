@@ -65,7 +65,9 @@ export async function getBikeModelsListData(lang: Locale) {
     .leftJoin(routeBikeCategories, eq(routeBikeCategories.id, bikeCategories.routeCategoryId))
     .innerJoin(bikeUnits, and(eq(bikeUnits.bikeModelId, bikeModels.id), inGarage()))
     .where(eq(bikeModels.isPublished, true))
-    .orderBy(asc(bikeModels.displayOrder))
+    .orderBy(
+      asc(bikeCategories.displayOrder), asc(bikeCategories.name), asc(bikeCategories.id), asc(bikeModels.displayOrder), asc(bikeModels.createdAt),
+    )
 
   // Taglie davvero in garage, una sola query per tutti i modelli insieme —
   // non una query per modello dentro il map sotto: la stessa forma N+1 che
@@ -112,7 +114,9 @@ export async function getSuggestedBikesForRoute(lang: Locale, bikeTypes: string[
     .innerJoin(routeBikeCategories, eq(routeBikeCategories.id, bikeCategories.routeCategoryId))
     .innerJoin(bikeUnits, and(eq(bikeUnits.bikeModelId, bikeModels.id), inGarage()))
     .where(and(eq(bikeModels.isPublished, true), inArray(routeBikeCategories.name, bikeTypes)))
-    .orderBy(asc(bikeModels.displayOrder))
+    .orderBy(
+      asc(bikeCategories.displayOrder), asc(bikeCategories.name), asc(bikeCategories.id), asc(bikeModels.displayOrder), asc(bikeModels.createdAt),
+    )
 
   const sizeLinks = await db
     .selectDistinct({ bikeModelId: bikeUnits.bikeModelId, size: bikeSizes })

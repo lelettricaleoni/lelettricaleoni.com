@@ -11,17 +11,23 @@ export const HOLD_MINUTES = 15
 export const MAX_BIKES_PER_BOOKING = 10
 /** The last day of a stay may be at most this many days from today. Only for the public page: the panel has no limit. */
 export const MAX_DAYS_AHEAD = 180
+/**
+ * The longest stay that can be booked online, in days, the same for every bike whatever its category (Kevin, 2026-10-13): the picker
+ * stops there and the server refuses more. The category's `maxRentalDays` only says how far its price table goes. Only for the public
+ * page: at the counter the shop decides.
+ */
+export const MAX_RENTAL_DAYS = 7
 /** A customer who has let this many bookings lapse in the last hour waits before starting another. */
 export const ABANDONED_LIMIT = 5
 
 export type StayCheck =
   | { ok: true; days: number }
-  | { ok: false; reason: 'invalid_date' | 'not_a_range' | 'too_soon' | 'too_far' | 'closed_day' }
+  | { ok: false; reason: 'invalid_date' | 'not_a_range' | 'too_soon' | 'too_far' | 'too_long' | 'closed_day' }
 
 /**
  * Whether the days of an online booking are acceptable, and how many there are. `endsOn` is exclusive, as in the database.
- * Online you book from tomorrow: today's rentals are made at the counter. The category's own limit (`maxRentalDays`) is
- * checked when the price is asked (lib/booking/pricing.ts), because it belongs to each bike.
+ * Online you book from tomorrow: today's rentals are made at the counter. No more than `MAX_RENTAL_DAYS` days.
+ * A bike whose category has no price for so many days is refused when the price is asked (lib/booking/pricing.ts).
  */
 export function checkStay(
   startsOn: string, endsOn: string, today: IsoDate,
@@ -33,6 +39,7 @@ export function checkStay(
   if (days < 1) return { ok: false, reason: 'not_a_range' }
   if (daysBetween(today, startsOn) < 1) return { ok: false, reason: 'too_soon' }
   if (daysBetween(addDaysTo(today, MAX_DAYS_AHEAD), inclusiveEnd(endsOn)) > 0) return { ok: false, reason: 'too_far' }
+  if (days > MAX_RENTAL_DAYS) return { ok: false, reason: 'too_long' }
   // The bike is picked up in the shop on the first day and brought back to it on the last.
   if (options.isClosed?.(startsOn) || options.isClosed?.(inclusiveEnd(endsOn))) return { ok: false, reason: 'closed_day' }
   return { ok: true, days }
