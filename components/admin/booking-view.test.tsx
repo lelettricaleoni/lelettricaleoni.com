@@ -20,8 +20,8 @@ const unit = (
 const rental = { id: 'r1', kind: 'counter_rental' as const, startsOn: '2031-07-10', endsOn: '2031-07-13', label: 'Mario Rossi', customer: { id: 'c1', firstName: 'Mario', lastName: 'Rossi', email: null, phone: null, notes: null }, amountCents: 4500, status: 'confirmed' as const }
 const maintenance = { id: 'm1', kind: 'maintenance' as const, startsOn: '2031-07-20', endsOn: '2031-07-22', label: 'chain', customer: null, amountCents: null, status: 'confirmed' as const }
 
-function render(units: GridUnit[], today = '2031-07-15') {
-  return renderToStaticMarkup(createElement(BookingView, { month: '2031-07', today, units, models: [] }))
+function render(units: GridUnit[], today = '2031-07-15', closedDays: string[] = []) {
+  return renderToStaticMarkup(createElement(BookingView, { month: '2031-07', today, units, models: [], closedDays }))
 }
 
 describe('BookingView', () => {
@@ -159,5 +159,20 @@ describe('BookingView', () => {
 
   it('says so when the shop has no bikes yet', () => {
     expect(render([])).toContain('No bikes in the shop yet')
+  })
+
+  it('paints the days the shop is closed red: the header cell, the cell of every bike, and a legend entry',
+    () => {
+      const html = render([unit('aaaaaaaa-0001', 'Mondraker'), unit('aaaaaaaa-0002', 'Mondraker')], '2031-07-15', ['2031-07-13', '2031-07-14'])
+      expect(html.split('bg-red-100 text-red-700')).toHaveLength(3) // two header cells
+      expect(html.split('bg-red-50')).toHaveLength(5) // two days on two bikes
+      expect(html).toContain('title="Shop closed"')
+      expect(html).toContain('>Shop closed<')
+    })
+
+  it('paints nothing and shows no legend entry when the shop is closed on none of the days', () => {
+    const html = render([unit('aaaaaaaa-0000', 'Mondraker')])
+    expect(html).not.toContain('bg-red-')
+    expect(html).not.toContain('Shop closed')
   })
 })
