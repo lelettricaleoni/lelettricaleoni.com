@@ -51,9 +51,12 @@ Tempo: circa mezz'ora, nessuna revisione da parte di Google.
 5. **Supabase** (progetto di sviluppo) → *Authentication → Sign In / Providers → Google* → **Enable** → incolla
    *Client ID* e *Client secret* → Salva. Il segreto resta in Supabase e non va mai in git né nelle variabili del sito.
 6. **Supabase → Authentication → URL Configuration**: nei *Redirect URLs* ci devono essere
-   `https://staging.lelettricaleoni.com/auth/callback` e `http://localhost:3000/auth/callback`
-   (in produzione, al rilascio, `https://www.lelettricaleoni.com/auth/callback`). Senza, Supabase rimanda
-   alla *Site URL* invece che alla pagina giusta.
+   `https://staging.lelettricaleoni.com/**` e `http://localhost:*/**`
+   (in produzione, al rilascio, `https://www.lelettricaleoni.com/**`). Senza, Supabase rimanda
+   alla *Site URL* invece che alla pagina giusta. **Si controlla senza fare l'accesso**: un link di verifica
+   con un codice sbagliato rimanda all'indirizzo chiesto se è ammesso, alla *Site URL* se non lo è:
+   `curl -s -o /dev/null -D - "https://<progetto>.supabase.co/auth/v1/verify?token=bad&type=signup&redirect_to=<indirizzo codificato>"`
+   e si legge l'intestazione `Location`.
 7. **Il pulsante non ha un interruttore** (Kevin, 2026-10-07: niente file d'ambiente come feature flag). «Continua con
    Google» compare sempre, e funziona se il provider è **attivo nel progetto Supabase** di quell'ambiente: è quello
    l'interruttore. Se il provider è spento, Supabase risponde con un errore e la persona torna al login con il messaggio
@@ -152,7 +155,7 @@ Si corregge e si invia di nuovo: non c'è penale. Intanto l'accesso base (Fase 1
 | Sintomo | Causa probabile |
 |---|---|
 | `redirect_uri_mismatch` | l'URI di Google non è identico a quello mostrato da Supabase |
-| Dopo Google si torna alla *Site URL* e non alla pagina | l'indirizzo del sito non è nei *Redirect URLs* di Supabase |
+| Dopo Google si torna alla *Site URL* (`localhost:3000`) e non alla pagina | l'indirizzo del sito non è nei *Redirect URLs* di Supabase: provarlo con il comando del punto 6 (visto su staging il 2026-10-13) |
 | Dopo «Continua con Google» si torna al login con un errore generico | il provider Google non è attivo (o ID e segreto sono sbagliati) nel progetto Supabase di quell'ambiente |
 | «Accesso bloccato: app non verificata» a persone che non sono utenti di test | l'app è ancora in stato «Test» invece che «In produzione» |
 | Schermata con avviso «app non verificata» | è stato chiesto un permesso sensibile prima della verifica |
