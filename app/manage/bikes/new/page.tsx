@@ -1,5 +1,5 @@
 import { BikeModelForm } from '@/components/admin/bike-model-form'
-import { createBikeModelAction } from '@/lib/actions/bike-models'
+import { createBikeModelAction, suggestBikeModelColor } from '@/lib/actions/bike-models'
 import { listBikeCategories, listBikeSizes, listBikeVersions } from '@/lib/actions/bike-options'
 import { getAdminUser } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
@@ -12,14 +12,14 @@ export default async function NewBikeModelPage() {
   const user = await getAdminUser()
   if (!user) redirect('/manage/login')
 
-  const [categories, sizes, versions] = await Promise.all([
-    listBikeCategories(), listBikeSizes(), listBikeVersions(),
+  const [categories, sizes, versions, suggestedColor] = await Promise.all([
+    listBikeCategories(), listBikeSizes(), listBikeVersions(), suggestBikeModelColor(),
   ])
 
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-[#1e3a5f]">New bike model</h1>
-      <BikeModelForm action={createBikeModelAction} categories={categories} sizes={sizes} versions={versions} />
+      <BikeModelForm action={createBikeModelAction} categories={categories} sizes={sizes} versions={versions} suggestedColor={suggestedColor} />
     </div>
   )
 }

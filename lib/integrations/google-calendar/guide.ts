@@ -61,9 +61,9 @@ export const GUIDE_STEPS: GuideStep[] = [
     todo: [
       'In Google Calendar, create a calendar for the bookings (for example "Rentals") or pick one you already have. A separate calendar is the tidiest choice.',
       'Open its Settings and sharing, go to Share with specific people or groups, press Add people and groups, and paste the service account e-mail from step 3.',
-      'Set the permission to "Make changes to events" and press Send. Read-only is not enough: the connection test will say so.',
+      'Set the permission to "Make changes and manage sharing" and press Send. It lets every model of bike have its own colour in the calendar. "Make changes to events" is enough to book, but then the bikes only get the fixed colours of Google; read-only is not enough: the connection test will say so.',
     ],
-    see: 'The service account e-mail is in the list of people with the calendar, with "Make changes to events".',
+    see: 'The service account e-mail is in the list of people with the calendar, with "Make changes and manage sharing".',
     links: [{ label: 'Google Calendar settings', href: 'https://calendar.google.com/calendar/u/0/r/settings' }],
   },
   {

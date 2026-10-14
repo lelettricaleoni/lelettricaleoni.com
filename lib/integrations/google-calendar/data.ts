@@ -1,11 +1,12 @@
 import 'server-only'
 import { and, eq, gt, lt } from 'drizzle-orm'
 import {
-  db, bikeModelTranslations, bikeReservations, bikeSizes, bikeUnits, bikeVersions, customers,
+  db, bikeModelTranslations, bikeModels, bikeReservations, bikeSizes, bikeUnits, bikeVersions, customers,
 } from '@/lib/db'
 import { fullName } from '@/lib/customer'
 import { todayInRome, type IsoDate } from '@/lib/dates'
 import type { ReservationForCalendar } from '@/lib/integrations/google-calendar/events'
+import type { ModelForLabel } from '@/lib/integrations/google-calendar/labels'
 
 /*
  * Reads reservations in the shape the calendar needs. It selects ONLY what an event may contain: the amount and the
@@ -20,6 +21,8 @@ const columns = {
   endsOn: bikeReservations.endsOn,
   label: bikeReservations.label,
   unitId: bikeUnits.id,
+  modelId: bikeModels.id,
+  modelColor: bikeModels.color,
   modelName: bikeModelTranslations.name,
   sizeName: bikeSizes.name,
   versionName: bikeVersions.name,
@@ -32,6 +35,7 @@ function select() {
   return db.select(columns)
     .from(bikeReservations)
     .innerJoin(bikeUnits, eq(bikeUnits.id, bikeReservations.bikeUnitId))
+    .innerJoin(bikeModels, eq(bikeModels.id, bikeUnits.bikeModelId))
     .leftJoin(bikeModelTranslations, and(eq(bikeModelTranslations.bikeModelId, bikeUnits.bikeModelId), eq(bikeModelTranslations.locale, 'it')))
     .innerJoin(bikeSizes, eq(bikeSizes.id, bikeUnits.bikeSizeId))
     .innerJoin(bikeVersions, eq(bikeVersions.id, bikeUnits.bikeVersionId))
@@ -44,6 +48,8 @@ function toReservation(row: Row): ReservationForCalendar {
   return {
     id: row.id, kind: row.kind, status: row.status, startsOn: row.startsOn, endsOn: row.endsOn,
     bikeLabel: [row.modelName ?? 'Untitled', row.sizeName, row.versionName].join(' · '),
+    modelId: row.modelId,
+    modelColor: row.modelColor,
     shortId: row.unitId.slice(0, 8),
     customerName: row.firstName === null ? null : fullName(row.firstName, row.lastName) || null,
     customerPhone: row.phone,
@@ -75,4 +81,14 @@ export async function listReservationIdsOfCustomer(customerId: string): Promise<
     gt(bikeReservations.endsOn, todayInRome()),
   ))
   return rows.map((row) => row.id)
+}
+
+/** Every model with its Italian name and its colour: what the labels of the calendar are made from. */
+export async function listModelsForLabels(): Promise<ModelForLabel[]> {
+  const rows = await db
+    .select({ id: bikeModels.id, color: bikeModels.color, name: bikeModelTranslations.name })
+    .from(bikeModels)
+    .leftJoin(bikeModelTranslations, and(eq(bikeModelTranslations.bikeModelId, bikeModels.id), eq(bikeModelTranslations.locale, 'it')))
+    .limit(1000)
+  return rows.map((row) => ({ id: row.id, name: row.name ?? 'Untitled', color: row.color }))
 }
